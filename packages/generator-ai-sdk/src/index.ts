@@ -21,6 +21,7 @@ export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
 export const M1B_REPETITIONS = 2;
+export const M1B_TIMEOUT_MS = 120_000;
 
 export const M1B_PROMPT_PROTOCOL = Object.freeze({
   id: "lachesis-plan-generation",
@@ -123,6 +124,7 @@ export type AiSdkModelAdapterInput = Readonly<{
   loadModel: () => Promise<unknown>;
   runtime?: AiSdkRuntime | undefined;
   providerOptions?: ProviderOptions | undefined;
+  timeoutMs?: number | undefined;
 }>;
 
 const tokenDetailsSchema = z
@@ -358,6 +360,9 @@ export function createAiSdkModelAdapter(
     pricingEntryId: input.pricing.id,
     async generate(request) {
       const started = performance.now();
+      const abortSignal = AbortSignal.timeout(
+        input.timeoutMs ?? M1B_TIMEOUT_MS,
+      );
       try {
         const prompt = renderRequest(request);
         const sdk = input.runtime ?? (await loadAiSdk());
@@ -378,6 +383,7 @@ export function createAiSdkModelAdapter(
           prompt,
           maxOutputTokens: input.inference.maxOutputTokens,
           maxRetries: 0,
+          abortSignal,
           ...(input.inference.temperature === null
             ? {}
             : { temperature: input.inference.temperature }),
@@ -425,6 +431,16 @@ export function createAiSdkModelAdapter(
         };
       } catch (error) {
         const latencyMs = Math.max(0, Math.round(performance.now() - started));
+        if (abortSignal.aborted) {
+          return {
+            ok: false,
+            error: {
+              code: "PROVIDER_TIMEOUT",
+              message: `Provider request exceeded ${input.timeoutMs ?? M1B_TIMEOUT_MS} ms.`,
+              latencyMs,
+            },
+          };
+        }
         const generated = structuredGenerationErrorSchema.safeParse(error);
         if (generated.success && generated.data.text !== undefined) {
           const metadata = responseMetadata({

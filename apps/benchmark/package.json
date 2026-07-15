@@ -1,0 +1,34 @@
+{
+  "name": "@nicia-ai/lachesis-benchmark",
+  "version": "0.1.0",
+  "description": "Node-only controlled experiment controller for Lachesis",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Nicia AI",
+  "private": true,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "bin": {
+    "lachesis-benchmark": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "smoke": "node --input-type=module -e \"const api = await import('./dist/controller.js'); if (typeof api.preflightPhase !== 'function' || typeof api.generateStoredReport !== 'function') process.exit(1);\"",
+    "start": "node dist/cli.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:*",
+    "@nicia-ai/lachesis-generator": "workspace:*",
+    "@nicia-ai/lachesis-generator-ai-sdk": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3"
+  }
+}

@@ -152,3 +152,20 @@ development-only and precedes the separately frozen held-out manifest.
 The deterministic fixtures prove the measurement machinery, not these empirical
 rates. Prompts, cases, manifests, scoring code, providers, capability tiers,
 repetition count, and a hard spend cap must be frozen before the M1b pilot.
+
+## M1b controlled execution
+
+The Node-only `apps/benchmark` controller wraps experiment manifests in a
+content-addressed campaign and phase protocol. Smoke and calibration share one
+durable $10 pool across manifests. Held-out has a separate $50 total pool with
+$25 OpenAI and Anthropic subcaps. A hash-chained append-only ledger reserves
+worst-case cost before every request, reconciles recorded usage, conservatively
+charges missing usage, validates a durable head, and is protected by an
+exclusive stale-aware filesystem lock.
+
+Phase validation prevents development/held-out mixing, rejects Bedrock and
+model-setting drift from the primary matrix, and requires a clean matching Git
+commit for held-out. Live execution requires exact experiment, phase, and pool
+cap acknowledgement. Dry-run and reporting do not construct provider models or
+make network requests. The operational protocol is in
+[`m1b-runbook.md`](m1b-runbook.md).

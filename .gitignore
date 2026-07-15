@@ -3,4 +3,5 @@ dist/
 coverage/
 .wrangler/
 .env
+.benchmark-state/
 *.tsbuildinfo

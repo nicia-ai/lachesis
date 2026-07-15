@@ -118,12 +118,37 @@ export type BenchmarkStore = Readonly<{
   save: (record: BenchmarkCaseRecord) => Promise<Result<void, Diagnostic>>;
 }>;
 
+export type BenchmarkBudgetReservation = Readonly<{
+  experimentDigest: string;
+  benchmarkRecordKey: string;
+  methodId: string;
+  attemptIndex: number;
+  billingProvider: string;
+  maximumCostUsdMicros: number;
+}>;
+
+export type BenchmarkBudgetSettlement = BenchmarkBudgetReservation &
+  Readonly<{
+    actualCostUsdMicros: number;
+    conservative: boolean;
+  }>;
+
+export type BenchmarkBudgetController = Readonly<{
+  reserve: (
+    reservation: BenchmarkBudgetReservation,
+  ) => Promise<Result<void, Diagnostic>>;
+  settle: (
+    settlement: BenchmarkBudgetSettlement,
+  ) => Promise<Result<void, Diagnostic>>;
+}>;
+
 export type BenchmarkRunInput = Readonly<{
   experiment: ExperimentManifest;
   cases: ReadonlyArray<FrozenPlanGenerationCase>;
   methods: ReadonlyArray<BenchmarkMethod>;
   resolveCatalog: CatalogResolver;
   store: BenchmarkStore;
+  budgetController?: BenchmarkBudgetController | undefined;
 }>;
 
 export type BenchmarkRunResult = Readonly<{
@@ -733,7 +758,10 @@ export async function runBenchmark(
   function meteredAdapter(
     adapter: ModelAdapter,
     pricingEntry: PricingEntry,
+    benchmarkRecordKey: string,
+    methodId: string,
   ): ModelAdapter {
+    let attemptIndex = 0;
     return {
       ...adapter,
       async generate(request) {
@@ -772,9 +800,22 @@ export async function runBenchmark(
             `Worst-case request reservation would exceed an experiment or ${pricingEntry.billingProvider} cap.`,
           );
         }
+        const reservation = {
+          experimentDigest: runContext.experiment.experimentDigest,
+          benchmarkRecordKey,
+          methodId,
+          attemptIndex,
+          billingProvider: pricingEntry.billingProvider,
+          maximumCostUsdMicros: reservedCost.value,
+        };
+        attemptIndex += 1;
+        if (input.budgetController !== undefined) {
+          const reserved = await input.budgetController.reserve(reservation);
+          if (!reserved.ok) return reservationFailure(reserved.error.message);
+        }
         usage = { ...usage, calls: usage.calls + 1 };
         const response = await adapter.generate(request);
-        const reconcileUsage = (
+        const reconcileUsage = async (
           pricedUsage: Readonly<{
             inputTokens: number;
             cachedInputTokens: number;
@@ -783,7 +824,8 @@ export async function runBenchmark(
             reasoningTokens: number;
             costUsdMicros: number;
           }>,
-        ): void => {
+          conservative: boolean,
+        ): Promise<Result<void, Diagnostic>> => {
           usage = {
             calls: usage.calls,
             inputTokens: usage.inputTokens + pricedUsage.inputTokens,
@@ -801,6 +843,13 @@ export async function runBenchmark(
             (providerCosts.get(pricingEntry.billingProvider) ?? 0) +
               pricedUsage.costUsdMicros,
           );
+          return input.budgetController === undefined
+            ? { ok: true, value: undefined }
+            : input.budgetController.settle({
+                ...reservation,
+                actualCostUsdMicros: pricedUsage.costUsdMicros,
+                conservative,
+              });
         };
         const conservativeUsage = {
           inputTokens: adapter.inference.maxInputTokens,
@@ -811,7 +860,8 @@ export async function runBenchmark(
           costUsdMicros: reservedCost.value,
         };
         if (!response.ok && response.error.usage === undefined) {
-          reconcileUsage(conservativeUsage);
+          const settled = await reconcileUsage(conservativeUsage, true);
+          if (!settled.ok) return reservationFailure(settled.error.message);
           return {
             ok: false,
             error: { ...response.error, usage: conservativeUsage },
@@ -821,7 +871,8 @@ export async function runBenchmark(
           ? response.value.usage
           : response.error.usage;
         if (responseUsage === undefined) {
-          reconcileUsage(conservativeUsage);
+          const settled = await reconcileUsage(conservativeUsage, true);
+          if (!settled.ok) return reservationFailure(settled.error.message);
           return reservationFailure(
             "Provider response omitted usage after a billable request.",
           );
@@ -835,7 +886,8 @@ export async function runBenchmark(
         };
         const actualCost = calculateCostUsdMicros(pricingEntry, completeUsage);
         if (!actualCost.ok) {
-          reconcileUsage(conservativeUsage);
+          const settled = await reconcileUsage(conservativeUsage, true);
+          if (!settled.ok) return reservationFailure(settled.error.message);
           return {
             ok: false,
             error: {
@@ -856,7 +908,8 @@ export async function runBenchmark(
           ...completeUsage,
           costUsdMicros: actualCost.value,
         };
-        reconcileUsage(pricedUsage);
+        const settled = await reconcileUsage(pricedUsage, false);
+        if (!settled.ok) return reservationFailure(settled.error.message);
         return response.ok
           ? {
               ok: true,
@@ -979,7 +1032,12 @@ export async function runBenchmark(
           catalog: catalog.value,
           policy: frozenCase.case.policy,
           publicExamples: toPublicExamples(frozenCase.case.publicExamples),
-          adapter: meteredAdapter(method.adapter, pricingEntry),
+          adapter: meteredAdapter(
+            method.adapter,
+            pricingEntry,
+            keyDigest.value,
+            method.id,
+          ),
           strategy: method.strategy,
           modelCallLimit: Math.min(MAX_REPAIR_ATTEMPTS + 1, remainingCalls),
         });

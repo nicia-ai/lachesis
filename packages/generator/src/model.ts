@@ -77,6 +77,7 @@ export type ModelAdapterFailure = Readonly<{
   code:
     | "RECORDED_RESPONSE_MISSING"
     | "PROVIDER_FAILURE"
+    | "PROVIDER_TIMEOUT"
     | "PROVIDER_REFUSAL"
     | "BUDGET_RESERVATION_FAILED";
   message: string;

@@ -1,4 +1,7 @@
 export {
+  type BenchmarkBudgetController,
+  type BenchmarkBudgetReservation,
+  type BenchmarkBudgetSettlement,
   type BenchmarkCaseRecord,
   benchmarkCaseRecordSchema,
   type BenchmarkMethod,

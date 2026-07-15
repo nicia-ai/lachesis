@@ -2,20 +2,34 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    alias: {
-      "@nicia-ai/lachesis": new URL(
-        "./packages/kernel/src/index.ts",
-        import.meta.url,
-      ).pathname,
-      "@nicia-ai/lachesis-generator": new URL(
-        "./packages/generator/src/index.ts",
-        import.meta.url,
-      ).pathname,
-      "@nicia-ai/lachesis-generator-ai-sdk": new URL(
-        "./packages/generator-ai-sdk/src/index.ts",
-        import.meta.url,
-      ).pathname,
-    },
+    alias: [
+      {
+        find: "@nicia-ai/lachesis-generator/node",
+        replacement: new URL(
+          "./packages/generator/src/node-store.ts",
+          import.meta.url,
+        ).pathname,
+      },
+      {
+        find: "@nicia-ai/lachesis-generator-ai-sdk",
+        replacement: new URL(
+          "./packages/generator-ai-sdk/src/index.ts",
+          import.meta.url,
+        ).pathname,
+      },
+      {
+        find: "@nicia-ai/lachesis-generator",
+        replacement: new URL(
+          "./packages/generator/src/index.ts",
+          import.meta.url,
+        ).pathname,
+      },
+      {
+        find: "@nicia-ai/lachesis",
+        replacement: new URL("./packages/kernel/src/index.ts", import.meta.url)
+          .pathname,
+      },
+    ],
   },
   test: {
     coverage: {
@@ -23,6 +37,10 @@ export default defineConfig({
       include: [
         "packages/kernel/src/**/*.ts",
         "packages/generator/src/**/*.ts",
+        "apps/benchmark/src/controller.ts",
+        "apps/benchmark/src/ledger.ts",
+        "apps/benchmark/src/manifests.ts",
+        "apps/benchmark/src/protocol.ts",
         "apps/cli/src/example-catalog.ts",
       ],
       thresholds: {

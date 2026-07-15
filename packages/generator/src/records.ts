@@ -106,6 +106,7 @@ const adapterFailureSchema = z
     code: z.enum([
       "RECORDED_RESPONSE_MISSING",
       "PROVIDER_FAILURE",
+      "PROVIDER_TIMEOUT",
       "PROVIDER_REFUSAL",
       "BUDGET_RESERVATION_FAILED",
     ]),

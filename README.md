@@ -6,8 +6,9 @@ callbacks, hidden loops, or undeclared effects. The kernel parses, resolves,
 type-checks, bounds, content-addresses, and executes the plan through explicit
 effect interpreters.
 
-This repository contains the measured plan kernel and the deterministic M1a
-plan-generation benchmark substrate.
+This repository contains the measured plan kernel, the deterministic M1a
+plan-generation benchmark substrate, and the Node-only M1b controlled experiment
+controller.
 
 ## What works
 
@@ -37,6 +38,9 @@ plan-generation benchmark substrate.
 - A Node-only Vercel AI SDK 7 adapter package whose primary comparison is direct
   OpenAI Responses and Anthropic Messages, with optional Anthropic-through-
   Bedrock support, frozen pricing, and worst-case spend reservation.
+- A phase-aware Node experiment controller with shared campaign budgets,
+  zero-network dry-run, append-only ledger accounting, safe resume, and offline
+  reporting.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -76,15 +80,16 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
   `@nicia-ai/lachesis-generator`; no live provider SDKs.
 - `packages/generator-ai-sdk` — Node-only live-provider adapter package; kept
   outside the kernel and portable generator.
+- `apps/benchmark` — private Node-only M1b campaign controller and CLI.
 - `apps/cli` — Node-only public package `@nicia-ai/lachesis-cli` and `lachesis`
   binary.
 - `fixtures` — valid/invalid plans, inputs, and effect recordings.
 - `compat` — built-package Node and Workers consumers.
 - `docs` — architecture and material ADRs.
 
-See [the architecture](docs/architecture.md) for the kernel guarantees and the
-[M1a benchmark protocol](docs/generator-benchmark.md) for generation and scoring
-boundaries.
+See [the architecture](docs/architecture.md) for the kernel guarantees, the
+[benchmark protocol](docs/generator-benchmark.md) for generation and scoring
+boundaries, and the [M1b runbook](docs/m1b-runbook.md) before any live use.
 
 ## Validation
 

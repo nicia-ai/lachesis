@@ -8,6 +8,9 @@
     "paths": {
       "@nicia-ai/lachesis": ["./packages/kernel/src/index.ts"],
       "@nicia-ai/lachesis-generator": ["./packages/generator/src/index.ts"],
+      "@nicia-ai/lachesis-generator/node": [
+        "./packages/generator/src/node-store.ts"
+      ],
       "@nicia-ai/lachesis-generator-ai-sdk": [
         "./packages/generator-ai-sdk/src/index.ts"
       ]

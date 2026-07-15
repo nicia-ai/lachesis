@@ -144,6 +144,7 @@ describe("AI SDK provider adapters", () => {
     const requestOptions = z.record(z.string(), z.unknown()).parse(captured[1]);
     expect(requestOptions["maxOutputTokens"]).toBe(8_192);
     expect(requestOptions["maxRetries"]).toBe(0);
+    expect(requestOptions["abortSignal"]).toBeInstanceOf(AbortSignal);
     expect(requestOptions).not.toHaveProperty("temperature");
     expect(requestOptions).not.toHaveProperty("seed");
     expect(requestOptions).not.toHaveProperty("tools");
@@ -195,6 +196,64 @@ describe("AI SDK provider adapters", () => {
     expect(session.record.finalKind).toBe("providerRefusal");
     expect(session.record.attempts[0]?.responseKind).toBe("providerRefusal");
     expect(session.record.attempts[0]?.abstentionReasons).toEqual([]);
+  });
+
+  it("aborts and classifies provider timeouts separately", async () => {
+    const pricing = required(M1B_PRICING_ENTRIES[0], "Missing OpenAI pricing.");
+    const adapter = createAiSdkModelAdapter({
+      identity: {
+        provider: "openai",
+        model: M1B_OPENAI_MODEL,
+        adapterVersion: AI_SDK_ADAPTER_VERSION,
+      },
+      inference: {
+        temperature: null,
+        seed: null,
+        reasoningSettings: { mode: "reasoning", effort: "low" },
+        maxInputTokens: 64_000,
+        maxOutputTokens: 8_192,
+        structuredOutputMode: "json-schema",
+      },
+      pricing,
+      loadModel: () => Promise.resolve({ id: "model-fixture" }),
+      timeoutMs: 1,
+      runtime: {
+        generateText: (...arguments_) => {
+          const options = z
+            .record(z.string(), z.unknown())
+            .parse(arguments_[0]);
+          const signal = z
+            .custom<AbortSignal>((value) => value instanceof AbortSignal)
+            .parse(options["abortSignal"]);
+          return new Promise((_, reject) => {
+            signal.addEventListener(
+              "abort",
+              () => {
+                reject(new Error("aborted"));
+              },
+              { once: true },
+            );
+          });
+        },
+        outputObject: () => ({ kind: "output-object-fixture" }),
+      },
+    });
+    const { benchmarkCase, catalog } = await generationInput();
+    const session = unwrap(
+      await generatePlan({
+        task: benchmarkCase.case.instruction,
+        catalog,
+        policy: benchmarkCase.case.policy,
+        publicExamples: [],
+        adapter,
+        strategy: strategy("json-schema"),
+      }),
+    );
+
+    expect(session.kind).toBe("adapterFailure");
+    expect(session.record.attempts[0]?.adapterFailure?.code).toBe(
+      "PROVIDER_TIMEOUT",
+    );
   });
 
   it("freezes pilot caps, pricing, and explicit route configurations", async () => {
