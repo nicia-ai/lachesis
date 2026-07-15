@@ -131,6 +131,8 @@ export type BenchmarkBudgetSettlement = BenchmarkBudgetReservation &
   Readonly<{
     actualCostUsdMicros: number;
     conservative: boolean;
+    accountingBasis:
+      "provider-reported" | "authorized-conservative" | "not-dispatched";
   }>;
 
 export type BenchmarkBudgetController = Readonly<{
@@ -516,8 +518,13 @@ function addRecordUsage(
   usage: RunUsage,
   record: BenchmarkCaseRecord,
 ): RunUsage {
+  const dispatchedCalls = record.generation.attempts.filter(
+    (attempt) =>
+      attempt.dispatchEvidence !== "not-dispatched" &&
+      attempt.adapterFailure?.dispatchEvidence !== "not-dispatched",
+  ).length;
   return {
-    calls: usage.calls + record.generation.attempts.length,
+    calls: usage.calls + dispatchedCalls,
     inputTokens: usage.inputTokens + record.generation.totalInputTokens,
     cachedInputTokens:
       usage.cachedInputTokens + record.generation.totalCachedInputTokens,
@@ -632,7 +639,11 @@ function reservationFailure(
 ): Result<ModelResponse, ModelAdapterFailure> {
   return {
     ok: false,
-    error: { code: "BUDGET_RESERVATION_FAILED", message },
+    error: {
+      code: "BUDGET_RESERVATION_FAILED",
+      message,
+      dispatchEvidence: "not-dispatched",
+    },
   };
 }
 
@@ -813,8 +824,12 @@ export async function runBenchmark(
           const reserved = await input.budgetController.reserve(reservation);
           if (!reserved.ok) return reservationFailure(reserved.error.message);
         }
-        usage = { ...usage, calls: usage.calls + 1 };
         const response = await adapter.generate(request);
+        const dispatchEvidence = response.ok
+          ? response.value.dispatchEvidence
+          : response.error.dispatchEvidence;
+        if (dispatchEvidence !== "not-dispatched")
+          usage = { ...usage, calls: usage.calls + 1 };
         const reconcileUsage = async (
           pricedUsage: Readonly<{
             inputTokens: number;
@@ -824,7 +839,7 @@ export async function runBenchmark(
             reasoningTokens: number;
             costUsdMicros: number;
           }>,
-          conservative: boolean,
+          accountingBasis: BenchmarkBudgetSettlement["accountingBasis"],
         ): Promise<Result<void, Diagnostic>> => {
           usage = {
             calls: usage.calls,
@@ -848,8 +863,17 @@ export async function runBenchmark(
             : input.budgetController.settle({
                 ...reservation,
                 actualCostUsdMicros: pricedUsage.costUsdMicros,
-                conservative,
+                conservative: accountingBasis === "authorized-conservative",
+                accountingBasis,
               });
+        };
+        const zeroUsage = {
+          inputTokens: 0,
+          cachedInputTokens: 0,
+          cacheWriteInputTokens: 0,
+          outputTokens: 0,
+          reasoningTokens: 0,
+          costUsdMicros: 0,
         };
         const conservativeUsage = {
           inputTokens: adapter.inference.maxInputTokens,
@@ -859,8 +883,19 @@ export async function runBenchmark(
           reasoningTokens: 0,
           costUsdMicros: reservedCost.value,
         };
+        if (!response.ok && dispatchEvidence === "not-dispatched") {
+          const settled = await reconcileUsage(zeroUsage, "not-dispatched");
+          if (!settled.ok) return reservationFailure(settled.error.message);
+          return {
+            ok: false,
+            error: { ...response.error, usage: zeroUsage },
+          };
+        }
         if (!response.ok && response.error.usage === undefined) {
-          const settled = await reconcileUsage(conservativeUsage, true);
+          const settled = await reconcileUsage(
+            conservativeUsage,
+            "authorized-conservative",
+          );
           if (!settled.ok) return reservationFailure(settled.error.message);
           return {
             ok: false,
@@ -871,7 +906,10 @@ export async function runBenchmark(
           ? response.value.usage
           : response.error.usage;
         if (responseUsage === undefined) {
-          const settled = await reconcileUsage(conservativeUsage, true);
+          const settled = await reconcileUsage(
+            conservativeUsage,
+            "authorized-conservative",
+          );
           if (!settled.ok) return reservationFailure(settled.error.message);
           return reservationFailure(
             "Provider response omitted usage after a billable request.",
@@ -886,13 +924,17 @@ export async function runBenchmark(
         };
         const actualCost = calculateCostUsdMicros(pricingEntry, completeUsage);
         if (!actualCost.ok) {
-          const settled = await reconcileUsage(conservativeUsage, true);
+          const settled = await reconcileUsage(
+            conservativeUsage,
+            "authorized-conservative",
+          );
           if (!settled.ok) return reservationFailure(settled.error.message);
           return {
             ok: false,
             error: {
               code: "PROVIDER_FAILURE",
               message: actualCost.error.message,
+              dispatchEvidence: "dispatched-usage-unknown",
               usage: conservativeUsage,
               ...(response.ok
                 ? response.value.metadata === undefined
@@ -908,7 +950,7 @@ export async function runBenchmark(
           ...completeUsage,
           costUsdMicros: actualCost.value,
         };
-        const settled = await reconcileUsage(pricedUsage, false);
+        const settled = await reconcileUsage(pricedUsage, "provider-reported");
         if (!settled.ok) return reservationFailure(settled.error.message);
         return response.ok
           ? {
@@ -1029,6 +1071,7 @@ export async function runBenchmark(
         }
         const session = await generatePlan({
           task: frozenCase.case.instruction,
+          taskInputs: frozenCase.case.taskInputs,
           catalog: catalog.value,
           policy: frozenCase.case.policy,
           publicExamples: toPublicExamples(frozenCase.case.publicExamples),

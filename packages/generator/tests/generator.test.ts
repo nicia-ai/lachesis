@@ -179,6 +179,7 @@ async function sessionFor(
   const session = unwrap(
     await generatePlan({
       task: benchmarkCase.case.instruction,
+      taskInputs: benchmarkCase.case.taskInputs,
       catalog: unwrap(
         unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
       ),
@@ -320,6 +321,29 @@ describe("M1a frozen substrate", () => {
         (item) => item.case.catalogId === "benchmark.workflow",
       ),
     ).toBe(false);
+    const expectedInputNames = new Map([
+      ["benchmark.numbers", ["items"]],
+      ["benchmark.text", ["items"]],
+      ["benchmark.decisions", ["condition", "primary", "fallback"]],
+      ["benchmark.workflow", ["state"]],
+    ]);
+    const collectionCatalogs = new Set(["benchmark.numbers", "benchmark.text"]);
+    for (const item of first) {
+      const names = item.case.taskInputs.map((taskInput) => taskInput.name);
+      expect(names).toEqual(expectedInputNames.get(item.case.catalogId));
+      for (const taskInput of item.case.taskInputs) {
+        expect(taskInput.declaredBounds).toEqual(
+          collectionCatalogs.has(item.case.catalogId)
+            ? [{ kind: "maximumCollectionItems", value: 128 }]
+            : [],
+        );
+        expect(Object.keys(taskInput).toSorted()).toEqual([
+          "declaredBounds",
+          "name",
+          "schema",
+        ]);
+      }
+    }
   });
 
   it("rejects malformed cases and freezes complete recorded fixtures", async () => {
@@ -367,6 +391,37 @@ describe("M1a frozen substrate", () => {
     expect(Object.isFrozen(first)).toBe(true);
     expect(Object.isFrozen(first.methods[0]?.inference)).toBe(true);
     expect((await verifyExperimentManifest(first)).ok).toBe(true);
+    const legacyMethods = [];
+    for (const method of first.methods) {
+      const modelConfigurationDigest = unwrap(
+        await digestValue({
+          model: method.model,
+          temperature: method.inference.temperature,
+          seed: method.inference.seed,
+          reasoningSettings: method.inference.reasoningSettings,
+          maxInputTokens: method.inference.maxInputTokens,
+          maxOutputTokens: method.inference.maxOutputTokens,
+        }),
+      );
+      legacyMethods.push({ ...method, modelConfigurationDigest });
+    }
+    const legacyBody = {
+      ...first,
+      formatVersion: "2",
+      methods: legacyMethods,
+    };
+    const { experimentDigest: currentDigest, ...legacyWithoutDigest } =
+      legacyBody;
+    expect(currentDigest).toBe(first.experimentDigest);
+    const legacyDigest = unwrap(await digestValue(legacyWithoutDigest));
+    expect(
+      (
+        await verifyExperimentManifest({
+          ...legacyWithoutDigest,
+          experimentDigest: legacyDigest,
+        })
+      ).ok,
+    ).toBe(true);
     expect(
       (
         await verifyExperimentManifest({
@@ -377,6 +432,63 @@ describe("M1a frozen substrate", () => {
     ).toBe(false);
     const { experimentDigest, ...manifestBody } = first;
     expect(experimentDigest).toBe(first.experimentDigest);
+    const incompatibleMethodBody = {
+      ...manifestBody,
+      methods: manifestBody.methods.map((method, index) =>
+        index === 0
+          ? {
+              ...method,
+              inference: {
+                ...method.inference,
+                structuredOutputMode: "none",
+              },
+            }
+          : method,
+      ),
+    };
+    const incompatibleMethodDigest = unwrap(
+      await digestValue(incompatibleMethodBody),
+    );
+    expect(
+      (
+        await verifyExperimentManifest({
+          ...incompatibleMethodBody,
+          experimentDigest: incompatibleMethodDigest,
+        })
+      ).ok,
+    ).toBe(false);
+    const extraSplitBody = {
+      ...manifestBody,
+      splits: [...manifestBody.splits, ...manifestBody.splits.slice(0, 1)],
+    };
+    const extraSplitDigest = unwrap(await digestValue(extraSplitBody));
+    expect(
+      (
+        await verifyExperimentManifest({
+          ...extraSplitBody,
+          experimentDigest: extraSplitDigest,
+        })
+      ).ok,
+    ).toBe(false);
+    const inconsistentMethodDigestBody = {
+      ...manifestBody,
+      methods: manifestBody.methods.map((method, index) =>
+        index === 0
+          ? { ...method, modelConfigurationDigest: "inconsistent" }
+          : method,
+      ),
+    };
+    const inconsistentMethodDigest = unwrap(
+      await digestValue(inconsistentMethodDigestBody),
+    );
+    expect(
+      (
+        await verifyExperimentManifest({
+          ...inconsistentMethodDigestBody,
+          experimentDigest: inconsistentMethodDigest,
+        })
+      ).ok,
+    ).toBe(false);
     const inconsistentCaseBody = {
       ...manifestBody,
       caseSetDigest: "inconsistent",
@@ -545,6 +657,7 @@ describe("generate, compile, and bounded repair", () => {
     const session = unwrap(
       await generatePlan({
         task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
         catalog,
         policy: benchmarkCase.case.policy,
         publicExamples: [],
@@ -572,6 +685,7 @@ describe("generate, compile, and bounded repair", () => {
     const session = unwrap(
       await generatePlan({
         task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
         catalog: unwrap(resolver(benchmarkCase.case.catalogId)),
         policy: benchmarkCase.case.policy,
         publicExamples: [],
@@ -586,12 +700,16 @@ describe("generate, compile, and bounded repair", () => {
       "INVALID_WIRE_SCHEMA",
     );
     const repair = required(adapter.requests()[1], "Missing repair request.");
+    const initial = required(adapter.requests()[0], "Missing initial request.");
+    expect(initial.taskInputs).toEqual(benchmarkCase.case.taskInputs);
+    expect(repair.taskInputs).toEqual(benchmarkCase.case.taskInputs);
     expect(Object.keys(repair).toSorted()).toEqual([
       "diagnostics",
       "kind",
       "languageManifest",
       "originalTask",
       "previousProposal",
+      "taskInputs",
     ]);
     expect("hiddenEvaluations" in repair).toBe(false);
     expect("executionResults" in repair).toBe(false);
@@ -623,6 +741,7 @@ describe("generate, compile, and bounded repair", () => {
     const session = unwrap(
       await generatePlan({
         task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
         catalog: unwrap(
           unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
         ),
@@ -645,6 +764,7 @@ describe("generate, compile, and bounded repair", () => {
     const abstained = unwrap(
       await generatePlan({
         task: impossible.case.instruction,
+        taskInputs: impossible.case.taskInputs,
         catalog: unwrap(resolver(impossible.case.catalogId)),
         policy: impossible.case.policy,
         publicExamples: [],
@@ -659,6 +779,7 @@ describe("generate, compile, and bounded repair", () => {
     await exhausted.generate({
       kind: "initial",
       originalTask: "first",
+      taskInputs: impossible.case.taskInputs,
       languageManifest: abstained.manifest,
       publicExamples: [],
       constraint: "json-schema",
@@ -666,6 +787,7 @@ describe("generate, compile, and bounded repair", () => {
     const failure = await exhausted.generate({
       kind: "initial",
       originalTask: "second",
+      taskInputs: impossible.case.taskInputs,
       languageManifest: abstained.manifest,
       publicExamples: [],
       constraint: "json-schema",
@@ -699,6 +821,7 @@ describe("generate, compile, and bounded repair", () => {
     const failed = unwrap(
       await generatePlan({
         task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
         catalog,
         policy: benchmarkCase.case.policy,
         publicExamples: [],
@@ -727,12 +850,14 @@ describe("generate, compile, and bounded repair", () => {
             rawResponse: "1n",
             usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
             latencyMs: 1,
+            dispatchEvidence: "dispatched-with-usage",
           },
         }),
     };
     const rejected = unwrap(
       await generatePlan({
         task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
         catalog,
         policy: benchmarkCase.case.policy,
         publicExamples: [],
@@ -783,6 +908,7 @@ describe("generate, compile, and bounded repair", () => {
       return unwrap(
         await generatePlan({
           task: benchmarkCase.case.instruction,
+          taskInputs: benchmarkCase.case.taskInputs,
           catalog,
           policy: benchmarkCase.case.policy,
           publicExamples: [],
@@ -858,6 +984,7 @@ describe("generate, compile, and bounded repair", () => {
     const repaired = unwrap(
       await generatePlan({
         task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
         catalog,
         policy: benchmarkCase.case.policy,
         publicExamples: [],
@@ -984,6 +1111,7 @@ describe("behavioral benchmark runner", () => {
     const session = unwrap(
       await generatePlan({
         task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
         catalog: unwrap(
           unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
         ),
@@ -1236,6 +1364,7 @@ describe("behavioral benchmark runner", () => {
     const session = unwrap(
       await generatePlan({
         task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
         catalog: unwrap(
           unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
         ),
@@ -1322,6 +1451,7 @@ describe("behavioral benchmark runner", () => {
     const session = unwrap(
       await generatePlan({
         task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
         catalog: unwrap(
           unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
         ),
@@ -1471,6 +1601,7 @@ describe("behavioral benchmark runner", () => {
     const rejected = unwrap(
       await generatePlan({
         task: impossible.case.instruction,
+        taskInputs: impossible.case.taskInputs,
         catalog,
         policy: impossible.case.policy,
         publicExamples: [],
@@ -1487,6 +1618,7 @@ describe("behavioral benchmark runner", () => {
     const abstained = unwrap(
       await generatePlan({
         task: impossible.case.instruction,
+        taskInputs: impossible.case.taskInputs,
         catalog,
         policy: impossible.case.policy,
         publicExamples: [],
@@ -1560,6 +1692,7 @@ describe("behavioral benchmark runner", () => {
     const session = unwrap(
       await generatePlan({
         task: impossible.case.instruction,
+        taskInputs: impossible.case.taskInputs,
         catalog: unwrap(
           unwrap(createM1aCatalogResolver())(impossible.case.catalogId),
         ),

@@ -21,6 +21,7 @@ import {
   freezePlanGenerationCase,
   type FrozenPlanGenerationCase,
 } from "./case.js";
+import type { TaskInput } from "./model.js";
 
 const VERSION = "1.0.0";
 
@@ -335,7 +336,11 @@ export function createM1aCatalogResolver(): Result<
 type CaseSeed = Readonly<{
   id: string;
   instruction: string;
-  catalogId: string;
+  catalogId:
+    | "benchmark.numbers"
+    | "benchmark.text"
+    | "benchmark.decisions"
+    | "benchmark.workflow";
   inputs: ReadonlyArray<Readonly<Record<string, unknown>>>;
   outputs: ReadonlyArray<unknown>;
   properties: ReadonlyArray<unknown>;
@@ -345,6 +350,55 @@ type CaseSeed = Readonly<{
   budget?: CompilationPolicy["budget"] | undefined;
   forbidden?: ReadonlyArray<string> | undefined;
 }>;
+
+const collectionBound: TaskInput["declaredBounds"] = Object.freeze([
+  Object.freeze({ kind: "maximumCollectionItems", value: 128 }),
+]);
+
+function taskInputsForCatalog(
+  catalogId: CaseSeed["catalogId"],
+): ReadonlyArray<TaskInput> {
+  switch (catalogId) {
+    case "benchmark.numbers":
+      return Object.freeze([
+        Object.freeze({
+          name: "items",
+          schema: Object.freeze({ id: "numbers", version: VERSION }),
+          declaredBounds: collectionBound,
+        }),
+      ]);
+    case "benchmark.text":
+      return Object.freeze([
+        Object.freeze({
+          name: "items",
+          schema: Object.freeze({ id: "texts", version: VERSION }),
+          declaredBounds: collectionBound,
+        }),
+      ]);
+    case "benchmark.decisions":
+      return Object.freeze(
+        [
+          { name: "condition", schema: { id: "boolean", version: VERSION } },
+          { name: "primary", schema: { id: "label", version: VERSION } },
+          { name: "fallback", schema: { id: "label", version: VERSION } },
+        ].map((item) =>
+          Object.freeze({
+            ...item,
+            schema: Object.freeze(item.schema),
+            declaredBounds: Object.freeze([]),
+          }),
+        ),
+      );
+    case "benchmark.workflow":
+      return Object.freeze([
+        Object.freeze({
+          name: "state",
+          schema: Object.freeze({ id: "workflow-state", version: VERSION }),
+          declaredBounds: Object.freeze([]),
+        }),
+      ]);
+  }
+}
 
 function caseValue(seed: CaseSeed): unknown {
   const hiddenEvaluations = seed.inputs.map((inputs, index) => ({
@@ -358,6 +412,7 @@ function caseValue(seed: CaseSeed): unknown {
     instruction: seed.instruction,
     catalogId: seed.catalogId,
     policy: policy(seed.allowedCapabilities, seed.budget),
+    taskInputs: taskInputsForCatalog(seed.catalogId),
     publicExamples: [],
     hiddenEvaluations,
     expectedFeasibility: seed.feasible === false ? "unplannable" : "plannable",

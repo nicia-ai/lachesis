@@ -65,6 +65,9 @@ const ledgerEventBodySchema = z.discriminatedUnion("kind", [
     reservationKey: z.string().min(1),
     actualCostUsdMicros: z.number().int().nonnegative(),
     conservative: z.boolean(),
+    accountingBasis: z
+      .enum(["provider-reported", "authorized-conservative", "not-dispatched"])
+      .optional(),
   }),
 ]);
 
@@ -108,11 +111,29 @@ export type BudgetPoolStatus = Readonly<{
   id: PoolId;
   consumedUsdMicros: number;
   remainingUsdMicros: number;
+  observedProviderBillingUsdMicros: number;
+  authorizedConservativeUsdMicros: number;
+  unsettledReservationUsdMicros: number;
+  notDispatchedSettlements: number;
+  accountingByProvider: ReadonlyArray<
+    Readonly<{
+      billingProvider: string;
+      consumedUsdMicros: number;
+      observedProviderBillingUsdMicros: number;
+      authorizedConservativeUsdMicros: number;
+      unsettledReservationUsdMicros: number;
+      notDispatchedSettlements: number;
+    }>
+  >;
   providers: ReadonlyArray<
     Readonly<{
       billingProvider: string;
       consumedUsdMicros: number;
       remainingUsdMicros: number;
+      observedProviderBillingUsdMicros: number;
+      authorizedConservativeUsdMicros: number;
+      unsettledReservationUsdMicros: number;
+      notDispatchedSettlements: number;
     }>
   >;
 }>;
@@ -333,6 +354,65 @@ function chargedCost(reservation: ReservationState): number {
   );
 }
 
+function settlementBasis(
+  settlement: Extract<LedgerEvent, Readonly<{ kind: "settled" }>>,
+): "provider-reported" | "authorized-conservative" | "not-dispatched" {
+  return (
+    settlement.accountingBasis ??
+    (settlement.conservative ? "authorized-conservative" : "provider-reported")
+  );
+}
+
+function accountingSummary(
+  reservations: ReadonlyArray<ReservationState>,
+): Readonly<{
+  observedProviderBillingUsdMicros: number;
+  authorizedConservativeUsdMicros: number;
+  unsettledReservationUsdMicros: number;
+  notDispatchedSettlements: number;
+}> {
+  return reservations.reduce(
+    (summary, reservation) => {
+      const settlement = reservation.settlement;
+      if (settlement === undefined) {
+        return {
+          ...summary,
+          unsettledReservationUsdMicros:
+            summary.unsettledReservationUsdMicros +
+            reservation.event.maximumCostUsdMicros,
+        };
+      }
+      switch (settlementBasis(settlement)) {
+        case "provider-reported":
+          return {
+            ...summary,
+            observedProviderBillingUsdMicros:
+              summary.observedProviderBillingUsdMicros +
+              settlement.actualCostUsdMicros,
+          };
+        case "authorized-conservative":
+          return {
+            ...summary,
+            authorizedConservativeUsdMicros:
+              summary.authorizedConservativeUsdMicros +
+              settlement.actualCostUsdMicros,
+          };
+        case "not-dispatched":
+          return {
+            ...summary,
+            notDispatchedSettlements: summary.notDispatchedSettlements + 1,
+          };
+      }
+    },
+    {
+      observedProviderBillingUsdMicros: 0,
+      authorizedConservativeUsdMicros: 0,
+      unsettledReservationUsdMicros: 0,
+      notDispatchedSettlements: 0,
+    },
+  );
+}
+
 function poolStatus(
   campaign: CampaignManifest,
   state: LedgerState,
@@ -347,16 +427,38 @@ function poolStatus(
     (total, item) => total + chargedCost(item),
     0,
   );
+  const accounting = accountingSummary(reservations);
+  const accountingByProvider = [
+    ...new Set(reservations.map((item) => item.event.billingProvider)),
+  ]
+    .toSorted()
+    .map((billingProvider) => {
+      const providerReservations = reservations.filter(
+        (item) => item.event.billingProvider === billingProvider,
+      );
+      return {
+        billingProvider,
+        consumedUsdMicros: providerReservations.reduce(
+          (total, item) => total + chargedCost(item),
+          0,
+        ),
+        ...accountingSummary(providerReservations),
+      };
+    });
   return {
     id: poolId,
     consumedUsdMicros,
     remainingUsdMicros: Math.max(0, pool.maxCostUsdMicros - consumedUsdMicros),
+    ...accounting,
+    accountingByProvider,
     providers: pool.providerCostCaps.map((providerCap) => {
-      const consumed = reservations
-        .filter(
-          (item) => item.event.billingProvider === providerCap.billingProvider,
-        )
-        .reduce((total, item) => total + chargedCost(item), 0);
+      const providerReservations = reservations.filter(
+        (item) => item.event.billingProvider === providerCap.billingProvider,
+      );
+      const consumed = providerReservations.reduce(
+        (total, item) => total + chargedCost(item),
+        0,
+      );
       return {
         billingProvider: providerCap.billingProvider,
         consumedUsdMicros: consumed,
@@ -364,6 +466,7 @@ function poolStatus(
           0,
           providerCap.maxCostUsdMicros - consumed,
         ),
+        ...accountingSummary(providerReservations),
       };
     }),
   };
@@ -619,6 +722,7 @@ export async function openCampaignLedger(
               reservationKey: key.value,
               actualCostUsdMicros: settlement.actualCostUsdMicros,
               conservative: settlement.conservative,
+              accountingBasis: settlement.accountingBasis,
             });
           },
         };

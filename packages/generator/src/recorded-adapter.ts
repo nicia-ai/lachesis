@@ -44,6 +44,9 @@ const responseSchema = z
         structuredOutput: z.json().optional(),
         usage: usageSchema,
         latencyMs: z.number().int().nonnegative(),
+        dispatchEvidence: z
+          .literal("dispatched-with-usage")
+          .default("dispatched-with-usage"),
         metadata: z
           .strictObject({
             providerRequestId: z.string().nullable(),
@@ -71,6 +74,13 @@ const failureSchema = z
           "BUDGET_RESERVATION_FAILED",
         ]),
         message: z.string().min(1),
+        dispatchEvidence: z
+          .enum([
+            "not-dispatched",
+            "dispatched-with-usage",
+            "dispatched-usage-unknown",
+          ])
+          .default("dispatched-usage-unknown"),
         metadata: z
           .strictObject({
             providerRequestId: z.string().nullable(),
@@ -167,6 +177,7 @@ export function createRecordedModelAdapter(
           error: {
             code: "RECORDED_RESPONSE_MISSING",
             message: `No recorded response at index ${cursor - 1}.`,
+            dispatchEvidence: "not-dispatched",
           },
         });
       }

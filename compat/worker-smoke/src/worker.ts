@@ -94,6 +94,13 @@ async function exerciseKernel(): Promise<Response> {
   if (!fixture.ok) return Response.json({ ok: false }, { status: 500 });
   const generated = await generatePlan({
     task: "Echo portable text.",
+    taskInputs: [
+      {
+        name: "message",
+        schema: { id: "portable-text", version: "1" },
+        declaredBounds: [],
+      },
+    ],
     catalog: catalog.value,
     policy: {
       allowedCapabilities: ["worker.echo"],

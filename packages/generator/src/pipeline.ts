@@ -25,6 +25,7 @@ import {
   type ModelResponse,
   type ModelUsage,
   type PublicExample,
+  type TaskInput,
 } from "./model.js";
 import type {
   AttemptRecord,
@@ -51,6 +52,7 @@ export type GeneratePlanInput = Readonly<{
   task: string;
   catalog: Catalog;
   policy: CompilationPolicy;
+  taskInputs: ReadonlyArray<TaskInput>;
   publicExamples: ReadonlyArray<PublicExample>;
   adapter: ModelAdapter;
   strategy: GenerationStrategy;
@@ -123,7 +125,9 @@ function wireValidated(diagnostics: ReadonlyArray<Diagnostic>): boolean {
   );
 }
 
-function structuredOutputCanonical(response: ModelResponse): string | null {
+function structuredOutputCanonical(
+  response: Readonly<{ structuredOutput?: unknown }>,
+): string | null {
   const canonical = canonicalizeJson(response.structuredOutput);
   return canonical.ok ? canonical.value : null;
 }
@@ -254,6 +258,7 @@ async function adapterFailureAttempt(
     abstentionReasons: [],
     diagnostics: [],
     adapterFailure: recordedFailure,
+    dispatchEvidence: failure.dispatchEvidence,
     parseSuccess: null,
     wireValidation: null,
     compiled: false,
@@ -270,6 +275,7 @@ async function outcomeAttempt(
   response: Readonly<{
     outcome: GenerationOutcome;
     rawResponse: string;
+    structuredOutput?: unknown;
     usage: ModelUsage;
     latencyMs: number;
     metadata?: ModelResponse["metadata"];
@@ -288,6 +294,7 @@ async function outcomeAttempt(
     abstentionReasons: unplannable ? response.outcome.reasons : [],
     diagnostics: compilation?.diagnostics ?? [],
     adapterFailure: null,
+    dispatchEvidence: "dispatched-with-usage",
     parseSuccess: true,
     wireValidation: compilation?.wireValidation ?? null,
     compiled: compilation?.executablePlan !== undefined,
@@ -315,6 +322,7 @@ async function invalidOutputAttempt(
     abstentionReasons: [],
     diagnostics,
     adapterFailure: null,
+    dispatchEvidence: "dispatched-with-usage",
     parseSuccess: false,
     wireValidation: null,
     compiled: false,
@@ -401,6 +409,7 @@ export async function generatePlan(
   let request: ModelRequest = {
     kind: "initial",
     originalTask: input.task,
+    taskInputs: input.taskInputs,
     languageManifest: manifest.value,
     publicExamples: input.publicExamples,
     constraint: input.strategy.constraint,
@@ -488,6 +497,7 @@ export async function generatePlan(
       request = {
         kind: "repair",
         originalTask: input.task,
+        taskInputs: input.taskInputs,
         languageManifest: manifest.value,
         previousProposal: parsedOutput.previousProposal,
         diagnostics: parsedOutput.diagnostics,
@@ -591,6 +601,7 @@ export async function generatePlan(
     request = {
       kind: "repair",
       originalTask: input.task,
+      taskInputs: input.taskInputs,
       languageManifest: manifest.value,
       previousProposal: parsedOutput.outcome.plan,
       diagnostics: compilation.diagnostics,

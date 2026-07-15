@@ -91,7 +91,17 @@ export type LoadedPhase = Readonly<{
   campaign: CampaignManifest;
   phase: PhaseManifest;
   materialized: MaterializedPhase;
+  resumeOnly: boolean;
 }>;
+
+const IMMUTABLE_ORIGINAL_SMOKE = Object.freeze({
+  campaignDigest:
+    "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+  experimentDigest:
+    "723b08db9b8a627e423bdf785eaa8b4d4c349171c0aaaa5072eb549db4224a98",
+  phaseManifestDigest:
+    "b64ec5405841923bc683fcba0da861509ec8bcea5ab5d4359216d4650e5fb198",
+});
 
 async function readJson(path: string): Promise<Result<unknown, Diagnostic>> {
   try {
@@ -147,6 +157,38 @@ export async function loadPhaseFiles(
     materialized.value.manifest.phaseManifestDigest !==
     phase.value.phaseManifestDigest
   ) {
+    if (
+      campaign.value.campaignDigest ===
+        IMMUTABLE_ORIGINAL_SMOKE.campaignDigest &&
+      phase.value.experimentDigest ===
+        IMMUTABLE_ORIGINAL_SMOKE.experimentDigest &&
+      phase.value.phaseManifestDigest ===
+        IMMUTABLE_ORIGINAL_SMOKE.phaseManifestDigest &&
+      phase.value.phase === "smoke"
+    ) {
+      const caseDigests = new Map(
+        phase.value.experiment.cases.map((item) => [item.id, item.caseDigest]),
+      );
+      const cases = materialized.value.cases.flatMap((item) => {
+        const digest = caseDigests.get(item.case.id);
+        return digest === undefined ? [] : [{ case: item.case, digest }];
+      });
+      if (cases.length === phase.value.experiment.cases.length) {
+        return {
+          ok: true,
+          value: {
+            campaign: campaign.value,
+            phase: phase.value,
+            materialized: {
+              campaign: campaign.value,
+              manifest: phase.value,
+              cases,
+            },
+            resumeOnly: true,
+          },
+        };
+      }
+    }
     return {
       ok: false,
       error: [
@@ -163,8 +205,35 @@ export async function loadPhaseFiles(
       campaign: campaign.value,
       phase: phase.value,
       materialized: materialized.value,
+      resumeOnly: false,
     },
   };
+}
+
+function recordsCompleteForManifest(
+  records: ReadonlyArray<BenchmarkCaseRecord>,
+  phase: PhaseManifest,
+): boolean {
+  const expected = new Set<string>();
+  for (const benchmarkCase of phase.experiment.cases) {
+    for (const method of phase.experiment.methods) {
+      for (let repetition = 0; repetition < phase.repetitions; repetition += 1)
+        expected.add(
+          `${benchmarkCase.id}\u0000${method.id}\u0000${repetition}`,
+        );
+    }
+  }
+  const actual = new Set(
+    records.map(
+      (record) =>
+        `${record.caseId}\u0000${record.methodId}\u0000${record.repetition}`,
+    ),
+  );
+  return (
+    records.length === expected.size &&
+    actual.size === expected.size &&
+    [...expected].every((key) => actual.has(key))
+  );
 }
 
 async function gitState(cwd: string): Promise<
@@ -422,6 +491,31 @@ export async function executePhase(
     );
     const store = await createJsonFileBenchmarkStore(recordPath);
     if (!store.ok) return store;
+    if (input.loaded.resumeOnly) {
+      const stored = await loadRecords(
+        recordPath,
+        input.loaded.phase.experimentDigest,
+      );
+      if (!stored.ok) return stored;
+      if (!recordsCompleteForManifest(stored.value, input.loaded.phase)) {
+        return {
+          ok: false,
+          error: diagnostic(
+            "INVALID_WIRE_SCHEMA",
+            "The immutable original smoke can only be resumed when every preregistered record is already complete.",
+          ),
+        };
+      }
+      return {
+        ok: true,
+        value: {
+          resumed: stored.value.length,
+          generated: 0,
+          records: stored.value.length,
+          budget: ledger.value.status(input.loaded.phase.budgetPoolId),
+        },
+      };
+    }
     const environment = input.environment ?? process.env;
     const catalogResolver = createM1aCatalogResolver();
     if (!catalogResolver.ok) {
@@ -566,6 +660,31 @@ export async function generateStoredReport(
         .filter(
           (attempt) => attempt.adapterFailure?.code === "PROVIDER_TIMEOUT",
         ).length,
+      dispatchEvidence: {
+        notDispatched: selected
+          .flatMap((record) => record.generation.attempts)
+          .filter(
+            (attempt) =>
+              attempt.dispatchEvidence === "not-dispatched" ||
+              attempt.adapterFailure?.dispatchEvidence === "not-dispatched",
+          ).length,
+        dispatchedWithUsage: selected
+          .flatMap((record) => record.generation.attempts)
+          .filter(
+            (attempt) =>
+              attempt.dispatchEvidence === "dispatched-with-usage" ||
+              attempt.adapterFailure?.dispatchEvidence ===
+                "dispatched-with-usage",
+          ).length,
+        dispatchedUsageUnknown: selected
+          .flatMap((record) => record.generation.attempts)
+          .filter(
+            (attempt) =>
+              attempt.dispatchEvidence === "dispatched-usage-unknown" ||
+              attempt.adapterFailure?.dispatchEvidence ===
+                "dispatched-usage-unknown",
+          ).length,
+      },
     };
   });
   const providers = [
@@ -580,6 +699,8 @@ export async function generateStoredReport(
       phase: input.loaded.phase.phase,
       interpretation:
         "Within-provider matched constraint and repair effects are primary; cross-provider values are descriptive only.",
+      accountingInterpretation:
+        "Observed provider billing is reconstructed from provider-reported usage. Authorized conservative accounting is a campaign charge used only when a dispatched request has no usable provider usage; not-dispatched failures settle at zero.",
       records: records.value.length,
       methods: groups,
       matchedComparisons: providers.flatMap((provider) => [

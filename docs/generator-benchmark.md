@@ -25,9 +25,11 @@ flowchart LR
 
 Only a compiled opaque artifact reaches hidden execution. A rejected plan,
 including one denied by capability or budget policy, is scored without being
-executed. Repair requests contain exactly the original task, exact manifest,
-previous proposal, and structured compiler diagnostics. Public examples, hidden
-inputs, effect results, and semantic scores are excluded from repair.
+executed. Repair requests contain exactly the original task, public task-input
+declarations, exact manifest, previous proposal, and structured compiler
+diagnostics. A declaration contains only an input name, schema reference, and
+declared bounds. Hidden input values, expected outputs, effect results, and
+semantic scores are excluded from both initial and repair requests.
 
 Adapters do not decide whether model output is valid. For unconstrained methods,
 the generator parses `rawResponse` itself. For constrained methods, it validates
@@ -49,23 +51,24 @@ unrelated catalogs:
 
 The exported holdout declaration reserves an entire workflow catalog, several
 operator combinations, and several phrasings. Case digests bind instructions,
-policy, public examples, hidden evaluations, feasibility, properties, and
-forbidden capabilities. Language manifests are independently content-addressed
-by the kernel. `partitionM1aCorpus()` creates non-overlapping development,
-catalog-holdout, combination-holdout, and phrasing-holdout sets, with whole
-catalog holdout taking precedence.
+policy, public task-input declarations, public examples, hidden evaluations,
+feasibility, properties, and forbidden capabilities. Language manifests are
+independently content-addressed by the kernel. `partitionM1aCorpus()` creates
+non-overlapping development, catalog-holdout, combination-holdout, and
+phrasing-holdout sets, with whole catalog holdout taking precedence.
 
 Recorded-provider fixtures cover direct compilation, compiler-guided repair, and
 correct abstention. They are validated, deeply frozen, and content-addressed
 before use.
 
-Every run requires a deeply frozen `ExperimentManifest` (format version 2). Its
-digest binds the case set and split digests, prompt and protocol content
-digests, provider/model and adapter version, inference settings,
-structured-output mode, methods, repetitions, call/token/cost caps, Git/package
-versions, and a separately content-addressed pricing snapshot. The runner
-verifies the manifest, pricing digest, provider cap bindings, and exact
-case/method coverage before the first request.
+Every new run requires a deeply frozen `ExperimentManifest` (format version 3;
+version 2 remains readable for immutable resume). Its digest binds the case set
+and split digests, prompt and protocol content digests, provider/model and
+adapter version, inference settings, structured-output mode, methods,
+repetitions, call/token/cost caps, Git/package versions, and a separately
+content-addressed pricing snapshot. The runner verifies the manifest, pricing
+digest, provider cap bindings, and exact case/method coverage before the first
+request.
 
 ## Behavioral scoring
 
@@ -89,9 +92,11 @@ maximum input and output tokens at the most expensive applicable frozen input
 rate. It checks the total call, token, dollar, per-call output, and per-provider
 dollar caps before allowing the adapter call, then reconciles the reservation
 against returned usage. Cost is recomputed from the frozen pricing snapshot; an
-adapter cannot supply a cheaper cost. If a dispatched request fails without
-usage, the worst-case reservation is retained. A denied reservation never
-reaches the provider.
+adapter cannot supply a cheaper cost. Every adapter result records whether it
+was not dispatched, dispatched with usage, or dispatched with unknown usage.
+Pre-dispatch failures settle at zero. If a dispatched request fails without
+usage, the worst-case reservation is retained as authorized conservative
+accounting. A denied reservation never reaches the provider.
 
 M1a supports these live-comparison method labels without embedding provider
 SDKs:
@@ -159,9 +164,9 @@ The Node-only `apps/benchmark` controller wraps experiment manifests in a
 content-addressed campaign and phase protocol. Smoke and calibration share one
 durable $10 pool across manifests. Held-out has a separate $50 total pool with
 $25 OpenAI and Anthropic subcaps. A hash-chained append-only ledger reserves
-worst-case cost before every request, reconciles recorded usage, conservatively
-charges missing usage, validates a durable head, and is protected by an
-exclusive stale-aware filesystem lock.
+worst-case cost before every request, reconciles provider-reported usage,
+separates it from authorized conservative missing-usage charges, validates a
+durable head, and is protected by an exclusive stale-aware filesystem lock.
 
 Phase validation prevents development/held-out mixing, rejects Bedrock and
 model-setting drift from the primary matrix, and requires a clean matching Git

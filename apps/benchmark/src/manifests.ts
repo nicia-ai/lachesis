@@ -21,6 +21,7 @@ import {
   type CampaignPhase,
   createCampaignManifest,
   createPhaseManifest,
+  experimentStorageNamespace,
   type PhaseManifest,
 } from "./protocol.js";
 
@@ -50,9 +51,9 @@ const SMOKE_CAPS: ExperimentCaps = Object.freeze({
 
 export const M1B_PROMPT_CANDIDATE = Object.freeze({
   id: "lachesis-m1b-plan-generator",
-  version: "development-candidate-1",
+  version: "development-candidate-2",
   instruction:
-    "Propose only registered Lachesis operators and schemas. Return the requested GenerationOutcome contract; use unplannable only when the supplied manifest and policy cannot satisfy the task.",
+    'Propose only registered Lachesis operators and schemas. Return raw JSON as exactly { "kind": "plan", "plan": ... } or { "kind": "unplannable", "reasons": [...] }; never use Markdown fences or alternate field names. Use unplannable only when the supplied manifest, public input contract, and policy cannot satisfy the task.',
 });
 
 export type MaterializedPhase = Readonly<{
@@ -81,6 +82,13 @@ async function calibrationWorkflowCase(): Promise<
       "Use boundedFix with the registered countdown step and remaining measure until the workflow state reaches its fixed point.",
     catalogId: "benchmark.workflow",
     policy: { allowedCapabilities: [], budget: DEFAULT_BUDGET },
+    taskInputs: [
+      {
+        name: "state",
+        schema: { id: "workflow-state", version: "1.0.0" },
+        declaredBounds: [],
+      },
+    ],
     publicExamples: [],
     hiddenEvaluations: [
       {
@@ -235,7 +243,10 @@ export async function materializeM1bPhase(
     phase: input.phase,
     experiment: experiment.value,
     corpusDigest: corpusDigest.value,
-    storageNamespace: `m1b/${input.phase}/v1`,
+    storageNamespace: experimentStorageNamespace(
+      input.phase,
+      experiment.value.experimentDigest,
+    ),
     runtimeVersions: input.runtimeVersions,
   });
   return manifest.ok

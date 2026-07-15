@@ -61,6 +61,7 @@ export {
 } from "./experiment.js";
 export { loadM1aRecordedFixtures, RECORDED_DOUBLE_PLAN } from "./fixtures.js";
 export {
+  type AdapterDispatchEvidence,
   DEFAULT_INFERENCE_SETTINGS,
   type GenerationConstraint,
   type GenerationOutcome,
@@ -80,6 +81,9 @@ export {
   type ModelUsage,
   type PublicExample,
   type RepairGenerationRequest,
+  type TaskInput,
+  taskInputBoundSchema,
+  taskInputSchema,
 } from "./model.js";
 export {
   type AttemptPhase,

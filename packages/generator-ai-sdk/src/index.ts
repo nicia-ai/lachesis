@@ -1,4 +1,5 @@
 import {
+  type AdapterDispatchEvidence,
   calculateCostUsdMicros,
   createPricingSnapshot,
   type ExperimentCaps,
@@ -16,26 +17,39 @@ import {
 import { z } from "zod";
 
 export const AI_SDK_VERSION = "7.0.28";
-export const AI_SDK_ADAPTER_VERSION = `ai-sdk/${AI_SDK_VERSION}`;
+export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/2;ai-sdk/${AI_SDK_VERSION}`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
 export const M1B_REPETITIONS = 2;
 export const M1B_TIMEOUT_MS = 120_000;
 
+export const GENERATION_OUTCOME_PROMPT_CONTRACT = Object.freeze({
+  plan: '{ "kind": "plan", "plan": ... }',
+  unplannable: '{ "kind": "unplannable", "reasons": [...] }',
+  rules: Object.freeze([
+    "Return raw JSON only.",
+    "Do not use Markdown fences.",
+    "Do not use alternate field names.",
+    "Return exactly one of the two shapes above.",
+  ]),
+});
+
 export const M1B_PROMPT_PROTOCOL = Object.freeze({
   id: "lachesis-plan-generation",
-  version: "1",
-  outputContract:
-    "Return exactly one GenerationOutcome. Abstain only when the task cannot be satisfied under the supplied language manifest and policy.",
+  version: "2",
+  outputContract: GENERATION_OUTCOME_PROMPT_CONTRACT,
   repairVisibility: Object.freeze([
     "original task",
+    "public task-input declarations",
     "exact language manifest",
     "previous proposal",
     "structured compiler diagnostics",
   ]),
   hiddenExecutionResultsVisible: false,
   toolsEnabled: false,
+  internalOutputTransport:
+    "Anthropic's json tool is an internal structured-output transport only; external tools remain disabled.",
 });
 
 export const M1B_PILOT_CAPS: ExperimentCaps = Object.freeze({
@@ -117,11 +131,15 @@ export type AiSdkRuntime = Readonly<{
   outputObject: UnknownFunction;
 }>;
 
+export type DispatchObserver = Readonly<{
+  markDispatched: () => void;
+}>;
+
 export type AiSdkModelAdapterInput = Readonly<{
   identity: ModelIdentity;
   inference: InferenceSettings;
   pricing: PricingEntry;
-  loadModel: () => Promise<unknown>;
+  loadModel: (observer: DispatchObserver) => Promise<unknown>;
   runtime?: AiSdkRuntime | undefined;
   providerOptions?: ProviderOptions | undefined;
   timeoutMs?: number | undefined;
@@ -180,7 +198,9 @@ const structuredGenerationErrorSchema = z.looseObject({
 function renderRequest(request: ModelRequest): string {
   const shared = {
     protocol: M1B_PROMPT_PROTOCOL,
+    generationOutcomeContract: GENERATION_OUTCOME_PROMPT_CONTRACT,
     originalTask: request.originalTask,
+    taskInputs: request.taskInputs,
     languageManifest: request.languageManifest,
   };
   return JSON.stringify(
@@ -201,7 +221,11 @@ function renderRequest(request: ModelRequest): string {
 }
 
 function property(value: unknown, key: string): unknown {
-  if (value === null || typeof value !== "object") return undefined;
+  if (
+    value === null ||
+    (typeof value !== "object" && typeof value !== "function")
+  )
+    return undefined;
   return Object.entries(value).find(([name]) => name === key)?.[1];
 }
 
@@ -213,14 +237,35 @@ async function importModule(name: string): Promise<unknown> {
   return import(name);
 }
 
-function jsonSettings(value: unknown): JsonValue | undefined {
-  if (value === undefined) return undefined;
-  const parsed = z.record(z.string(), z.string().optional()).parse(value);
-  const settings: Record<string, string> = {};
+type ProviderFetch = typeof globalThis.fetch;
+type ProviderSetting = string | ProviderFetch;
+type ProviderSettings = Readonly<Record<string, ProviderSetting>>;
+
+const providerSettingSchema = z.union([
+  z.string(),
+  z.custom<ProviderFetch>((value) => callable(value)),
+]);
+
+function providerSettings(value: unknown): ProviderSettings {
+  const parsed = z
+    .record(z.string(), providerSettingSchema.optional())
+    .parse(value ?? {});
+  const settings: Record<string, ProviderSetting> = {};
   for (const [key, setting] of Object.entries(parsed)) {
     if (setting !== undefined) settings[key] = setting;
   }
   return settings;
+}
+
+function dispatchingFetch(
+  configured: ProviderFetch | undefined,
+  observer: DispatchObserver,
+): ProviderFetch {
+  const target = configured ?? globalThis.fetch;
+  return (resource, options) => {
+    observer.markDispatched();
+    return target(resource, options);
+  };
 }
 
 async function loadAiSdk(): Promise<AiSdkRuntime> {
@@ -236,14 +281,24 @@ async function loadAiSdk(): Promise<AiSdkRuntime> {
 async function providerModel(
   moduleName: string,
   factoryName: string,
-  settings: JsonValue | undefined,
+  settings: ProviderSettings,
   modelId: string,
+  observer: DispatchObserver,
   modelFactoryName?: string,
 ): Promise<unknown> {
   const module = await importModule(moduleName);
   const factory = property(module, factoryName);
   if (!callable(factory)) throw new Error(`Missing ${factoryName}.`);
-  const provider = await Promise.resolve(factory(settings));
+  const configuredFetch = settings["fetch"];
+  const provider = await Promise.resolve(
+    factory({
+      ...settings,
+      fetch: dispatchingFetch(
+        typeof configuredFetch === "function" ? configuredFetch : undefined,
+        observer,
+      ),
+    }),
+  );
   const modelFactory =
     modelFactoryName === undefined
       ? provider
@@ -343,6 +398,7 @@ function refusal(
     error: {
       code: "PROVIDER_REFUSAL",
       message: "The provider returned a safety refusal.",
+      dispatchEvidence: "dispatched-with-usage",
       metadata,
       usage,
       latencyMs,
@@ -350,23 +406,38 @@ function refusal(
   };
 }
 
+function failureEvidence(
+  dispatched: boolean,
+  usageKnown: boolean,
+): AdapterDispatchEvidence {
+  return dispatched
+    ? usageKnown
+      ? "dispatched-with-usage"
+      : "dispatched-usage-unknown"
+    : "not-dispatched";
+}
+
 export function createAiSdkModelAdapter(
   input: AiSdkModelAdapterInput,
 ): ModelAdapter {
-  let model: Promise<unknown> | undefined;
   return {
     identity: input.identity,
     inference: input.inference,
     pricingEntryId: input.pricing.id,
     async generate(request) {
       const started = performance.now();
+      let dispatched = false;
+      const observer: DispatchObserver = {
+        markDispatched: () => {
+          dispatched = true;
+        },
+      };
       const abortSignal = AbortSignal.timeout(
         input.timeoutMs ?? M1B_TIMEOUT_MS,
       );
       try {
         const prompt = renderRequest(request);
         const sdk = input.runtime ?? (await loadAiSdk());
-        model ??= input.loadModel();
         const structured = !(
           request.kind === "initial" &&
           request.constraint === "unconstrained-json"
@@ -379,7 +450,7 @@ export function createAiSdkModelAdapter(
             })
           : undefined;
         const raw = await sdk.generateText({
-          model: await model,
+          model: await input.loadModel(observer),
           prompt,
           maxOutputTokens: input.inference.maxOutputTokens,
           maxRetries: 0,
@@ -396,12 +467,13 @@ export function createAiSdkModelAdapter(
           ...(output === undefined ? {} : { output }),
         });
         const parsed = generationResultSchema.safeParse(raw);
-        if (!parsed.success) {
+        if (!parsed.success || parsed.data.usage === undefined) {
           return {
             ok: false,
             error: {
               code: "PROVIDER_FAILURE",
               message: "AI SDK returned an invalid generation result.",
+              dispatchEvidence: failureEvidence(dispatched, false),
               latencyMs: Math.max(0, Math.round(performance.now() - started)),
             },
           };
@@ -427,6 +499,7 @@ export function createAiSdkModelAdapter(
             usage,
             latencyMs,
             metadata,
+            dispatchEvidence: "dispatched-with-usage",
           },
         };
       } catch (error) {
@@ -437,12 +510,17 @@ export function createAiSdkModelAdapter(
             error: {
               code: "PROVIDER_TIMEOUT",
               message: `Provider request exceeded ${input.timeoutMs ?? M1B_TIMEOUT_MS} ms.`,
+              dispatchEvidence: failureEvidence(dispatched, false),
               latencyMs,
             },
           };
         }
         const generated = structuredGenerationErrorSchema.safeParse(error);
-        if (generated.success && generated.data.text !== undefined) {
+        if (
+          generated.success &&
+          generated.data.text !== undefined &&
+          generated.data.usage !== undefined
+        ) {
           const metadata = responseMetadata({
             configuredModel: input.identity.model,
             response: generated.data.response,
@@ -459,6 +537,7 @@ export function createAiSdkModelAdapter(
               usage,
               latencyMs,
               metadata,
+              dispatchEvidence: "dispatched-with-usage",
             },
           };
         }
@@ -467,6 +546,7 @@ export function createAiSdkModelAdapter(
           error: {
             code: "PROVIDER_FAILURE",
             message: errorMessage(error),
+            dispatchEvidence: failureEvidence(dispatched, false),
             latencyMs,
           },
         };
@@ -478,6 +558,10 @@ export function createAiSdkModelAdapter(
 function inference(
   constraint: GenerationConstraint,
   reasoningSettings: InferenceSettings["reasoningSettings"],
+  structuredOutputTransport: Exclude<
+    InferenceSettings["structuredOutputTransport"],
+    "prompt-json" | undefined
+  >,
 ): InferenceSettings {
   return Object.freeze({
     temperature: null,
@@ -487,6 +571,10 @@ function inference(
     maxOutputTokens: 8_192,
     structuredOutputMode:
       constraint === "unconstrained-json" ? "none" : "json-schema",
+    structuredOutputTransport:
+      constraint === "unconstrained-json"
+        ? "prompt-json"
+        : structuredOutputTransport,
   });
 }
 
@@ -495,6 +583,7 @@ export type OpenAiProviderSettings = Readonly<{
   baseURL?: string | undefined;
   organization?: string | undefined;
   project?: string | undefined;
+  fetch?: ProviderFetch | undefined;
 }>;
 
 export type OpenAiAdapterInput = Readonly<{
@@ -511,17 +600,19 @@ export function createOpenAiPlanAdapter(
       model: M1B_OPENAI_MODEL,
       adapterVersion: AI_SDK_ADAPTER_VERSION,
     },
-    inference: inference(input.constraint, {
-      mode: "reasoning",
-      effort: "low",
-    }),
+    inference: inference(
+      input.constraint,
+      { mode: "reasoning", effort: "low" },
+      "openai-responses-json-schema",
+    ),
     pricing: OPENAI_PRICING,
-    loadModel: () =>
+    loadModel: (observer) =>
       providerModel(
         ["@ai-sdk", "openai"].join("/"),
         "createOpenAI",
-        jsonSettings(input.provider),
+        providerSettings(input.provider),
         M1B_OPENAI_MODEL,
+        observer,
         "responses",
       ),
     providerOptions: {
@@ -542,6 +633,7 @@ type AdaptiveThinkingAcknowledgement = Readonly<{
 export type AnthropicProviderSettings = Readonly<{
   apiKey?: string | undefined;
   baseURL?: string | undefined;
+  fetch?: ProviderFetch | undefined;
 }>;
 
 export type AnthropicAdapterInput = AdaptiveThinkingAcknowledgement &
@@ -556,20 +648,25 @@ export function createAnthropicPlanAdapter(
       model: M1B_ANTHROPIC_MODEL,
       adapterVersion: AI_SDK_ADAPTER_VERSION,
     },
-    inference: inference(input.constraint, { mode: "adaptive", effort: "low" }),
+    inference: inference(
+      input.constraint,
+      { mode: "adaptive", effort: "low" },
+      "anthropic-json-tool",
+    ),
     pricing: ANTHROPIC_DIRECT_PRICING,
-    loadModel: () =>
+    loadModel: (observer) =>
       providerModel(
         ["@ai-sdk", "anthropic"].join("/"),
         "createAnthropic",
-        jsonSettings(input.provider),
+        providerSettings(input.provider),
         M1B_ANTHROPIC_MODEL,
+        observer,
       ),
     providerOptions: {
       anthropic: {
         thinking: { type: "adaptive" },
         effort: "low",
-        structuredOutputMode: "outputFormat",
+        structuredOutputMode: "jsonTool",
       },
     },
   });
@@ -609,6 +706,7 @@ export type BedrockAnthropicProviderSettings = Readonly<{
   secretAccessKey?: string | undefined;
   sessionToken?: string | undefined;
   baseURL?: string | undefined;
+  fetch?: ProviderFetch | undefined;
 }>;
 
 export type BedrockAnthropicAdapterInput = AdaptiveThinkingAcknowledgement &
@@ -623,24 +721,25 @@ export function createBedrockAnthropicPlanAdapter(
       model: M1B_BEDROCK_ANTHROPIC_MODEL,
       adapterVersion: AI_SDK_ADAPTER_VERSION,
     },
-    inference: inference(input.constraint, {
-      mode: "adaptive",
-      effort: "low",
-      route: "aws-bedrock",
-    }),
+    inference: inference(
+      input.constraint,
+      { mode: "adaptive", effort: "low", route: "aws-bedrock" },
+      "bedrock-json-tool",
+    ),
     pricing: ANTHROPIC_BEDROCK_PRICING,
-    loadModel: () =>
+    loadModel: (observer) =>
       providerModel(
         ["@ai-sdk", "amazon-bedrock", "anthropic"].join("/"),
         "createAmazonBedrockAnthropic",
-        jsonSettings(input.provider),
+        providerSettings(input.provider),
         M1B_BEDROCK_ANTHROPIC_MODEL,
+        observer,
       ),
     providerOptions: {
       anthropic: {
         thinking: { type: "adaptive" },
         effort: "low",
-        structuredOutputMode: "outputFormat",
+        structuredOutputMode: "jsonTool",
       },
     },
   });

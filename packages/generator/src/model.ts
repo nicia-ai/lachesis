@@ -29,9 +29,32 @@ export type PublicExample = Readonly<{
 
 export type GenerationConstraint = "unconstrained-json" | "json-schema";
 
+export const taskInputBoundSchema = z
+  .strictObject({
+    kind: z.literal("maximumCollectionItems"),
+    value: z.number().int().nonnegative(),
+  })
+  .readonly();
+
+export const taskInputSchema = z
+  .strictObject({
+    name: z.string().min(1),
+    schema: z
+      .strictObject({
+        id: z.string().min(1),
+        version: z.string().min(1),
+      })
+      .readonly(),
+    declaredBounds: z.array(taskInputBoundSchema).readonly(),
+  })
+  .readonly();
+
+export type TaskInput = z.infer<typeof taskInputSchema>;
+
 export type InitialGenerationRequest = Readonly<{
   kind: "initial";
   originalTask: string;
+  taskInputs: ReadonlyArray<TaskInput>;
   languageManifest: PlanLanguageManifest;
   publicExamples: ReadonlyArray<PublicExample>;
   constraint: GenerationConstraint;
@@ -41,6 +64,7 @@ export type InitialGenerationRequest = Readonly<{
 export type RepairGenerationRequest = Readonly<{
   kind: "repair";
   originalTask: string;
+  taskInputs: ReadonlyArray<TaskInput>;
   languageManifest: PlanLanguageManifest;
   previousProposal: unknown;
   diagnostics: ReadonlyArray<Diagnostic>;
@@ -71,7 +95,11 @@ export type ModelResponse = Readonly<{
   usage: ModelUsage;
   latencyMs: number;
   metadata?: ModelResponseMetadata | undefined;
+  dispatchEvidence: "dispatched-with-usage";
 }>;
+
+export type AdapterDispatchEvidence =
+  "not-dispatched" | "dispatched-with-usage" | "dispatched-usage-unknown";
 
 export type ModelAdapterFailure = Readonly<{
   code:
@@ -81,6 +109,7 @@ export type ModelAdapterFailure = Readonly<{
     | "PROVIDER_REFUSAL"
     | "BUDGET_RESERVATION_FAILED";
   message: string;
+  dispatchEvidence: AdapterDispatchEvidence;
   metadata?: ModelResponseMetadata | undefined;
   usage?: ModelUsage | undefined;
   latencyMs?: number | undefined;
@@ -100,6 +129,15 @@ export const inferenceSettingsSchema = z
     maxInputTokens: z.number().int().positive(),
     maxOutputTokens: z.number().int().positive(),
     structuredOutputMode: z.enum(["none", "json-schema", "provider-native"]),
+    structuredOutputTransport: z
+      .enum([
+        "prompt-json",
+        "openai-responses-json-schema",
+        "anthropic-json-tool",
+        "bedrock-json-tool",
+        "recorded-json-schema",
+      ])
+      .optional(),
   })
   .readonly();
 
@@ -112,6 +150,7 @@ export const DEFAULT_INFERENCE_SETTINGS: InferenceSettings = Object.freeze({
   maxInputTokens: 8_000,
   maxOutputTokens: 2_000,
   structuredOutputMode: "json-schema",
+  structuredOutputTransport: "recorded-json-schema",
 });
 
 export type ModelAdapter = Readonly<{

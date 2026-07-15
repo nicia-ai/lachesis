@@ -1,7 +1,11 @@
 import { type Diagnostic, digestValue, type Result } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
-import { generationOutcomeSchema, type PublicExample } from "./model.js";
+import {
+  generationOutcomeSchema,
+  type PublicExample,
+  taskInputSchema,
+} from "./model.js";
 
 export const exampleSchema = z
   .strictObject({
@@ -90,6 +94,7 @@ export const planGenerationCaseSchema = z
     instruction: z.string().min(1),
     catalogId: z.string().min(1),
     policy: compilationPolicySchema,
+    taskInputs: z.array(taskInputSchema).min(1).readonly(),
     publicExamples: z.array(exampleSchema).readonly(),
     hiddenEvaluations: z.array(hiddenEvaluationSchema).readonly(),
     expectedFeasibility: z.enum(["plannable", "unplannable"]),

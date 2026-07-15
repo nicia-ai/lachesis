@@ -90,7 +90,7 @@ const experimentVersionsSchema = z
 
 export const experimentManifestSchema = z
   .strictObject({
-    formatVersion: z.literal("2"),
+    formatVersion: z.enum(["2", "3"]),
     promptDigest: z.string().min(1),
     protocolDigest: z.string().min(1),
     cases: z.array(experimentCaseSchema).min(1).readonly(),
@@ -164,15 +164,25 @@ function schemaDiagnostics(error: z.ZodError): Diagnostics {
 
 async function modelConfigurationDigest(
   method: ExperimentMethodInput,
+  formatVersion: "2" | "3",
 ): Promise<Result<string, Diagnostic>> {
-  return digestValue({
+  const legacy = {
     model: method.model,
     temperature: method.inference.temperature,
     seed: method.inference.seed,
     reasoningSettings: method.inference.reasoningSettings,
     maxInputTokens: method.inference.maxInputTokens,
     maxOutputTokens: method.inference.maxOutputTokens,
-  });
+  };
+  return digestValue(
+    formatVersion === "2"
+      ? legacy
+      : {
+          ...legacy,
+          structuredOutputMode: method.inference.structuredOutputMode,
+          structuredOutputTransport: method.inference.structuredOutputTransport,
+        },
+  );
 }
 
 function duplicate(values: ReadonlyArray<string>): string | undefined {
@@ -194,10 +204,19 @@ function sameStrings(
   );
 }
 
-function methodModeIsValid(method: ExperimentMethodInput): boolean {
-  return method.strategy.constraint === "unconstrained-json"
-    ? method.inference.structuredOutputMode === "none"
-    : method.inference.structuredOutputMode !== "none";
+function methodModeIsValid(
+  method: ExperimentMethodInput,
+  requireTransport: boolean,
+): boolean {
+  const modeMatches =
+    method.strategy.constraint === "unconstrained-json"
+      ? method.inference.structuredOutputMode === "none"
+      : method.inference.structuredOutputMode !== "none";
+  return (
+    modeMatches &&
+    (!requireTransport ||
+      method.inference.structuredOutputTransport !== undefined)
+  );
 }
 
 function pricingBindingsAreValid(
@@ -238,7 +257,7 @@ export async function createExperimentManifest(
     };
   }
   const invalidMode = input.methods.find(
-    (method) => !methodModeIsValid(method),
+    (method) => !methodModeIsValid(method, true),
   );
   if (invalidMode !== undefined) {
     return {
@@ -299,7 +318,7 @@ export async function createExperimentManifest(
   }
   const methods: Array<ExperimentMethod> = [];
   for (const method of input.methods) {
-    const digest = await modelConfigurationDigest(method);
+    const digest = await modelConfigurationDigest(method, "3");
     if (!digest.ok) return { ok: false, error: [digest.error] };
     methods.push({
       ...method,
@@ -309,7 +328,7 @@ export async function createExperimentManifest(
   methods.sort((left, right) =>
     left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
   );
-  const formatVersion = "2";
+  const formatVersion = "3";
   const body = {
     formatVersion,
     promptDigest: promptDigest.value,
@@ -429,7 +448,7 @@ export async function verifyExperimentManifest(
     };
   }
   for (const method of parsed.data.methods) {
-    if (!methodModeIsValid(method)) {
+    if (!methodModeIsValid(method, parsed.data.formatVersion === "3")) {
       return {
         ok: false,
         error: [
@@ -440,7 +459,10 @@ export async function verifyExperimentManifest(
         ],
       };
     }
-    const methodDigest = await modelConfigurationDigest(method);
+    const methodDigest = await modelConfigurationDigest(
+      method,
+      parsed.data.formatVersion,
+    );
     if (!methodDigest.ok) return { ok: false, error: [methodDigest.error] };
     if (methodDigest.value !== method.modelConfigurationDigest) {
       return {

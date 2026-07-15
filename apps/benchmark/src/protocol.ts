@@ -12,6 +12,7 @@ import {
   verifyExperimentManifest,
 } from "@nicia-ai/lachesis-generator";
 import {
+  AI_SDK_ADAPTER_VERSION,
   AI_SDK_VERSION,
   M1B_ANTHROPIC_MODEL,
   M1B_OPENAI_MODEL,
@@ -77,12 +78,15 @@ const failurePolicySchema = z
     selectiveSemanticReruns: z.literal("prohibited"),
     compilerGuidedRepairLimit: z.literal(2),
     timeoutMs: z.number().int().positive(),
+    adapterDispatchEvidence: z.literal("v1").optional(),
+    preDispatchSettlement: z.literal("zero").optional(),
+    postDispatchUnknownUsage: z.literal("authorized-conservative").optional(),
   })
   .readonly();
 
 export const phaseManifestSchema = z
   .strictObject({
-    formatVersion: z.literal("1"),
+    formatVersion: z.enum(["1", "2"]),
     campaignId: z.string().min(1),
     campaignDigest: z.string().min(1),
     phase: campaignPhaseSchema,
@@ -117,6 +121,13 @@ export type CampaignManifest = z.infer<typeof campaignManifestSchema>;
 export type PhaseManifest = z.infer<typeof phaseManifestSchema>;
 export type FailurePolicy = z.infer<typeof failurePolicySchema>;
 
+export function experimentStorageNamespace(
+  phase: CampaignPhase,
+  experimentDigest: string,
+): string {
+  return `m1b/${phase}/experiments/${experimentDigest}`;
+}
+
 export const M1B_FAILURE_POLICY: FailurePolicy = Object.freeze({
   transport: "record-and-continue",
   providerAutomaticRetries: 0,
@@ -124,6 +135,9 @@ export const M1B_FAILURE_POLICY: FailurePolicy = Object.freeze({
   selectiveSemanticReruns: "prohibited",
   compilerGuidedRepairLimit: 2,
   timeoutMs: M1B_TIMEOUT_MS,
+  adapterDispatchEvidence: "v1",
+  preDispatchSettlement: "zero",
+  postDispatchUnknownUsage: "authorized-conservative",
 });
 
 function schemaDiagnostics(label: string, error: z.ZodError): Diagnostics {
@@ -248,7 +262,10 @@ function phaseSplitsAreValid(
     : splits.size === 1 && splits.has("development");
 }
 
-function primaryMethodsAreValid(experiment: ExperimentManifest): boolean {
+function primaryMethodsAreValid(
+  experiment: ExperimentManifest,
+  legacy: boolean,
+): boolean {
   if (experiment.methods.length !== 6) return false;
   const expectedStrategies = [
     "unconstrained-json",
@@ -267,6 +284,19 @@ function primaryMethodsAreValid(experiment: ExperimentManifest): boolean {
     )
       return false;
     for (const method of methods) {
+      const expectedTransport =
+        method.strategy.constraint === "unconstrained-json"
+          ? "prompt-json"
+          : provider === "openai"
+            ? "openai-responses-json-schema"
+            : "anthropic-json-tool";
+      if (
+        method.model.adapterVersion !==
+          (legacy ? `ai-sdk/${AI_SDK_VERSION}` : AI_SDK_ADAPTER_VERSION) ||
+        method.inference.structuredOutputTransport !==
+          (legacy ? undefined : expectedTransport)
+      )
+        return false;
       if (provider === "openai") {
         if (
           method.model.model !== M1B_OPENAI_MODEL ||
@@ -312,7 +342,7 @@ export async function createPhaseManifest(
   });
   if (!scorerDigest.ok) return { ok: false, error: [scorerDigest.error] };
   const body = {
-    formatVersion: "1",
+    formatVersion: "2",
     campaignId: input.campaign.campaignId,
     campaignDigest: input.campaign.campaignDigest,
     phase: input.phase,
@@ -389,7 +419,33 @@ export async function verifyPhaseManifest(
     return phaseDiagnostic(
       "Phase manifest uses the wrong campaign budget pool.",
     );
-  if (!primaryMethodsAreValid(verifiedExperiment.value))
+  if (
+    parsed.data.formatVersion === "2" &&
+    parsed.data.storageNamespace !==
+      experimentStorageNamespace(
+        parsed.data.phase,
+        parsed.data.experimentDigest,
+      )
+  )
+    return phaseDiagnostic(
+      "Phase manifest storage namespace is not bound to its experiment digest.",
+    );
+  if (
+    parsed.data.formatVersion === "2" &&
+    (parsed.data.failurePolicy.adapterDispatchEvidence !== "v1" ||
+      parsed.data.failurePolicy.preDispatchSettlement !== "zero" ||
+      parsed.data.failurePolicy.postDispatchUnknownUsage !==
+        "authorized-conservative")
+  )
+    return phaseDiagnostic(
+      "Phase manifest is missing the M1b.3 dispatch-accounting identity.",
+    );
+  if (
+    !primaryMethodsAreValid(
+      verifiedExperiment.value,
+      parsed.data.formatVersion === "1",
+    )
+  )
     return phaseDiagnostic(
       "Phase manifest does not use the frozen direct OpenAI/Anthropic primary model matrix.",
     );

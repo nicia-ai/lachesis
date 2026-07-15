@@ -21,6 +21,11 @@ effort. Vercel AI SDK is pinned to 7.0.28 with automatic retries set to zero.
 Bedrock is optional secondary research and is rejected from the primary held-out
 manifest and pools.
 
+Anthropic structured output uses the AI SDK's `jsonTool` mode. Its `json` tool
+is an internal `GenerationOutcome` output transport only; external tools remain
+disabled. Every initial and repair prompt carries the same exact plan or
+unplannable JSON contract and the public task-input declarations.
+
 The causal result is the matched effect of `unconstrained-json`, `json-schema`,
 and `json-schema-with-repair` within each model. Terra and Sonnet use different
 reasoning treatments, so cross-provider numbers are descriptive, not a
@@ -50,7 +55,10 @@ node apps/benchmark/dist/cli.js validate \
   --manifest /secure/m1b/smoke/smoke.json
 ```
 
-Do not hand-edit a manifest. Rematerialize it and review the new digest.
+Do not hand-edit a manifest. Rematerialize it and review the new digest. M1b.3
+derives `storageNamespace` from the complete experiment digest, so a fresh smoke
+registers beside the immutable original smoke without receiving a new
+development allowance.
 
 ## 2. Zero-network dry run
 
@@ -169,16 +177,24 @@ transport failure, timeout, safety refusal, invalid model output, parse failure,
 wire-schema failure, compilation failure, and hidden semantic failure remain
 distinct records.
 
-If provider usage is unavailable after dispatch, the ledger retains the entire
-worst-case reservation. Actual usage otherwise reconciles that reservation.
-Integer micro-dollars are used throughout. Incomplete matched tuples are
-reported as incomplete/unevaluable; they are never silently dropped or filled by
-selective reruns.
+Adapter results record `not-dispatched`, `dispatched-with-usage`, or
+`dispatched-usage-unknown`. A pre-dispatch failure settles at zero tokens and
+zero cost. If provider usage is unavailable after dispatch, the ledger retains
+the entire worst-case reservation as authorized conservative accounting.
+Provider-reported usage otherwise reconciles that reservation and is reported
+separately from conservative accounting. Integer micro-dollars are used
+throughout. Incomplete matched tuples are reported as incomplete/unevaluable;
+they are never silently dropped or filled by selective reruns.
 
 The ledger is append-only, sequence-numbered, hash-chained, campaign-bound, and
 paired with a durable head. Validation rejects malformed, truncated, reordered,
 duplicate, or mismatched events. The head detects removal of an already
 committed suffix. Never delete or edit the ledger or head.
+
+The immutable original smoke ledger is not retroactively edited or credited. Its
+six OpenAI conservative settlements are historical overestimates caused by the
+pre-M1b.3 callable-provider reflection semantics, which could not distinguish a
+local factory failure from a dispatched request.
 
 ## 8. Offline report
 

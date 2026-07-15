@@ -21,6 +21,7 @@ import {
 } from "@nicia-ai/lachesis";
 import {
   type BenchmarkBudgetReservation,
+  type BenchmarkBudgetSettlement,
   type BenchmarkMethod,
   createExperimentManifest,
   createInMemoryBenchmarkStore,
@@ -58,6 +59,7 @@ import {
 import {
   createCampaignManifest,
   createPhaseManifest,
+  experimentStorageNamespace,
   type PhaseManifest,
   phaseManifestSchema,
   verifyCampaignManifest,
@@ -119,6 +121,7 @@ function loaded(value: MaterializedPhase): LoadedPhase {
     campaign: value.campaign,
     phase: value.manifest,
     materialized: value,
+    resumeOnly: false,
   };
 }
 
@@ -185,7 +188,10 @@ async function phaseWithExperiment(
     phase,
     experiment,
     corpusDigest: value.manifest.corpusDigest,
-    storageNamespace: value.manifest.storageNamespace,
+    storageNamespace: experimentStorageNamespace(
+      phase,
+      experiment.experimentDigest,
+    ),
     runtimeVersions: value.manifest.runtimeVersions,
   });
 }
@@ -193,6 +199,8 @@ async function phaseWithExperiment(
 function fakeMethods(
   value: MaterializedPhase,
   calls: { value: number },
+  dispatchEvidence:
+    "not-dispatched" | "dispatched-usage-unknown" = "dispatched-usage-unknown",
 ): ReadonlyArray<BenchmarkMethod> {
   return value.manifest.experiment.methods.map((method) => ({
     id: method.id,
@@ -212,6 +220,7 @@ function fakeMethods(
           error: {
             code,
             message: "Recorded transport failure.",
+            dispatchEvidence,
           },
         });
       },
@@ -278,6 +287,47 @@ describe("M1b phase protocol", () => {
       maximumAdditionalRepairCalls: 136,
       maximumModelCalls: 340,
     });
+    expect(smoke.campaign.campaignDigest).toBe(
+      "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+    );
+    expect(smoke.manifest.formatVersion).toBe("2");
+    expect(smoke.manifest.experiment.formatVersion).toBe("3");
+    expect(smoke.manifest.storageNamespace).toBe(
+      `m1b/smoke/experiments/${smoke.manifest.experimentDigest}`,
+    );
+  });
+
+  it("gives each experiment a collision-resistant namespace in the shared campaign", async () => {
+    const first = await materialized("smoke", "commit-one");
+    const second = await materialized("smoke", "commit-two");
+
+    expect(first.campaign.campaignDigest).toBe(second.campaign.campaignDigest);
+    expect(first.manifest.experimentDigest).not.toBe(
+      second.manifest.experimentDigest,
+    );
+    expect(first.manifest.phaseManifestDigest).not.toBe(
+      second.manifest.phaseManifestDigest,
+    );
+    expect(first.manifest.storageNamespace).not.toBe(
+      second.manifest.storageNamespace,
+    );
+    expect(first.manifest.storageNamespace).toContain(
+      first.manifest.experimentDigest,
+    );
+
+    const namespaceBody = {
+      ...withoutPhaseDigest(first.manifest),
+      storageNamespace: "m1b/smoke/experiments/wrong",
+    };
+    const namespaceDigest = unwrap(await digestValue(namespaceBody));
+    expect(
+      (
+        await verifyPhaseManifest(
+          { ...namespaceBody, phaseManifestDigest: namespaceDigest },
+          first.campaign,
+        )
+      ).ok,
+    ).toBe(false);
   });
 
   it("pre-registers a development-only calibration set across all catalogs and operator classes", async () => {
@@ -322,6 +372,10 @@ describe("M1b phase protocol", () => {
         { index: 1, split: "heldout-catalog" },
       ],
     });
+    const truncatedHeldout = await recreateExperiment({
+      materialized: heldout,
+      caseBindings: [{ index: 0, split: "heldout-catalog" }],
+    });
 
     expect(
       (await phaseWithExperiment(heldout, heldoutAsSmoke, "smoke")).ok,
@@ -332,6 +386,9 @@ describe("M1b phase protocol", () => {
     expect((await phaseWithExperiment(heldout, mixed, "heldout")).ok).toBe(
       false,
     );
+    expect(
+      (await phaseWithExperiment(heldout, truncatedHeldout, "heldout")).ok,
+    ).toBe(false);
   });
 
   it("rejects Bedrock, wrong models, and wrong reasoning settings", async () => {
@@ -364,11 +421,19 @@ describe("M1b phase protocol", () => {
         reasoningSettings: { mode: "adaptive", effort: "high" },
       },
     });
+    const wrongTransportMethods = methods.with(anthropicIndex, {
+      ...anthropic,
+      inference: {
+        ...anthropic.inference,
+        structuredOutputTransport: "openai-responses-json-schema",
+      },
+    });
 
     for (const candidate of [
       bedrockMethods,
       wrongModelMethods,
       wrongReasoningMethods,
+      wrongTransportMethods,
     ]) {
       const experiment = await recreateExperiment({
         materialized: heldout,
@@ -376,6 +441,33 @@ describe("M1b phase protocol", () => {
       });
       expect((await phaseWithExperiment(heldout, experiment)).ok).toBe(false);
     }
+
+    const phaseBody = withoutPhaseDigest(heldout.manifest);
+    const legacyFailurePolicyBody = {
+      ...phaseBody,
+      failurePolicy: {
+        transport: "record-and-continue",
+        providerAutomaticRetries: 0,
+        storedProviderFailureOnResume: "do-not-retry",
+        selectiveSemanticReruns: "prohibited",
+        compilerGuidedRepairLimit: 2,
+        timeoutMs: phaseBody.failurePolicy.timeoutMs,
+      } satisfies PhaseManifest["failurePolicy"],
+    };
+    const legacyFailurePolicyDigest = unwrap(
+      await digestValue(legacyFailurePolicyBody),
+    );
+    expect(
+      (
+        await verifyPhaseManifest(
+          {
+            ...legacyFailurePolicyBody,
+            phaseManifestDigest: legacyFailurePolicyDigest,
+          },
+          heldout.campaign,
+        )
+      ).ok,
+    ).toBe(false);
   });
 });
 
@@ -714,6 +806,7 @@ describe("campaign ledger", () => {
           ...first,
           actualCostUsdMicros: 6_000_000,
           conservative: false,
+          accountingBasis: "provider-reported",
         })
       ).ok,
     ).toBe(true);
@@ -751,6 +844,7 @@ describe("campaign ledger", () => {
           ...openai,
           actualCostUsdMicros: 24_000_000,
           conservative: true,
+          accountingBasis: "authorized-conservative",
         })
       ).ok,
     ).toBe(true);
@@ -762,6 +856,8 @@ describe("campaign ledger", () => {
     expect(ledger.status("m1b-heldout-pilot")).toMatchObject({
       consumedUsdMicros: 49_000_000,
       remainingUsdMicros: 1_000_000,
+      authorizedConservativeUsdMicros: 24_000_000,
+      unsettledReservationUsdMicros: 25_000_000,
     });
   });
 
@@ -781,7 +877,8 @@ describe("campaign ledger", () => {
       ...value,
       actualCostUsdMicros: 400,
       conservative: false,
-    };
+      accountingBasis: "provider-reported",
+    } satisfies BenchmarkBudgetSettlement;
     expect((await budget.settle(settlement)).ok).toBe(true);
     expect((await budget.settle(settlement)).ok).toBe(false);
     expect(ledger.status("m1b-development").consumedUsdMicros).toBe(400);
@@ -861,6 +958,42 @@ describe("campaign ledger", () => {
 });
 
 describe("resume and reporting", () => {
+  it("settles pre-dispatch adapter failures at zero cost and zero tokens", async () => {
+    const smoke = await materialized("smoke");
+    const path = join(await temporaryDirectory(), "ledger.ndjson");
+    const ledger = unwrap(
+      await openCampaignLedger({ path, campaign: smoke.campaign }),
+    );
+    const calls = { value: 0 };
+    const result = unwrap(
+      await runBenchmark({
+        experiment: smoke.manifest.experiment,
+        cases: smoke.cases,
+        methods: fakeMethods(smoke, calls, "not-dispatched"),
+        resolveCatalog: unwrap(createM1aCatalogResolver()),
+        store: createInMemoryBenchmarkStore(),
+        budgetController: ledger.budgetController(smoke.manifest),
+      }),
+    );
+
+    expect(result.generated).toBe(12);
+    expect(calls.value).toBe(12);
+    expect(
+      result.records.every(
+        (record) =>
+          record.generation.totalCostUsdMicros === 0 &&
+          record.generation.totalInputTokens === 0 &&
+          record.generation.totalOutputTokens === 0,
+      ),
+    ).toBe(true);
+    expect(ledger.status("m1b-development")).toMatchObject({
+      consumedUsdMicros: 0,
+      observedProviderBillingUsdMicros: 0,
+      authorizedConservativeUsdMicros: 0,
+      notDispatchedSettlements: 12,
+    });
+  });
+
   it("propagates external reservation and settlement denial without overspending", async () => {
     const smoke = await materialized("smoke");
     const resolver = unwrap(createM1aCatalogResolver());
@@ -950,6 +1083,59 @@ describe("resume and reporting", () => {
     expect(ledger.status("m1b-development").consumedUsdMicros).toBe(
       chargedAfterFirst,
     );
+
+    const resumeOnlyCalls = { value: 0 };
+    const resumeOnly = unwrap(
+      await executePhase({
+        loaded: { ...loaded(smoke), resumeOnly: true },
+        storageRoot,
+        cwd: process.cwd(),
+        acknowledgement: {
+          experimentDigest: smoke.manifest.experimentDigest,
+          phase: "smoke",
+          maximumCostUsdMicros: 10_000_000,
+        },
+        environment: {
+          OPENAI_API_KEY: "offline-dummy",
+          ANTHROPIC_API_KEY: "offline-dummy",
+        },
+        methods: fakeMethods(smoke, resumeOnlyCalls),
+      }),
+    );
+    expect(resumeOnly).toMatchObject({
+      resumed: 12,
+      generated: 0,
+      records: 12,
+    });
+    expect(resumeOnlyCalls.value).toBe(0);
+
+    const completeRecords = await readFile(recordPath, "utf8");
+    await writeFile(
+      recordPath,
+      `${JSON.stringify(first.records.slice(0, -1))}\n`,
+      "utf8",
+    );
+    expect(
+      (
+        await executePhase({
+          loaded: { ...loaded(smoke), resumeOnly: true },
+          storageRoot,
+          cwd: process.cwd(),
+          acknowledgement: {
+            experimentDigest: smoke.manifest.experimentDigest,
+            phase: "smoke",
+            maximumCostUsdMicros: 10_000_000,
+          },
+          environment: {
+            OPENAI_API_KEY: "offline-dummy",
+            ANTHROPIC_API_KEY: "offline-dummy",
+          },
+          methods: fakeMethods(smoke, resumeOnlyCalls),
+        })
+      ).ok,
+    ).toBe(false);
+    expect(resumeOnlyCalls.value).toBe(0);
+    await writeFile(recordPath, completeRecords, "utf8");
 
     const report = unwrap(
       await generateStoredReport({

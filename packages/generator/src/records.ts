@@ -111,6 +111,13 @@ const adapterFailureSchema = z
       "BUDGET_RESERVATION_FAILED",
     ]),
     message: z.string(),
+    dispatchEvidence: z
+      .enum([
+        "not-dispatched",
+        "dispatched-with-usage",
+        "dispatched-usage-unknown",
+      ])
+      .optional(),
     metadata: modelResponseMetadataSchema.optional(),
     usage: modelUsageSchema.optional(),
     latencyMs: z.number().int().nonnegative().optional(),
@@ -135,6 +142,13 @@ export const attemptRecordSchema = z
     abstentionReasons: z.array(z.string()).readonly(),
     diagnostics: z.array(diagnosticRecordSchema).readonly(),
     adapterFailure: adapterFailureSchema.nullable(),
+    dispatchEvidence: z
+      .enum([
+        "not-dispatched",
+        "dispatched-with-usage",
+        "dispatched-usage-unknown",
+      ])
+      .optional(),
     parseSuccess: z.boolean().nullable(),
     wireValidation: z.boolean().nullable(),
     compiled: z.boolean(),
