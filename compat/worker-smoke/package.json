@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@nicia-ai/lachesis": "workspace:*",
+    "@nicia-ai/lachesis-generator": "workspace:*",
     "zod": "4.4.3"
   }
 }

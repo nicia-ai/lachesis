@@ -6,8 +6,8 @@ callbacks, hidden loops, or undeclared effects. The kernel parses, resolves,
 type-checks, bounds, content-addresses, and executes the plan through explicit
 effect interpreters.
 
-This repository contains the first production vertical slice: the **Measured
-Plan Kernel**.
+This repository contains the measured plan kernel and the deterministic M1a
+plan-generation benchmark substrate.
 
 ## What works
 
@@ -30,6 +30,12 @@ Plan Kernel**.
 - A typed in-memory run trace containing digests rather than unbounded values.
 - Node 24 and Cloudflare Workers compatibility builds using public package
   exports.
+- A provider-neutral generate/compile/two-repair pipeline with canonical attempt
+  records, recorded-model fixtures, and resumable hidden-case semantic scoring.
+- Central model-output parsing, digest-bound experiment manifests, enforced
+  inference caps, and paired held-out research gates with confidence intervals.
+- Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
+  including bounded recursion and intentionally impossible policies.
 
 Deterministic orchestration is not semantic determinism. Exact replay comes from
 recorded effect results bound to plan, catalog, operation, invocation, effect,
@@ -63,14 +69,17 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
 ## Workspace
 
 - `packages/kernel` — portable public package `@nicia-ai/lachesis`.
+- `packages/generator` — provider-neutral package
+  `@nicia-ai/lachesis-generator`; no live provider SDKs.
 - `apps/cli` — Node-only public package `@nicia-ai/lachesis-cli` and `lachesis`
   binary.
 - `fixtures` — valid/invalid plans, inputs, and effect recordings.
 - `compat` — built-package Node and Workers consumers.
 - `docs` — architecture and material ADRs.
 
-See [the architecture](docs/architecture.md) for the trust boundaries and
-guarantees.
+See [the architecture](docs/architecture.md) for the kernel guarantees and the
+[M1a benchmark protocol](docs/generator-benchmark.md) for generation and scoring
+boundaries.
 
 ## Validation
 
@@ -87,11 +96,11 @@ git diff --check
 
 ## Not yet implemented
 
-The milestone intentionally excludes live model/provider handlers, TypeGraph,
-SQL/Drizzle, knowledge-graph persistence, graph-native traversal, joins,
-`boundedExplore`, optimizer rewrites, durable/distributed scheduling, general
-adaptive loops, package publication, and deployment. The next research milestone
-is provider-neutral plan-generation reliability and bounded repair, not a
+The milestone intentionally excludes live model/provider handlers, CodeMode,
+TypeGraph, SQL/Drizzle, knowledge-graph persistence, graph-native traversal,
+joins, `boundedExplore`, optimizer rewrites, durable/distributed scheduling,
+general adaptive loops, package publication, and deployment. The next research
+milestone is the M1b live provider pilot over the frozen M1a benchmark, not a
 TypeGraph integration.
 
 Licensed under [Apache License 2.0](LICENSE).

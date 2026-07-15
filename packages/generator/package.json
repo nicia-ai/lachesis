@@ -1,0 +1,39 @@
+{
+  "name": "@nicia-ai/lachesis-generator",
+  "version": "0.1.0",
+  "description": "Provider-neutral plan generation and resumable benchmark substrate for Lachesis",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Nicia AI",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node-store.d.ts",
+      "import": "./dist/node-store.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.node.json",
+    "smoke": "node --input-type=module -e \"const api = await import('@nicia-ai/lachesis-generator'); const nodeApi = await import('@nicia-ai/lachesis-generator/node'); if (typeof api.generatePlan !== 'function' || typeof api.loadM1aCorpus !== 'function' || typeof nodeApi.createJsonFileBenchmarkStore !== 'function') process.exit(1);\"",
+    "typecheck": "tsc --noEmit -p tsconfig.portable.json && tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3"
+  }
+}

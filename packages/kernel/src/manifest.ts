@@ -181,6 +181,12 @@ async function digestJson(value: unknown): Promise<Result<string, Diagnostic>> {
       );
 }
 
+function deepFreeze(value: unknown): void {
+  if (value === null || typeof value !== "object") return;
+  for (const child of Object.values(value)) deepFreeze(child);
+  Object.freeze(value);
+}
+
 export async function fingerprintCatalog(
   catalog: Catalog,
 ): Promise<Result<CatalogFingerprint, Diagnostic>> {
@@ -199,13 +205,17 @@ export async function createPlanLanguageManifest(
     ...core,
     planJsonSchema: z.json().parse(z.toJSONSchema(wirePlanSchema)),
     catalogFingerprint: fingerprint.value,
-    policy,
+    policy: {
+      allowedCapabilities: [...policy.allowedCapabilities],
+      budget: { ...policy.budget },
+    },
   };
   const digest = await digestJson(partial);
-  return digest.ok
-    ? ok({
-        ...partial,
-        manifestDigest: manifestDigestSchema.parse(digest.value),
-      })
-    : digest;
+  if (!digest.ok) return digest;
+  const manifest: PlanLanguageManifest = {
+    ...partial,
+    manifestDigest: manifestDigestSchema.parse(digest.value),
+  };
+  deepFreeze(manifest);
+  return ok(manifest);
 }

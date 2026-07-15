@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "noEmit": true, "declaration": true },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/node-store.ts", "tests/**/*.ts"]
+}

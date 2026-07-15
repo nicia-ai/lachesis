@@ -1,0 +1,129 @@
+import type {
+  Diagnostic,
+  PlanLanguageManifest,
+  Result,
+} from "@nicia-ai/lachesis";
+import { z } from "zod";
+
+export type GenerationOutcome =
+  | Readonly<{ kind: "plan"; plan: unknown }>
+  | Readonly<{
+      kind: "unplannable";
+      reasons: ReadonlyArray<string>;
+    }>;
+
+export const generationOutcomeSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("plan"), plan: z.json() }).readonly(),
+  z
+    .strictObject({
+      kind: z.literal("unplannable"),
+      reasons: z.array(z.string().min(1)).min(1).readonly(),
+    })
+    .readonly(),
+]);
+
+export type PublicExample = Readonly<{
+  instruction: string;
+  outcome: GenerationOutcome;
+}>;
+
+export type GenerationConstraint = "unconstrained-json" | "json-schema";
+
+export type InitialGenerationRequest = Readonly<{
+  kind: "initial";
+  originalTask: string;
+  languageManifest: PlanLanguageManifest;
+  publicExamples: ReadonlyArray<PublicExample>;
+  constraint: GenerationConstraint;
+}>;
+
+/** Deliberately excludes examples, hidden evaluations, and execution results. */
+export type RepairGenerationRequest = Readonly<{
+  kind: "repair";
+  originalTask: string;
+  languageManifest: PlanLanguageManifest;
+  previousProposal: unknown;
+  diagnostics: ReadonlyArray<Diagnostic>;
+}>;
+
+export type ModelRequest = InitialGenerationRequest | RepairGenerationRequest;
+
+export type ModelUsage = Readonly<{
+  inputTokens: number;
+  outputTokens: number;
+  costUsdMicros: number;
+}>;
+
+export type ModelResponse = Readonly<{
+  rawResponse: string;
+  structuredOutput?: unknown;
+  usage: ModelUsage;
+  latencyMs: number;
+}>;
+
+export type ModelAdapterFailure = Readonly<{
+  code: "RECORDED_RESPONSE_MISSING" | "PROVIDER_FAILURE";
+  message: string;
+}>;
+
+export type ModelIdentity = Readonly<{
+  provider: string;
+  model: string;
+  adapterVersion: string;
+}>;
+
+export const inferenceSettingsSchema = z
+  .strictObject({
+    temperature: z.number().min(0).nullable(),
+    seed: z.number().int().nullable(),
+    reasoningSettings: z.json(),
+    maxInputTokens: z.number().int().positive(),
+    maxOutputTokens: z.number().int().positive(),
+    structuredOutputMode: z.enum(["none", "json-schema", "provider-native"]),
+  })
+  .readonly();
+
+export type InferenceSettings = z.infer<typeof inferenceSettingsSchema>;
+
+export const DEFAULT_INFERENCE_SETTINGS: InferenceSettings = Object.freeze({
+  temperature: 0,
+  seed: null,
+  reasoningSettings: Object.freeze({}),
+  maxInputTokens: 8_000,
+  maxOutputTokens: 2_000,
+  structuredOutputMode: "json-schema",
+});
+
+export type ModelAdapter = Readonly<{
+  identity: ModelIdentity;
+  inference: InferenceSettings;
+  generate: (
+    request: ModelRequest,
+  ) => Promise<Result<ModelResponse, ModelAdapterFailure>>;
+}>;
+
+export type GenerationStrategy = Readonly<{
+  id:
+    | "unconstrained-json"
+    | "json-schema"
+    | "json-schema-with-repair"
+    | "codemode";
+  constraint: GenerationConstraint;
+  repair: "none" | "compiler-guided";
+}>;
+
+export const M1A_GENERATION_STRATEGIES: ReadonlyArray<GenerationStrategy> = [
+  {
+    id: "unconstrained-json",
+    constraint: "unconstrained-json",
+    repair: "none",
+  },
+  { id: "json-schema", constraint: "json-schema", repair: "none" },
+  {
+    id: "json-schema-with-repair",
+    constraint: "json-schema",
+    repair: "compiler-guided",
+  },
+];
+
+export const MAX_REPAIR_ATTEMPTS = 2;

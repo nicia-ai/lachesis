@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.portable.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true,
+    "paths": {
+      "@nicia-ai/lachesis": ["../../packages/kernel/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/node-store.ts", "tests/**/*.ts"]
+}

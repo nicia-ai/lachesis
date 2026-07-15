@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": ["ES2024"],
+    "types": ["node"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "paths": {
+      "@nicia-ai/lachesis": ["../../packages/kernel/dist/index.d.ts"],
+      "@nicia-ai/lachesis-generator": ["./dist/index.d.ts"]
+    }
+  },
+  "include": ["src/node-store.ts"]
+}

@@ -1,0 +1,16 @@
+# `@nicia-ai/lachesis-generator`
+
+Provider-neutral generation, bounded compiler-guided repair, deterministic
+recorded adapters, and resumable semantic benchmarks for Lachesis.
+
+The core export owns model-output parsing and is portable to Workers. Adapters
+return raw provider text plus optional provider-decoded structure; malformed
+model output is measured separately from provider transport failure.
+
+Benchmark runs require a content-addressed `ExperimentManifest` and resume by
+its digest. Research gates use held-out records, matched comparison tuples,
+explicit denominators, and 95% confidence intervals. Node filesystem storage is
+available only from `@nicia-ai/lachesis-generator/node`.
+
+M1a contains no live model SDK. Provider adapters and CodeMode enter only in the
+M1b pilot, outside `@nicia-ai/lachesis`.

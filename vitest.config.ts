@@ -14,6 +14,7 @@ export default defineConfig({
       provider: "v8",
       include: [
         "packages/kernel/src/**/*.ts",
+        "packages/generator/src/**/*.ts",
         "apps/cli/src/example-catalog.ts",
       ],
       thresholds: {

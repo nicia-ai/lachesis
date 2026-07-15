@@ -6,7 +6,8 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "paths": {
-      "@nicia-ai/lachesis": ["./packages/kernel/src/index.ts"]
+      "@nicia-ai/lachesis": ["./packages/kernel/src/index.ts"],
+      "@nicia-ai/lachesis-generator": ["./packages/generator/src/index.ts"]
     },
     "lib": ["ES2023", "WebWorker"],
     "types": [],

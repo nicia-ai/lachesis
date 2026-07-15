@@ -7,6 +7,11 @@ import {
   executePlan,
   inspectExecutablePlan,
 } from "@nicia-ai/lachesis";
+import {
+  createRecordedModelAdapter,
+  freezeRecordedModelFixture,
+  generatePlan,
+} from "@nicia-ai/lachesis-generator";
 import { z } from "zod";
 
 const textSchema = defineSchema({
@@ -34,7 +39,7 @@ async function exerciseKernel(): Promise<Response> {
     schemas: [textSchema.runtime],
     operations: [echoEffect],
   });
-  const planText = JSON.stringify({
+  const plan = {
     formatVersion: "1",
     catalog: { id: "worker/catalog", version: "1" },
     root: "echo",
@@ -61,8 +66,49 @@ async function exerciseKernel(): Promise<Response> {
       maxParallelism: 1,
     },
     allowedCapabilities: ["worker.echo"],
-  });
+  };
+  const planText = JSON.stringify(plan);
   if (!catalog.ok) return Response.json({ ok: false }, { status: 500 });
+  const fixture = await freezeRecordedModelFixture({
+    identity: {
+      provider: "recorded",
+      model: "worker-smoke",
+      adapterVersion: "1",
+    },
+    responses: [
+      {
+        kind: "response",
+        response: {
+          rawResponse: JSON.stringify({ kind: "plan", plan }),
+          structuredOutput: { kind: "plan", plan },
+          usage: {
+            inputTokens: 10,
+            outputTokens: 10,
+            costUsdMicros: 0,
+          },
+          latencyMs: 1,
+        },
+      },
+    ],
+  });
+  if (!fixture.ok) return Response.json({ ok: false }, { status: 500 });
+  const generated = await generatePlan({
+    task: "Echo portable text.",
+    catalog: catalog.value,
+    policy: {
+      allowedCapabilities: ["worker.echo"],
+      budget: plan.budget,
+    },
+    publicExamples: [],
+    adapter: createRecordedModelAdapter(fixture.value),
+    strategy: {
+      id: "json-schema",
+      constraint: "json-schema",
+      repair: "none",
+    },
+  });
+  if (!generated.ok || generated.value.kind !== "compiled")
+    return Response.json({ ok: false }, { status: 500 });
   const compiled = await compilePlanJson(planText, catalog.value, {
     allowedCapabilities: ["worker.echo"],
     budget: {
