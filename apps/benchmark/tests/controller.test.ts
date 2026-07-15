@@ -14,6 +14,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 
 import {
+  type Diagnostic,
   diagnostic,
   type Diagnostics,
   digestValue,
@@ -26,6 +27,8 @@ import {
   createExperimentManifest,
   createInMemoryBenchmarkStore,
   createM1aCatalogResolver,
+  createPricingSnapshot,
+  type ExperimentCaps,
   type ExperimentMethodInput,
   runBenchmark,
 } from "@nicia-ai/lachesis-generator";
@@ -51,10 +54,12 @@ import {
   openCampaignLedger,
 } from "../src/ledger.js";
 import {
+  deriveTransportProbeCaps,
   M1B_PROMPT_CANDIDATE,
   type MaterializedPhase,
   materializeM1bPhase,
   matrixCounts,
+  validateTransportProbeCaps,
 } from "../src/manifests.js";
 import {
   createCampaignManifest,
@@ -75,6 +80,15 @@ const RUNTIME_VERSIONS = Object.freeze({
   zod: "4.4.3",
   aiSdk: "7.0.28",
 });
+const IMMUTABLE_PARTIAL_PROBE = Object.freeze({
+  gitCommit: "bd72ae69f2f3efaeab97bd2890bbe9a4c450de8e",
+  campaignDigest:
+    "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+  experimentDigest:
+    "9b3abca99a1f90926631d8216827eba47348045e0cb343b77a0e37f51781e431",
+  phaseManifestDigest:
+    "37feb76ee3959218d715695d47c7ee5a4de8b9d5d2de7542dc285c9aca6f59e5",
+});
 
 afterEach(async () => {
   await Promise.all(
@@ -93,6 +107,11 @@ async function temporaryDirectory(): Promise<string> {
 function unwrap<T, E>(result: Result<T, E>): T {
   if (!result.ok) throw new Error(JSON.stringify(result.error));
   return result.value;
+}
+
+function diagnosticMessage<T>(result: Result<T, Diagnostic>): string {
+  if (result.ok) throw new Error("Expected a diagnostic result.");
+  return result.error.message;
 }
 
 function withoutPhaseDigest(
@@ -121,7 +140,7 @@ function loaded(value: MaterializedPhase): LoadedPhase {
     campaign: value.campaign,
     phase: value.manifest,
     materialized: value,
-    resumeOnly: false,
+    executionPolicy: "live",
   };
 }
 
@@ -139,6 +158,7 @@ async function recreateExperiment(
       }>
     >;
     methods?: ReadonlyArray<ExperimentMethodInput>;
+    caps?: ExperimentCaps;
   }>,
 ): Promise<PhaseManifest["experiment"]> {
   const original = input.materialized.manifest.experiment;
@@ -185,7 +205,7 @@ async function recreateExperiment(
       transportSchemas,
       pricingSnapshot: original.pricingSnapshot,
       repetitions: original.repetitions,
-      caps: original.caps,
+      caps: input.caps ?? original.caps,
       versions: original.versions,
     }),
   );
@@ -207,6 +227,43 @@ async function phaseWithExperiment(
     ),
     runtimeVersions: value.manifest.runtimeVersions,
   });
+}
+
+async function immutablePartialProbe(): Promise<MaterializedPhase> {
+  const current = unwrap(
+    await materializeM1bPhase({
+      phase: "transport-probe",
+      gitCommit: IMMUTABLE_PARTIAL_PROBE.gitCommit,
+      runtimeVersions: { ...RUNTIME_VERSIONS, node: "24.18.0" },
+    }),
+  );
+  const historicalCaps: ExperimentCaps = {
+    maxCalls: 2,
+    maxInputTokens: 2_000_000,
+    maxOutputTokens: 500_000,
+    maxTotalTokens: 2_500_000,
+    maxOutputTokensPerCall: 8_192,
+    maxCostUsdMicros: 564_800,
+    providerCostCaps: [
+      { billingProvider: "openai", maxCostUsdMicros: 282_880 },
+      { billingProvider: "anthropic", maxCostUsdMicros: 281_920 },
+    ],
+  };
+  const experiment = await recreateExperiment({
+    materialized: current,
+    caps: historicalCaps,
+  });
+  const manifest = unwrap(await phaseWithExperiment(current, experiment));
+  expect(current.campaign.campaignDigest).toBe(
+    IMMUTABLE_PARTIAL_PROBE.campaignDigest,
+  );
+  expect(experiment.experimentDigest).toBe(
+    IMMUTABLE_PARTIAL_PROBE.experimentDigest,
+  );
+  expect(manifest.phaseManifestDigest).toBe(
+    IMMUTABLE_PARTIAL_PROBE.phaseManifestDigest,
+  );
+  return { campaign: current.campaign, manifest, cases: current.cases };
 }
 
 function fakeMethods(
@@ -291,6 +348,18 @@ describe("M1b phase protocol", () => {
       maximumModelCalls: 2,
     });
     expect(probe.manifest.experiment.caps.maxCostUsdMicros).toBe(564_800);
+    expect(probe.manifest.experiment.caps).toEqual({
+      maxCalls: 2,
+      maxInputTokens: 128_000,
+      maxOutputTokens: 16_384,
+      maxTotalTokens: 144_384,
+      maxOutputTokensPerCall: 8_192,
+      maxCostUsdMicros: 564_800,
+      providerCostCaps: [
+        { billingProvider: "anthropic", maxCostUsdMicros: 241_920 },
+        { billingProvider: "openai", maxCostUsdMicros: 322_880 },
+      ],
+    });
     expect(probe.campaign.campaignDigest).toBe(smoke.campaign.campaignDigest);
     expect(smoke.manifest.experiment.cases).toHaveLength(2);
     expect(matrixCounts(smoke.manifest)).toEqual({
@@ -318,6 +387,114 @@ describe("M1b phase protocol", () => {
     expect(smoke.manifest.storageNamespace).toBe(
       `m1b/smoke/experiments/${smoke.manifest.experimentDigest}`,
     );
+  });
+
+  it("derives probe caps from frozen pricing independent of method order", async () => {
+    const probe = await materialized("transport-probe");
+    const experiment = probe.manifest.experiment;
+    const direct = unwrap(
+      deriveTransportProbeCaps({
+        methods: experiment.methods,
+        pricingSnapshot: experiment.pricingSnapshot,
+        caseCount: experiment.cases.length,
+        repetitions: experiment.repetitions,
+      }),
+    );
+    const reversed = unwrap(
+      deriveTransportProbeCaps({
+        methods: experiment.methods.toReversed(),
+        pricingSnapshot: experiment.pricingSnapshot,
+        caseCount: experiment.cases.length,
+        repetitions: experiment.repetitions,
+      }),
+    );
+    expect(reversed).toEqual(direct);
+
+    const changedPricing = unwrap(
+      await createPricingSnapshot({
+        capturedAt: experiment.pricingSnapshot.capturedAt,
+        entries: experiment.pricingSnapshot.entries.map((entry) =>
+          entry.billingProvider === "openai"
+            ? {
+                ...entry,
+                cacheWriteInputUsdMicrosPerMillionTokens:
+                  entry.cacheWriteInputUsdMicrosPerMillionTokens + 1_000_000,
+              }
+            : entry,
+        ),
+      }),
+    );
+    const changed = unwrap(
+      deriveTransportProbeCaps({
+        methods: experiment.methods,
+        pricingSnapshot: changedPricing,
+        caseCount: experiment.cases.length,
+        repetitions: experiment.repetitions,
+      }),
+    );
+    expect(changed.providerCostCaps).toEqual([
+      { billingProvider: "anthropic", maxCostUsdMicros: 241_920 },
+      { billingProvider: "openai", maxCostUsdMicros: 386_880 },
+    ]);
+    expect(changed.maxCostUsdMicros).toBe(628_800);
+  });
+
+  it("rejects a materialized probe with any lowered derived provider cap", async () => {
+    const probe = await materialized("transport-probe");
+    const caps = probe.manifest.experiment.caps;
+    const lowered: ExperimentCaps = {
+      ...caps,
+      providerCostCaps: caps.providerCostCaps.map((cap) =>
+        cap.billingProvider === "openai"
+          ? { ...cap, maxCostUsdMicros: cap.maxCostUsdMicros - 1 }
+          : cap,
+      ),
+    };
+    expect(
+      validateTransportProbeCaps({
+        ...probe.manifest.experiment,
+        caps: lowered,
+      }).ok,
+    ).toBe(false);
+  });
+
+  it("fails closed on incomplete or unsafe probe cap inputs", async () => {
+    const probe = await materialized("transport-probe");
+    const experiment = probe.manifest.experiment;
+    expect(
+      deriveTransportProbeCaps({
+        methods: [],
+        pricingSnapshot: experiment.pricingSnapshot,
+        caseCount: experiment.cases.length,
+        repetitions: experiment.repetitions,
+      }).ok,
+    ).toBe(false);
+    const firstMethod = experiment.methods[0];
+    if (firstMethod === undefined) throw new Error("Missing probe method.");
+    expect(
+      deriveTransportProbeCaps({
+        methods: [{ ...firstMethod, pricingEntryId: "missing-pricing" }],
+        pricingSnapshot: experiment.pricingSnapshot,
+        caseCount: experiment.cases.length,
+        repetitions: experiment.repetitions,
+      }).ok,
+    ).toBe(false);
+    expect(
+      deriveTransportProbeCaps({
+        methods: [
+          {
+            ...firstMethod,
+            inference: {
+              ...firstMethod.inference,
+              maxInputTokens: Number.MAX_SAFE_INTEGER,
+            },
+          },
+        ],
+        pricingSnapshot: experiment.pricingSnapshot,
+        caseCount: 2,
+        repetitions: 1,
+      }).ok,
+    ).toBe(false);
   });
 
   it("gives each experiment a collision-resistant namespace in the shared campaign", async () => {
@@ -557,6 +734,91 @@ describe("preflight", () => {
     expect((await loadPhaseFiles({ campaignPath, phasePath })).ok).toBe(false);
   });
 
+  it("keeps the immutable partial probe report-only without touching its state", async () => {
+    const historical = await immutablePartialProbe();
+    const storageRoot = await temporaryDirectory();
+    const manifestDirectory = await temporaryDirectory();
+    const campaignPath = join(manifestDirectory, "campaign.json");
+    const phasePath = join(manifestDirectory, "transport-probe.json");
+    await writeFile(
+      campaignPath,
+      `${JSON.stringify(historical.campaign)}\n`,
+      "utf8",
+    );
+    await writeFile(
+      phasePath,
+      `${JSON.stringify(historical.manifest)}\n`,
+      "utf8",
+    );
+    const historicalLoaded = unwrap(
+      await loadPhaseFiles({ campaignPath, phasePath }),
+    );
+    expect(historicalLoaded.executionPolicy).toBe("report-only");
+
+    const base = join(storageRoot, historical.campaign.campaignDigest);
+    const ledgerPath = join(base, "ledger.ndjson");
+    const recordPath = join(
+      base,
+      historical.manifest.storageNamespace,
+      "records.json",
+    );
+    const ledger = unwrap(
+      await openCampaignLedger({
+        path: ledgerPath,
+        campaign: historical.campaign,
+      }),
+    );
+    const store = unwrap(await createJsonFileBenchmarkStore(recordPath));
+    const setupCalls = { value: 0 };
+    const partial = await runBenchmark({
+      experiment: historical.manifest.experiment,
+      cases: historical.cases,
+      methods: fakeMethods(historical, setupCalls),
+      resolveCatalog: unwrap(createM1aCatalogResolver()),
+      store,
+      budgetController: ledger.budgetController(historical.manifest),
+    });
+    expect(partial.ok).toBe(false);
+    expect(setupCalls.value).toBe(1);
+    const report = unwrap(
+      await generateStoredReport({ loaded: historicalLoaded, storageRoot }),
+    );
+    expect(report).toMatchObject({
+      experimentDigest: IMMUTABLE_PARTIAL_PROBE.experimentDigest,
+      records: 1,
+    });
+
+    const ledgerBefore = await readFile(ledgerPath, "utf8");
+    const recordsBefore = await readFile(recordPath, "utf8");
+    const blockedCalls = { value: 0 };
+    const acknowledgement: LiveAcknowledgement = {
+      experimentDigest: IMMUTABLE_PARTIAL_PROBE.experimentDigest,
+      phase: "transport-probe",
+      maximumCostUsdMicros: 10_000_000,
+    };
+    for (const environment of [
+      {},
+      {
+        OPENAI_API_KEY: "offline-dummy",
+        ANTHROPIC_API_KEY: "offline-dummy",
+      },
+    ]) {
+      const blocked = await executePhase({
+        loaded: historicalLoaded,
+        storageRoot,
+        cwd: process.cwd(),
+        environment,
+        acknowledgement,
+        methods: fakeMethods(historical, blockedCalls),
+      });
+      expect(blocked.ok).toBe(false);
+      expect(diagnosticMessage(blocked)).toContain("report-only");
+    }
+    expect(blockedCalls.value).toBe(0);
+    expect(await readFile(ledgerPath, "utf8")).toBe(ledgerBefore);
+    expect(await readFile(recordPath, "utf8")).toBe(recordsBefore);
+  });
+
   it("requires exact acknowledgement and reports credentials without exposing values", async () => {
     const smoke = await materialized("smoke");
     const path = await temporaryDirectory();
@@ -760,6 +1022,84 @@ describe("preflight", () => {
     );
     expect(second).toMatchObject({ generated: 0, resumed: 12, records: 12 });
     expect(calls.value).toBe(12);
+  });
+
+  it("accepts complete worst-case reservations for both probe methods", async () => {
+    const repository = await initializeGitRepository();
+    const probe = await materialized("transport-probe", repository.commit);
+    const calls = { value: 0 };
+    const reservations: Array<string> = [];
+    const result = unwrap(
+      await executePhase({
+        loaded: loaded(probe),
+        storageRoot: await temporaryDirectory(),
+        cwd: repository.path,
+        environment: {
+          OPENAI_API_KEY: "offline-dummy",
+          ANTHROPIC_API_KEY: "offline-dummy",
+        },
+        acknowledgement: {
+          experimentDigest: probe.manifest.experimentDigest,
+          phase: "transport-probe",
+          maximumCostUsdMicros: 10_000_000,
+        },
+        methods: fakeMethods(probe, calls),
+        onReservation: (_, provider) => {
+          reservations.push(provider);
+        },
+      }),
+    );
+    expect(result).toMatchObject({ generated: 2, resumed: 0, records: 2 });
+    expect(calls.value).toBe(2);
+    expect(reservations).toEqual(["anthropic", "openai"]);
+    expect(result.budget).toMatchObject({
+      consumedUsdMicros: 564_800,
+      unsettledReservationUsdMicros: 0,
+    });
+  });
+
+  it("rejects invalid probe caps before dispatch or ledger mutation", async () => {
+    const probe = await materialized("transport-probe");
+    const storageRoot = await temporaryDirectory();
+    const calls = { value: 0 };
+    const caps = probe.manifest.experiment.caps;
+    const invalidExperiment = {
+      ...probe.manifest.experiment,
+      caps: {
+        ...caps,
+        providerCostCaps: caps.providerCostCaps.map((cap) =>
+          cap.billingProvider === "openai"
+            ? { ...cap, maxCostUsdMicros: cap.maxCostUsdMicros - 1 }
+            : cap,
+        ),
+      },
+    };
+    const invalidPhase = { ...probe.manifest, experiment: invalidExperiment };
+    const result = await executePhase({
+      loaded: {
+        ...loaded(probe),
+        phase: invalidPhase,
+        materialized: {
+          ...probe,
+          manifest: invalidPhase,
+        },
+      },
+      storageRoot,
+      cwd: process.cwd(),
+      environment: {
+        OPENAI_API_KEY: "offline-dummy",
+        ANTHROPIC_API_KEY: "offline-dummy",
+      },
+      acknowledgement: {
+        experimentDigest: probe.manifest.experimentDigest,
+        phase: "transport-probe",
+        maximumCostUsdMicros: 10_000_000,
+      },
+      methods: fakeMethods(probe, calls),
+    });
+    expect(result.ok).toBe(false);
+    expect(calls.value).toBe(0);
+    expect(await readdir(storageRoot)).toEqual([]);
   });
 
   it("refuses execution before constructing live methods when acknowledgement is absent", async () => {
@@ -1110,7 +1450,7 @@ describe("resume and reporting", () => {
     const resumeOnlyCalls = { value: 0 };
     const resumeOnly = unwrap(
       await executePhase({
-        loaded: { ...loaded(smoke), resumeOnly: true },
+        loaded: { ...loaded(smoke), executionPolicy: "completed-records-only" },
         storageRoot,
         cwd: process.cwd(),
         acknowledgement: {
@@ -1141,7 +1481,10 @@ describe("resume and reporting", () => {
     expect(
       (
         await executePhase({
-          loaded: { ...loaded(smoke), resumeOnly: true },
+          loaded: {
+            ...loaded(smoke),
+            executionPolicy: "completed-records-only",
+          },
           storageRoot,
           cwd: process.cwd(),
           acknowledgement: {

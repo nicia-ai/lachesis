@@ -37,6 +37,20 @@ wrapper. Anthropic uses the AI SDK's `jsonTool` mode with the same schema. Its
 tools remain disabled. Every initial and repair prompt carries the same exact
 plan or unplannable JSON contract and the public task-input declarations.
 
+This transport choice was rechecked against the current
+[AI SDK structured-data guide](https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data),
+[AI SDK JSON Schema helper](https://ai-sdk.dev/docs/reference/ai-sdk-core/json-schema),
+[OpenAI Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs),
+and
+[Anthropic Structured Outputs guide](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
+OpenAI's response schema remains the appropriate output mechanism. Anthropic now
+also documents native `output_config.format`; pinned AI SDK 7 additionally
+supports explicit `jsonTool` transport, which remains frozen here because it
+uses the same provider-supported schema constraints and has succeeded in the
+authorized direct-provider probe. A future switch to native Anthropic output
+format is a transport-identity change and requires a new offline review and
+experiment.
+
 The causal result is the matched effect of `unconstrained-json`, `json-schema`,
 and `json-schema-with-repair` within each model. Terra and Sonnet use different
 reasoning treatments, so cross-provider numbers are descriptive, not a
@@ -125,6 +139,23 @@ node apps/benchmark/dist/cli.js execute \
 The probe requires a clean worktree at its bound commit. Run it only under a
 separate live authorization. A schema rejection is recorded once; do not edit or
 retry the immutable probe.
+
+Probe caps are never hand-authored. Materialization enumerates every
+case/method/repetition request and applies the same frozen-pricing
+`calculateMaximumCostUsdMicros` function used immediately before execution.
+Calls, input tokens, output tokens, total tokens, per-provider cost, and total
+cost are exact sums; provider caps are sorted by billing-provider identity and
+the total cost cap must equal their sum. For the M1b.4.1 two-call matrix this is
+322,880 micro-dollars for OpenAI plus 241,920 for Anthropic, totaling 564,800.
+Manifest loading rederives and compares all probe caps before credentials,
+ledger registration, reservation, or provider construction.
+
+The historical M1b.4 probe
+`9b3abca99a1f90926631d8216827eba47348045e0cb343b77a0e37f51781e431` is immutable
+and explicitly report-only. Its one completed Anthropic record, manifest,
+report, and ledger entries remain valid for offline inspection, but both
+`execute` and `resume` reject before credentials, locking, reservation, or
+dispatch. Its missing OpenAI record must never be dispatched.
 
 ## 3. Development transport smoke
 

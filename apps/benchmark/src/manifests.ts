@@ -5,10 +5,12 @@ import {
   type Result,
 } from "@nicia-ai/lachesis";
 import {
+  calculateMaximumCostUsdMicros,
   compileCaseStructuredOutputTransports,
   createExperimentManifest,
   createM1aCatalogResolver,
   type ExperimentCaps,
+  type ExperimentManifest,
   type ExperimentMethodInput,
   type ExperimentTransportSchemaBinding,
   freezePlanGenerationCase,
@@ -16,6 +18,7 @@ import {
   loadM1aCorpus,
   M1A_GENERATION_STRATEGIES,
   partitionM1aCorpus,
+  type PricingSnapshot,
 } from "@nicia-ai/lachesis-generator";
 import {
   createM1bPricingSnapshot,
@@ -55,22 +58,6 @@ const DEVELOPMENT_CAPS: ExperimentCaps = Object.freeze({
 const SMOKE_CAPS: ExperimentCaps = Object.freeze({
   ...DEVELOPMENT_CAPS,
   maxCalls: 20,
-});
-
-const TRANSPORT_PROBE_CAPS: ExperimentCaps = Object.freeze({
-  ...DEVELOPMENT_CAPS,
-  maxCalls: 2,
-  maxCostUsdMicros: 564_800,
-  providerCostCaps: Object.freeze([
-    Object.freeze({
-      billingProvider: "openai",
-      maxCostUsdMicros: 282_880,
-    }),
-    Object.freeze({
-      billingProvider: "anthropic",
-      maxCostUsdMicros: 281_920,
-    }),
-  ]),
 });
 
 export const M1B_PROMPT_CANDIDATE = Object.freeze({
@@ -217,6 +204,222 @@ function experimentMethods(
   });
 }
 
+type TransportProbeCapInput = Readonly<{
+  methods: ReadonlyArray<ExperimentMethodInput>;
+  pricingSnapshot: PricingSnapshot;
+  caseCount: number;
+  repetitions: number;
+}>;
+
+function capDiagnostic(message: string): Diagnostics {
+  return [diagnostic("INVALID_WIRE_SCHEMA", message)];
+}
+
+function checkedProduct(
+  left: number,
+  right: number,
+  label: string,
+): Result<number, Diagnostics> {
+  const value = left * right;
+  return Number.isSafeInteger(value) && value > 0
+    ? { ok: true, value }
+    : {
+        ok: false,
+        error: capDiagnostic(`Transport-probe ${label} is not a safe integer.`),
+      };
+}
+
+function checkedSum(
+  left: number,
+  right: number,
+  label: string,
+): Result<number, Diagnostics> {
+  const value = left + right;
+  return Number.isSafeInteger(value) && value > 0
+    ? { ok: true, value }
+    : {
+        ok: false,
+        error: capDiagnostic(`Transport-probe ${label} is not a safe integer.`),
+      };
+}
+
+/** Derives every exact transport-probe cap from its frozen request matrix. */
+export function deriveTransportProbeCaps(
+  input: TransportProbeCapInput,
+): Result<ExperimentCaps, Diagnostics> {
+  if (
+    input.methods.length === 0 ||
+    !Number.isSafeInteger(input.caseCount) ||
+    input.caseCount <= 0 ||
+    !Number.isSafeInteger(input.repetitions) ||
+    input.repetitions <= 0
+  )
+    return {
+      ok: false,
+      error: capDiagnostic(
+        "Transport-probe methods, cases, and repetitions must be positive.",
+      ),
+    };
+  const requestsPerMethod = checkedProduct(
+    input.caseCount,
+    input.repetitions,
+    "requests per method",
+  );
+  if (!requestsPerMethod.ok) return requestsPerMethod;
+  const maxCalls = checkedProduct(
+    input.methods.length,
+    requestsPerMethod.value,
+    "call cap",
+  );
+  if (!maxCalls.ok) return maxCalls;
+
+  let maxInputTokens = 0;
+  let maxOutputTokens = 0;
+  let maxOutputTokensPerCall = 0;
+  const costsByProvider = new Map<string, number>();
+  for (const method of input.methods) {
+    const pricing = input.pricingSnapshot.entries.find(
+      (entry) => entry.id === method.pricingEntryId,
+    );
+    if (pricing === undefined)
+      return {
+        ok: false,
+        error: capDiagnostic(
+          `Transport-probe method ${method.id} has no frozen pricing entry.`,
+        ),
+      };
+    const methodInput = checkedProduct(
+      method.inference.maxInputTokens,
+      requestsPerMethod.value,
+      `${method.id} input-token cap`,
+    );
+    if (!methodInput.ok) return methodInput;
+    const nextInput = checkedSum(
+      maxInputTokens,
+      methodInput.value,
+      "input-token cap",
+    );
+    if (!nextInput.ok) return nextInput;
+    maxInputTokens = nextInput.value;
+
+    const methodOutput = checkedProduct(
+      method.inference.maxOutputTokens,
+      requestsPerMethod.value,
+      `${method.id} output-token cap`,
+    );
+    if (!methodOutput.ok) return methodOutput;
+    const nextOutput = checkedSum(
+      maxOutputTokens,
+      methodOutput.value,
+      "output-token cap",
+    );
+    if (!nextOutput.ok) return nextOutput;
+    maxOutputTokens = nextOutput.value;
+    maxOutputTokensPerCall = Math.max(
+      maxOutputTokensPerCall,
+      method.inference.maxOutputTokens,
+    );
+
+    const requestCost = calculateMaximumCostUsdMicros(
+      pricing,
+      method.inference.maxInputTokens,
+      method.inference.maxOutputTokens,
+    );
+    if (!requestCost.ok) return { ok: false, error: [requestCost.error] };
+    const methodCost = checkedProduct(
+      requestCost.value,
+      requestsPerMethod.value,
+      `${method.id} cost cap`,
+    );
+    if (!methodCost.ok) return methodCost;
+    const providerCost = checkedSum(
+      costsByProvider.get(pricing.billingProvider) ?? 0,
+      methodCost.value,
+      `${pricing.billingProvider} cost cap`,
+    );
+    if (!providerCost.ok) return providerCost;
+    costsByProvider.set(pricing.billingProvider, providerCost.value);
+  }
+
+  const maxTotalTokens = checkedSum(
+    maxInputTokens,
+    maxOutputTokens,
+    "total-token cap",
+  );
+  if (!maxTotalTokens.ok) return maxTotalTokens;
+  const providerCostCaps = Object.freeze(
+    [...costsByProvider.entries()]
+      .toSorted(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([billingProvider, maxCostUsdMicros]) =>
+        Object.freeze({ billingProvider, maxCostUsdMicros }),
+      ),
+  );
+  let maxCostUsdMicros = 0;
+  for (const cap of providerCostCaps) {
+    const nextCost = checkedSum(
+      maxCostUsdMicros,
+      cap.maxCostUsdMicros,
+      "total cost cap",
+    );
+    if (!nextCost.ok) return nextCost;
+    maxCostUsdMicros = nextCost.value;
+  }
+  return {
+    ok: true,
+    value: Object.freeze({
+      maxCalls: maxCalls.value,
+      maxInputTokens,
+      maxOutputTokens,
+      maxTotalTokens: maxTotalTokens.value,
+      maxOutputTokensPerCall,
+      maxCostUsdMicros,
+      providerCostCaps,
+    }),
+  };
+}
+
+function capsEqual(left: ExperimentCaps, right: ExperimentCaps): boolean {
+  return (
+    left.maxCalls === right.maxCalls &&
+    left.maxInputTokens === right.maxInputTokens &&
+    left.maxOutputTokens === right.maxOutputTokens &&
+    left.maxTotalTokens === right.maxTotalTokens &&
+    left.maxOutputTokensPerCall === right.maxOutputTokensPerCall &&
+    left.maxCostUsdMicros === right.maxCostUsdMicros &&
+    left.providerCostCaps.length === right.providerCostCaps.length &&
+    left.providerCostCaps.every(
+      (cap, index) =>
+        cap.billingProvider ===
+          right.providerCostCaps[index]?.billingProvider &&
+        cap.maxCostUsdMicros === right.providerCostCaps[index].maxCostUsdMicros,
+    )
+  );
+}
+
+/** Rejects a probe whose manifest cannot reserve every preregistered request. */
+export function validateTransportProbeCaps(
+  experiment: Pick<
+    ExperimentManifest,
+    "methods" | "pricingSnapshot" | "cases" | "repetitions" | "caps"
+  >,
+): Result<undefined, Diagnostics> {
+  const derived = deriveTransportProbeCaps({
+    methods: experiment.methods,
+    pricingSnapshot: experiment.pricingSnapshot,
+    caseCount: experiment.cases.length,
+    repetitions: experiment.repetitions,
+  });
+  if (!derived.ok) return derived;
+  if (!capsEqual(experiment.caps, derived.value))
+    return {
+      ok: false,
+      error: capDiagnostic(
+        "Transport-probe caps do not exactly cover every preregistered worst-case request.",
+      ),
+    };
+  return { ok: true, value: undefined };
+}
+
 async function transportSchemaBindings(
   cases: ReadonlyArray<FrozenPlanGenerationCase>,
   methods: ReadonlyArray<ExperimentMethodInput>,
@@ -304,6 +507,21 @@ export async function materializeM1bPhase(
   const pricing = await createM1bPricingSnapshot();
   if (!pricing.ok) return pricing;
   const methods = experimentMethods(input.phase);
+  const repetitions = input.phase === "heldout" ? 2 : 1;
+  const caps: Result<ExperimentCaps, Diagnostics> =
+    input.phase === "heldout"
+      ? { ok: true, value: M1B_PILOT_CAPS }
+      : input.phase === "transport-probe"
+        ? deriveTransportProbeCaps({
+            methods,
+            pricingSnapshot: pricing.value,
+            caseCount: cases.value.length,
+            repetitions,
+          })
+        : input.phase === "smoke"
+          ? { ok: true, value: SMOKE_CAPS }
+          : { ok: true, value: DEVELOPMENT_CAPS };
+  if (!caps.ok) return caps;
   const transportSchemas = await transportSchemaBindings(cases.value, methods);
   if (!transportSchemas.ok) return transportSchemas;
   const corpusDigest = await digestValue(
@@ -332,15 +550,8 @@ export async function materializeM1bPhase(
     methods,
     transportSchemas: transportSchemas.value,
     pricingSnapshot: pricing.value,
-    repetitions: input.phase === "heldout" ? 2 : 1,
-    caps:
-      input.phase === "heldout"
-        ? M1B_PILOT_CAPS
-        : input.phase === "transport-probe"
-          ? TRANSPORT_PROBE_CAPS
-          : input.phase === "smoke"
-            ? SMOKE_CAPS
-            : DEVELOPMENT_CAPS,
+    repetitions,
+    caps: caps.value,
     versions: {
       gitCommit: input.gitCommit,
       workspaceVersion: "0.1.0",
@@ -349,6 +560,10 @@ export async function materializeM1bPhase(
     },
   });
   if (!experiment.ok) return experiment;
+  if (input.phase === "transport-probe") {
+    const validatedCaps = validateTransportProbeCaps(experiment.value);
+    if (!validatedCaps.ok) return validatedCaps;
+  }
   const manifest = await createPhaseManifest({
     campaign: campaign.value,
     phase: input.phase,

@@ -33,6 +33,7 @@ import {
   type MaterializedPhase,
   materializeM1bPhase,
   matrixCounts,
+  validateTransportProbeCaps,
 } from "./manifests.js";
 import {
   type CampaignManifest,
@@ -82,6 +83,7 @@ export type PreflightReport = Readonly<{
     commitMatches: boolean;
     credentialsPresent: boolean;
     acknowledgementMatches: boolean;
+    executionPolicyAllowsExecution: boolean;
   }>;
   missingCredentialNames: ReadonlyArray<string>;
   liveExecutionPermitted: boolean;
@@ -91,10 +93,10 @@ export type LoadedPhase = Readonly<{
   campaign: CampaignManifest;
   phase: PhaseManifest;
   materialized: MaterializedPhase;
-  resumeOnly: boolean;
+  executionPolicy: "live" | "completed-records-only" | "report-only";
 }>;
 
-const IMMUTABLE_SMOKE_IDENTITIES = Object.freeze([
+const IMMUTABLE_EXPERIMENT_IDENTITIES = Object.freeze([
   Object.freeze({
     campaignDigest:
       "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
@@ -102,6 +104,8 @@ const IMMUTABLE_SMOKE_IDENTITIES = Object.freeze([
       "723b08db9b8a627e423bdf785eaa8b4d4c349171c0aaaa5072eb549db4224a98",
     phaseManifestDigest:
       "b64ec5405841923bc683fcba0da861509ec8bcea5ab5d4359216d4650e5fb198",
+    phase: "smoke" as const,
+    executionPolicy: "completed-records-only" as const,
   }),
   Object.freeze({
     campaignDigest:
@@ -110,8 +114,33 @@ const IMMUTABLE_SMOKE_IDENTITIES = Object.freeze([
       "2fe30988638aba282955cbeb94c19c41f41ab224a0c5794ffe9c37343a27ce6d",
     phaseManifestDigest:
       "7dc8660c02cbda0c58b0339f2c660456af4e3057f6d29b3f81600a63bd5b7352",
+    phase: "smoke" as const,
+    executionPolicy: "completed-records-only" as const,
+  }),
+  Object.freeze({
+    campaignDigest:
+      "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+    experimentDigest:
+      "9b3abca99a1f90926631d8216827eba47348045e0cb343b77a0e37f51781e431",
+    phaseManifestDigest:
+      "37feb76ee3959218d715695d47c7ee5a4de8b9d5d2de7542dc285c9aca6f59e5",
+    phase: "transport-probe" as const,
+    executionPolicy: "report-only" as const,
   }),
 ]);
+
+function immutableExecutionPolicy(
+  campaign: CampaignManifest,
+  phase: PhaseManifest,
+): LoadedPhase["executionPolicy"] | undefined {
+  return IMMUTABLE_EXPERIMENT_IDENTITIES.find(
+    (identity) =>
+      campaign.campaignDigest === identity.campaignDigest &&
+      phase.experimentDigest === identity.experimentDigest &&
+      phase.phaseManifestDigest === identity.phaseManifestDigest &&
+      phase.phase === identity.phase,
+  )?.executionPolicy;
+}
 
 async function readJson(path: string): Promise<Result<unknown, Diagnostic>> {
   try {
@@ -157,6 +186,14 @@ export async function loadPhaseFiles(
   if (!campaign.ok) return campaign;
   const phase = await verifyPhaseManifest(parsedPhase.data, campaign.value);
   if (!phase.ok) return phase;
+  const immutablePolicy = immutableExecutionPolicy(campaign.value, phase.value);
+  if (
+    phase.value.phase === "transport-probe" &&
+    immutablePolicy !== "report-only"
+  ) {
+    const caps = validateTransportProbeCaps(phase.value.experiment);
+    if (!caps.ok) return caps;
+  }
   const materialized = await materializeM1bPhase({
     phase: phase.value.phase,
     gitCommit: phase.value.experiment.versions.gitCommit,
@@ -167,13 +204,7 @@ export async function loadPhaseFiles(
     materialized.value.manifest.phaseManifestDigest !==
     phase.value.phaseManifestDigest
   ) {
-    const immutableSmoke = IMMUTABLE_SMOKE_IDENTITIES.some(
-      (identity) =>
-        campaign.value.campaignDigest === identity.campaignDigest &&
-        phase.value.experimentDigest === identity.experimentDigest &&
-        phase.value.phaseManifestDigest === identity.phaseManifestDigest,
-    );
-    if (immutableSmoke && phase.value.phase === "smoke") {
+    if (immutablePolicy !== undefined) {
       const caseDigests = new Map(
         phase.value.experiment.cases.map((item) => [item.id, item.caseDigest]),
       );
@@ -192,7 +223,7 @@ export async function loadPhaseFiles(
               manifest: phase.value,
               cases,
             },
-            resumeOnly: true,
+            executionPolicy: immutablePolicy,
           },
         };
       }
@@ -213,7 +244,7 @@ export async function loadPhaseFiles(
       campaign: campaign.value,
       phase: phase.value,
       materialized: materialized.value,
-      resumeOnly: false,
+      executionPolicy: "live",
     },
   };
 }
@@ -365,6 +396,8 @@ export async function preflightPhase(
     commitMatches,
     credentialsPresent: credentials.present,
     acknowledgementMatches,
+    executionPolicyAllowsExecution:
+      input.loaded.executionPolicy !== "report-only",
   };
   const splitCounts = new Map<string, number>();
   for (const item of input.loaded.phase.experiment.cases) {
@@ -461,6 +494,27 @@ export async function executePhase(
     Diagnostic
   >
 > {
+  if (input.loaded.executionPolicy === "report-only")
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "This immutable historical experiment is report-only and can never execute or resume.",
+      ),
+    };
+  if (input.loaded.phase.phase === "transport-probe") {
+    const caps = validateTransportProbeCaps(input.loaded.phase.experiment);
+    if (!caps.ok)
+      return {
+        ok: false,
+        error:
+          caps.error[0] ??
+          diagnostic(
+            "INVALID_WIRE_SCHEMA",
+            "Transport-probe cap validation failed.",
+          ),
+      };
+  }
   const ledgerPath = join(
     input.storageRoot,
     input.loaded.campaign.campaignDigest,
@@ -501,7 +555,7 @@ export async function executePhase(
     );
     const store = await createJsonFileBenchmarkStore(recordPath);
     if (!store.ok) return store;
-    if (input.loaded.resumeOnly) {
+    if (input.loaded.executionPolicy === "completed-records-only") {
       const stored = await loadRecords(
         recordPath,
         input.loaded.phase.experimentDigest,
@@ -512,7 +566,7 @@ export async function executePhase(
           ok: false,
           error: diagnostic(
             "INVALID_WIRE_SCHEMA",
-            "The immutable original smoke can only be resumed when every preregistered record is already complete.",
+            "An immutable completed-records-only experiment can resume only when every preregistered record is already complete.",
           ),
         };
       }
