@@ -1,0 +1,23 @@
+[
+  {
+    "invocationId": "extracted:0",
+    "value": { "id": "c1", "text": "Typed plans expose control flow." },
+    "replayResultId": "recording/extract/0",
+    "usage": { "tokens": 80, "wallClockMs": 100 }
+  },
+  {
+    "invocationId": "extracted:1",
+    "value": { "id": "c2", "text": "Recorded effects enable exact replay." },
+    "replayResultId": "recording/extract/1",
+    "usage": { "tokens": 90, "wallClockMs": 110 }
+  },
+  {
+    "invocationId": "synthesis:0",
+    "value": {
+      "text": "Typed plans expose control flow, while recorded effects enable exact replay.",
+      "claimIds": ["c1", "c2"]
+    },
+    "replayResultId": "recording/synthesis/0",
+    "usage": { "tokens": 120, "wallClockMs": 200 }
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "lachesis-worker-smoke",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-06-01",
+}

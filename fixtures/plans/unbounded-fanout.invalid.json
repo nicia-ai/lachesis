@@ -1,0 +1,34 @@
+{
+  "formatVersion": "1",
+  "catalog": { "id": "example/catalog", "version": "1" },
+  "root": "mapped",
+  "nodes": [
+    {
+      "id": "fragments",
+      "op": "input",
+      "inputKey": "fragments",
+      "schema": { "id": "example/fragments", "version": "1" }
+    },
+    {
+      "id": "mapped",
+      "op": "map",
+      "source": "fragments",
+      "operation": {
+        "kind": "effect",
+        "id": "example/extract-claim",
+        "version": "1"
+      },
+      "outputCollectionSchema": { "id": "example/claims", "version": "1" },
+      "parallelism": 2
+    }
+  ],
+  "budget": {
+    "maxEffectCalls": 10,
+    "maxCollectionItems": 10,
+    "maxRecursionDepth": 0,
+    "maxTokens": 2000,
+    "maxWallClockMs": 10000,
+    "maxParallelism": 2
+  },
+  "allowedCapabilities": ["llm.invoke:extractor"]
+}

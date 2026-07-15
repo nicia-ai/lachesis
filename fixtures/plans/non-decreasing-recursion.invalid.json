@@ -1,0 +1,30 @@
+{
+  "formatVersion": "1",
+  "catalog": { "id": "example/catalog", "version": "1" },
+  "root": "loop",
+  "nodes": [
+    {
+      "id": "seed",
+      "op": "constant",
+      "schema": { "id": "example/countdown", "version": "1" },
+      "value": { "remaining": 2 }
+    },
+    {
+      "id": "loop",
+      "op": "boundedFix",
+      "seed": "seed",
+      "step": { "id": "example/stuck-countdown-step", "version": "1" },
+      "measure": { "id": "example/countdown-measure", "version": "1" },
+      "maxIterations": 3
+    }
+  ],
+  "budget": {
+    "maxEffectCalls": 0,
+    "maxCollectionItems": 1,
+    "maxRecursionDepth": 3,
+    "maxTokens": 0,
+    "maxWallClockMs": 0,
+    "maxParallelism": 1
+  },
+  "allowedCapabilities": []
+}

@@ -1,0 +1,48 @@
+{
+  "formatVersion": "1",
+  "catalog": { "id": "example/catalog", "version": "1" },
+  "root": "synthesis",
+  "nodes": [
+    {
+      "id": "fragments",
+      "op": "input",
+      "inputKey": "fragments",
+      "schema": { "id": "example/fragments", "version": "1" },
+      "maxItems": 3
+    },
+    {
+      "id": "extracted",
+      "op": "map",
+      "source": "fragments",
+      "operation": {
+        "kind": "effect",
+        "id": "example/extract-claim",
+        "version": "1"
+      },
+      "outputCollectionSchema": { "id": "example/claims", "version": "1" },
+      "parallelism": 2
+    },
+    {
+      "id": "claims",
+      "op": "fold",
+      "source": "extracted",
+      "reducer": { "id": "example/claim-union", "version": "1" }
+    },
+    {
+      "id": "synthesis",
+      "op": "effect",
+      "source": "claims",
+      "effect": { "id": "example/synthesize", "version": "1" }
+    }
+  ],
+  "budget": {
+    "maxEffectCalls": 4,
+    "maxCollectionItems": 3,
+    "maxRecursionDepth": 0,
+    "maxTokens": 1100,
+    "maxWallClockMs": 5000,
+    "maxParallelism": 2
+  },
+  "allowedCapabilities": ["llm.invoke:extractor", "llm.invoke:synthesizer"],
+  "metadata": { "name": "document-claim-replay", "revision": "1" }
+}

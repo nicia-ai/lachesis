@@ -1,0 +1,38 @@
+{
+  "name": "@nicia-ai/lachesis",
+  "version": "0.1.0",
+  "description": "Typed measured-plan kernel for reliable agent programs",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Nicia AI",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicia-ai/lachesis.git",
+    "directory": "packages/kernel"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  }
+}

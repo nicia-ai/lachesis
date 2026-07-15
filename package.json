@@ -1,0 +1,40 @@
+{
+  "name": "@nicia-ai/lachesis-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "pretest": "pnpm build",
+    "build": "pnpm --recursive --if-present build",
+    "typecheck": "pnpm --recursive --if-present typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "smoke": "pnpm --filter @nicia-ai/lachesis-node-smoke test && pnpm --filter @nicia-ai/lachesis-worker-smoke test"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.10",
+    "@vitest/eslint-plugin": "1.6.23",
+    "eslint": "10.7.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-functional": "10.0.0",
+    "eslint-plugin-simple-import-sort": "13.0.0",
+    "eslint-plugin-unicorn": "71.1.0",
+    "fast-check": "4.8.0",
+    "prettier": "3.9.5",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.64.0",
+    "vitest": "4.1.10",
+    "wrangler": "4.110.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@nicia-ai/lachesis-node-smoke",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node smoke.mjs",
+    "test": "node smoke.mjs"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:*",
+    "zod": "4.4.3"
+  }
+}

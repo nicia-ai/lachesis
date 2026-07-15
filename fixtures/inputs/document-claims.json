@@ -1,0 +1,6 @@
+{
+  "fragments": [
+    { "id": "f1", "text": "Typed plans expose control flow." },
+    { "id": "f2", "text": "Recorded effects enable exact replay." }
+  ]
+}

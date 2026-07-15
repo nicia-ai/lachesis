@@ -1,0 +1,15 @@
+{
+  "name": "@nicia-ai/lachesis-worker-smoke",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "wrangler deploy --dry-run --outdir dist"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:*",
+    "zod": "4.4.3"
+  }
+}

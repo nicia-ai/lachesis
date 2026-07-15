@@ -1,0 +1,41 @@
+{
+  "formatVersion": "1",
+  "catalog": { "id": "example/catalog", "version": "1" },
+  "root": "choice",
+  "nodes": [
+    {
+      "id": "condition",
+      "op": "constant",
+      "schema": { "id": "core/boolean", "version": "1" },
+      "value": true
+    },
+    {
+      "id": "claims",
+      "op": "constant",
+      "schema": { "id": "example/claims", "version": "1" },
+      "value": []
+    },
+    {
+      "id": "summary",
+      "op": "constant",
+      "schema": { "id": "example/summary", "version": "1" },
+      "value": { "text": "", "claimIds": [] }
+    },
+    {
+      "id": "choice",
+      "op": "select",
+      "condition": "condition",
+      "whenTrue": "claims",
+      "whenFalse": "summary"
+    }
+  ],
+  "budget": {
+    "maxEffectCalls": 0,
+    "maxCollectionItems": 0,
+    "maxRecursionDepth": 0,
+    "maxTokens": 0,
+    "maxWallClockMs": 0,
+    "maxParallelism": 1
+  },
+  "allowedCapabilities": []
+}

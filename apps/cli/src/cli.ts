@@ -1,0 +1,283 @@
+#!/usr/bin/env node
+
+import { readFile } from "node:fs/promises";
+
+import {
+  analyzePlan,
+  canonicalizePlan,
+  checkPlan,
+  createReplayEffectHandler,
+  type Diagnostic,
+  executePlan,
+  hashPlan,
+  normalizePlan,
+  parseJson,
+  parsePlanJson,
+  type PlanAnalysis,
+  type ReplayEntry,
+  type Result,
+  type WirePlan,
+} from "@nicia-ai/lachesis";
+import { z } from "zod";
+
+import { createExampleCatalog } from "./example-catalog.js";
+
+type Compiled = Readonly<{
+  plan: WirePlan;
+  checked: Parameters<typeof analyzePlan>[0];
+  analysis: PlanAnalysis;
+}>;
+
+const replayEntrySchema = z.strictObject({
+  invocationId: z.string(),
+  value: z.json(),
+  replayResultId: z.string(),
+  usage: z.strictObject({
+    tokens: z.number().int().nonnegative(),
+    wallClockMs: z.number().int().nonnegative(),
+  }),
+});
+
+function jsonOutput(value: unknown): void {
+  process.stdout.write(`${JSON.stringify(value, undefined, 2)}\n`);
+}
+
+function diagnosticsOutput(
+  diagnostics: ReadonlyArray<Diagnostic>,
+  asJson: boolean,
+): void {
+  if (asJson) jsonOutput({ valid: false, diagnostics });
+  else
+    for (const item of diagnostics)
+      process.stderr.write(`${item.code}: ${item.message}\n`);
+}
+
+async function readText(
+  path: string,
+): Promise<Result<string, ReadonlyArray<Diagnostic>>> {
+  try {
+    return { ok: true, value: await readFile(path, "utf8") };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Unknown filesystem error";
+    return {
+      ok: false,
+      error: [
+        {
+          code: "MALFORMED_JSON",
+          message: `Could not read ${path}: ${message}`,
+          location: {},
+          details: [],
+        },
+      ],
+    };
+  }
+}
+
+async function compile(
+  path: string,
+): Promise<Result<Compiled, ReadonlyArray<Diagnostic>>> {
+  const text = await readText(path);
+  if (!text.ok) return text;
+  const parsed = parsePlanJson(text.value);
+  if (!parsed.ok) return parsed;
+  const normalized = normalizePlan(parsed.value);
+  if (!normalized.ok) return normalized;
+  const checked = checkPlan(normalized.value, createExampleCatalog());
+  if (!checked.ok) return checked;
+  const analysis = analyzePlan(checked.value);
+  return analysis.ok
+    ? {
+        ok: true,
+        value: {
+          plan: parsed.value,
+          checked: checked.value,
+          analysis: analysis.value,
+        },
+      }
+    : analysis;
+}
+
+function analysisJson(analysis: PlanAnalysis): unknown {
+  return {
+    inferredSchemas: [...analysis.inferredSchemas].map(([nodeId, schema]) => ({
+      nodeId,
+      schema,
+    })),
+    topologicalStages: analysis.topologicalStages,
+    effectsUsed: [...analysis.effectsUsed].toSorted(),
+    capabilitiesRequired: [...analysis.capabilitiesRequired].toSorted(),
+    cacheableNodes: [...analysis.cacheableNodes].toSorted(),
+    replayableNodes: [...analysis.replayableNodes].toSorted(),
+    maximumEffectCalls: analysis.maximumEffectCalls,
+    maximumRecursionDepth: analysis.maximumRecursionDepth,
+    maximumCollectionFanOut: analysis.maximumCollectionFanOut,
+    maximumDeclaredTokens: analysis.maximumDeclaredTokens,
+    maximumDeclaredWallClockMs: analysis.maximumDeclaredWallClockMs,
+    maximumParallelism: analysis.maximumParallelism,
+    everyRelevantBoundProven: analysis.everyRelevantBoundProven,
+  };
+}
+
+function usage(): void {
+  process.stderr.write(
+    "Usage: lachesis <validate|analyze|canonicalize|run> <plan.json> [--inputs inputs.json --replay effects.json] [--json]\n",
+  );
+}
+
+function flagValue(
+  args: ReadonlyArray<string>,
+  flag: string,
+): string | undefined {
+  const index = args.indexOf(flag);
+  return index === -1 ? undefined : args[index + 1];
+}
+
+async function loadInputs(
+  path: string,
+): Promise<Result<ReadonlyMap<string, unknown>, ReadonlyArray<Diagnostic>>> {
+  const text = await readText(path);
+  if (!text.ok) return text;
+  const json = parseJson(text.value);
+  if (!json.ok) return { ok: false, error: [json.error] };
+  const parsed = z.record(z.string(), z.json()).safeParse(json.value);
+  return parsed.success
+    ? { ok: true, value: new Map(Object.entries(parsed.data)) }
+    : {
+        ok: false,
+        error: [
+          {
+            code: "INVALID_WIRE_SCHEMA",
+            message: "Inputs must be a JSON object.",
+            location: {},
+            details: [],
+          },
+        ],
+      };
+}
+
+async function loadReplay(
+  path: string,
+): Promise<Result<ReadonlyArray<ReplayEntry>, ReadonlyArray<Diagnostic>>> {
+  const text = await readText(path);
+  if (!text.ok) return text;
+  const json = parseJson(text.value);
+  if (!json.ok) return { ok: false, error: [json.error] };
+  const parsed = z.array(replayEntrySchema).safeParse(json.value);
+  return parsed.success
+    ? { ok: true, value: parsed.data }
+    : {
+        ok: false,
+        error: [
+          {
+            code: "INVALID_WIRE_SCHEMA",
+            message: "Replay file has an invalid shape.",
+            location: {},
+            details: [],
+          },
+        ],
+      };
+}
+
+async function main(args: ReadonlyArray<string>): Promise<number> {
+  const [command, planPath] = args;
+  const asJson = args.includes("--json");
+  if (
+    command === undefined ||
+    planPath === undefined ||
+    !["validate", "analyze", "canonicalize", "run"].includes(command)
+  ) {
+    usage();
+    return 2;
+  }
+  const compiled = await compile(planPath);
+  if (!compiled.ok) {
+    diagnosticsOutput(compiled.error, asJson);
+    return 1;
+  }
+  if (command === "validate") {
+    if (asJson)
+      jsonOutput({
+        valid: true,
+        rootSchema: compiled.value.checked.root.outputSchema.id,
+      });
+    else
+      process.stdout.write(
+        `Valid plan; root schema ${compiled.value.checked.root.outputSchema.id}.\n`,
+      );
+    return 0;
+  }
+  if (command === "analyze") {
+    jsonOutput(analysisJson(compiled.value.analysis));
+    return 0;
+  }
+  if (command === "canonicalize") {
+    const canonical = canonicalizePlan(compiled.value.plan);
+    const hash = await hashPlan(compiled.value.plan);
+    if (!canonical.ok) {
+      diagnosticsOutput([canonical.error], asJson);
+      return 1;
+    }
+    if (!hash.ok) {
+      diagnosticsOutput([hash.error], asJson);
+      return 1;
+    }
+    if (asJson) jsonOutput({ canonical: canonical.value, hash: hash.value });
+    else process.stdout.write(`${canonical.value}\n${hash.value}\n`);
+    return 0;
+  }
+  const inputsPath = flagValue(args, "--inputs");
+  const replayPath = flagValue(args, "--replay");
+  if (inputsPath === undefined || replayPath === undefined) {
+    usage();
+    return 2;
+  }
+  const inputs = await loadInputs(inputsPath);
+  const replay = await loadReplay(replayPath);
+  if (!inputs.ok) {
+    diagnosticsOutput(inputs.error, asJson);
+    return 1;
+  }
+  if (!replay.ok) {
+    diagnosticsOutput(replay.error, asJson);
+    return 1;
+  }
+  let tick = 0;
+  const executed = await executePlan(
+    compiled.value.checked,
+    compiled.value.analysis,
+    createExampleCatalog(),
+    {
+      inputs: inputs.value,
+      effectHandler: createReplayEffectHandler(replay.value),
+      clock: {
+        now: () => new Date(Date.UTC(2026, 0, 1, 0, 0, tick++)).toISOString(),
+      },
+      runIdProvider: { next: () => "example-replay-run" },
+    },
+  );
+  if (!executed.ok) {
+    diagnosticsOutput(executed.error.diagnostics, asJson);
+    return 1;
+  }
+  jsonOutput({
+    output: executed.value.output,
+    outputDigest: executed.value.outputDigest,
+    trace: executed.value.trace,
+  });
+  return 0;
+}
+
+main(process.argv.slice(2)).then(
+  (exitCode) => {
+    process.exitCode = exitCode;
+  },
+  (error: unknown) => {
+    const message =
+      error instanceof Error
+        ? (error.stack ?? error.message)
+        : "Unexpected internal failure";
+    process.stderr.write(`${message}\n`);
+    process.exitCode = 2;
+  },
+);
