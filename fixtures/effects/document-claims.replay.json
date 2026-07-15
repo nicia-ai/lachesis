@@ -1,18 +1,42 @@
 [
   {
-    "invocationId": "extracted:0",
+    "requestHash": "f786d20cc6d0a4ec8ece76f297382c069cd28357edfed0257d9b7117f3e952ee",
+    "planHash": "812d030ba794b15d91129470a306f1af77b617573eb3e8a8f08518f1e28c2df4",
+    "catalogFingerprint": "eb3742091d958df637505779fd7f899509bea33c357c2803dfc8bbc1ceeb3a6b",
+    "operation": { "id": "example/extract-claim", "version": "1" },
+    "nodeId": "extracted",
+    "invocationIndex": 0,
+    "effectName": "model.extract",
+    "inputDigest": "fde05ae8ca6e9dc94dc910dca8d37ec387d4329a6a7ca2f578ad1d01c74b2012",
+    "outputDigest": "c921791315a7e96d8d30c44dbcd5ee330d7fedb9706206be2d2f5ee803df70e7",
     "value": { "id": "c1", "text": "Typed plans expose control flow." },
     "replayResultId": "recording/extract/0",
     "usage": { "tokens": 80, "wallClockMs": 100 }
   },
   {
-    "invocationId": "extracted:1",
+    "requestHash": "7f28e39549df5598ffbf19fbe5e8574b39cd113918b984cf58b89b157b91b4c8",
+    "planHash": "812d030ba794b15d91129470a306f1af77b617573eb3e8a8f08518f1e28c2df4",
+    "catalogFingerprint": "eb3742091d958df637505779fd7f899509bea33c357c2803dfc8bbc1ceeb3a6b",
+    "operation": { "id": "example/extract-claim", "version": "1" },
+    "nodeId": "extracted",
+    "invocationIndex": 1,
+    "effectName": "model.extract",
+    "inputDigest": "e11ddf571acb9272da56deb45786185d6164ec8dc7fac871f8111dbd86f5af76",
+    "outputDigest": "f452aa0c22d6cee9e0947febef53f187891394a1d25fcc6cc19b26f1975ba979",
     "value": { "id": "c2", "text": "Recorded effects enable exact replay." },
     "replayResultId": "recording/extract/1",
     "usage": { "tokens": 90, "wallClockMs": 110 }
   },
   {
-    "invocationId": "synthesis:0",
+    "requestHash": "40c661d29a89b2f19090a29656eb14a6da0a14d1d43ae5cd062f51e70f986392",
+    "planHash": "812d030ba794b15d91129470a306f1af77b617573eb3e8a8f08518f1e28c2df4",
+    "catalogFingerprint": "eb3742091d958df637505779fd7f899509bea33c357c2803dfc8bbc1ceeb3a6b",
+    "operation": { "id": "example/synthesize", "version": "1" },
+    "nodeId": "synthesis",
+    "invocationIndex": 0,
+    "effectName": "model.synthesize",
+    "inputDigest": "ac9968ca50e8303f5cd0091e1d60359de77f7f85dbb302db771a31f1bfb5bbde",
+    "outputDigest": "068e8e62fa164d15b4580b5d59798175afcca41c8af2fd544bc8e61daaea7367",
     "value": {
       "text": "Typed plans expose control flow, while recorded effects enable exact replay.",
       "claimIds": ["c1", "c2"]

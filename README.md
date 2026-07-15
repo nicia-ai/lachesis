@@ -20,15 +20,20 @@ Plan Kernel**.
 - Complete schema inference, effect/capability inference, conservative resource
   maxima, and budget rejection.
 - Portable canonical JSON and SHA-256 hashing through Web Crypto.
+- An opaque compile/execute boundary that binds successful analysis, policy,
+  plan hash, and immutable catalog fingerprint.
+- A canonical generator-facing language manifest with JSON Schemas, complete
+  signatures, effects, bounds, reducer laws, and available policy.
 - Pure, replay, and caller-supplied mock effect execution with runtime budget,
   output-schema, cardinality, and recursion-progress enforcement.
+- Request-bound replay identities and verified recording output digests.
 - A typed in-memory run trace containing digests rather than unbounded values.
 - Node 24 and Cloudflare Workers compatibility builds using public package
   exports.
 
 Deterministic orchestration is not semantic determinism. Exact replay comes from
-recorded effect results, pinned plan/catalog identity, and injected time and run
-identifiers.
+recorded effect results bound to plan, catalog, operation, invocation, effect,
+and input identities, plus injected time and run identifiers.
 
 ## Try the example
 

@@ -22,6 +22,10 @@ export const DIAGNOSTIC_CODES = [
   "BUDGET_EXCEEDED",
   "RUNTIME_SCHEMA_VIOLATION",
   "MISSING_REPLAY_RESULT",
+  "REPLAY_REQUEST_MISMATCH",
+  "REPLAY_OUTPUT_MISMATCH",
+  "INVALID_EXECUTABLE_PLAN",
+  "CATALOG_REFERENCE_MISMATCH",
   "INTERNAL_INVARIANT_VIOLATION",
 ] as const;
 
@@ -33,6 +37,31 @@ export type DiagnosticLocation = Readonly<{
   path?: ReadonlyArray<string | number> | undefined;
 }>;
 
+export type DiagnosticReference = Readonly<{
+  kind: "schema" | "operation" | "catalog" | "effectRequest";
+  id: string;
+  version?: string | undefined;
+}>;
+
+export type DiagnosticValue = Readonly<{
+  schema?: Readonly<{ id: string; version: string }> | undefined;
+  reference?: DiagnosticReference | undefined;
+  value?: string | number | boolean | undefined;
+}>;
+
+export type DiagnosticLimit = Readonly<{
+  resource: string;
+  limit: number;
+  actual: number;
+}>;
+
+export type DiagnosticContext = Readonly<{
+  expected?: DiagnosticValue | undefined;
+  actual?: DiagnosticValue | undefined;
+  limit?: DiagnosticLimit | undefined;
+  repair?: DiagnosticLocation | undefined;
+}>;
+
 export type Diagnostic = Readonly<{
   code: DiagnosticCode;
   message: string;
@@ -40,13 +69,20 @@ export type Diagnostic = Readonly<{
   details: ReadonlyArray<
     Readonly<{ key: string; value: string | number | boolean }>
   >;
+  expected?: DiagnosticValue | undefined;
+  actual?: DiagnosticValue | undefined;
+  limit?: DiagnosticLimit | undefined;
+  repair?: DiagnosticLocation | undefined;
 }>;
+
+export type Diagnostics = ReadonlyArray<Diagnostic>;
 
 export function diagnostic(
   code: DiagnosticCode,
   message: string,
   location: DiagnosticLocation = {},
   details: Diagnostic["details"] = [],
+  context: DiagnosticContext = {},
 ): Diagnostic {
-  return { code, message, location, details };
+  return { code, message, location, details, ...context };
 }

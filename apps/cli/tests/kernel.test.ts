@@ -4,102 +4,126 @@ import { resolve } from "node:path";
 import { promisify } from "node:util";
 
 import {
-  aggregateBound,
-  analyzePlan,
   canonicalizeJson,
-  canonicalizePlan,
   type Catalog,
-  type CheckedPlan,
-  checkPlan,
+  compilePlanJson,
   createCatalog,
   createMockEffectHandler,
+  createPlanLanguageManifest,
   createReplayEffectHandler,
+  defineEffect,
   diagnostic,
+  type DiagnosticCode,
+  type EffectHandler,
+  type EffectRequest,
+  type EffectResult,
+  type ExecutablePlan,
   executePlan,
-  hashPlan,
-  normalizePlan,
+  fingerprintCatalog,
+  inspectExecutablePlan,
   parseJson,
-  parsePlanJson,
-  type PlanAnalysis,
+  recordEffectResult,
   type ReplayEntry,
-  unionEffectSets,
-  type WirePlan,
+  type Result,
+  schemaReferenceSchema,
+  wirePlanSchema,
 } from "@nicia-ai/lachesis";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
 
-import { createExampleCatalog } from "../src/example-catalog.js";
+import { normalizePlan } from "../../../packages/kernel/src/normalize.js";
+import {
+  claimIsNonempty,
+  claimSchema,
+  claimUnion,
+  countdownMeasure,
+  countdownStep,
+  createExampleCatalog,
+  exampleOperations,
+  examplePolicy,
+  exampleSchemas,
+  extractionEffect,
+  fragmentSchema,
+  fragmentToClaim,
+} from "../src/example-catalog.js";
 
 const execFileAsync = promisify(execFile);
 const ROOT = resolve(import.meta.dirname, "../../..");
+const inputFragments = new Map<string, unknown>([
+  [
+    "fragments",
+    [
+      { id: "f1", text: "one" },
+      { id: "f2", text: "two" },
+    ],
+  ],
+]);
 
-async function loadPlan(name: string): Promise<WirePlan> {
-  const parsed = parsePlanJson(
-    await readFile(resolve(ROOT, "fixtures/plans", name), "utf8"),
-  );
-  if (!parsed.ok)
-    throw new Error(parsed.error.map((item) => item.message).join("; "));
-  return parsed.value;
+async function fixture(name: string): Promise<string> {
+  return readFile(resolve(ROOT, "fixtures/plans", name), "utf8");
 }
 
-function compile(
-  plan: WirePlan,
+function planText(
+  nodes: ReadonlyArray<unknown>,
+  root: string,
+  overrides: Readonly<Record<string, unknown>> = {},
+): string {
+  return JSON.stringify({
+    formatVersion: "1",
+    catalog: { id: "example/catalog", version: "1" },
+    root,
+    nodes,
+    budget: {
+      maxEffectCalls: 20,
+      maxCollectionItems: 20,
+      maxRecursionDepth: 20,
+      maxTokens: 20_000,
+      maxWallClockMs: 20_000,
+      maxParallelism: 4,
+    },
+    allowedCapabilities: ["llm.invoke:extractor", "llm.invoke:synthesizer"],
+    ...overrides,
+  });
+}
+
+function parseWireText(text: string) {
+  const parsed = parseJson(text);
+  if (!parsed.ok) throw new Error(parsed.error.message);
+  return wirePlanSchema.parse(parsed.value);
+}
+
+function catalogReplacing(
+  replacement: (typeof exampleOperations)[number],
+): Catalog {
+  const catalog = createCatalog({
+    identity: { id: "example/catalog", version: "1" },
+    schemas: exampleSchemas,
+    operations: exampleOperations.map((operation) =>
+      operation.id === replacement.id ? replacement : operation,
+    ),
+  });
+  if (!catalog.ok) throw new Error(catalog.error[0]?.message);
+  return catalog.value;
+}
+
+async function compileOrThrow(
+  text: string,
   catalog: Catalog = createExampleCatalog(),
-): Readonly<{
-  checked: CheckedPlan;
-  analysis: PlanAnalysis;
-}> {
-  const normalized = normalizePlan(plan);
-  if (!normalized.ok)
-    throw new Error(normalized.error.map((item) => item.message).join("; "));
-  const checked = checkPlan(normalized.value, catalog);
-  if (!checked.ok)
-    throw new Error(checked.error.map((item) => item.message).join("; "));
-  const analysis = analyzePlan(checked.value);
-  if (!analysis.ok)
-    throw new Error(analysis.error.map((item) => item.message).join("; "));
-  return { checked: checked.value, analysis: analysis.value };
+): Promise<ExecutablePlan> {
+  const compiled = await compilePlanJson(text, catalog, examplePolicy);
+  if (!compiled.ok)
+    throw new Error(compiled.error.map((item) => item.message).join("; "));
+  return compiled.value;
 }
 
-function basePlan(nodes: ReadonlyArray<unknown>, root: string): WirePlan {
-  const parsed = parsePlanJson(
-    JSON.stringify({
-      formatVersion: "1",
-      catalog: { id: "example/catalog", version: "1" },
-      root,
-      nodes,
-      budget: {
-        maxEffectCalls: 20,
-        maxCollectionItems: 20,
-        maxRecursionDepth: 20,
-        maxTokens: 20_000,
-        maxWallClockMs: 20_000,
-        maxParallelism: 4,
-      },
-      allowedCapabilities: ["llm.invoke:extractor", "llm.invoke:synthesizer"],
-    }),
-  );
-  if (!parsed.ok)
-    throw new Error(parsed.error.map((item) => item.message).join("; "));
-  return parsed.value;
-}
-
-function deterministicOptions(
-  entries: ReadonlyArray<ReplayEntry>,
-): Parameters<typeof executePlan>[3] {
+function options(
+  effectHandler: EffectHandler,
+  inputs: ReadonlyMap<string, unknown> = inputFragments,
+) {
   let tick = 0;
   return {
-    inputs: new Map([
-      [
-        "fragments",
-        [
-          { id: "f1", text: "one" },
-          { id: "f2", text: "two" },
-        ],
-      ],
-    ]),
-    effectHandler: createReplayEffectHandler(entries),
+    inputs,
+    effectHandler,
     clock: {
       now: () => `2026-01-01T00:00:${String(tick++).padStart(2, "0")}.000Z`,
     },
@@ -107,65 +131,241 @@ function deterministicOptions(
   };
 }
 
-describe("wire parsing and normalization", () => {
-  it("distinguishes malformed, unsupported, and invalid wire documents", () => {
-    const malformed = parsePlanJson("{");
-    const unsupported = parsePlanJson('{"formatVersion":"2"}');
-    const invalid = parsePlanJson('{"formatVersion":"1"}');
-    expect(malformed.ok ? undefined : malformed.error[0]?.code).toBe(
-      "MALFORMED_JSON",
-    );
-    expect(unsupported.ok ? undefined : unsupported.error[0]?.code).toBe(
-      "UNSUPPORTED_PLAN_VERSION",
-    );
-    expect(invalid.ok ? undefined : invalid.error[0]?.code).toBe(
-      "INVALID_WIRE_SCHEMA",
-    );
+function successfulEffect(request: EffectRequest): EffectResult {
+  if (request.effectName === "model.extract") {
+    const parsed = fragmentSchema.parse(request.input);
+    if (!parsed.ok) throw new Error(parsed.error.message);
+    return {
+      value: { id: `c${request.invocationIndex + 1}`, text: parsed.value.text },
+      replayResultId: `recording/${request.invocationId}`,
+      usage: { tokens: 5, wallClockMs: 7 },
+    };
+  }
+  return {
+    value: { text: "summary", claimIds: ["c1", "c2"] },
+    replayResultId: "recording/synthesis",
+    usage: { tokens: 8, wallClockMs: 9 },
+  };
+}
+
+function recordingHandler(entries: Array<ReplayEntry>): EffectHandler {
+  return async (request) => {
+    const result = successfulEffect(request);
+    const recorded = await recordEffectResult(request, result);
+    if (!recorded.ok) return recorded;
+    entries.push(recorded.value);
+    return { ok: true, value: result };
+  };
+}
+
+async function recordingFor(
+  text: string,
+  catalog: Catalog = createExampleCatalog(),
+): Promise<
+  Readonly<{ executable: ExecutablePlan; entries: ReadonlyArray<ReplayEntry> }>
+> {
+  const executable = await compileOrThrow(text, catalog);
+  const entries: Array<ReplayEntry> = [];
+  const executed = await executePlan(
+    executable,
+    options(recordingHandler(entries)),
+  );
+  if (!executed.ok) throw new Error(executed.error.diagnostics[0]?.message);
+  return { executable, entries };
+}
+
+function firstCode<T>(
+  result: Result<T, ReadonlyArray<{ code: DiagnosticCode }>>,
+) {
+  return result.ok ? undefined : result.error[0]?.code;
+}
+
+describe("unskippable compilation", () => {
+  it("distinguishes malformed, unsupported, and invalid wire input", async () => {
+    expect(
+      firstCode(
+        await compilePlanJson("{", createExampleCatalog(), examplePolicy),
+      ),
+    ).toBe("MALFORMED_JSON");
+    expect(
+      firstCode(
+        await compilePlanJson(
+          '{"formatVersion":"2"}',
+          createExampleCatalog(),
+          examplePolicy,
+        ),
+      ),
+    ).toBe("UNSUPPORTED_PLAN_VERSION");
+    expect(
+      firstCode(
+        await compilePlanJson(
+          '{"formatVersion":"1"}',
+          createExampleCatalog(),
+          examplePolicy,
+        ),
+      ),
+    ).toBe("INVALID_WIRE_SCHEMA");
   });
 
-  it("rejects duplicate IDs, missing roots, dangling references, and cycles", () => {
+  it("rejects duplicate IDs, missing roots, dangling edges, and cycles", async () => {
     const constant = {
       id: "value",
       op: "constant",
       schema: { id: "core/boolean", version: "1" },
       value: true,
-    } as const;
-    const duplicate = normalizePlan(basePlan([constant, constant], "value"));
-    expect(duplicate.ok ? undefined : duplicate.error[0]?.code).toBe(
-      "DUPLICATE_NODE_ID",
-    );
-
-    const missingRoot = normalizePlan(basePlan([constant], "other"));
-    expect(missingRoot.ok ? undefined : missingRoot.error[0]?.code).toBe(
-      "MISSING_ROOT",
-    );
-
-    const dangling = normalizePlan(
-      basePlan(
-        [{ id: "cp", op: "checkpoint", source: "missing", label: "cp" }],
-        "cp",
-      ),
-    );
-    expect(dangling.ok ? undefined : dangling.error[0]?.code).toBe(
-      "MISSING_NODE_REFERENCE",
-    );
-
-    const cycle = normalizePlan(
-      basePlan(
-        [
-          { id: "a", op: "checkpoint", source: "b", label: "a" },
-          { id: "b", op: "checkpoint", source: "a", label: "b" },
-        ],
-        "a",
-      ),
-    );
-    expect(cycle.ok ? undefined : cycle.error[0]?.code).toBe("GRAPH_CYCLE");
+    };
+    const cases: ReadonlyArray<readonly [string, DiagnosticCode]> = [
+      [planText([constant, constant], "value"), "DUPLICATE_NODE_ID"],
+      [planText([constant], "other"), "MISSING_ROOT"],
+      [
+        planText(
+          [{ id: "cp", op: "checkpoint", source: "missing", label: "cp" }],
+          "cp",
+        ),
+        "MISSING_NODE_REFERENCE",
+      ],
+      [
+        planText(
+          [
+            { id: "a", op: "checkpoint", source: "b", label: "a" },
+            { id: "b", op: "checkpoint", source: "a", label: "b" },
+          ],
+          "a",
+        ),
+        "GRAPH_CYCLE",
+      ],
+    ];
+    for (const [text, code] of cases) {
+      expect(
+        firstCode(
+          await compilePlanJson(text, createExampleCatalog(), examplePolicy),
+        ),
+      ).toBe(code);
+    }
   });
-});
 
-describe("catalog and checker", () => {
-  it("checks every node variant and nominally infers schemas", () => {
-    const plan = basePlan(
+  it("rejects catalog, schema, operation, kind, type, and branch mismatches", async () => {
+    const cases: ReadonlyArray<readonly [string, DiagnosticCode]> = [
+      [
+        planText(
+          [
+            {
+              id: "x",
+              op: "constant",
+              schema: { id: "missing", version: "1" },
+              value: true,
+            },
+          ],
+          "x",
+        ),
+        "UNKNOWN_SCHEMA",
+      ],
+      [
+        planText(
+          [
+            {
+              id: "x",
+              op: "constant",
+              schema: { id: "example/fragment", version: "1" },
+              value: { id: "x", text: "x" },
+            },
+            {
+              id: "y",
+              op: "invoke",
+              source: "x",
+              function: { id: "missing", version: "1" },
+            },
+          ],
+          "y",
+        ),
+        "UNKNOWN_OPERATION",
+      ],
+      [
+        planText(
+          [
+            {
+              id: "x",
+              op: "constant",
+              schema: { id: "example/claims", version: "1" },
+              value: [],
+            },
+            {
+              id: "y",
+              op: "invoke",
+              source: "x",
+              function: { id: "example/claim-union", version: "1" },
+            },
+          ],
+          "y",
+        ),
+        "OPERATION_KIND_MISMATCH",
+      ],
+      [
+        planText(
+          [
+            {
+              id: "x",
+              op: "constant",
+              schema: { id: "example/claims", version: "1" },
+              value: [],
+            },
+            {
+              id: "y",
+              op: "invoke",
+              source: "x",
+              function: { id: "example/fragment-to-claim", version: "1" },
+            },
+          ],
+          "y",
+        ),
+        "TYPE_MISMATCH",
+      ],
+      [await fixture("branch-mismatch.invalid.json"), "BRANCH_TYPE_MISMATCH"],
+      [
+        planText(
+          [
+            {
+              id: "x",
+              op: "constant",
+              schema: { id: "core/boolean", version: "1" },
+              value: true,
+            },
+          ],
+          "x",
+          { catalog: { id: "other/catalog", version: "1" } },
+        ),
+        "CATALOG_REFERENCE_MISMATCH",
+      ],
+    ];
+    for (const [text, code] of cases)
+      expect(
+        firstCode(
+          await compilePlanJson(text, createExampleCatalog(), examplePolicy),
+        ),
+      ).toBe(code);
+  });
+
+  it("rejects a constant that violates its declared schema", async () => {
+    const result = await compilePlanJson(
+      planText(
+        [
+          {
+            id: "bad",
+            op: "constant",
+            schema: { id: "example/fragment", version: "1" },
+            value: { id: "missing-text" },
+          },
+        ],
+        "bad",
+      ),
+      createExampleCatalog(),
+      examplePolicy,
+    );
+    expect(firstCode(result)).toBe("RUNTIME_SCHEMA_VIOLATION");
+  });
+
+  it("checks every node form and binds analysis into an opaque summary", async () => {
+    const text = planText(
       [
         {
           id: "fragments",
@@ -229,16 +429,11 @@ describe("catalog and checker", () => {
           whenTrue: "folded",
           whenFalse: "empty",
         },
+        { id: "cp", op: "checkpoint", source: "selected", label: "done" },
         {
-          id: "checkpoint",
-          op: "checkpoint",
-          source: "selected",
-          label: "claims-ready",
-        },
-        {
-          id: "synthesis",
+          id: "effect",
           op: "effect",
-          source: "checkpoint",
+          source: "cp",
           effect: { id: "example/synthesize", version: "1" },
         },
         {
@@ -248,7 +443,7 @@ describe("catalog and checker", () => {
           value: { remaining: 2 },
         },
         {
-          id: "fixed",
+          id: "fix",
           op: "boundedFix",
           seed: "seed",
           step: { id: "example/countdown-step", version: "1" },
@@ -256,294 +451,577 @@ describe("catalog and checker", () => {
           maxIterations: 2,
         },
       ],
-      "synthesis",
+      "effect",
     );
-    const result = compile(plan);
-    expect(result.checked.nodes.size).toBe(13);
-    expect(
-      [...result.checked.nodes.values()].find(
-        (node) => node.node.id === "invoked",
-      )?.outputSchema.id,
-    ).toBe("example/claim");
-    expect(
-      [...result.checked.nodes.values()].find(
-        (node) => node.node.id === "fixed",
-      )?.outputSchema.id,
-    ).toBe("example/countdown");
+    const executable = await compileOrThrow(text);
+    const summary = inspectExecutablePlan(executable);
+    expect(summary?.rootSchema.id).toBe("example/summary");
+    expect(summary?.analysis.effectsUsed).toEqual(
+      new Set(["model.synthesize"]),
+    );
+    expect(summary?.analysis.topologicalStages.length).toBeGreaterThan(2);
+    expect(summary?.canonicalPlan.startsWith("{")).toBe(true);
   });
 
-  it("reports unknown schemas, operations, kind mismatches, and type mismatches", () => {
-    const unknownSchemaPlan = basePlan(
-      [
-        {
-          id: "x",
-          op: "constant",
-          schema: { id: "missing", version: "1" },
-          value: true,
-        },
-      ],
-      "x",
-    );
-    const normalizedSchema = normalizePlan(unknownSchemaPlan);
-    if (!normalizedSchema.ok) throw new Error("normalization failed");
-    const unknownSchema = checkPlan(
-      normalizedSchema.value,
+  it("enforces plan capability and budget policy before execution", async () => {
+    const denied = await compilePlanJson(
+      await fixture("document-claims.valid.json"),
       createExampleCatalog(),
+      { ...examplePolicy, allowedCapabilities: [] },
     );
-    expect(unknownSchema.ok ? undefined : unknownSchema.error[0]?.code).toBe(
-      "UNKNOWN_SCHEMA",
-    );
-
-    const unknownOperationPlan = basePlan(
-      [
-        {
-          id: "x",
-          op: "constant",
-          schema: { id: "example/fragment", version: "1" },
-          value: { id: "x", text: "x" },
-        },
-        {
-          id: "y",
-          op: "invoke",
-          source: "x",
-          function: { id: "missing", version: "1" },
-        },
-      ],
-      "y",
-    );
-    const normalizedOperation = normalizePlan(unknownOperationPlan);
-    if (!normalizedOperation.ok) throw new Error("normalization failed");
-    const unknownOperation = checkPlan(
-      normalizedOperation.value,
+    expect(firstCode(denied)).toBe("DENIED_CAPABILITY");
+    const limited = await compilePlanJson(
+      await fixture("document-claims.valid.json"),
       createExampleCatalog(),
+      {
+        ...examplePolicy,
+        budget: { ...examplePolicy.budget, maxTokens: 1 },
+      },
     );
-    expect(
-      unknownOperation.ok ? undefined : unknownOperation.error[0]?.code,
-    ).toBe("UNKNOWN_OPERATION");
-
-    const kindPlan = basePlan(
-      [
-        {
-          id: "x",
-          op: "constant",
-          schema: { id: "example/claims", version: "1" },
-          value: [],
-        },
-        {
-          id: "y",
-          op: "invoke",
-          source: "x",
-          function: { id: "example/claim-union", version: "1" },
-        },
-      ],
-      "y",
-    );
-    const normalizedKind = normalizePlan(kindPlan);
-    if (!normalizedKind.ok) throw new Error("normalization failed");
-    const wrongKind = checkPlan(normalizedKind.value, createExampleCatalog());
-    expect(wrongKind.ok ? undefined : wrongKind.error[0]?.code).toBe(
-      "OPERATION_KIND_MISMATCH",
-    );
-
-    const typePlan = basePlan(
-      [
-        {
-          id: "x",
-          op: "constant",
-          schema: { id: "example/claims", version: "1" },
-          value: [],
-        },
-        {
-          id: "y",
-          op: "invoke",
-          source: "x",
-          function: { id: "example/fragment-to-claim", version: "1" },
-        },
-      ],
-      "y",
-    );
-    const normalizedType = normalizePlan(typePlan);
-    if (!normalizedType.ok) throw new Error("normalization failed");
-    const wrongType = checkPlan(normalizedType.value, createExampleCatalog());
-    expect(wrongType.ok ? undefined : wrongType.error[0]?.code).toBe(
-      "TYPE_MISMATCH",
-    );
-  });
-
-  it("reports branch mismatches and invalid or undeclared catalog operations", async () => {
-    const branch = await loadPlan("branch-mismatch.invalid.json");
-    const normalized = normalizePlan(branch);
-    if (!normalized.ok) throw new Error("normalization failed");
-    const checked = checkPlan(normalized.value, createExampleCatalog());
-    expect(checked.ok ? undefined : checked.error[0]?.code).toBe(
-      "BRANCH_TYPE_MISMATCH",
-    );
-
-    const catalog = createExampleCatalog();
-    const schema = catalog.schemas.values().next().value;
-    if (schema === undefined) throw new Error("schema missing");
-    const invalidReducer = createCatalog({
-      identity: { id: "bad", version: "1" },
-      schemas: [schema],
-      operations: [
-        {
-          kind: "reducer",
-          id: "bad/reducer",
-          version: "1",
-          element: { id: "missing", version: "1" },
-          accumulator: { id: schema.id, version: schema.version },
-          identity: true,
-          laws: { associative: true, commutative: true, idempotent: true },
-          reduce: (value) => ({ ok: true, value }),
-        },
-      ],
+    expect(firstCode(limited)).toBe("BUDGET_EXCEEDED");
+    const limitedDiagnostic = limited.ok ? undefined : limited.error[0];
+    expect(limitedDiagnostic?.limit).toEqual({
+      resource: "tokens",
+      actual: 1100,
+      limit: 1,
     });
-    expect(invalidReducer.ok ? undefined : invalidReducer.error[0]?.code).toBe(
-      "INVALID_REDUCER",
-    );
-
-    const undeclared = createCatalog({
-      identity: { id: "bad", version: "1" },
-      schemas: [schema],
-      operations: [
-        {
-          kind: "effect",
-          id: "bad/effect",
-          version: "1",
-          input: { id: schema.id, version: schema.version },
-          output: { id: schema.id, version: schema.version },
-          effectName: "",
-          capability: "",
-          maxTokens: 0,
-          maxWallClockMs: 0,
-          replayable: true,
-        },
-      ],
-    });
-    expect(undeclared.ok ? undefined : undeclared.error[0]?.code).toBe(
-      "UNDECLARED_EFFECT",
-    );
-  });
-});
-
-describe("analysis", () => {
-  it("infers effects, capabilities, stages, and conservative known bounds", async () => {
-    const { analysis } = compile(await loadPlan("document-claims.valid.json"));
-    expect([...analysis.effectsUsed]).toEqual([
-      "model.extract",
-      "model.synthesize",
-    ]);
-    expect(analysis.maximumEffectCalls).toEqual({ kind: "known", value: 4 });
-    expect(analysis.maximumParallelism).toEqual({ kind: "known", value: 2 });
-    expect(analysis.topologicalStages).toHaveLength(4);
-    expect(analysis.everyRelevantBoundProven).toBe(true);
+    expect(limitedDiagnostic?.repair?.path).toEqual(["budget", "maxTokens"]);
   });
 
-  it("rejects denied capabilities, unbounded fan-out, and exceeded budgets", async () => {
-    for (const [fixture, code] of [
+  it("rejects analysis-time denied capability, unbounded fan-out, and budgets", async () => {
+    for (const [name, code] of [
       ["capability-denied.invalid.json", "DENIED_CAPABILITY"],
       ["unbounded-fanout.invalid.json", "UNBOUNDED_CARDINALITY"],
     ] as const) {
-      const plan = await loadPlan(fixture);
-      const normalized = normalizePlan(plan);
-      if (!normalized.ok) throw new Error("normalization failed");
-      const checked = checkPlan(normalized.value, createExampleCatalog());
-      if (!checked.ok) throw new Error("checking failed");
-      const analysis = analyzePlan(checked.value);
-      expect(analysis.ok ? undefined : analysis.error[0]?.code).toBe(code);
+      expect(
+        firstCode(
+          await compilePlanJson(
+            await fixture(name),
+            createExampleCatalog(),
+            examplePolicy,
+          ),
+        ),
+      ).toBe(code);
     }
-    const valid = await loadPlan("document-claims.valid.json");
-    const overBudget: WirePlan = {
-      ...valid,
-      budget: { ...valid.budget, maxEffectCalls: 3 },
-    };
-    const normalized = normalizePlan(overBudget);
-    if (!normalized.ok) throw new Error("normalization failed");
-    const checked = checkPlan(normalized.value, createExampleCatalog());
-    if (!checked.ok) throw new Error("checking failed");
-    const analysis = analyzePlan(checked.value);
-    expect(analysis.ok ? undefined : analysis.error[0]?.code).toBe(
-      "BUDGET_EXCEEDED",
-    );
-  });
-
-  it("obeys effect-set union laws and monotone budget aggregation", () => {
-    fc.assert(
-      fc.property(
-        fc.uniqueArray(fc.string()),
-        fc.uniqueArray(fc.string()),
-        (left, right) => {
-          const leftSet = new Set(left);
-          const rightSet = new Set(right);
-          expect(unionEffectSets(leftSet, leftSet)).toEqual(leftSet);
-          expect(unionEffectSets(leftSet, rightSet)).toEqual(
-            unionEffectSets(rightSet, leftSet),
-          );
-          expect(
-            unionEffectSets(unionEffectSets(leftSet, rightSet), leftSet),
-          ).toEqual(
-            unionEffectSets(leftSet, unionEffectSets(rightSet, leftSet)),
-          );
-        },
+    const parsed = parseJson(await fixture("document-claims.valid.json"));
+    if (!parsed.ok || typeof parsed.value !== "object" || parsed.value === null)
+      throw new Error("fixture parse failed");
+    const wire = wirePlanSchema.parse(parsed.value);
+    const over = JSON.stringify({
+      ...wire,
+      budget: { ...wire.budget, maxEffectCalls: 3 },
+    });
+    expect(
+      firstCode(
+        await compilePlanJson(over, createExampleCatalog(), examplePolicy),
       ),
-    );
-    fc.assert(
-      fc.property(fc.nat(), fc.nat(), (base, increment) => {
-        const total = aggregateBound(
-          { kind: "known", value: base },
-          { kind: "known", value: increment },
-        );
-        expect(total.kind === "known" && total.value >= base).toBe(true);
-      }),
-    );
-  });
-});
-
-describe("canonical identity", () => {
-  it("is idempotent and stable under object-key reordering", () => {
-    fc.assert(
-      fc.property(fc.jsonValue(), (value) => {
-        const first = canonicalizeJson(value);
-        if (!first.ok) throw new Error(first.error.message);
-        const parsed = parseJson(first.value);
-        if (!parsed.ok) throw new Error(parsed.error.message);
-        const second = canonicalizeJson(parsed.value);
-        expect(second).toEqual(first);
-      }),
-    );
-    const left = canonicalizeJson({ z: 1, a: { d: 2, b: 3 } });
-    const right = canonicalizeJson({ a: { b: 3, d: 2 }, z: 1 });
-    expect(left).toEqual(right);
+    ).toBe("BUDGET_EXCEEDED");
   });
 
-  it("keeps hashes stable and changes them for semantic changes", async () => {
-    const plan = await loadPlan("document-claims.valid.json");
-    const reordered = parsePlanJson(
-      JSON.stringify({
-        allowedCapabilities: plan.allowedCapabilities,
-        nodes: plan.nodes,
-        root: plan.root,
-        catalog: plan.catalog,
-        budget: plan.budget,
-        metadata: plan.metadata,
-        formatVersion: plan.formatVersion,
-      }),
-    );
-    if (!reordered.ok) throw new Error("reordered parse failed");
-    expect(await hashPlan(reordered.value)).toEqual(await hashPlan(plan));
-    const changed: WirePlan = {
-      ...plan,
-      budget: { ...plan.budget, maxTokens: plan.budget.maxTokens + 1 },
+  it("checks collection, reducer, select, map-output, and fixed-point schemas", async () => {
+    const mismatches = [
+      planText(
+        [
+          {
+            id: "source",
+            op: "constant",
+            schema: { id: "example/fragment", version: "1" },
+            value: { id: "x", text: "x" },
+          },
+          {
+            id: "filtered",
+            op: "filter",
+            source: "source",
+            predicate: { id: "example/claim-is-nonempty", version: "1" },
+          },
+        ],
+        "filtered",
+      ),
+      planText(
+        [
+          {
+            id: "source",
+            op: "constant",
+            schema: { id: "example/fragments", version: "1" },
+            value: [{ id: "x", text: "x" }],
+          },
+          {
+            id: "folded",
+            op: "fold",
+            source: "source",
+            reducer: { id: "example/claim-union", version: "1" },
+          },
+        ],
+        "folded",
+      ),
+      planText(
+        [
+          {
+            id: "source",
+            op: "constant",
+            schema: { id: "example/fragments", version: "1" },
+            value: [{ id: "x", text: "x" }],
+          },
+          {
+            id: "mapped",
+            op: "map",
+            source: "source",
+            operation: {
+              kind: "function",
+              id: "example/fragment-to-claim",
+              version: "1",
+            },
+            outputCollectionSchema: { id: "example/fragments", version: "1" },
+            parallelism: 1,
+          },
+        ],
+        "mapped",
+      ),
+      planText(
+        [
+          {
+            id: "condition",
+            op: "constant",
+            schema: { id: "example/fragment", version: "1" },
+            value: { id: "x", text: "x" },
+          },
+          {
+            id: "left",
+            op: "constant",
+            schema: { id: "example/claims", version: "1" },
+            value: [],
+          },
+          {
+            id: "selected",
+            op: "select",
+            condition: "condition",
+            whenTrue: "left",
+            whenFalse: "left",
+          },
+        ],
+        "selected",
+      ),
+      planText(
+        [
+          {
+            id: "seed",
+            op: "constant",
+            schema: { id: "example/fragment", version: "1" },
+            value: { id: "x", text: "x" },
+          },
+          {
+            id: "fix",
+            op: "boundedFix",
+            seed: "seed",
+            step: { id: "example/countdown-step", version: "1" },
+            measure: { id: "example/countdown-measure", version: "1" },
+            maxIterations: 1,
+          },
+        ],
+        "fix",
+      ),
+    ];
+    for (const text of mismatches) {
+      const result = await compilePlanJson(
+        text,
+        createExampleCatalog(),
+        examplePolicy,
+      );
+      expect(firstCode(result)).toBe("TYPE_MISMATCH");
+      const hasStructuredExpectation = result.ok
+        ? false
+        : result.error.some((item) => item.expected !== undefined);
+      expect(hasStructuredExpectation).toBe(true);
+    }
+  });
+
+  it("checks every analyzed resource limit", async () => {
+    const source = {
+      id: "source",
+      op: "input",
+      inputKey: "fragments",
+      schema: { id: "example/fragments", version: "1" },
+      maxItems: 3,
     };
-    expect(await hashPlan(changed)).not.toEqual(await hashPlan(plan));
-    const canonical = canonicalizePlan(plan);
-    expect(canonical.ok && canonical.value.startsWith("{")).toBe(true);
+    const effectMap = {
+      id: "mapped",
+      op: "map",
+      source: "source",
+      operation: {
+        kind: "effect",
+        id: "example/extract-claim",
+        version: "1",
+      },
+      outputCollectionSchema: { id: "example/claims", version: "1" },
+      parallelism: 2,
+    };
+    const budgets = [
+      { maxEffectCalls: 2 },
+      { maxCollectionItems: 2 },
+      { maxTokens: 599 },
+      { maxWallClockMs: 2_999 },
+      { maxParallelism: 1 },
+    ];
+    for (const budget of budgets) {
+      const result = await compilePlanJson(
+        planText([source, effectMap], "mapped", {
+          budget: {
+            maxEffectCalls: 3,
+            maxCollectionItems: 3,
+            maxRecursionDepth: 0,
+            maxTokens: 600,
+            maxWallClockMs: 3_000,
+            maxParallelism: 2,
+            ...budget,
+          },
+          allowedCapabilities: ["llm.invoke:extractor"],
+        }),
+        createExampleCatalog(),
+        examplePolicy,
+      );
+      expect(firstCode(result)).toBe("BUDGET_EXCEEDED");
+      expect(result.ok ? undefined : result.error[0]?.limit).toBeDefined();
+    }
+  });
+
+  it("rejects mismatched and forged executable artifacts", async () => {
+    const invalid: unknown = await Promise.resolve<unknown>(
+      Reflect.apply(executePlan, undefined, [
+        Object.freeze({}),
+        options(createReplayEffectHandler([])),
+      ]),
+    );
+    expect(invalid).toMatchObject({
+      ok: false,
+      error: { diagnostics: [{ code: "INVALID_EXECUTABLE_PLAN" }] },
+    });
   });
 });
 
-describe("execution and provenance", () => {
-  it("executes the complete pure algebra and a successful bounded fix", async () => {
-    const purePlan = basePlan(
+describe("language manifest and catalog contract", () => {
+  it("is deterministic, canonical, complete, and content addressed", async () => {
+    const first = await createPlanLanguageManifest(
+      createExampleCatalog(),
+      examplePolicy,
+    );
+    const second = await createPlanLanguageManifest(
+      createExampleCatalog(),
+      examplePolicy,
+    );
+    expect(first).toEqual(second);
+    if (!first.ok) throw new Error(first.error.message);
+    expect(first.value.planJsonSchema).toMatchObject({ type: "object" });
+    expect(
+      first.value.schemas.every((schema) => schema.description.length > 0),
+    ).toBe(true);
+    const synthesis = first.value.operations.find(
+      (operation) => operation.reference.id === "example/synthesize",
+    );
+    expect(synthesis).toMatchObject({
+      output: { id: "example/summary", version: "1" },
+      effect: {
+        name: "model.synthesize",
+        capability: "llm.invoke:synthesizer",
+      },
+      bounds: { maxTokens: 500, maxWallClockMs: 2000 },
+    });
+    expect(
+      first.value.operations.find((operation) => operation.kind === "reducer"),
+    ).toMatchObject({
+      reducerLaws: { associative: true, commutative: true, idempotent: true },
+    });
+  });
+
+  it("changes its catalog fingerprint for a manifest-level catalog change", async () => {
+    const alteredEffect = defineEffect({
+      id: "example/extract-claim",
+      version: "1",
+      description: "Changed extraction semantics.",
+      input: fragmentSchema,
+      output: claimSchema,
+      effectName: "model.extract",
+      capability: "llm.invoke:extractor",
+      maxTokens: 200,
+      maxWallClockMs: 1_000,
+      replayable: true,
+    });
+    const altered = createCatalog({
+      identity: { id: "example/catalog", version: "1" },
+      schemas: exampleSchemas,
+      operations: exampleOperations.map((operation) =>
+        operation.id === alteredEffect.id ? alteredEffect : operation,
+      ),
+    });
+    if (!altered.ok) throw new Error(altered.error[0]?.message);
+    expect(await fingerprintCatalog(altered.value)).not.toEqual(
+      await fingerprintCatalog(createExampleCatalog()),
+    );
+  });
+
+  it("marks nodes using non-replayable effects accordingly", async () => {
+    const liveEffect = defineEffect({
+      id: "example/extract-claim",
+      version: "1",
+      description: "A deliberately live extraction effect.",
+      input: fragmentSchema,
+      output: claimSchema,
+      effectName: "model.extract",
+      capability: "llm.invoke:extractor",
+      maxTokens: 200,
+      maxWallClockMs: 1_000,
+      replayable: false,
+    });
+    const catalog = createCatalog({
+      identity: { id: "example/catalog", version: "1" },
+      schemas: exampleSchemas,
+      operations: exampleOperations.map((operation) =>
+        operation.id === liveEffect.id ? liveEffect : operation,
+      ),
+    });
+    if (!catalog.ok) throw new Error(catalog.error[0]?.message);
+    const compiled = await compileOrThrow(
+      await fixture("document-claims.valid.json"),
+      catalog.value,
+    );
+    expect(
+      [
+        ...(inspectExecutablePlan(compiled)?.analysis.replayableNodes ?? []),
+      ].some((nodeId) => nodeId === "extracted"),
+    ).toBe(false);
+  });
+
+  it("rejects duplicate, dangling, invalid reducer, and undeclared catalog entries", () => {
+    expect(
+      firstCode(
+        createCatalog({
+          identity: { id: "bad/catalog", version: "1" },
+          schemas: [fragmentSchema.runtime, fragmentSchema.runtime],
+          operations: [],
+        }),
+      ),
+    ).toBe("UNKNOWN_SCHEMA");
+    const missing = schemaReferenceSchema.parse({
+      id: "missing",
+      version: "1",
+    });
+    expect(
+      firstCode(
+        createCatalog({
+          identity: { id: "bad/catalog", version: "1" },
+          schemas: [fragmentSchema.runtime],
+          operations: [{ ...extractionEffect, input: missing }],
+        }),
+      ),
+    ).toBe("UNKNOWN_SCHEMA");
+    const reducer = exampleOperations.find(
+      (operation) => operation.kind === "reducer",
+    );
+    if (reducer === undefined) throw new Error("reducer missing");
+    expect(
+      firstCode(
+        createCatalog({
+          identity: { id: "bad/catalog", version: "1" },
+          schemas: [fragmentSchema.runtime],
+          operations: [{ ...reducer, element: missing }],
+        }),
+      ),
+    ).toBe("INVALID_REDUCER");
+    expect(
+      firstCode(
+        createCatalog({
+          identity: { id: "bad/catalog", version: "1" },
+          schemas: [fragmentSchema.runtime, claimSchema.runtime],
+          operations: [{ ...extractionEffect, effectName: "", capability: "" }],
+        }),
+      ),
+    ).toBe("UNDECLARED_EFFECT");
+  });
+
+  it("snapshots and freezes registered catalog entries", async () => {
+    const catalog = createExampleCatalog();
+    expect(Reflect.set(extractionEffect, "capability", "changed")).toBe(true);
+    const manifest = await createPlanLanguageManifest(catalog, examplePolicy);
+    if (!manifest.ok) throw new Error(manifest.error.message);
+    expect(
+      manifest.value.operations.find(
+        (operation) => operation.reference.id === "example/extract-claim",
+      )?.effect?.capability,
+    ).toBe("llm.invoke:extractor");
+    expect(
+      Reflect.set(extractionEffect, "capability", "llm.invoke:extractor"),
+    ).toBe(true);
+  });
+});
+
+describe("request-bound replay and execution", () => {
+  it("records request/output digests and replays a complete run deterministically", async () => {
+    const text = await fixture("document-claims.valid.json");
+    const recorded = await recordingFor(text);
+    expect(recorded.entries).toHaveLength(3);
+    expect(
+      recorded.entries.every((entry) => entry.requestHash.length === 64),
+    ).toBe(true);
+    expect(
+      recorded.entries.every((entry) => entry.outputDigest.length === 64),
+    ).toBe(true);
+    const first = await executePlan(
+      recorded.executable,
+      options(createReplayEffectHandler(recorded.entries)),
+    );
+    const second = await executePlan(
+      recorded.executable,
+      options(createReplayEffectHandler(recorded.entries)),
+    );
+    expect(first).toEqual(second);
+    expect(first.ok ? first.value.output : undefined).toEqual({
+      text: "summary",
+      claimIds: ["c1", "c2"],
+    });
+    expect(first.ok ? first.value.trace.finalUsage.effectCalls : 0).toBe(3);
+  });
+
+  it("rejects recordings after input, plan, operation, or catalog changes", async () => {
+    const originalText = await fixture("document-claims.valid.json");
+    const recorded = await recordingFor(originalText);
+
+    const changedInput = new Map<string, unknown>([
+      ["fragments", [{ id: "f1", text: "changed" }]],
+    ]);
+    const inputResult = await executePlan(
+      recorded.executable,
+      options(createReplayEffectHandler(recorded.entries), changedInput),
+    );
+    expect(
+      inputResult.ok ? undefined : inputResult.error.diagnostics[0]?.code,
+    ).toBe("REPLAY_REQUEST_MISMATCH");
+
+    const json = parseJson(originalText);
+    if (!json.ok || typeof json.value !== "object" || json.value === null)
+      throw new Error("plan parse failed");
+    const plan = wirePlanSchema.parse(json.value);
+    const changedPlan = await compileOrThrow(
+      JSON.stringify({ ...plan, metadata: { name: "changed", revision: "2" } }),
+    );
+    const planResult = await executePlan(
+      changedPlan,
+      options(createReplayEffectHandler(recorded.entries)),
+    );
+    expect(
+      planResult.ok ? undefined : planResult.error.diagnostics[0]?.code,
+    ).toBe("REPLAY_REQUEST_MISMATCH");
+
+    const changedCatalogEffect = defineEffect({
+      id: "example/extract-claim",
+      version: "1",
+      description: "Catalog-changed extraction.",
+      input: fragmentSchema,
+      output: claimSchema,
+      effectName: "model.extract",
+      capability: "llm.invoke:extractor",
+      maxTokens: 200,
+      maxWallClockMs: 1_000,
+      replayable: true,
+    });
+    const changedCatalog = createCatalog({
+      identity: { id: "example/catalog", version: "1" },
+      schemas: exampleSchemas,
+      operations: exampleOperations.map((operation) =>
+        operation.id === changedCatalogEffect.id
+          ? changedCatalogEffect
+          : operation,
+      ),
+    });
+    if (!changedCatalog.ok) throw new Error(changedCatalog.error[0]?.message);
+    const catalogExecutable = await compileOrThrow(
+      originalText,
+      changedCatalog.value,
+    );
+    const catalogResult = await executePlan(
+      catalogExecutable,
+      options(createReplayEffectHandler(recorded.entries)),
+    );
+    expect(
+      catalogResult.ok ? undefined : catalogResult.error.diagnostics[0]?.code,
+    ).toBe("REPLAY_REQUEST_MISMATCH");
+
+    const operationV2 = defineEffect({
+      id: "example/extract-claim",
+      version: "2",
+      description: "Version-two extraction.",
+      input: fragmentSchema,
+      output: claimSchema,
+      effectName: "model.extract",
+      capability: "llm.invoke:extractor",
+      maxTokens: 200,
+      maxWallClockMs: 1_000,
+      replayable: true,
+    });
+    const operationCatalog = createCatalog({
+      identity: { id: "example/catalog", version: "1" },
+      schemas: exampleSchemas,
+      operations: exampleOperations.map((operation) =>
+        operation.id === operationV2.id ? operationV2 : operation,
+      ),
+    });
+    if (!operationCatalog.ok)
+      throw new Error(operationCatalog.error[0]?.message);
+    const operationText = originalText.replace(
+      '"id": "example/extract-claim",\n        "version": "1"',
+      '"id": "example/extract-claim",\n        "version": "2"',
+    );
+    const operationExecutable = await compileOrThrow(
+      operationText,
+      operationCatalog.value,
+    );
+    const operationResult = await executePlan(
+      operationExecutable,
+      options(createReplayEffectHandler(recorded.entries)),
+    );
+    expect(
+      operationResult.ok
+        ? undefined
+        : operationResult.error.diagnostics[0]?.code,
+    ).toBe("REPLAY_REQUEST_MISMATCH");
+  });
+
+  it("rejects missing entries, identity tampering, and output tampering", async () => {
+    const text = await fixture("document-claims.valid.json");
+    const recorded = await recordingFor(text);
+    const missing = await executePlan(
+      recorded.executable,
+      options(createReplayEffectHandler([])),
+    );
+    expect(missing.ok ? undefined : missing.error.diagnostics[0]?.code).toBe(
+      "MISSING_REPLAY_RESULT",
+    );
+    const first = recorded.entries[0];
+    if (first === undefined) throw new Error("recording missing");
+    const identityTampered = [
+      { ...first, effectName: "other.effect" },
+      ...recorded.entries.slice(1),
+    ];
+    const identity = await executePlan(
+      recorded.executable,
+      options(createReplayEffectHandler(identityTampered)),
+    );
+    expect(identity.ok ? undefined : identity.error.diagnostics[0]?.code).toBe(
+      "REPLAY_REQUEST_MISMATCH",
+    );
+    const outputTampered = [
+      { ...first, value: { id: "c1", text: "tampered" } },
+      ...recorded.entries.slice(1),
+    ];
+    const output = await executePlan(
+      recorded.executable,
+      options(createReplayEffectHandler(outputTampered)),
+    );
+    expect(output.ok ? undefined : output.error.diagnostics[0]?.code).toBe(
+      "REPLAY_OUTPUT_MISMATCH",
+    );
+  });
+
+  it("executes pure invoke/map/filter/fold/select/checkpoint nodes", async () => {
+    const text = planText(
       [
         {
           id: "fragments",
@@ -580,49 +1058,21 @@ describe("execution and provenance", () => {
           id: "condition",
           op: "constant",
           schema: { id: "core/boolean", version: "1" },
-          value: true,
-        },
-        {
-          id: "empty",
-          op: "constant",
-          schema: { id: "example/claims", version: "1" },
-          value: [],
+          value: false,
         },
         {
           id: "selected",
           op: "select",
           condition: "condition",
           whenTrue: "folded",
-          whenFalse: "empty",
+          whenFalse: "folded",
         },
-        {
-          id: "checkpoint",
-          op: "checkpoint",
-          source: "selected",
-          label: "done",
-        },
-      ],
-      "checkpoint",
-    );
-    const pure = compile(purePlan);
-    const pureResult = await executePlan(
-      pure.checked,
-      pure.analysis,
-      createExampleCatalog(),
-      deterministicOptions([]),
-    );
-    expect(pureResult.ok ? pureResult.value.output : undefined).toEqual([
-      { id: "f1", text: "one" },
-      { id: "f2", text: "two" },
-    ]);
-
-    const invokePlan = basePlan(
-      [
+        { id: "cp", op: "checkpoint", source: "selected", label: "done" },
         {
           id: "fragment",
           op: "constant",
           schema: { id: "example/fragment", version: "1" },
-          value: { id: "f", text: "invoked" },
+          value: { id: "single", text: "invoked" },
         },
         {
           id: "invoked",
@@ -631,287 +1081,213 @@ describe("execution and provenance", () => {
           function: { id: "example/fragment-to-claim", version: "1" },
         },
       ],
-      "invoked",
+      "cp",
     );
-    const invoked = compile(invokePlan);
-    const invokeResult = await executePlan(
-      invoked.checked,
-      invoked.analysis,
-      createExampleCatalog(),
-      deterministicOptions([]),
-    );
-    expect(invokeResult.ok ? invokeResult.value.output : undefined).toEqual({
-      id: "f",
-      text: "invoked",
-    });
-
-    const fixPlan = basePlan(
-      [
-        {
-          id: "seed",
-          op: "constant",
-          schema: { id: "example/countdown", version: "1" },
-          value: { remaining: 2 },
-        },
-        {
-          id: "fix",
-          op: "boundedFix",
-          seed: "seed",
-          step: { id: "example/countdown-step", version: "1" },
-          measure: { id: "example/countdown-measure", version: "1" },
-          maxIterations: 2,
-        },
-      ],
-      "fix",
-    );
-    const fixed = compile(fixPlan);
-    const fixResult = await executePlan(
-      fixed.checked,
-      fixed.analysis,
-      createExampleCatalog(),
-      deterministicOptions([]),
-    );
-    expect(fixResult.ok ? fixResult.value.output : undefined).toEqual({
-      remaining: 0,
-    });
-  });
-
-  it("replays mapped effects in stable order and produces identical traces", async () => {
-    const plan = await loadPlan("document-claims.valid.json");
-    const compiled = compile(plan);
-    const replay = parseJson(
-      await readFile(
-        resolve(ROOT, "fixtures/effects/document-claims.replay.json"),
-        "utf8",
-      ),
-    );
-    if (!replay.ok) throw new Error(replay.error.message);
-    const parsedEntries = z
-      .array(
-        z.strictObject({
-          invocationId: z.string(),
-          value: z.json(),
-          replayResultId: z.string(),
-          usage: z.strictObject({
-            tokens: z.number(),
-            wallClockMs: z.number(),
-          }),
-        }),
-      )
-      .safeParse(replay.value);
-    if (!parsedEntries.success) throw new Error(parsedEntries.error.message);
-    const entries = parsedEntries.data;
-    const first = await executePlan(
-      compiled.checked,
-      compiled.analysis,
-      createExampleCatalog(),
-      deterministicOptions(entries),
-    );
-    const second = await executePlan(
-      compiled.checked,
-      compiled.analysis,
-      createExampleCatalog(),
-      deterministicOptions(entries),
-    );
-    expect(first).toEqual(second);
-    if (!first.ok) throw new Error(first.error.diagnostics[0]?.message);
-    expect(first.value.outputDigest).toBe(
-      "068e8e62fa164d15b4580b5d59798175afcca41c8af2fd544bc8e61daaea7367",
-    );
-    expect(first.value.trace.finalUsage.effectCalls).toBe(3);
-    expect(
-      first.value.trace.events
-        .filter((event) => event.kind === "effectInvoked")
-        .map((event) => event.invocationId),
-    ).toEqual(["extracted:0", "extracted:1", "synthesis:0"]);
-  });
-
-  it("rejects missing replay values and invalid effect outputs", async () => {
-    const plan = await loadPlan("document-claims.valid.json");
-    const compiled = compile(plan);
-    const missing = await executePlan(
-      compiled.checked,
-      compiled.analysis,
-      createExampleCatalog(),
-      deterministicOptions([]),
-    );
-    expect(missing.ok ? undefined : missing.error.diagnostics[0]?.code).toBe(
-      "MISSING_REPLAY_RESULT",
-    );
-    expect(
-      missing.ok
-        ? undefined
-        : missing.error.trace?.events.some(
-            (event) => event.kind === "nodeFailed",
-          ),
-    ).toBe(true);
-
-    const invalidEntry: ReplayEntry = {
-      invocationId: "extracted:0",
-      value: { wrong: true },
-      replayResultId: "invalid",
-      usage: { tokens: 0, wallClockMs: 0 },
-    };
-    const invalid = await executePlan(
-      compiled.checked,
-      compiled.analysis,
-      createExampleCatalog(),
-      deterministicOptions([invalidEntry]),
-    );
-    expect(invalid.ok ? undefined : invalid.error.diagnostics[0]?.code).toBe(
-      "RUNTIME_SCHEMA_VIOLATION",
-    );
-  });
-
-  it("supports deterministic caller-owned mock effects", async () => {
-    const plan = await loadPlan("document-claims.valid.json");
-    const compiled = compile(plan);
-    const options = deterministicOptions([]);
-    const mocked = await executePlan(
-      compiled.checked,
-      compiled.analysis,
-      createExampleCatalog(),
-      {
-        ...options,
-        effectHandler: createMockEffectHandler((request) => {
-          if (request.effectName === "model.extract") {
-            const text =
-              typeof request.input === "object" &&
-              request.input !== null &&
-              "text" in request.input
-                ? request.input.text
-                : "";
-            const id = request.invocationId.endsWith(":0") ? "c1" : "c2";
-            return {
-              ok: true,
-              value: {
-                value: { id, text },
-                replayResultId: `mock/${request.invocationId}`,
-                usage: { tokens: 0, wallClockMs: 0 },
-              },
-            };
-          }
-          return {
-            ok: true,
-            value: {
-              value: { text: "mocked", claimIds: ["c1", "c2"] },
-              replayResultId: "mock/synthesis",
-              usage: { tokens: 0, wallClockMs: 0 },
-            },
-          };
-        }),
-      },
-    );
-    expect(mocked.ok ? mocked.value.output : undefined).toEqual({
-      text: "mocked",
-      claimIds: ["c1", "c2"],
-    });
-  });
-
-  it("enforces runtime input cardinality, usage shape, and actual budgets", async () => {
-    const plan = await loadPlan("document-claims.valid.json");
-    const compiled = compile(plan);
-    const missingOptions = deterministicOptions([]);
-    const missing = await executePlan(
-      compiled.checked,
-      compiled.analysis,
-      createExampleCatalog(),
-      { ...missingOptions, inputs: new Map() },
-    );
-    expect(missing.ok ? undefined : missing.error.diagnostics[0]?.code).toBe(
-      "RUNTIME_SCHEMA_VIOLATION",
-    );
-
-    const oversizedOptions = deterministicOptions([]);
-    const oversized = await executePlan(
-      compiled.checked,
-      compiled.analysis,
-      createExampleCatalog(),
-      {
-        ...oversizedOptions,
-        inputs: new Map([
+    const result = await executePlan(
+      await compileOrThrow(text),
+      options(
+        createReplayEffectHandler([]),
+        new Map([
           [
             "fragments",
             [
-              { id: "1", text: "1" },
-              { id: "2", text: "2" },
-              { id: "3", text: "3" },
-              { id: "4", text: "4" },
+              { id: "f1", text: "one" },
+              { id: "f2", text: "" },
             ],
           ],
         ]),
-      },
+      ),
     );
-    expect(
-      oversized.ok ? undefined : oversized.error.diagnostics[0]?.code,
-    ).toBe("BUDGET_EXCEEDED");
-
-    const badUsageOptions = deterministicOptions([]);
-    const badUsage = await executePlan(
-      compiled.checked,
-      compiled.analysis,
-      createExampleCatalog(),
-      {
-        ...badUsageOptions,
-        effectHandler: createMockEffectHandler(() => ({
-          ok: true,
-          value: {
-            value: { id: "c", text: "c" },
-            replayResultId: "bad-usage",
-            usage: { tokens: -1, wallClockMs: 0 },
-          },
-        })),
-      },
-    );
-    expect(badUsage.ok ? undefined : badUsage.error.diagnostics[0]?.code).toBe(
-      "RUNTIME_SCHEMA_VIOLATION",
-    );
-
-    const overBudgetOptions = deterministicOptions([]);
-    const overBudget = await executePlan(
-      compiled.checked,
-      compiled.analysis,
-      createExampleCatalog(),
-      {
-        ...overBudgetOptions,
-        effectHandler: createMockEffectHandler((request) => ({
-          ok: true,
-          value: {
-            value:
-              request.effectName === "model.extract"
-                ? { id: request.invocationId, text: "claim" }
-                : { text: "summary", claimIds: [] },
-            replayResultId: "over-budget",
-            usage: { tokens: 2_000, wallClockMs: 0 },
-          },
-        })),
-      },
-    );
-    expect(
-      overBudget.ok ? undefined : overBudget.error.diagnostics[0]?.code,
-    ).toBe("BUDGET_EXCEEDED");
+    expect(result.ok ? result.value.output : undefined).toEqual([
+      { id: "f1", text: "one" },
+    ]);
   });
 
-  it("enforces decreasing measures and bounded recursion at runtime", async () => {
-    const stuckPlan = await loadPlan("non-decreasing-recursion.invalid.json");
-    const stuck = compile(stuckPlan);
-    const stuckResult = await executePlan(
-      stuck.checked,
-      stuck.analysis,
-      createExampleCatalog(),
-      deterministicOptions([]),
+  it("executes a pure invocation as the root", async () => {
+    const executable = await compileOrThrow(
+      planText(
+        [
+          {
+            id: "fragment",
+            op: "constant",
+            schema: { id: "example/fragment", version: "1" },
+            value: { id: "x", text: "invoked" },
+          },
+          {
+            id: "invoked",
+            op: "invoke",
+            source: "fragment",
+            function: { id: "example/fragment-to-claim", version: "1" },
+          },
+        ],
+        "invoked",
+      ),
+    );
+    const result = await executePlan(
+      executable,
+      options(createReplayEffectHandler([])),
+    );
+    expect(result.ok ? result.value.output : undefined).toEqual({
+      id: "x",
+      text: "invoked",
+    });
+  });
+
+  it("executes scalar input and memoized select dependencies", async () => {
+    const scalar = await executePlan(
+      await compileOrThrow(
+        planText(
+          [
+            {
+              id: "item",
+              op: "input",
+              inputKey: "item",
+              schema: { id: "example/fragment", version: "1" },
+            },
+          ],
+          "item",
+        ),
+      ),
+      options(
+        createReplayEffectHandler([]),
+        new Map([["item", { id: "x", text: "scalar" }]]),
+      ),
+    );
+    expect(scalar.ok ? scalar.value.output : undefined).toEqual({
+      id: "x",
+      text: "scalar",
+    });
+    const memoized = await executePlan(
+      await compileOrThrow(
+        planText(
+          [
+            {
+              id: "condition",
+              op: "constant",
+              schema: { id: "core/boolean", version: "1" },
+              value: true,
+            },
+            {
+              id: "selected",
+              op: "select",
+              condition: "condition",
+              whenTrue: "condition",
+              whenFalse: "condition",
+            },
+          ],
+          "selected",
+        ),
+      ),
+      options(createReplayEffectHandler([])),
+    );
+    expect(memoized.ok ? memoized.value.output : undefined).toBe(true);
+  });
+
+  it("propagates trusted function, predicate, reducer, step, and measure failures", async () => {
+    const injected = diagnostic("RUNTIME_SCHEMA_VIOLATION", "injected");
+    function failure<T>(): Result<T, typeof injected> {
+      return { ok: false, error: injected };
+    }
+    const badFunction = {
+      ...fragmentToClaim,
+      invoke: () => failure<unknown>(),
+    };
+    const mapText = planText(
+      [
+        {
+          id: "source",
+          op: "constant",
+          schema: { id: "example/fragments", version: "1" },
+          value: [{ id: "x", text: "x" }],
+        },
+        {
+          id: "mapped",
+          op: "map",
+          source: "source",
+          operation: {
+            kind: "function",
+            id: "example/fragment-to-claim",
+            version: "1",
+          },
+          outputCollectionSchema: { id: "example/claims", version: "1" },
+          parallelism: 1,
+        },
+      ],
+      "mapped",
+    );
+    const mapped = await executePlan(
+      await compileOrThrow(mapText, catalogReplacing(badFunction)),
+      options(createReplayEffectHandler([])),
+    );
+    expect(mapped.ok ? undefined : mapped.error.diagnostics[0]?.message).toBe(
+      "injected",
+    );
+
+    const badPredicate = {
+      ...claimIsNonempty,
+      test: () => failure<boolean>(),
+    };
+    const filterText = planText(
+      [
+        {
+          id: "source",
+          op: "constant",
+          schema: { id: "example/claims", version: "1" },
+          value: [{ id: "x", text: "x" }],
+        },
+        {
+          id: "filtered",
+          op: "filter",
+          source: "source",
+          predicate: { id: "example/claim-is-nonempty", version: "1" },
+        },
+      ],
+      "filtered",
+    );
+    const filtered = await executePlan(
+      await compileOrThrow(filterText, catalogReplacing(badPredicate)),
+      options(createReplayEffectHandler([])),
     );
     expect(
-      stuckResult.ok ? undefined : stuckResult.error.diagnostics[0]?.code,
-    ).toBe("NON_DECREASING_RECURSION_MEASURE");
+      filtered.ok ? undefined : filtered.error.diagnostics[0]?.message,
+    ).toBe("injected");
 
-    const exhaustedPlan = basePlan(
+    const badReducer = {
+      ...claimUnion,
+      reduce: () => failure<unknown>(),
+    };
+    const foldText = planText(
+      [
+        {
+          id: "source",
+          op: "constant",
+          schema: { id: "example/claims", version: "1" },
+          value: [{ id: "x", text: "x" }],
+        },
+        {
+          id: "folded",
+          op: "fold",
+          source: "source",
+          reducer: { id: "example/claim-union", version: "1" },
+        },
+      ],
+      "folded",
+    );
+    const folded = await executePlan(
+      await compileOrThrow(foldText, catalogReplacing(badReducer)),
+      options(createReplayEffectHandler([])),
+    );
+    expect(folded.ok ? undefined : folded.error.diagnostics[0]?.message).toBe(
+      "injected",
+    );
+
+    const fixedText = planText(
       [
         {
           id: "seed",
           op: "constant",
           schema: { id: "example/countdown", version: "1" },
-          value: { remaining: 2 },
+          value: { remaining: 1 },
         },
         {
           id: "fix",
@@ -924,87 +1300,376 @@ describe("execution and provenance", () => {
       ],
       "fix",
     );
-    const exhausted = compile(exhaustedPlan);
-    const exhaustedResult = await executePlan(
-      exhausted.checked,
-      exhausted.analysis,
-      createExampleCatalog(),
-      deterministicOptions([]),
+    const badStep = {
+      ...countdownStep,
+      invoke: () => failure<unknown>(),
+    };
+    const stepped = await executePlan(
+      await compileOrThrow(fixedText, catalogReplacing(badStep)),
+      options(createReplayEffectHandler([])),
+    );
+    expect(stepped.ok ? undefined : stepped.error.diagnostics[0]?.message).toBe(
+      "injected",
+    );
+    const badMeasure = {
+      ...countdownMeasure,
+      measure: () => failure<number>(),
+    };
+    const measured = await executePlan(
+      await compileOrThrow(fixedText, catalogReplacing(badMeasure)),
+      options(createReplayEffectHandler([])),
     );
     expect(
-      exhaustedResult.ok
+      measured.ok ? undefined : measured.error.diagnostics[0]?.message,
+    ).toBe("injected");
+  });
+
+  it("enforces missing/oversized inputs and effect usage/output boundaries", async () => {
+    const text = await fixture("document-claims.valid.json");
+    const executable = await compileOrThrow(text);
+    const missing = await executePlan(
+      executable,
+      options(createReplayEffectHandler([]), new Map()),
+    );
+    expect(missing.ok ? undefined : missing.error.diagnostics[0]?.code).toBe(
+      "RUNTIME_SCHEMA_VIOLATION",
+    );
+    const oversized = await executePlan(
+      executable,
+      options(
+        createReplayEffectHandler([]),
+        new Map([
+          [
+            "fragments",
+            [
+              { id: "1", text: "1" },
+              { id: "2", text: "2" },
+              { id: "3", text: "3" },
+              { id: "4", text: "4" },
+            ],
+          ],
+        ]),
+      ),
+    );
+    expect(
+      oversized.ok ? undefined : oversized.error.diagnostics[0]?.code,
+    ).toBe("BUDGET_EXCEEDED");
+    const badUsage = await executePlan(
+      executable,
+      options(
+        createMockEffectHandler(() => ({
+          ok: true,
+          value: {
+            value: { id: "c", text: "claim" },
+            replayResultId: "bad-usage",
+            usage: { tokens: -1, wallClockMs: 0 },
+          },
+        })),
+      ),
+    );
+    expect(badUsage.ok ? undefined : badUsage.error.diagnostics[0]?.code).toBe(
+      "RUNTIME_SCHEMA_VIOLATION",
+    );
+    const overEffectBudget = await executePlan(
+      executable,
+      options(
+        createMockEffectHandler((request) => ({
+          ok: true,
+          value: {
+            value:
+              request.effectName === "model.extract"
+                ? { id: "c", text: "claim" }
+                : { text: "summary", claimIds: [] },
+            replayResultId: "over-budget",
+            usage: { tokens: 2_000, wallClockMs: 0 },
+          },
+        })),
+      ),
+    );
+    expect(
+      overEffectBudget.ok
         ? undefined
-        : exhaustedResult.error.diagnostics[0]?.code,
+        : overEffectBudget.error.diagnostics[0]?.code,
+    ).toBe("BUDGET_EXCEEDED");
+    const invalidOutput = await executePlan(
+      executable,
+      options(
+        createMockEffectHandler(() => ({
+          ok: true,
+          value: {
+            value: { wrong: true },
+            replayResultId: "invalid-output",
+            usage: { tokens: 0, wallClockMs: 0 },
+          },
+        })),
+      ),
+    );
+    expect(
+      invalidOutput.ok ? undefined : invalidOutput.error.diagnostics[0]?.code,
+    ).toBe("RUNTIME_SCHEMA_VIOLATION");
+
+    const invalidInput = await executePlan(
+      executable,
+      options(
+        createReplayEffectHandler([]),
+        new Map([["fragments", [{ id: "missing-text" }]]]),
+      ),
+    );
+    expect(
+      invalidInput.ok ? undefined : invalidInput.error.diagnostics[0]?.code,
+    ).toBe("RUNTIME_SCHEMA_VIOLATION");
+
+    const handlerFailure = await executePlan(
+      executable,
+      options(
+        createMockEffectHandler(() => ({
+          ok: false,
+          error: diagnostic("MISSING_REPLAY_RESULT", "injected failure"),
+        })),
+      ),
+    );
+    expect(
+      handlerFailure.ok ? undefined : handlerFailure.error.diagnostics[0]?.code,
+    ).toBe("MISSING_REPLAY_RESULT");
+
+    const overWallClock = await executePlan(
+      executable,
+      options(
+        createMockEffectHandler((request) => ({
+          ok: true,
+          value: {
+            value:
+              request.effectName === "model.extract"
+                ? { id: "c", text: "claim" }
+                : { text: "summary", claimIds: [] },
+            replayResultId: "over-wall-clock",
+            usage: { tokens: 0, wallClockMs: 5_000 },
+          },
+        })),
+      ),
+    );
+    expect(
+      overWallClock.ok ? undefined : overWallClock.error.diagnostics[0]?.code,
+    ).toBe("BUDGET_EXCEEDED");
+  });
+
+  it("enforces an input node's tighter cardinality bound", async () => {
+    const text = planText(
+      [
+        {
+          id: "fragments",
+          op: "input",
+          inputKey: "fragments",
+          schema: { id: "example/fragments", version: "1" },
+          maxItems: 2,
+        },
+      ],
+      "fragments",
+    );
+    const result = await executePlan(
+      await compileOrThrow(text),
+      options(
+        createReplayEffectHandler([]),
+        new Map([
+          [
+            "fragments",
+            [
+              { id: "1", text: "1" },
+              { id: "2", text: "2" },
+              { id: "3", text: "3" },
+            ],
+          ],
+        ]),
+      ),
+    );
+    expect(result.ok ? undefined : result.error.diagnostics[0]?.code).toBe(
+      "BUDGET_EXCEEDED",
+    );
+  });
+
+  it("rejects non-JSON effect recordings", async () => {
+    const text = await fixture("document-claims.valid.json");
+    const executable = await compileOrThrow(text);
+    let requestSeen: EffectRequest | undefined;
+    await executePlan(
+      executable,
+      options(
+        createMockEffectHandler((request) => {
+          requestSeen = request;
+          return {
+            ok: false,
+            error: diagnostic("MISSING_REPLAY_RESULT", "stop"),
+          };
+        }),
+      ),
+    );
+    if (requestSeen === undefined) throw new Error("effect request missing");
+    const recorded = await recordEffectResult(requestSeen, {
+      value: 1n,
+      replayResultId: "non-json",
+      usage: { tokens: 0, wallClockMs: 0 },
+    });
+    expect(recorded.ok ? undefined : recorded.error.code).toBe(
+      "RUNTIME_SCHEMA_VIOLATION",
+    );
+    const invalidUsage = await recordEffectResult(requestSeen, {
+      value: { id: "c", text: "claim" },
+      replayResultId: "invalid-usage",
+      usage: { tokens: -1, wallClockMs: 0 },
+    });
+    expect(invalidUsage.ok ? undefined : invalidUsage.error.code).toBe(
+      "RUNTIME_SCHEMA_VIOLATION",
+    );
+  });
+
+  it("executes decreasing bounded fixes and rejects stuck or exhausted fixes", async () => {
+    const fix = (step: string, remaining: number, maxIterations: number) =>
+      planText(
+        [
+          {
+            id: "seed",
+            op: "constant",
+            schema: { id: "example/countdown", version: "1" },
+            value: { remaining },
+          },
+          {
+            id: "fix",
+            op: "boundedFix",
+            seed: "seed",
+            step: { id: step, version: "1" },
+            measure: { id: "example/countdown-measure", version: "1" },
+            maxIterations,
+          },
+        ],
+        "fix",
+      );
+    const success = await executePlan(
+      await compileOrThrow(fix("example/countdown-step", 2, 2)),
+      options(createReplayEffectHandler([])),
+    );
+    expect(success.ok ? success.value.output : undefined).toEqual({
+      remaining: 0,
+    });
+    const stuck = await executePlan(
+      await compileOrThrow(fix("example/stuck-countdown-step", 2, 3)),
+      options(createReplayEffectHandler([])),
+    );
+    expect(stuck.ok ? undefined : stuck.error.diagnostics[0]?.code).toBe(
+      "NON_DECREASING_RECURSION_MEASURE",
+    );
+    const exhausted = await executePlan(
+      await compileOrThrow(fix("example/countdown-step", 2, 1)),
+      options(createReplayEffectHandler([])),
+    );
+    expect(
+      exhausted.ok ? undefined : exhausted.error.diagnostics[0]?.code,
     ).toBe("UNBOUNDED_RECURSION");
   });
+});
 
-  it("property-tests the declared claim reducer laws", () => {
-    const reducer = createExampleCatalog().operations.get(
-      "example/claim-union@1",
+describe("property and wire contracts", () => {
+  it("makes parsed wire arrays and nested objects readonly at runtime", () => {
+    const parsed = parseWireText(
+      planText(
+        [
+          {
+            id: "x",
+            op: "constant",
+            schema: { id: "core/boolean", version: "1" },
+            value: true,
+          },
+        ],
+        "x",
+      ),
     );
-    if (reducer?.kind !== "reducer") throw new Error("fixture reducer missing");
-    const runtimeReducer = reducer;
-    function reduce(
-      claims: ReadonlyArray<Readonly<{ id: string; text: string }>>,
-    ): unknown {
-      let accumulator: unknown = runtimeReducer.identity;
-      for (const claim of claims) {
-        const result = runtimeReducer.reduce(accumulator, claim);
-        if (!result.ok) throw new Error(result.error.message);
-        accumulator = result.value;
-      }
-      return accumulator;
-    }
-    const claim = fc.record({ id: fc.string(), text: fc.string() });
+    expect(Object.isFrozen(parsed)).toBe(true);
+    expect(Object.isFrozen(parsed.nodes)).toBe(true);
+    expect(Object.isFrozen(parsed.nodes[0])).toBe(true);
+    expect(Object.isFrozen(parsed.budget)).toBe(true);
+    expect(Object.isFrozen(parsed.allowedCapabilities)).toBe(true);
+  });
+
+  it("property-tests arbitrary checkpoint graphs for deterministic normalization", () => {
     fc.assert(
-      fc.property(claim, claim, claim, (a, b, c) => {
-        expect(reduce([a, b, c])).toEqual(reduce([c, a, b]));
-        expect(reduce([a, a])).toEqual(reduce([a]));
-        expect(reduce([a, b, c])).toEqual(reduce([...([a, b] as const), c]));
+      fc.property(
+        fc.uniqueArray(fc.stringMatching(/^[a-z][a-z0-9]{0,7}$/), {
+          minLength: 1,
+          maxLength: 30,
+        }),
+        (ids) => {
+          const nodes = ids.map((id, index) =>
+            index === 0
+              ? {
+                  id,
+                  op: "constant",
+                  schema: { id: "core/boolean", version: "1" },
+                  value: true,
+                }
+              : { id, op: "checkpoint", source: ids[index - 1], label: id },
+          );
+          const parsed = parseWireText(
+            planText(nodes, ids[ids.length - 1] ?? ids[0] ?? "x"),
+          );
+          expect(normalizePlan(parsed)).toEqual(normalizePlan(parsed));
+        },
+      ),
+    );
+  });
+
+  it("property-tests graph cycle rejection", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 2, max: 30 }), (size) => {
+        const nodes = Array.from({ length: size }, (_, index) => ({
+          id: `n${index}`,
+          op: "checkpoint",
+          source: `n${(index + 1) % size}`,
+          label: `n${index}`,
+        }));
+        const parsed = parseWireText(planText(nodes, "n0"));
+        expect(firstCode(normalizePlan(parsed))).toBe("GRAPH_CYCLE");
       }),
     );
   });
 
-  it("property-tests rejection of non-decreasing measures", async () => {
-    await fc.assert(
-      fc.asyncProperty(fc.integer({ min: 1, max: 10 }), async (remaining) => {
-        const fixture = await loadPlan("non-decreasing-recursion.invalid.json");
-        const nodes = fixture.nodes.map((node) =>
-          node.id === "seed" && node.op === "constant"
-            ? { ...node, value: { remaining } }
-            : node,
-        );
-        const compiled = compile({ ...fixture, nodes });
-        const result = await executePlan(
-          compiled.checked,
-          compiled.analysis,
-          createExampleCatalog(),
-          deterministicOptions([]),
-        );
-        expect(result.ok ? undefined : result.error.diagnostics[0]?.code).toBe(
-          "NON_DECREASING_RECURSION_MEASURE",
-        );
+  it("canonicalizes arbitrary JSON idempotently", () => {
+    fc.assert(
+      fc.property(fc.jsonValue(), (value) => {
+        const first = canonicalizeJson(value);
+        if (!first.ok) throw new Error(first.error.message);
+        const parsed = parseJson(first.value);
+        if (!parsed.ok) throw new Error(parsed.error.message);
+        expect(canonicalizeJson(parsed.value)).toEqual(first);
       }),
     );
+  });
+
+  it("exposes structured diagnostic expectations, limits, and repair locations", () => {
+    expect(
+      diagnostic("TYPE_MISMATCH", "mismatch", { nodeId: "x" }, [], {
+        expected: { schema: { id: "a", version: "1" } },
+        actual: { schema: { id: "b", version: "1" } },
+        repair: { nodeId: "x", path: ["schema"] },
+      }),
+    ).toMatchObject({
+      expected: { schema: { id: "a", version: "1" } },
+      actual: { schema: { id: "b", version: "1" } },
+      repair: { nodeId: "x", path: ["schema"] },
+    });
   });
 });
 
 describe("CLI", () => {
-  it("uses deterministic success, rejection, and usage exit codes with JSON output", async () => {
+  it("compiles through the public boundary and uses deterministic exit codes", async () => {
     const cli = resolve(ROOT, "apps/cli/dist/cli.js");
     const valid = await execFileAsync(
       process.execPath,
       [cli, "validate", "fixtures/plans/document-claims.valid.json", "--json"],
-      {
-        cwd: ROOT,
-      },
+      { cwd: ROOT },
     );
-    const output = parseJson(valid.stdout);
-    expect(output.ok ? output.value : undefined).toEqual({
-      valid: true,
-      rootSchema: "example/summary",
+    expect(parseJson(valid.stdout)).toMatchObject({
+      ok: true,
+      value: { valid: true, rootSchema: "example/summary" },
     });
-
     await expect(
       execFileAsync(
         process.execPath,
@@ -1014,26 +1679,13 @@ describe("CLI", () => {
           "fixtures/plans/capability-denied.invalid.json",
           "--json",
         ],
-        {
-          cwd: ROOT,
-        },
+        { cwd: ROOT },
       ),
     ).rejects.toMatchObject({ code: 1 });
     await expect(
       execFileAsync(process.execPath, [cli], { cwd: ROOT }),
-    ).rejects.toMatchObject({ code: 2 });
-  });
-});
-
-describe("diagnostics", () => {
-  it("creates stable machine-readable details", () => {
-    expect(
-      diagnostic("INTERNAL_INVARIANT_VIOLATION", "invariant", { nodeId: "x" }),
-    ).toEqual({
-      code: "INTERNAL_INVARIANT_VIOLATION",
-      message: "invariant",
-      location: { nodeId: "x" },
-      details: [],
+    ).rejects.toMatchObject({
+      code: 2,
     });
   });
 });

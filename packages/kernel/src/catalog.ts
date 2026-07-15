@@ -2,19 +2,31 @@ import { z } from "zod";
 
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
 import { err, ok, type Result } from "./result.js";
-import type { VersionedReference } from "./wire.js";
+import {
+  type CatalogReference,
+  catalogReferenceSchema,
+  type OperationReference,
+  operationReferenceSchema,
+  type SchemaReference,
+  schemaReferenceSchema,
+} from "./wire.js";
+
+type JsonValue = z.infer<ReturnType<typeof z.json>>;
+type Reference = SchemaReference | OperationReference | CatalogReference;
 
 export type SchemaKind =
   | Readonly<{ kind: "scalar"; semantic?: "boolean" | undefined }>
   | Readonly<{
       kind: "collection";
-      element: VersionedReference;
+      element: SchemaReference;
       defaultMaxItems?: number | undefined;
     }>;
 
 export type RuntimeSchema = Readonly<{
-  id: string;
+  id: SchemaReference["id"];
   version: string;
+  description: string;
+  jsonSchema: JsonValue;
   kind: SchemaKind;
   parse: (value: unknown) => Result<unknown, Diagnostic>;
 }>;
@@ -28,15 +40,16 @@ export type SchemaRegistration<T> = Readonly<{
 }>;
 
 type OperationBase = Readonly<{
-  id: string;
+  id: OperationReference["id"];
   version: string;
-  input: VersionedReference;
+  description: string;
+  input: SchemaReference;
 }>;
 
 export type RuntimeFunction = OperationBase &
   Readonly<{
     kind: "function";
-    output: VersionedReference;
+    output: SchemaReference;
     maxOutputItems?: number | undefined;
     invoke: (input: unknown) => Result<unknown, Diagnostic>;
   }>;
@@ -55,10 +68,11 @@ export type ReducerLaws = Readonly<{
 
 export type RuntimeReducer = Readonly<{
   kind: "reducer";
-  id: string;
+  id: OperationReference["id"];
   version: string;
-  element: VersionedReference;
-  accumulator: VersionedReference;
+  description: string;
+  element: SchemaReference;
+  accumulator: SchemaReference;
   identity: unknown;
   laws: ReducerLaws;
   reduce: (
@@ -70,7 +84,7 @@ export type RuntimeReducer = Readonly<{
 export type RuntimeEffect = OperationBase &
   Readonly<{
     kind: "effect";
-    output: VersionedReference;
+    output: SchemaReference;
     effectName: string;
     capability: string;
     maxTokens: number;
@@ -82,7 +96,7 @@ export type RuntimeEffect = OperationBase &
 export type RuntimeFixedPointStep = OperationBase &
   Readonly<{
     kind: "fixedPointStep";
-    output: VersionedReference;
+    output: SchemaReference;
     invoke: (input: unknown) => Result<unknown, Diagnostic>;
   }>;
 
@@ -100,38 +114,125 @@ export type RuntimeOperation =
   | RuntimeFixedPointStep
   | RuntimeMeasure;
 
+const catalogBrand: unique symbol = Symbol("Catalog");
+
 export type Catalog = Readonly<{
-  identity: VersionedReference;
+  [catalogBrand]: "Catalog";
+}>;
+
+export type CatalogState = Readonly<{
+  identity: CatalogReference;
   schemas: ReadonlyMap<string, RuntimeSchema>;
   operations: ReadonlyMap<string, RuntimeOperation>;
 }>;
 
 export type CatalogDescription = Readonly<{
-  identity: VersionedReference;
+  identity: CatalogReference;
   schemas: ReadonlyArray<
-    Readonly<{ id: string; version: string; kind: SchemaKind }>
+    Readonly<{
+      id: SchemaReference["id"];
+      version: string;
+      description: string;
+      jsonSchema: JsonValue;
+      kind: SchemaKind;
+    }>
   >;
   operations: ReadonlyArray<
     Readonly<{
-      id: string;
+      id: OperationReference["id"];
       version: string;
       kind: RuntimeOperation["kind"];
-      input?: VersionedReference | undefined;
+      description: string;
+      input?: SchemaReference | undefined;
     }>
   >;
 }>;
 
-export function referenceKey(reference: VersionedReference): string {
+const catalogStates = new WeakMap<Catalog, CatalogState>();
+
+export function readCatalog(catalog: Catalog): CatalogState {
+  const state = catalogStates.get(catalog);
+  if (state === undefined) throw new Error("Invalid Catalog token.");
+  return state;
+}
+
+export function snapshotCatalog(catalog: Catalog): Catalog {
+  const state = readCatalog(catalog);
+  return storeCatalog({
+    identity: state.identity,
+    schemas: new Map(state.schemas),
+    operations: new Map(state.operations),
+  });
+}
+
+function storeCatalog(state: CatalogState): Catalog {
+  const token: Catalog = Object.freeze({ [catalogBrand]: "Catalog" });
+  catalogStates.set(token, Object.freeze(state));
+  return token;
+}
+
+export function referenceKey(reference: Reference): string {
   return `${reference.id}@${reference.version}`;
 }
 
-function compareKeys(
-  left: VersionedReference,
-  right: VersionedReference,
-): number {
+function compareKeys(left: Reference, right: Reference): number {
   const leftKey = referenceKey(left);
   const rightKey = referenceKey(right);
   return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+}
+
+function schemaReference(id: string, version: string): SchemaReference {
+  return schemaReferenceSchema.parse({ id, version });
+}
+
+function operationReference(id: string, version: string): OperationReference {
+  return operationReferenceSchema.parse({ id, version });
+}
+
+function freezeJson(value: JsonValue): JsonValue {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) {
+    for (const item of value) freezeJson(item);
+  } else {
+    for (const item of Object.values(value)) freezeJson(item);
+  }
+  Object.freeze(value);
+  return value;
+}
+
+function freezeRuntimeSchema(schema: RuntimeSchema): RuntimeSchema {
+  const kind =
+    schema.kind.kind === "scalar"
+      ? Object.freeze({ ...schema.kind })
+      : Object.freeze({
+          ...schema.kind,
+          element: Object.freeze({ ...schema.kind.element }),
+        });
+  return Object.freeze({
+    ...schema,
+    kind,
+    jsonSchema: freezeJson(schema.jsonSchema),
+  });
+}
+
+function freezeRuntimeOperation(operation: RuntimeOperation): RuntimeOperation {
+  if (operation.kind === "reducer") {
+    return Object.freeze({
+      ...operation,
+      element: Object.freeze({ ...operation.element }),
+      accumulator: Object.freeze({ ...operation.accumulator }),
+      laws: Object.freeze({ ...operation.laws }),
+    });
+  }
+  const input = Object.freeze({ ...operation.input });
+  if (operation.kind === "predicate" || operation.kind === "measure") {
+    return Object.freeze({ ...operation, input });
+  }
+  return Object.freeze({
+    ...operation,
+    input,
+    output: Object.freeze({ ...operation.output }),
+  });
 }
 
 function runtimeValidationDiagnostic(
@@ -146,6 +247,7 @@ export function defineSchema<T>(
   definition: Readonly<{
     id: string;
     version: string;
+    description: string;
     validator: z.ZodType<T>;
     semantic?: "boolean" | undefined;
   }>,
@@ -176,8 +278,10 @@ export function defineSchema<T>(
       : { semantic: definition.semantic }),
   };
   const runtime: RuntimeSchema = {
-    id: definition.id,
+    id: schemaReference(definition.id, definition.version).id,
     version: definition.version,
+    description: definition.description,
+    jsonSchema: z.json().parse(z.toJSONSchema(definition.validator)),
     kind,
     parse,
   };
@@ -189,6 +293,7 @@ export function defineCollectionSchema<T>(
   definition: Readonly<{
     id: string;
     version: string;
+    description: string;
     validator: z.ZodType<ReadonlyArray<T>>;
     element: SchemaRegistration<T>;
     defaultMaxItems?: number | undefined;
@@ -196,7 +301,7 @@ export function defineCollectionSchema<T>(
 ): SchemaRegistration<ReadonlyArray<T>> {
   const kind: SchemaKind = {
     kind: "collection",
-    element: { id: definition.element.id, version: definition.element.version },
+    element: schemaReference(definition.element.id, definition.element.version),
     ...(definition.defaultMaxItems === undefined
       ? {}
       : { defaultMaxItems: definition.defaultMaxItems }),
@@ -221,8 +326,10 @@ export function defineCollectionSchema<T>(
         );
   }
   const runtime: RuntimeSchema = {
-    id: definition.id,
+    id: schemaReference(definition.id, definition.version).id,
     version: definition.version,
+    description: definition.description,
+    jsonSchema: z.json().parse(z.toJSONSchema(definition.validator)),
     kind,
     parse,
   };
@@ -259,6 +366,7 @@ export function defineFunction<I, O>(
   definition: Readonly<{
     id: string;
     version: string;
+    description: string;
     input: SchemaRegistration<I>;
     output: SchemaRegistration<O>;
     implementation: (input: I) => O;
@@ -267,10 +375,11 @@ export function defineFunction<I, O>(
 ): RuntimeFunction {
   return {
     kind: "function",
-    id: definition.id,
+    id: operationReference(definition.id, definition.version).id,
     version: definition.version,
-    input: { id: definition.input.id, version: definition.input.version },
-    output: { id: definition.output.id, version: definition.output.version },
+    description: definition.description,
+    input: schemaReference(definition.input.id, definition.input.version),
+    output: schemaReference(definition.output.id, definition.output.version),
     ...(definition.maxOutputItems === undefined
       ? {}
       : { maxOutputItems: definition.maxOutputItems }),
@@ -290,15 +399,17 @@ export function definePredicate<I>(
   definition: Readonly<{
     id: string;
     version: string;
+    description: string;
     input: SchemaRegistration<I>;
     implementation: (input: I) => boolean;
   }>,
 ): RuntimePredicate {
   return {
     kind: "predicate",
-    id: definition.id,
+    id: operationReference(definition.id, definition.version).id,
     version: definition.version,
-    input: { id: definition.input.id, version: definition.input.version },
+    description: definition.description,
+    input: schemaReference(definition.input.id, definition.input.version),
     test(input: unknown): Result<boolean, Diagnostic> {
       const parsed = definition.input.parse(input);
       return parsed.ok ? ok(definition.implementation(parsed.value)) : parsed;
@@ -311,6 +422,7 @@ export function defineReducer<E, A>(
   definition: Readonly<{
     id: string;
     version: string;
+    description: string;
     element: SchemaRegistration<E>;
     accumulator: SchemaRegistration<A>;
     identity: A;
@@ -326,13 +438,14 @@ export function defineReducer<E, A>(
   }
   return {
     kind: "reducer",
-    id: definition.id,
+    id: operationReference(definition.id, definition.version).id,
     version: definition.version,
-    element: { id: definition.element.id, version: definition.element.version },
-    accumulator: {
-      id: definition.accumulator.id,
-      version: definition.accumulator.version,
-    },
+    description: definition.description,
+    element: schemaReference(definition.element.id, definition.element.version),
+    accumulator: schemaReference(
+      definition.accumulator.id,
+      definition.accumulator.version,
+    ),
     identity: identity.value,
     laws: definition.laws,
     reduce(
@@ -359,6 +472,7 @@ export function defineEffect<I, O>(
   definition: Readonly<{
     id: string;
     version: string;
+    description: string;
     input: SchemaRegistration<I>;
     output: SchemaRegistration<O>;
     effectName: string;
@@ -371,10 +485,11 @@ export function defineEffect<I, O>(
 ): RuntimeEffect {
   return {
     kind: "effect",
-    id: definition.id,
+    id: operationReference(definition.id, definition.version).id,
     version: definition.version,
-    input: { id: definition.input.id, version: definition.input.version },
-    output: { id: definition.output.id, version: definition.output.version },
+    description: definition.description,
+    input: schemaReference(definition.input.id, definition.input.version),
+    output: schemaReference(definition.output.id, definition.output.version),
     effectName: definition.effectName,
     capability: definition.capability,
     maxTokens: definition.maxTokens,
@@ -391,16 +506,18 @@ export function defineFixedPointStep<T>(
   definition: Readonly<{
     id: string;
     version: string;
+    description: string;
     state: SchemaRegistration<T>;
     implementation: (state: T) => T;
   }>,
 ): RuntimeFixedPointStep {
   return {
     kind: "fixedPointStep",
-    id: definition.id,
+    id: operationReference(definition.id, definition.version).id,
     version: definition.version,
-    input: { id: definition.state.id, version: definition.state.version },
-    output: { id: definition.state.id, version: definition.state.version },
+    description: definition.description,
+    input: schemaReference(definition.state.id, definition.state.version),
+    output: schemaReference(definition.state.id, definition.state.version),
     invoke: (input) =>
       runTyped(
         definition.id,
@@ -417,15 +534,17 @@ export function defineMeasure<T>(
   definition: Readonly<{
     id: string;
     version: string;
+    description: string;
     input: SchemaRegistration<T>;
     implementation: (input: T) => number;
   }>,
 ): RuntimeMeasure {
   return {
     kind: "measure",
-    id: definition.id,
+    id: operationReference(definition.id, definition.version).id,
     version: definition.version,
-    input: { id: definition.input.id, version: definition.input.version },
+    description: definition.description,
+    input: schemaReference(definition.input.id, definition.input.version),
     measure(input: unknown): Result<number, Diagnostic> {
       const parsed = definition.input.parse(input);
       if (!parsed.ok) return parsed;
@@ -445,15 +564,25 @@ export function defineMeasure<T>(
 /** Builds an immutable heterogeneous catalog and rejects duplicate or dangling registrations. */
 export function createCatalog(
   definition: Readonly<{
-    identity: VersionedReference;
+    identity: Readonly<{ id: string; version: string }>;
     schemas: ReadonlyArray<RuntimeSchema>;
     operations: ReadonlyArray<RuntimeOperation>;
   }>,
 ): Result<Catalog, ReadonlyArray<Diagnostic>> {
+  const identity = catalogReferenceSchema.safeParse(definition.identity);
+  if (!identity.success) {
+    return err([
+      diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "Catalog identity must contain a valid branded ID and version.",
+      ),
+    ]);
+  }
   const schemas = new Map<string, RuntimeSchema>();
   const operations = new Map<string, RuntimeOperation>();
   const diagnostics: Array<Diagnostic> = [];
-  for (const schema of definition.schemas) {
+  for (const registration of definition.schemas) {
+    const schema = freezeRuntimeSchema(registration);
     const key = referenceKey(schema);
     if (schemas.has(key))
       diagnostics.push(
@@ -461,7 +590,8 @@ export function createCatalog(
       );
     else schemas.set(key, schema);
   }
-  for (const operation of definition.operations) {
+  for (const registration of definition.operations) {
+    const operation = freezeRuntimeOperation(registration);
     const key = referenceKey(operation);
     if (operations.has(key))
       diagnostics.push(
@@ -521,25 +651,29 @@ export function createCatalog(
     }
   }
   return diagnostics.length === 0
-    ? ok({ identity: definition.identity, schemas, operations })
+    ? ok(storeCatalog({ identity: identity.data, schemas, operations }))
     : err(diagnostics);
 }
 
 export function describeCatalog(catalog: Catalog): CatalogDescription {
+  const state = readCatalog(catalog);
   return {
-    identity: catalog.identity,
-    schemas: [...catalog.schemas.values()]
+    identity: state.identity,
+    schemas: [...state.schemas.values()]
       .map((schema) => ({
         id: schema.id,
         version: schema.version,
+        description: schema.description,
+        jsonSchema: schema.jsonSchema,
         kind: schema.kind,
       }))
       .toSorted((left, right) => compareKeys(left, right)),
-    operations: [...catalog.operations.values()]
+    operations: [...state.operations.values()]
       .map((operation) => ({
         id: operation.id,
         version: operation.version,
         kind: operation.kind,
+        description: operation.description,
         ...(operation.kind === "reducer" ? {} : { input: operation.input }),
       }))
       .toSorted((left, right) => compareKeys(left, right)),

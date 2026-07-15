@@ -3,40 +3,21 @@
 import { readFile } from "node:fs/promises";
 
 import {
-  analyzePlan,
-  canonicalizePlan,
-  checkPlan,
+  compilePlanJson,
   createReplayEffectHandler,
   type Diagnostic,
+  type ExecutablePlan,
   executePlan,
-  hashPlan,
-  normalizePlan,
+  inspectExecutablePlan,
   parseJson,
-  parsePlanJson,
   type PlanAnalysis,
   type ReplayEntry,
+  replayEntrySchema,
   type Result,
-  type WirePlan,
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
-import { createExampleCatalog } from "./example-catalog.js";
-
-type Compiled = Readonly<{
-  plan: WirePlan;
-  checked: Parameters<typeof analyzePlan>[0];
-  analysis: PlanAnalysis;
-}>;
-
-const replayEntrySchema = z.strictObject({
-  invocationId: z.string(),
-  value: z.json(),
-  replayResultId: z.string(),
-  usage: z.strictObject({
-    tokens: z.number().int().nonnegative(),
-    wallClockMs: z.number().int().nonnegative(),
-  }),
-});
+import { createExampleCatalog, examplePolicy } from "./example-catalog.js";
 
 function jsonOutput(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, undefined, 2)}\n`);
@@ -76,26 +57,10 @@ async function readText(
 
 async function compile(
   path: string,
-): Promise<Result<Compiled, ReadonlyArray<Diagnostic>>> {
+): Promise<Result<ExecutablePlan, ReadonlyArray<Diagnostic>>> {
   const text = await readText(path);
   if (!text.ok) return text;
-  const parsed = parsePlanJson(text.value);
-  if (!parsed.ok) return parsed;
-  const normalized = normalizePlan(parsed.value);
-  if (!normalized.ok) return normalized;
-  const checked = checkPlan(normalized.value, createExampleCatalog());
-  if (!checked.ok) return checked;
-  const analysis = analyzePlan(checked.value);
-  return analysis.ok
-    ? {
-        ok: true,
-        value: {
-          plan: parsed.value,
-          checked: checked.value,
-          analysis: analysis.value,
-        },
-      }
-    : analysis;
+  return compilePlanJson(text.value, createExampleCatalog(), examplePolicy);
 }
 
 function analysisJson(analysis: PlanAnalysis): unknown {
@@ -196,34 +161,32 @@ async function main(args: ReadonlyArray<string>): Promise<number> {
     return 1;
   }
   if (command === "validate") {
+    const summary = inspectExecutablePlan(compiled.value);
+    if (summary === undefined) return 1;
     if (asJson)
       jsonOutput({
         valid: true,
-        rootSchema: compiled.value.checked.root.outputSchema.id,
+        rootSchema: summary.rootSchema.id,
       });
     else
       process.stdout.write(
-        `Valid plan; root schema ${compiled.value.checked.root.outputSchema.id}.\n`,
+        `Valid plan; root schema ${summary.rootSchema.id}.\n`,
       );
     return 0;
   }
   if (command === "analyze") {
-    jsonOutput(analysisJson(compiled.value.analysis));
+    const summary = inspectExecutablePlan(compiled.value);
+    if (summary === undefined) return 1;
+    jsonOutput(analysisJson(summary.analysis));
     return 0;
   }
   if (command === "canonicalize") {
-    const canonical = canonicalizePlan(compiled.value.plan);
-    const hash = await hashPlan(compiled.value.plan);
-    if (!canonical.ok) {
-      diagnosticsOutput([canonical.error], asJson);
-      return 1;
-    }
-    if (!hash.ok) {
-      diagnosticsOutput([hash.error], asJson);
-      return 1;
-    }
-    if (asJson) jsonOutput({ canonical: canonical.value, hash: hash.value });
-    else process.stdout.write(`${canonical.value}\n${hash.value}\n`);
+    const summary = inspectExecutablePlan(compiled.value);
+    if (summary === undefined) return 1;
+    if (asJson)
+      jsonOutput({ canonical: summary.canonicalPlan, hash: summary.planHash });
+    else
+      process.stdout.write(`${summary.canonicalPlan}\n${summary.planHash}\n`);
     return 0;
   }
   const inputsPath = flagValue(args, "--inputs");
@@ -243,19 +206,14 @@ async function main(args: ReadonlyArray<string>): Promise<number> {
     return 1;
   }
   let tick = 0;
-  const executed = await executePlan(
-    compiled.value.checked,
-    compiled.value.analysis,
-    createExampleCatalog(),
-    {
-      inputs: inputs.value,
-      effectHandler: createReplayEffectHandler(replay.value),
-      clock: {
-        now: () => new Date(Date.UTC(2026, 0, 1, 0, 0, tick++)).toISOString(),
-      },
-      runIdProvider: { next: () => "example-replay-run" },
+  const executed = await executePlan(compiled.value, {
+    inputs: inputs.value,
+    effectHandler: createReplayEffectHandler(replay.value),
+    clock: {
+      now: () => new Date(Date.UTC(2026, 0, 1, 0, 0, tick++)).toISOString(),
     },
-  );
+    runIdProvider: { next: () => "example-replay-run" },
+  });
   if (!executed.ok) {
     diagnosticsOutput(executed.error.diagnostics, asJson);
     return 1;

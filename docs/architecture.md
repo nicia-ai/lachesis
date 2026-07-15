@@ -8,8 +8,9 @@ flowchart LR
   PARSE --> NORMALIZE["Normalize IDs + graph"]
   NORMALIZE --> CHECK["Resolve catalog + type-check"]
   CHECK --> ANALYZE["Effects, capabilities + resource proofs"]
-  ANALYZE --> CANON["Canonical JSON + SHA-256"]
-  CANON --> EXEC["Pure / mock / replay interpreter"]
+  ANALYZE --> CANON["Plan + catalog fingerprints"]
+  CANON --> ARTIFACT["Opaque ExecutablePlan"]
+  ARTIFACT --> EXEC["Pure / mock / replay interpreter"]
   EXEC --> TRACE["Separate typed provenance trace"]
 ```
 
@@ -17,8 +18,14 @@ Every arrow strengthens the value's guarantees. Parsing accepts text and returns
 only a validated wire document. Normalization builds a `ReadonlyMap`, detects
 identity/reference failures, and establishes topological order. Checking proves
 nominal schema compatibility at every edge. Analysis must prove every relevant
-maximum and policy inclusion before execution. Execution accepts only the
-checked plan and independently enforces actual usage and runtime schemas.
+maximum and policy inclusion before execution. Compilation snapshots the catalog
+and binds analysis, the plan hash, catalog fingerprint, capability set, and
+budget into an opaque `ExecutablePlan`. Execution accepts only that artifact and
+independently enforces capabilities, actual usage, and runtime schemas.
+
+The public package does not export normalization, checking, or analysis entry
+points. Callers cannot pair artifacts from separate compilations or substitute a
+catalog at execution time.
 
 ## Three graphs
 
@@ -48,6 +55,11 @@ Schema compatibility is conservative and nominal. Equal identities are
 compatible; collection element compatibility comes from registered collection
 metadata. There is no coercion or structural-subtyping guess.
 
+Catalog tokens hold frozen snapshots. Their canonical manifest fingerprints all
+schema descriptions and JSON Schemas, operation signatures, effect declarations,
+bounds, and reducer laws. The generator-facing `PlanLanguageManifest` combines
+that catalog fingerprint with the plan JSON Schema and the available policy.
+
 ## Bounds
 
 Mapped effect calls are multiplied by the source collection's proven maximum.
@@ -75,6 +87,9 @@ array order remains significant, and all plan/catalog/policy references in the
 wire document contribute to the hash. Equivalent programs are not promised the
 same hash.
 
-Replay reuses recorded external results. It does not claim that rerunning a
-provider would reproduce those results, nor that a semantically incorrect
-recorded answer becomes correct.
+Replay reuses recorded external results only when the effect request hash
+matches. That hash binds the plan, catalog, operation version, node/invocation,
+effect name, and input digest. Recorded output digests are checked before a
+value is returned. Replay does not claim that rerunning a provider would
+reproduce a recording, nor that a semantically incorrect recorded answer becomes
+correct.

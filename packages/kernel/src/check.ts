@@ -1,5 +1,7 @@
 import {
   type Catalog,
+  type CatalogState,
+  readCatalog,
   referenceKey,
   type RuntimeOperation,
   type RuntimeSchema,
@@ -12,12 +14,17 @@ import type {
   NormalizedPlan,
 } from "./plan.js";
 import { err, ok, type Result } from "./result.js";
-import type { NodeId, VersionedReference, WireNode } from "./wire.js";
+import type {
+  CatalogReference,
+  NodeId,
+  OperationReference,
+  SchemaReference,
+  WireNode,
+} from "./wire.js";
 
-function referencesEqual(
-  left: VersionedReference,
-  right: VersionedReference,
-): boolean {
+type Reference = SchemaReference | OperationReference | CatalogReference;
+
+function referencesEqual(left: Reference, right: Reference): boolean {
   return left.id === right.id && left.version === right.version;
 }
 
@@ -30,8 +37,8 @@ function unknown(reason: string): Bound {
 }
 
 function resolveSchema(
-  catalog: Catalog,
-  reference: VersionedReference,
+  catalog: CatalogState,
+  reference: SchemaReference,
   nodeId: NodeId,
   diagnostics: Array<Diagnostic>,
 ): RuntimeSchema | undefined {
@@ -42,6 +49,17 @@ function resolveSchema(
         "UNKNOWN_SCHEMA",
         `Unknown schema ${referenceKey(reference)}.`,
         { nodeId },
+        [],
+        {
+          actual: {
+            reference: {
+              kind: "schema",
+              id: reference.id,
+              version: reference.version,
+            },
+          },
+          repair: { nodeId },
+        },
       ),
     );
   }
@@ -49,8 +67,8 @@ function resolveSchema(
 }
 
 function resolveOperation(
-  catalog: Catalog,
-  reference: VersionedReference,
+  catalog: CatalogState,
+  reference: OperationReference,
   nodeId: NodeId,
   diagnostics: Array<Diagnostic>,
 ): RuntimeOperation | undefined {
@@ -61,6 +79,17 @@ function resolveOperation(
         "UNKNOWN_OPERATION",
         `Unknown operation ${referenceKey(reference)}.`,
         { nodeId },
+        [],
+        {
+          actual: {
+            reference: {
+              kind: "operation",
+              id: reference.id,
+              version: reference.version,
+            },
+          },
+          repair: { nodeId },
+        },
       ),
     );
   }
@@ -80,6 +109,12 @@ function expectKind<K extends RuntimeOperation["kind"]>(
         "OPERATION_KIND_MISMATCH",
         `Operation ${referenceKey(operation)} is ${operation.kind}, expected ${kind}.`,
         { nodeId },
+        [],
+        {
+          expected: { value: kind },
+          actual: { value: operation.kind },
+          repair: { nodeId },
+        },
       ),
     );
     return undefined;
@@ -96,7 +131,7 @@ function hasOperationKind<K extends RuntimeOperation["kind"]>(
 
 function expectType(
   actual: RuntimeSchema,
-  expected: VersionedReference,
+  expected: SchemaReference,
   nodeId: NodeId,
   diagnostics: Array<Diagnostic>,
   code: "TYPE_MISMATCH" | "BRANCH_TYPE_MISMATCH" = "TYPE_MISMATCH",
@@ -108,6 +143,14 @@ function expectType(
       `Schema ${referenceKey(actual)} is not compatible with ${referenceKey(expected)}.`,
       {
         nodeId,
+      },
+      [],
+      {
+        expected: { schema: expected },
+        actual: {
+          schema: { id: actual.id, version: actual.version },
+        },
+        repair: { nodeId },
       },
     ),
   );
@@ -136,13 +179,19 @@ function collectionElement(
   schema: RuntimeSchema,
   nodeId: NodeId,
   diagnostics: Array<Diagnostic>,
-): VersionedReference | undefined {
+): SchemaReference | undefined {
   if (schema.kind.kind === "collection") return schema.kind.element;
   diagnostics.push(
     diagnostic(
       "TYPE_MISMATCH",
       `Schema ${referenceKey(schema)} is not a collection.`,
       { nodeId },
+      [],
+      {
+        expected: { value: "collection schema" },
+        actual: { schema: { id: schema.id, version: schema.version } },
+        repair: { nodeId },
+      },
     ),
   );
   return undefined;
@@ -151,7 +200,7 @@ function collectionElement(
 function checkNode(
   node: WireNode,
   checked: ReadonlyMap<NodeId, CheckedNode>,
-  catalog: Catalog,
+  catalog: CatalogState,
   diagnostics: Array<Diagnostic>,
 ): CheckedNode | undefined {
   switch (node.op) {
@@ -195,6 +244,7 @@ function checkNode(
         node.id,
         diagnostics,
       );
+      /* v8 ignore next -- catalog registration rejects dangling output schemas */
       return output === undefined
         ? undefined
         : {
@@ -222,6 +272,7 @@ function checkNode(
         node.id,
         diagnostics,
       );
+      /* v8 ignore next -- dependency/order failures already carry their source diagnostic */
       if (
         source === undefined ||
         expectedOperation === undefined ||
@@ -259,6 +310,12 @@ function checkNode(
             "Mapped operation output does not match the output collection element.",
             {
               nodeId: node.id,
+            },
+            [],
+            {
+              expected: { schema: outputElement },
+              actual: { schema: expectedOperation.output },
+              repair: { nodeId: node.id },
             },
           ),
         );
@@ -323,6 +380,12 @@ function checkNode(
             {
               nodeId: node.id,
             },
+            [],
+            {
+              expected: { schema: reducer.element },
+              actual: { schema: element },
+              repair: { nodeId: node.id },
+            },
           ),
         );
       }
@@ -332,6 +395,7 @@ function checkNode(
         node.id,
         diagnostics,
       );
+      /* v8 ignore next -- catalog registration rejects dangling accumulators */
       return output === undefined
         ? undefined
         : {
@@ -345,6 +409,7 @@ function checkNode(
       const condition = checkedDependency(checked, node.condition);
       const whenTrue = checkedDependency(checked, node.whenTrue);
       const whenFalse = checkedDependency(checked, node.whenFalse);
+      /* v8 ignore next -- normalization and dependency checks bind all select inputs */
       if (
         condition === undefined ||
         whenTrue === undefined ||
@@ -360,6 +425,17 @@ function checkNode(
             "TYPE_MISMATCH",
             "Select condition must use a boolean schema.",
             { nodeId: node.id },
+            [],
+            {
+              expected: { value: "boolean scalar schema" },
+              actual: {
+                schema: {
+                  id: condition.outputSchema.id,
+                  version: condition.outputSchema.version,
+                },
+              },
+              repair: { nodeId: node.id },
+            },
           ),
         );
       }
@@ -395,6 +471,7 @@ function checkNode(
         node.id,
         diagnostics,
       );
+      /* v8 ignore next -- catalog registration rejects dangling output schemas */
       return output === undefined
         ? undefined
         : {
@@ -428,6 +505,7 @@ function checkNode(
         node.id,
         diagnostics,
       );
+      /* v8 ignore next -- failures here already carry a dependency or operation diagnostic */
       if (seed === undefined || step === undefined || measure === undefined)
         return undefined;
       expectType(seed.outputSchema, step.input, node.id, diagnostics);
@@ -448,18 +526,39 @@ export function checkPlan(
   normalized: NormalizedPlan,
   catalog: Catalog,
 ): Result<CheckedPlan, ReadonlyArray<Diagnostic>> {
+  const state = readCatalog(catalog);
   const diagnostics: Array<Diagnostic> = [];
-  if (!referencesEqual(normalized.wire.catalog, catalog.identity)) {
+  if (!referencesEqual(normalized.wire.catalog, state.identity)) {
     diagnostics.push(
       diagnostic(
-        "UNKNOWN_OPERATION",
-        `Plan requires catalog ${referenceKey(normalized.wire.catalog)}, received ${referenceKey(catalog.identity)}.`,
+        "CATALOG_REFERENCE_MISMATCH",
+        `Plan requires catalog ${referenceKey(normalized.wire.catalog)}, received ${referenceKey(state.identity)}.`,
+        {},
+        [],
+        {
+          expected: {
+            reference: {
+              kind: "catalog",
+              id: normalized.wire.catalog.id,
+              version: normalized.wire.catalog.version,
+            },
+          },
+          actual: {
+            reference: {
+              kind: "catalog",
+              id: state.identity.id,
+              version: state.identity.version,
+            },
+          },
+          repair: { path: ["catalog"] },
+        },
       ),
     );
   }
   const checked = new Map<NodeId, CheckedNode>();
   for (const nodeId of normalized.topologicalOrder) {
     const node = normalized.nodes.get(nodeId);
+    /* v8 ignore next -- normalization owns this exact order and node map */
     if (node === undefined) {
       diagnostics.push(
         diagnostic(
@@ -469,10 +568,11 @@ export function checkPlan(
       );
       continue;
     }
-    const result = checkNode(node, checked, catalog, diagnostics);
+    const result = checkNode(node, checked, state, diagnostics);
     if (result !== undefined) checked.set(nodeId, result);
   }
   const root = checked.get(normalized.wire.root);
+  /* v8 ignore next -- a missing checked root always has a prior diagnostic */
   if (root === undefined && diagnostics.length === 0) {
     diagnostics.push(
       diagnostic("INTERNAL_INVARIANT_VIOLATION", "Checked root is missing."),

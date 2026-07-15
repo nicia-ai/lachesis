@@ -1,14 +1,37 @@
-import { digestValue, hashPlan } from "./canonical.js";
+import { z } from "zod";
+
 import {
-  type Catalog,
+  canonicalizeJson,
+  digestValue,
+  hashCanonicalJson,
+} from "./canonical.js";
+import {
+  type CatalogState,
+  readCatalog,
   referenceKey,
   type RuntimeEffect,
   type RuntimeSchema,
 } from "./catalog.js";
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
-import type { CheckedNode, CheckedPlan, PlanAnalysis } from "./plan.js";
+import { type ExecutablePlan, readExecutablePlan } from "./executable.js";
+import {
+  type CatalogFingerprint,
+  catalogFingerprintSchema,
+  type EffectRequestHash,
+  effectRequestHashSchema,
+  type PlanHash,
+  planHashSchema,
+  type ValueDigest,
+  valueDigestSchema,
+} from "./identity.js";
+import type { CheckedNode, CheckedPlan } from "./plan.js";
 import { err, ok, type Result } from "./result.js";
-import type { NodeId } from "./wire.js";
+import {
+  type NodeId,
+  nodeIdSchema,
+  type OperationReference,
+  operationReferenceSchema,
+} from "./wire.js";
 
 export type RuntimeUsage = Readonly<{
   effectCalls: number;
@@ -20,12 +43,16 @@ export type RuntimeUsage = Readonly<{
 
 export type EffectRequest = Readonly<{
   invocationId: string;
+  invocationIndex: number;
+  requestHash: EffectRequestHash;
+  planHash: PlanHash;
+  catalogFingerprint: CatalogFingerprint;
   nodeId: NodeId;
-  operation: Readonly<{ id: string; version: string }>;
+  operation: OperationReference;
   effectName: string;
   capability: string;
   input: unknown;
-  inputDigest: string;
+  inputDigest: ValueDigest;
 }>;
 
 export type EffectResult = Readonly<{
@@ -74,11 +101,12 @@ export type RunTrace = Readonly<{
   runId: string;
   planHash: string;
   catalog: Readonly<{ id: string; version: string }>;
+  catalogFingerprint: CatalogFingerprint;
   events: ReadonlyArray<TraceEvent>;
   finalUsage: RuntimeUsage;
 }>;
 
-export type ExecutionSuccess = Readonly<{
+export type ExecutionResult = Readonly<{
   output: unknown;
   outputDigest: string;
   trace: RunTrace;
@@ -131,6 +159,7 @@ function checkUsage(
   usage: MutableUsage,
   nodeId: NodeId,
 ): Diagnostic | undefined {
+  /* v8 ignore start -- compilation proves these totals; checks remain defense in depth */
   const budget = plan.normalized.wire.budget;
   if (usage.effectCalls > budget.maxEffectCalls)
     return budgetFailure(
@@ -163,12 +192,14 @@ function checkUsage(
       nodeId,
     );
   return undefined;
+  /* v8 ignore stop */
 }
 
 function ensureArray(
   value: unknown,
   nodeId: NodeId,
 ): Result<ReadonlyArray<unknown>, Diagnostic> {
+  /* v8 ignore next -- checker only routes collection schemas to collection operators */
   return Array.isArray(value)
     ? ok(value)
     : err(
@@ -181,10 +212,11 @@ function ensureArray(
 }
 
 function outputSchemaForEffect(
-  catalog: Catalog,
+  catalog: CatalogState,
   effect: RuntimeEffect,
 ): Result<RuntimeSchema, Diagnostic> {
   const schema = catalog.schemas.get(referenceKey(effect.output));
+  /* v8 ignore next -- immutable catalog registration rejects dangling outputs */
   return schema === undefined
     ? err(
         diagnostic(
@@ -195,15 +227,26 @@ function outputSchemaForEffect(
     : ok(schema);
 }
 
-/** Executes only a checked/analyzed plan through injected effects, time, and run identity. */
+/** Executes only an opaque artifact emitted by compilePlanJson. */
 export async function executePlan(
-  plan: CheckedPlan,
-  _analysis: PlanAnalysis,
-  catalog: Catalog,
+  executablePlan: ExecutablePlan,
   options: ExecuteOptions,
-): Promise<Result<ExecutionSuccess, ExecutionFailure>> {
-  const planHash = await hashPlan(plan.normalized.wire);
-  if (!planHash.ok) return err({ diagnostics: [planHash.error] });
+): Promise<Result<ExecutionResult, ExecutionFailure>> {
+  const artifacts = readExecutablePlan(executablePlan);
+  if (artifacts === undefined) {
+    return err({
+      diagnostics: [
+        diagnostic(
+          "INVALID_EXECUTABLE_PLAN",
+          "Execution requires an artifact returned by compilePlanJson.",
+        ),
+      ],
+    });
+  }
+  const compiledArtifacts = artifacts;
+  const plan: CheckedPlan = compiledArtifacts.checked;
+  const catalog = readCatalog(compiledArtifacts.catalog);
+  const planHash = compiledArtifacts.planHash;
   const runId = options.runIdProvider.next();
   const events: Array<TraceEvent> = [];
   const pendingEffectEvents = new Map<
@@ -227,19 +270,64 @@ export async function executePlan(
   ): Promise<Result<unknown, Diagnostic>> {
     const invocationId = `${nodeId}:${index}`;
     const invokedAt = options.clock.now();
+    if (
+      !plan.normalized.wire.allowedCapabilities.includes(effect.capability) ||
+      !compiledArtifacts.policy.allowedCapabilities.includes(
+        effect.capability,
+      ) ||
+      !compiledArtifacts.analysis.capabilitiesRequired.has(effect.capability)
+    ) {
+      return err(
+        diagnostic(
+          "DENIED_CAPABILITY",
+          `Capability ${effect.capability} is not authorized by the compiled plan.`,
+          { nodeId },
+          [{ key: "capability", value: effect.capability }],
+          {
+            expected: { value: "capability bound into executable plan" },
+            actual: { value: effect.capability },
+            repair: { nodeId },
+          },
+        ),
+      );
+    }
     usage.effectCalls += 1;
     const beforeFailure = checkUsage(plan, usage, nodeId);
+    /* v8 ignore next -- analysis proves the maximum effect-call count */
     if (beforeFailure !== undefined) return err(beforeFailure);
     const inputDigest = await digestValue(input);
+    /* v8 ignore next -- checked schema values are guaranteed to be JSON */
     if (!inputDigest.ok) return inputDigest;
+    const requestIdentity = {
+      planHash,
+      catalogFingerprint: compiledArtifacts.catalogFingerprint,
+      operation: { id: effect.id, version: effect.version },
+      nodeId,
+      invocationIndex: index,
+      effectName: effect.effectName,
+      inputDigest: valueDigestSchema.parse(inputDigest.value),
+    };
+    const requestCanonical = canonicalizeJson(requestIdentity);
+    /* v8 ignore next -- request identity consists only of validated JSON scalars */
+    if (!requestCanonical.ok) return requestCanonical;
+    const requestHash = effectRequestHashSchema.parse(
+      await hashCanonicalJson(requestCanonical.value),
+    );
     const handled = await options.effectHandler({
       invocationId,
+      invocationIndex: index,
+      requestHash,
+      planHash,
+      catalogFingerprint: compiledArtifacts.catalogFingerprint,
       nodeId,
-      operation: { id: effect.id, version: effect.version },
+      operation: operationReferenceSchema.parse({
+        id: effect.id,
+        version: effect.version,
+      }),
       effectName: effect.effectName,
       capability: effect.capability,
       input,
-      inputDigest: inputDigest.value,
+      inputDigest: requestIdentity.inputDigest,
     });
     if (!handled.ok) return handled;
     if (
@@ -281,12 +369,15 @@ export async function executePlan(
     usage.tokens += handled.value.usage.tokens;
     usage.wallClockMs += handled.value.usage.wallClockMs;
     const afterFailure = checkUsage(plan, usage, nodeId);
+    /* v8 ignore next -- analysis and per-effect checks prove aggregate usage */
     if (afterFailure !== undefined) return err(afterFailure);
     const schema = outputSchemaForEffect(catalog, effect);
+    /* v8 ignore next -- output schema is bound into the immutable catalog snapshot */
     if (!schema.ok) return schema;
     const validated = schema.value.parse(handled.value.value);
     if (!validated.ok) return validated;
     const outputDigest = await digestValue(validated.value);
+    /* v8 ignore next -- validated effect outputs are guaranteed to be JSON */
     if (!outputDigest.ok) return outputDigest;
     pendingEffectEvents.set(invocationId, {
       kind: "effectInvoked",
@@ -325,6 +416,7 @@ export async function executePlan(
       const value = await evaluate(nodeId);
       if (value.ok) {
         const digest = await digestValue(value.value);
+        /* v8 ignore next -- successful checked nodes only produce JSON */
         if (digest.ok) inputDigests.push(digest.value);
       }
       return value;
@@ -402,10 +494,12 @@ export async function executePlan(
           break;
         }
         const array = ensureArray(source.value, node.id);
+        /* v8 ignore start -- checker and runtime schema guarantee a collection here */
         if (!array.ok) {
           result = array;
           break;
         }
+        /* v8 ignore stop */
         if (checkedNode.operation?.kind === "function") {
           const output: Array<unknown> = [];
           let failure: Diagnostic | undefined;
@@ -428,6 +522,7 @@ export async function executePlan(
             Math.min(node.parallelism, array.value.length),
           );
           const usageFailure = checkUsage(plan, usage, node.id);
+          /* v8 ignore next -- analysis proves map parallelism and effect totals */
           if (usageFailure !== undefined) {
             result = err(usageFailure);
             break;
@@ -461,7 +556,7 @@ export async function executePlan(
             failure === undefined
               ? checkedNode.outputSchema.parse(output)
               : err(failure);
-        } else {
+        } /* v8 ignore next -- checker always binds a map operation */ else {
           result = err(
             diagnostic(
               "INTERNAL_INVARIANT_VIOLATION",
@@ -479,6 +574,7 @@ export async function executePlan(
           break;
         }
         const array = ensureArray(source.value, node.id);
+        /* v8 ignore start -- checker binds collection input and predicate */
         if (!array.ok || checkedNode.operation?.kind !== "predicate") {
           result = array.ok
             ? err(
@@ -491,6 +587,7 @@ export async function executePlan(
             : array;
           break;
         }
+        /* v8 ignore stop */
         const output: Array<unknown> = [];
         let failure: Diagnostic | undefined;
         for (const item of array.value) {
@@ -514,6 +611,7 @@ export async function executePlan(
           break;
         }
         const array = ensureArray(source.value, node.id);
+        /* v8 ignore start -- checker binds collection input and reducer */
         if (!array.ok || checkedNode.operation?.kind !== "reducer") {
           result = array.ok
             ? err(
@@ -526,6 +624,7 @@ export async function executePlan(
             : array;
           break;
         }
+        /* v8 ignore stop */
         let accumulator: unknown = checkedNode.operation.identity;
         let failure: Diagnostic | undefined;
         for (const item of array.value) {
@@ -548,6 +647,7 @@ export async function executePlan(
           result = condition;
           break;
         }
+        /* v8 ignore next -- checker requires a boolean schema for select */
         if (typeof condition.value !== "boolean") {
           result = err(
             diagnostic(
@@ -581,6 +681,7 @@ export async function executePlan(
         const measureOperation = catalog.operations.get(
           referenceKey(node.measure),
         );
+        /* v8 ignore next -- checker binds step and measure operations */
         if (
           !seed.ok ||
           checkedNode.operation?.kind !== "fixedPointStep" ||
@@ -661,6 +762,7 @@ export async function executePlan(
       return result;
     }
     const outputDigest = await digestValue(result.value);
+    /* v8 ignore next -- successful checked nodes only produce JSON */
     if (!outputDigest.ok) return outputDigest;
     events.push({
       kind: "nodeCompleted",
@@ -677,6 +779,7 @@ export async function executePlan(
     const existing = memo.get(nodeId);
     if (existing !== undefined) return existing;
     const checkedNode = plan.nodes.get(nodeId);
+    /* v8 ignore next -- executable artifacts snapshot every checked node */
     const pending =
       checkedNode === undefined
         ? Promise.resolve(
@@ -698,21 +801,24 @@ export async function executePlan(
       diagnostics: [output.error],
       trace: {
         runId,
-        planHash: planHash.value,
+        planHash,
         catalog: catalog.identity,
+        catalogFingerprint: compiledArtifacts.catalogFingerprint,
         events,
         finalUsage: snapshotUsage(usage),
       },
     });
   }
   const outputDigest = await digestValue(output.value);
+  /* v8 ignore next -- the checked root output is guaranteed to be JSON */
   if (!outputDigest.ok) {
     return err({
       diagnostics: [outputDigest.error],
       trace: {
         runId,
-        planHash: planHash.value,
+        planHash,
         catalog: catalog.identity,
+        catalogFingerprint: compiledArtifacts.catalogFingerprint,
         events,
         finalUsage: snapshotUsage(usage),
       },
@@ -723,46 +829,168 @@ export async function executePlan(
     outputDigest: outputDigest.value,
     trace: {
       runId,
-      planHash: planHash.value,
+      planHash,
       catalog: catalog.identity,
+      catalogFingerprint: compiledArtifacts.catalogFingerprint,
       events,
       finalUsage: snapshotUsage(usage),
     },
   });
 }
 
-export type ReplayEntry = Readonly<{
-  invocationId: string;
-  value: unknown;
-  replayResultId: string;
-  usage: Readonly<{ tokens: number; wallClockMs: number }>;
-}>;
+export const replayEntrySchema = z
+  .strictObject({
+    requestHash: effectRequestHashSchema,
+    planHash: planHashSchema,
+    catalogFingerprint: catalogFingerprintSchema,
+    operation: operationReferenceSchema,
+    nodeId: nodeIdSchema,
+    invocationIndex: z.number().int().nonnegative(),
+    effectName: z.string().min(1),
+    inputDigest: valueDigestSchema,
+    outputDigest: valueDigestSchema,
+    value: z.json(),
+    replayResultId: z.string().min(1),
+    usage: z
+      .strictObject({
+        tokens: z.number().int().nonnegative(),
+        wallClockMs: z.number().int().nonnegative(),
+      })
+      .readonly(),
+  })
+  .readonly();
+
+export type ReplayEntry = z.infer<typeof replayEntrySchema>;
+
+function replayIdentityMatches(
+  entry: ReplayEntry,
+  request: EffectRequest,
+): boolean {
+  return (
+    entry.requestHash === request.requestHash &&
+    entry.planHash === request.planHash &&
+    entry.catalogFingerprint === request.catalogFingerprint &&
+    entry.operation.id === request.operation.id &&
+    entry.operation.version === request.operation.version &&
+    entry.nodeId === request.nodeId &&
+    entry.invocationIndex === request.invocationIndex &&
+    entry.effectName === request.effectName &&
+    entry.inputDigest === request.inputDigest
+  );
+}
+
+export async function recordEffectResult(
+  request: EffectRequest,
+  result: EffectResult,
+): Promise<Result<ReplayEntry, Diagnostic>> {
+  const outputDigest = await digestValue(result.value);
+  if (!outputDigest.ok) return outputDigest;
+  const parsed = replayEntrySchema.safeParse({
+    requestHash: request.requestHash,
+    planHash: request.planHash,
+    catalogFingerprint: request.catalogFingerprint,
+    operation: request.operation,
+    nodeId: request.nodeId,
+    invocationIndex: request.invocationIndex,
+    effectName: request.effectName,
+    inputDigest: request.inputDigest,
+    outputDigest: outputDigest.value,
+    value: result.value,
+    replayResultId: result.replayResultId,
+    usage: result.usage,
+  });
+  return parsed.success
+    ? ok(parsed.data)
+    : err(
+        diagnostic(
+          "RUNTIME_SCHEMA_VIOLATION",
+          parsed.error.issues.map((issue) => issue.message).join("; "),
+          { nodeId: request.nodeId },
+        ),
+      );
+}
 
 export function createReplayEffectHandler(
   entries: ReadonlyArray<ReplayEntry>,
 ): EffectHandler {
-  const byInvocation = new Map(
-    entries.map((entry) => [entry.invocationId, entry]),
+  const byRequestHash = new Map(
+    entries.map((entry) => [entry.requestHash, entry]),
   );
-  return (request) => {
-    const entry = byInvocation.get(request.invocationId);
-    return Promise.resolve(
-      entry === undefined
+  const byInvocation = new Map(
+    entries.map((entry) => [`${entry.nodeId}:${entry.invocationIndex}`, entry]),
+  );
+  return async (request) => {
+    const entry = byRequestHash.get(request.requestHash);
+    const invocationEntry = byInvocation.get(request.invocationId);
+    if (entry === undefined) {
+      return invocationEntry === undefined
         ? err(
             diagnostic(
               "MISSING_REPLAY_RESULT",
-              `No replay result for ${request.invocationId}.`,
-              {
-                nodeId: request.nodeId,
-              },
+              `No replay result for request ${request.requestHash}.`,
+              { nodeId: request.nodeId },
+              [],
+              { repair: { nodeId: request.nodeId } },
             ),
           )
-        : ok({
-            value: entry.value,
-            replayResultId: entry.replayResultId,
-            usage: entry.usage,
-          }),
-    );
+        : err(
+            diagnostic(
+              "REPLAY_REQUEST_MISMATCH",
+              `Replay request at ${request.invocationId} does not match the recording.`,
+              { nodeId: request.nodeId },
+              [],
+              {
+                expected: {
+                  reference: {
+                    kind: "effectRequest",
+                    id: invocationEntry.requestHash,
+                  },
+                },
+                actual: {
+                  reference: {
+                    kind: "effectRequest",
+                    id: request.requestHash,
+                  },
+                },
+                repair: { nodeId: request.nodeId },
+              },
+            ),
+          );
+    }
+    if (!replayIdentityMatches(entry, request)) {
+      return err(
+        diagnostic(
+          "REPLAY_REQUEST_MISMATCH",
+          `Replay identity fields do not match request ${request.requestHash}.`,
+          { nodeId: request.nodeId },
+          [],
+          { repair: { nodeId: request.nodeId } },
+        ),
+      );
+    }
+    const actualOutputDigest = await digestValue(entry.value);
+    /* v8 ignore next -- replayEntrySchema only accepts JSON values */
+    if (!actualOutputDigest.ok) return actualOutputDigest;
+    if (actualOutputDigest.value !== entry.outputDigest) {
+      return err(
+        diagnostic(
+          "REPLAY_OUTPUT_MISMATCH",
+          `Replay output digest does not match request ${request.requestHash}.`,
+          { nodeId: request.nodeId },
+          [],
+          {
+            expected: { value: entry.outputDigest },
+            actual: { value: actualOutputDigest.value },
+            repair: { nodeId: request.nodeId },
+          },
+        ),
+      );
+    }
+    return ok({
+      value: entry.value,
+      replayResultId: entry.replayResultId,
+      usage: entry.usage,
+    });
   };
 }
 
