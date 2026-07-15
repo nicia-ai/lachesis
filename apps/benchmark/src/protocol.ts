@@ -9,6 +9,7 @@ import {
 import {
   type ExperimentManifest,
   experimentManifestSchema,
+  PORTABLE_TRANSPORT_COMPILER_VERSION,
   verifyExperimentManifest,
 } from "@nicia-ai/lachesis-generator";
 import {
@@ -20,7 +21,12 @@ import {
 } from "@nicia-ai/lachesis-generator-ai-sdk";
 import { z } from "zod";
 
-export const campaignPhaseSchema = z.enum(["smoke", "calibration", "heldout"]);
+export const campaignPhaseSchema = z.enum([
+  "transport-probe",
+  "smoke",
+  "calibration",
+  "heldout",
+]);
 export type CampaignPhase = z.infer<typeof campaignPhaseSchema>;
 
 const providerCapSchema = z
@@ -81,12 +87,16 @@ const failurePolicySchema = z
     adapterDispatchEvidence: z.literal("v1").optional(),
     preDispatchSettlement: z.literal("zero").optional(),
     postDispatchUnknownUsage: z.literal("authorized-conservative").optional(),
+    transportSchemaCompiler: z
+      .literal(PORTABLE_TRANSPORT_COMPILER_VERSION)
+      .optional(),
+    schemaPreflight: z.literal("before-budget-reservation").optional(),
   })
   .readonly();
 
 export const phaseManifestSchema = z
   .strictObject({
-    formatVersion: z.enum(["1", "2"]),
+    formatVersion: z.enum(["1", "2", "3"]),
     campaignId: z.string().min(1),
     campaignDigest: z.string().min(1),
     phase: campaignPhaseSchema,
@@ -138,6 +148,8 @@ export const M1B_FAILURE_POLICY: FailurePolicy = Object.freeze({
   adapterDispatchEvidence: "v1",
   preDispatchSettlement: "zero",
   postDispatchUnknownUsage: "authorized-conservative",
+  transportSchemaCompiler: PORTABLE_TRANSPORT_COMPILER_VERSION,
+  schemaPreflight: "before-budget-reservation",
 });
 
 function schemaDiagnostics(label: string, error: z.ZodError): Diagnostics {
@@ -264,20 +276,20 @@ function phaseSplitsAreValid(
 
 function primaryMethodsAreValid(
   experiment: ExperimentManifest,
-  legacy: boolean,
+  phaseFormatVersion: PhaseManifest["formatVersion"],
+  phase: CampaignPhase,
 ): boolean {
-  if (experiment.methods.length !== 6) return false;
-  const expectedStrategies = [
-    "unconstrained-json",
-    "json-schema",
-    "json-schema-with-repair",
-  ];
+  const probe = phase === "transport-probe";
+  if (experiment.methods.length !== (probe ? 2 : 6)) return false;
+  const expectedStrategies = probe
+    ? ["json-schema"]
+    : ["unconstrained-json", "json-schema", "json-schema-with-repair"];
   for (const provider of ["openai", "anthropic"]) {
     const methods = experiment.methods.filter(
       (method) => method.model.provider === provider,
     );
     if (
-      methods.length !== 3 ||
+      methods.length !== (probe ? 1 : 3) ||
       !expectedStrategies.every((strategy) =>
         methods.some((method) => method.strategy.id === strategy),
       )
@@ -288,13 +300,22 @@ function primaryMethodsAreValid(
         method.strategy.constraint === "unconstrained-json"
           ? "prompt-json"
           : provider === "openai"
-            ? "openai-responses-json-schema"
-            : "anthropic-json-tool";
+            ? phaseFormatVersion === "3"
+              ? "openai-responses-portable-json-schema"
+              : "openai-responses-json-schema"
+            : phaseFormatVersion === "3"
+              ? "anthropic-json-tool-portable-json-schema"
+              : "anthropic-json-tool";
+      const expectedAdapterVersion =
+        phaseFormatVersion === "1"
+          ? `ai-sdk/${AI_SDK_VERSION}`
+          : phaseFormatVersion === "2"
+            ? `lachesis-ai-sdk-adapter/2;ai-sdk/${AI_SDK_VERSION}`
+            : AI_SDK_ADAPTER_VERSION;
       if (
-        method.model.adapterVersion !==
-          (legacy ? `ai-sdk/${AI_SDK_VERSION}` : AI_SDK_ADAPTER_VERSION) ||
+        method.model.adapterVersion !== expectedAdapterVersion ||
         method.inference.structuredOutputTransport !==
-          (legacy ? undefined : expectedTransport)
+          (phaseFormatVersion === "1" ? undefined : expectedTransport)
       )
         return false;
       if (provider === "openai") {
@@ -342,7 +363,7 @@ export async function createPhaseManifest(
   });
   if (!scorerDigest.ok) return { ok: false, error: [scorerDigest.error] };
   const body = {
-    formatVersion: "2",
+    formatVersion: "3",
     campaignId: input.campaign.campaignId,
     campaignDigest: input.campaign.campaignDigest,
     phase: input.phase,
@@ -420,7 +441,7 @@ export async function verifyPhaseManifest(
       "Phase manifest uses the wrong campaign budget pool.",
     );
   if (
-    parsed.data.formatVersion === "2" &&
+    parsed.data.formatVersion !== "1" &&
     parsed.data.storageNamespace !==
       experimentStorageNamespace(
         parsed.data.phase,
@@ -431,7 +452,7 @@ export async function verifyPhaseManifest(
       "Phase manifest storage namespace is not bound to its experiment digest.",
     );
   if (
-    parsed.data.formatVersion === "2" &&
+    parsed.data.formatVersion !== "1" &&
     (parsed.data.failurePolicy.adapterDispatchEvidence !== "v1" ||
       parsed.data.failurePolicy.preDispatchSettlement !== "zero" ||
       parsed.data.failurePolicy.postDispatchUnknownUsage !==
@@ -441,9 +462,19 @@ export async function verifyPhaseManifest(
       "Phase manifest is missing the M1b.3 dispatch-accounting identity.",
     );
   if (
+    parsed.data.formatVersion === "3" &&
+    (parsed.data.failurePolicy.transportSchemaCompiler !==
+      PORTABLE_TRANSPORT_COMPILER_VERSION ||
+      parsed.data.failurePolicy.schemaPreflight !== "before-budget-reservation")
+  )
+    return phaseDiagnostic(
+      "Phase manifest is missing the M1b.4 transport-schema identity.",
+    );
+  if (
     !primaryMethodsAreValid(
       verifiedExperiment.value,
-      parsed.data.formatVersion === "1",
+      parsed.data.formatVersion,
+      parsed.data.phase,
     )
   )
     return phaseDiagnostic(

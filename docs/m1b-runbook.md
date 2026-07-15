@@ -21,10 +21,21 @@ effort. Vercel AI SDK is pinned to 7.0.28 with automatic retries set to zero.
 Bedrock is optional secondary research and is rejected from the primary held-out
 manifest and pools.
 
-Anthropic structured output uses the AI SDK's `jsonTool` mode. Its `json` tool
-is an internal `GenerationOutcome` output transport only; external tools remain
-disabled. Every initial and repair prompt carries the same exact plan or
-unplannable JSON contract and the public task-input declarations.
+Constrained output uses a versioned, provider-portable JSON Schema compiled from
+the exact plan-language manifest. The schema has a strict object root and an
+internal `{ "outcome": ... }` envelope, inlines all alternatives, restricts
+references to manifest members, and compiles constant values from each catalog's
+declared schemas. Optional wire fields are required and nullable in transport,
+then normalized back to the unchanged wire representation. Schemas containing
+unsupported maps or dialect keywords fail offline before budget reservation. The
+compiler version and exact schema digest are part of experiment and request
+identity.
+
+OpenAI receives that JSON Schema directly through the AI SDK JSON-schema
+wrapper. Anthropic uses the AI SDK's `jsonTool` mode with the same schema. Its
+`json` tool is an internal `GenerationOutcome` output transport only; external
+tools remain disabled. Every initial and repair prompt carries the same exact
+plan or unplannable JSON contract and the public task-input declarations.
 
 The causal result is the matched effect of `unconstrained-json`, `json-schema`,
 and `json-schema-with-repair` within each model. Terra and Sonnet use different
@@ -39,6 +50,7 @@ worktree:
 ```sh
 pnpm install --frozen-lockfile
 pnpm build
+node apps/benchmark/dist/cli.js materialize transport-probe --out /secure/m1b/transport-probe
 node apps/benchmark/dist/cli.js materialize smoke --out /secure/m1b/smoke
 node apps/benchmark/dist/cli.js materialize calibration --out /secure/m1b/calibration
 node apps/benchmark/dist/cli.js materialize heldout --out /secure/m1b/heldout
@@ -55,7 +67,7 @@ node apps/benchmark/dist/cli.js validate \
   --manifest /secure/m1b/smoke/smoke.json
 ```
 
-Do not hand-edit a manifest. Rematerialize it and review the new digest. M1b.3
+Do not hand-edit a manifest. Rematerialize it and review the new digest. M1b.4
 derives `storageNamespace` from the complete experiment digest, so a fresh smoke
 registers beside the immutable original smoke without receiving a new
 development allowance.
@@ -81,6 +93,38 @@ credential-name checks, Git checks, acknowledgement checks, and
 The smoke phase is one feasible and one impossible development task, both
 providers, three strategies, and one repetition: 12 records, 12 initial calls,
 at most 8 repair calls, and at most 20 model calls.
+
+Materialization also performs a zero-network schema preflight for every distinct
+manifest/provider combination. A transport incompatibility or unsupported
+catalog schema prevents manifest creation and cannot reach the ledger's reserve
+operation.
+
+## 2a. Two-call transport probe
+
+Before a fresh smoke, use the separately materialized `transport-probe` phase:
+one feasible development case, one constrained method per direct provider, no
+repair, and exactly two possible calls. Its experiment cap is 564,800
+micro-dollars. It consumes the same campaign-level `m1b-development` pool as
+both smoke generations and calibration; it does not create new allowance.
+
+```sh
+node apps/benchmark/dist/cli.js dry-run \
+  --campaign /secure/m1b/transport-probe/campaign.json \
+  --manifest /secure/m1b/transport-probe/transport-probe.json \
+  --storage-root /secure/m1b/state
+
+node apps/benchmark/dist/cli.js execute \
+  --campaign /secure/m1b/transport-probe/campaign.json \
+  --manifest /secure/m1b/transport-probe/transport-probe.json \
+  --storage-root /secure/m1b/state \
+  --ack-experiment EXACT_EXPERIMENT_DIGEST \
+  --ack-phase transport-probe \
+  --ack-max-usd-micros 10000000
+```
+
+The probe requires a clean worktree at its bound commit. Run it only under a
+separate live authorization. A schema rejection is recorded once; do not edit or
+retry the immutable probe.
 
 ## 3. Development transport smoke
 
@@ -191,10 +235,11 @@ paired with a durable head. Validation rejects malformed, truncated, reordered,
 duplicate, or mismatched events. The head detects removal of an already
 committed suffix. Never delete or edit the ledger or head.
 
-The immutable original smoke ledger is not retroactively edited or credited. Its
-six OpenAI conservative settlements are historical overestimates caused by the
-pre-M1b.3 callable-provider reflection semantics, which could not distinguish a
-local factory failure from a dispatched request.
+The two immutable prior smoke experiments and their shared ledger are not
+retroactively edited or credited. The six OpenAI conservative settlements are
+historical overestimates caused by the pre-M1b.3 callable-provider reflection
+semantics, which could not distinguish a local factory failure from a dispatched
+request.
 
 ## 8. Offline report
 

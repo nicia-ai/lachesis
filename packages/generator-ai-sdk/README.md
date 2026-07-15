@@ -33,6 +33,13 @@ parser. They capture exact returned model IDs, provider request/response IDs,
 finish reasons, provider refusals, latency, and
 input/cache-read/cache-write/output/ reasoning tokens where available.
 
+Constrained requests receive a separately compiled, versioned JSON Schema with a
+strict object root and internal outcome envelope. The adapter passes that schema
+directly through the AI SDK's JSON-schema wrapper; it never asks the SDK to
+derive provider schemas from the runtime Zod `GenerationOutcome`. The compiler
+version and schema digest are request identities. Adapter preflight rejects a
+non-portable schema before model construction or dispatch.
+
 `M1B_PILOT_CAPS` freezes the requested $50/$25-per-provider, call, token, and
 per-call limits. `createM1bPricingSnapshot()` creates the separately digested
 pricing input. The benchmark runner reserves worst-case cost before invoking an

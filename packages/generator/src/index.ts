@@ -56,6 +56,7 @@ export {
   experimentManifestSchema,
   type ExperimentMethod,
   type ExperimentMethodInput,
+  type ExperimentTransportSchemaBinding,
   type ExperimentVersions,
   verifyExperimentManifest,
 } from "./experiment.js";
@@ -121,3 +122,14 @@ export {
   generationStrategySchema,
   modelIdentitySchema,
 } from "./records.js";
+export {
+  type CaseStructuredOutputTransport,
+  compileCaseStructuredOutputTransports,
+  compileStructuredOutputTransport,
+  normalizeStructuredOutputEnvelope,
+  PORTABLE_TRANSPORT_COMPILER_VERSION,
+  type StructuredOutputCatalogResolver,
+  type StructuredOutputTransport,
+  structuredOutputTransportSchema,
+  validatePortableStructuredOutputSchema,
+} from "./transport.js";

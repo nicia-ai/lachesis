@@ -104,7 +104,7 @@ function withoutPhaseDigest(
 }
 
 async function materialized(
-  phase: "smoke" | "calibration" | "heldout",
+  phase: "transport-probe" | "smoke" | "calibration" | "heldout",
   gitCommit = "test-commit",
 ): Promise<MaterializedPhase> {
   return unwrap(
@@ -148,28 +148,41 @@ async function recreateExperiment(
       index,
       split: original.cases[index]?.split ?? "development",
     }));
+  const cases = caseBindings.map((binding) => ({
+    frozenCase:
+      input.materialized.cases[binding.index] ??
+      input.materialized.cases[0] ??
+      (() => {
+        throw new Error("Missing test case.");
+      })(),
+    split: binding.split,
+  }));
+  const methods =
+    input.methods ??
+    original.methods.map((method) => ({
+      id: method.id,
+      model: method.model,
+      strategy: method.strategy,
+      inference: method.inference,
+      pricingEntryId: method.pricingEntryId,
+    }));
+  const transportSchemas = cases.flatMap(({ frozenCase }) =>
+    methods.flatMap(
+      (method) =>
+        original.transportSchemas?.filter(
+          (binding) =>
+            binding.caseDigest === frozenCase.digest &&
+            binding.methodId === method.id,
+        ) ?? [],
+    ),
+  );
   return unwrap(
     await createExperimentManifest({
       prompt: M1B_PROMPT_CANDIDATE,
       protocol: M1B_PROMPT_PROTOCOL,
-      cases: caseBindings.map((binding) => ({
-        frozenCase:
-          input.materialized.cases[binding.index] ??
-          input.materialized.cases[0] ??
-          (() => {
-            throw new Error("Missing test case.");
-          })(),
-        split: binding.split,
-      })),
-      methods:
-        input.methods ??
-        original.methods.map((method) => ({
-          id: method.id,
-          model: method.model,
-          strategy: method.strategy,
-          inference: method.inference,
-          pricingEntryId: method.pricingEntryId,
-        })),
+      cases,
+      methods,
+      transportSchemas,
       pricingSnapshot: original.pricingSnapshot,
       repetitions: original.repetitions,
       caps: original.caps,
@@ -265,10 +278,20 @@ async function initializeGitRepository(): Promise<
 }
 
 describe("M1b phase protocol", () => {
-  it("freezes the exact smoke and held-out matrix counts", async () => {
+  it("freezes the exact probe, smoke, and held-out matrix counts", async () => {
+    const probe = await materialized("transport-probe");
     const smoke = await materialized("smoke");
     const heldout = await materialized("heldout");
 
+    expect(probe.manifest.experiment.cases).toHaveLength(1);
+    expect(matrixCounts(probe.manifest)).toEqual({
+      benchmarkRecords: 2,
+      initialModelCalls: 2,
+      maximumAdditionalRepairCalls: 0,
+      maximumModelCalls: 2,
+    });
+    expect(probe.manifest.experiment.caps.maxCostUsdMicros).toBe(564_800);
+    expect(probe.campaign.campaignDigest).toBe(smoke.campaign.campaignDigest);
     expect(smoke.manifest.experiment.cases).toHaveLength(2);
     expect(matrixCounts(smoke.manifest)).toEqual({
       benchmarkRecords: 12,
@@ -290,8 +313,8 @@ describe("M1b phase protocol", () => {
     expect(smoke.campaign.campaignDigest).toBe(
       "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
     );
-    expect(smoke.manifest.formatVersion).toBe("2");
-    expect(smoke.manifest.experiment.formatVersion).toBe("3");
+    expect(smoke.manifest.formatVersion).toBe("3");
+    expect(smoke.manifest.experiment.formatVersion).toBe("4");
     expect(smoke.manifest.storageNamespace).toBe(
       `m1b/smoke/experiments/${smoke.manifest.experimentDigest}`,
     );
@@ -425,7 +448,7 @@ describe("M1b phase protocol", () => {
       ...anthropic,
       inference: {
         ...anthropic.inference,
-        structuredOutputTransport: "openai-responses-json-schema",
+        structuredOutputTransport: "openai-responses-portable-json-schema",
       },
     });
 

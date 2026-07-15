@@ -165,6 +165,8 @@ export function createRecordedModelAdapter(
     pricingEntryId: frozen.fixture.pricingEntryId,
     fixtureDigest: frozen.digest,
     requests: () => [...requests],
+    preflightStructuredOutput: () =>
+      Promise.resolve({ ok: true, value: undefined }),
     generate(
       request: ModelRequest,
     ): Promise<Result<ModelResponse, ModelAdapterFailure>> {

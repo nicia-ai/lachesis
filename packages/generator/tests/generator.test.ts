@@ -2,8 +2,15 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { digestValue, type Result } from "@nicia-ai/lachesis";
+import {
+  createCatalog,
+  createPlanLanguageManifest,
+  defineSchema,
+  digestValue,
+  type Result,
+} from "@nicia-ai/lachesis";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import {
   benchmarkCaseRecordSchema,
@@ -11,6 +18,8 @@ import {
   type BenchmarkSplit,
   calculateCostUsdMicros,
   calculateMaximumCostUsdMicros,
+  compileCaseStructuredOutputTransports,
+  compileStructuredOutputTransport,
   createExperimentManifest,
   createInMemoryBenchmarkStore,
   createM1aCatalogResolver,
@@ -20,6 +29,7 @@ import {
   evaluateResearchGates,
   type ExperimentCaps,
   type ExperimentManifest,
+  type ExperimentTransportSchemaBinding,
   freezePlanGenerationCase,
   freezeRecordedModelFixture,
   type FrozenPlanGenerationCase,
@@ -32,12 +42,14 @@ import {
   loadM1aRecordedFixtures,
   M1A_GENERATION_STRATEGIES,
   type ModelAdapter,
+  normalizeStructuredOutputEnvelope,
   partitionM1aCorpus,
   type PricingSnapshot,
   RECORDED_DOUBLE_PLAN,
   runBenchmark,
   scoreGeneration,
   summarizeBenchmark,
+  validatePortableStructuredOutputSchema,
   verifyExperimentManifest,
   verifyPricingSnapshot,
 } from "../src/index.js";
@@ -124,18 +136,36 @@ async function experimentFor(
     ],
   },
 ): Promise<ExperimentManifest> {
+  const methodInputs = methods.map((method) => ({
+    id: method.id,
+    model: method.adapter.identity,
+    strategy: method.strategy,
+    inference: method.adapter.inference,
+    pricingEntryId: method.adapter.pricingEntryId,
+  }));
+  const resolver = unwrap(createM1aCatalogResolver());
+  const transports = unwrap(
+    await compileCaseStructuredOutputTransports(cases, resolver),
+  );
+  const transportSchemas: ReadonlyArray<ExperimentTransportSchemaBinding> =
+    transports.flatMap((item) =>
+      methodInputs
+        .filter((method) => method.strategy.constraint === "json-schema")
+        .map((method) => ({
+          caseDigest: item.caseDigest,
+          methodId: method.id,
+          manifestDigest: item.transport.manifestDigest,
+          compilerVersion: item.transport.compilerVersion,
+          schemaDigest: item.transport.schemaDigest,
+        })),
+    );
   return unwrap(
     await createExperimentManifest({
       prompt: `${protocolIdentity}-prompt`,
       protocol: { id: protocolIdentity, version: "1" },
       cases: cases.map((frozenCase) => ({ frozenCase, split })),
-      methods: methods.map((method) => ({
-        id: method.id,
-        model: method.adapter.identity,
-        strategy: method.strategy,
-        inference: method.adapter.inference,
-        pricingEntryId: method.adapter.pricingEntryId,
-      })),
+      methods: methodInputs,
+      transportSchemas,
       pricingSnapshot: await pricingFor(methods),
       repetitions,
       caps,
@@ -193,6 +223,206 @@ async function sessionFor(
 }
 
 describe("M1a frozen substrate", () => {
+  it("compiles portable scalar, collection, and closed-object catalog schemas", async () => {
+    const boolean = defineSchema({
+      id: "boolean-value",
+      version: "1",
+      description: "Boolean fixture.",
+      validator: z.boolean(),
+    });
+    const constrainedText = defineSchema({
+      id: "constrained-text",
+      version: "1",
+      description: "Constrained text fixture.",
+      validator: z.string().min(1).max(8),
+    });
+    const enumeratedText = defineSchema({
+      id: "enumerated-text",
+      version: "1",
+      description: "Enumerated text fixture.",
+      validator: z.enum(["first", "second"]),
+    });
+    const boundedStrings = defineSchema({
+      id: "bounded-strings",
+      version: "1",
+      description: "Bounded strings fixture.",
+      validator: z.array(z.string()).min(1).max(3),
+    });
+    const closedObject = defineSchema({
+      id: "closed-object",
+      version: "1",
+      description: "Closed object fixture.",
+      validator: z.strictObject({
+        enabled: z.boolean(),
+        count: z.int().min(0),
+      }),
+    });
+    const catalog = unwrap(
+      createCatalog({
+        identity: { id: "portable-test", version: "1" },
+        schemas: [
+          boolean.runtime,
+          constrainedText.runtime,
+          enumeratedText.runtime,
+          boundedStrings.runtime,
+          closedObject.runtime,
+        ],
+        operations: [],
+      }),
+    );
+    const benchmarkCase = await corpusCase("numbers/double");
+    const manifest = unwrap(
+      await createPlanLanguageManifest(catalog, benchmarkCase.case.policy),
+    );
+    expect((await compileStructuredOutputTransport(manifest)).ok).toBe(true);
+
+    const unsupported = [
+      defineSchema({
+        id: "optional-object",
+        version: "1",
+        description: "Optional object fixture.",
+        validator: z.strictObject({ value: z.string().optional() }),
+      }).runtime,
+      defineSchema({
+        id: "schema-union",
+        version: "1",
+        description: "Union fixture.",
+        validator: z.union([z.string(), z.number()]),
+      }).runtime,
+      defineSchema({
+        id: "tuple",
+        version: "1",
+        description: "Tuple fixture.",
+        validator: z.tuple([z.string(), z.number()]),
+      }).runtime,
+    ];
+    for (const schema of unsupported) {
+      const unsupportedCatalog = unwrap(
+        createCatalog({
+          identity: { id: `unsupported-${schema.id}`, version: "1" },
+          schemas: [schema],
+          operations: [],
+        }),
+      );
+      const unsupportedManifest = unwrap(
+        await createPlanLanguageManifest(
+          unsupportedCatalog,
+          benchmarkCase.case.policy,
+        ),
+      );
+      expect(
+        (await compileStructuredOutputTransport(unsupportedManifest)).ok,
+      ).toBe(false);
+    }
+
+    for (const jsonSchema of [
+      "not-a-schema-object",
+      z.json().parse({ type: "array" }),
+      z.json().parse({
+        type: "object",
+        properties: { value: { type: "string" } },
+        required: [],
+        additionalProperties: false,
+      }),
+    ]) {
+      const alteredManifest = {
+        ...manifest,
+        schemas: manifest.schemas.map((schema, index) =>
+          index === 0 ? { ...schema, jsonSchema } : schema,
+        ),
+      };
+      expect((await compileStructuredOutputTransport(alteredManifest)).ok).toBe(
+        false,
+      );
+    }
+  });
+
+  it("normalizes the portable outcome envelope and rejects malformed transports", () => {
+    const transportPlan = {
+      ...RECORDED_DOUBLE_PLAN,
+      nodes: RECORDED_DOUBLE_PLAN.nodes.map((node) =>
+        node.op === "input" ? { ...node, maxItems: null } : node,
+      ),
+      metadata: null,
+    };
+    const normalized = unwrap(
+      normalizeStructuredOutputEnvelope({
+        outcome: { kind: "plan", plan: transportPlan },
+      }),
+    );
+    expect(normalized.kind).toBe("plan");
+    if (normalized.kind !== "plan") throw new Error("Expected plan outcome.");
+    expect(normalized.plan).not.toHaveProperty("metadata");
+    expect(normalized.plan).not.toHaveProperty("nodes.0.maxItems");
+    expect(
+      unwrap(
+        normalizeStructuredOutputEnvelope({
+          outcome: { kind: "unplannable", reasons: ["offline"] },
+        }),
+      ),
+    ).toEqual({ kind: "unplannable", reasons: ["offline"] });
+
+    for (const malformed of [
+      null,
+      {},
+      { outcome: { kind: "other" } },
+      { outcome: { kind: "unplannable", reasons: [] } },
+      { outcome: { kind: "plan" } },
+      { outcome: { kind: "plan", plan: "not-an-object" } },
+      { outcome: { kind: "plan", plan: {} } },
+      { outcome: { kind: "plan", plan: { nodes: ["not-a-node"] } } },
+      {
+        outcome: {
+          kind: "plan",
+          plan: { ...transportPlan, formatVersion: "unsupported" },
+        },
+      },
+    ])
+      expect(normalizeStructuredOutputEnvelope(malformed).ok).toBe(false);
+
+    for (const nonPortable of [
+      null,
+      { type: "string" },
+      { type: "object", readOnly: true },
+      { type: "object", properties: {}, required: [] },
+      {
+        type: "object",
+        properties: "invalid",
+        required: [],
+        additionalProperties: false,
+      },
+      {
+        type: "object",
+        properties: { value: { type: "string" } },
+        required: [],
+        additionalProperties: false,
+      },
+      {
+        type: "object",
+        properties: { value: { type: "string", readOnly: true } },
+        required: ["value"],
+        additionalProperties: false,
+      },
+      {
+        type: "object",
+        properties: {
+          value: { type: "array", items: { type: "string", readOnly: true } },
+        },
+        required: ["value"],
+        additionalProperties: false,
+      },
+      {
+        type: "object",
+        properties: { value: { anyOf: [] } },
+        required: ["value"],
+        additionalProperties: false,
+      },
+    ])
+      expect(validatePortableStructuredOutputSchema(nonPortable).ok).toBe(
+        false,
+      );
+  });
+
   it("content-addresses immutable pricing and prices cache usage exactly", async () => {
     const method: BenchmarkMethod = {
       id: "schema",
@@ -546,6 +776,7 @@ describe("M1a frozen substrate", () => {
           pricingEntryId: methods[0]?.adapter.pricingEntryId ?? "recorded/free",
         },
       ],
+      transportSchemas: [],
       pricingSnapshot: await pricingFor(methods),
       repetitions: 1,
       caps: {
@@ -571,9 +802,10 @@ describe("M1a frozen substrate", () => {
 
   it("rejects duplicate and unpriced experiment identities", async () => {
     const benchmarkCase = await corpusCase("numbers/double");
+    const adapter = createRecordedModelAdapter(await recordedFixture(0));
     const method: BenchmarkMethod = {
       id: "schema",
-      adapter: createRecordedModelAdapter(await recordedFixture(0)),
+      adapter,
       strategy: strategy("json-schema"),
     };
     const pricingSnapshot = await pricingFor([method]);
@@ -589,6 +821,7 @@ describe("M1a frozen substrate", () => {
       protocol: "protocol",
       pricingSnapshot,
       repetitions: 1,
+      transportSchemas: [],
       caps: {
         maxCalls: 2,
         maxInputTokens: 100_000,
@@ -709,6 +942,7 @@ describe("generate, compile, and bounded repair", () => {
       "languageManifest",
       "originalTask",
       "previousProposal",
+      "structuredOutputTransport",
       "taskInputs",
     ]);
     expect("hiddenEvaluations" in repair).toBe(false);
@@ -776,6 +1010,9 @@ describe("generate, compile, and bounded repair", () => {
     expect(abstained.record.attempts[0]?.abstentionReasons).toHaveLength(1);
 
     const exhausted = createRecordedModelAdapter(await recordedFixture(2));
+    const transport = unwrap(
+      await compileStructuredOutputTransport(abstained.manifest),
+    );
     await exhausted.generate({
       kind: "initial",
       originalTask: "first",
@@ -783,6 +1020,7 @@ describe("generate, compile, and bounded repair", () => {
       languageManifest: abstained.manifest,
       publicExamples: [],
       constraint: "json-schema",
+      structuredOutputTransport: transport,
     });
     const failure = await exhausted.generate({
       kind: "initial",
@@ -791,6 +1029,7 @@ describe("generate, compile, and bounded repair", () => {
       languageManifest: abstained.manifest,
       publicExamples: [],
       constraint: "json-schema",
+      structuredOutputTransport: transport,
     });
     expect(failure.ok).toBe(false);
     expect(failure.ok ? undefined : failure.error.code).toBe(
@@ -1002,6 +1241,52 @@ describe("generate, compile, and bounded repair", () => {
 });
 
 describe("behavioral benchmark runner", () => {
+  it("rejects unsupported catalog schemas before dispatch or budget reservation", async () => {
+    const benchmarkCase = await corpusCase("numbers/double");
+    const adapter = createRecordedModelAdapter(await recordedFixture(0));
+    const method: BenchmarkMethod = {
+      id: "schema",
+      adapter,
+      strategy: strategy("json-schema"),
+    };
+    const experiment = await experimentFor([benchmarkCase], [method]);
+    const arbitraryMap = defineSchema({
+      id: "arbitrary-map",
+      version: "1.0.0",
+      description: "An intentionally unsupported arbitrary map.",
+      validator: z.record(z.string(), z.string()),
+    });
+    const unsupportedCatalog = unwrap(
+      createCatalog({
+        identity: { id: "benchmark.numbers", version: "1.0.0" },
+        schemas: [arbitraryMap.runtime],
+        operations: [],
+      }),
+    );
+    let reservations = 0;
+    const result = await runBenchmark({
+      experiment,
+      cases: [benchmarkCase],
+      methods: [method],
+      resolveCatalog: () => ({ ok: true, value: unsupportedCatalog }),
+      store: createInMemoryBenchmarkStore(),
+      budgetController: {
+        reserve: () => {
+          reservations += 1;
+          return Promise.resolve({ ok: true, value: undefined });
+        },
+        settle: () => Promise.resolve({ ok: true, value: undefined }),
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.ok ? "" : result.error.message).toContain(
+      "unsupported JSON Schema keyword propertyNames",
+    );
+    expect(reservations).toBe(0);
+    expect(adapter.requests()).toHaveLength(0);
+  });
+
   it("scores hidden inputs and resumes by content identity", async () => {
     const benchmarkCase = await corpusCase("numbers/double");
     const fixture = await recordedFixture(0);
@@ -1847,6 +2132,7 @@ describe("behavioral benchmark runner", () => {
           pricingEntryId: method.adapter.pricingEntryId,
         },
       ],
+      transportSchemas: [],
       pricingSnapshot: await pricingFor([method]),
       repetitions: 0,
       caps: {

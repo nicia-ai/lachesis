@@ -20,6 +20,7 @@ import {
   verifyPricingSnapshot,
 } from "./pricing.js";
 import { generationStrategySchema, modelIdentitySchema } from "./records.js";
+import { PORTABLE_TRANSPORT_COMPILER_VERSION } from "./transport.js";
 
 export const benchmarkSplitSchema = z.enum([
   "development",
@@ -57,6 +58,16 @@ const experimentMethodSchema = z
   })
   .readonly();
 
+const experimentTransportSchemaBindingSchema = z
+  .strictObject({
+    caseDigest: z.string().min(1),
+    methodId: z.string().min(1),
+    manifestDigest: z.string().min(1),
+    compilerVersion: z.string().min(1),
+    schemaDigest: z.string().min(1),
+  })
+  .readonly();
+
 const experimentCapsSchema = z
   .strictObject({
     maxCalls: z.number().int().positive(),
@@ -90,13 +101,17 @@ const experimentVersionsSchema = z
 
 export const experimentManifestSchema = z
   .strictObject({
-    formatVersion: z.enum(["2", "3"]),
+    formatVersion: z.enum(["2", "3", "4"]),
     promptDigest: z.string().min(1),
     protocolDigest: z.string().min(1),
     cases: z.array(experimentCaseSchema).min(1).readonly(),
     caseSetDigest: z.string().min(1),
     splits: z.array(experimentSplitSchema).min(1).readonly(),
     methods: z.array(experimentMethodSchema).min(1).readonly(),
+    transportSchemas: z
+      .array(experimentTransportSchemaBindingSchema)
+      .readonly()
+      .optional(),
     pricingSnapshot: pricingSnapshotSchema,
     repetitions: z.number().int().positive(),
     caps: experimentCapsSchema,
@@ -108,6 +123,9 @@ export const experimentManifestSchema = z
 export type ExperimentCaps = z.infer<typeof experimentCapsSchema>;
 export type ExperimentVersions = z.infer<typeof experimentVersionsSchema>;
 export type ExperimentMethod = z.infer<typeof experimentMethodSchema>;
+export type ExperimentTransportSchemaBinding = z.infer<
+  typeof experimentTransportSchemaBindingSchema
+>;
 export type ExperimentManifest = z.infer<typeof experimentManifestSchema>;
 
 export type ExperimentMethodInput = Readonly<{
@@ -128,6 +146,7 @@ export type ExperimentManifestInput = Readonly<{
     }>
   >;
   methods: ReadonlyArray<ExperimentMethodInput>;
+  transportSchemas: ReadonlyArray<ExperimentTransportSchemaBinding>;
   pricingSnapshot: PricingSnapshot;
   repetitions: number;
   caps: ExperimentCaps;
@@ -164,7 +183,7 @@ function schemaDiagnostics(error: z.ZodError): Diagnostics {
 
 async function modelConfigurationDigest(
   method: ExperimentMethodInput,
-  formatVersion: "2" | "3",
+  formatVersion: "2" | "3" | "4",
 ): Promise<Result<string, Diagnostic>> {
   const legacy = {
     model: method.model,
@@ -182,6 +201,30 @@ async function modelConfigurationDigest(
           structuredOutputMode: method.inference.structuredOutputMode,
           structuredOutputTransport: method.inference.structuredOutputTransport,
         },
+  );
+}
+
+function transportBindingsAreValid(
+  cases: ReadonlyArray<z.infer<typeof experimentCaseSchema>>,
+  methods: ReadonlyArray<ExperimentMethodInput>,
+  bindings: ReadonlyArray<ExperimentTransportSchemaBinding>,
+): boolean {
+  const expected = cases.flatMap((benchmarkCase) =>
+    methods
+      .filter((method) => method.strategy.constraint === "json-schema")
+      .map((method) => `${benchmarkCase.caseDigest}\u0000${method.id}`),
+  );
+  const actual = bindings.map(
+    (binding) => `${binding.caseDigest}\u0000${binding.methodId}`,
+  );
+  return (
+    duplicate(actual) === undefined &&
+    expected.length === actual.length &&
+    expected.every((key) => actual.includes(key)) &&
+    bindings.every(
+      (binding) =>
+        binding.compilerVersion === PORTABLE_TRANSPORT_COMPILER_VERSION,
+    )
   );
 }
 
@@ -318,7 +361,7 @@ export async function createExperimentManifest(
   }
   const methods: Array<ExperimentMethod> = [];
   for (const method of input.methods) {
-    const digest = await modelConfigurationDigest(method, "3");
+    const digest = await modelConfigurationDigest(method, "4");
     if (!digest.ok) return { ok: false, error: [digest.error] };
     methods.push({
       ...method,
@@ -328,7 +371,24 @@ export async function createExperimentManifest(
   methods.sort((left, right) =>
     left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
   );
-  const formatVersion = "3";
+  const transportSchemas = [...input.transportSchemas].toSorted(
+    (left, right) => {
+      const leftKey = `${left.caseDigest}\u0000${left.methodId}`;
+      const rightKey = `${right.caseDigest}\u0000${right.methodId}`;
+      return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+    },
+  );
+  if (!transportBindingsAreValid(cases, methods, transportSchemas))
+    return {
+      ok: false,
+      error: [
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Experiment transport-schema bindings are incomplete or inconsistent.",
+        ),
+      ],
+    };
+  const formatVersion = "4";
   const body = {
     formatVersion,
     promptDigest: promptDigest.value,
@@ -337,6 +397,7 @@ export async function createExperimentManifest(
     caseSetDigest: caseSetDigest.value,
     splits,
     methods,
+    transportSchemas,
     pricingSnapshot: pricing.value,
     repetitions: input.repetitions,
     caps: input.caps,
@@ -448,7 +509,12 @@ export async function verifyExperimentManifest(
     };
   }
   for (const method of parsed.data.methods) {
-    if (!methodModeIsValid(method, parsed.data.formatVersion === "3")) {
+    if (
+      !methodModeIsValid(
+        method,
+        parsed.data.formatVersion === "3" || parsed.data.formatVersion === "4",
+      )
+    ) {
       return {
         ok: false,
         error: [
@@ -476,6 +542,24 @@ export async function verifyExperimentManifest(
       };
     }
   }
+  if (
+    parsed.data.formatVersion === "4" &&
+    (parsed.data.transportSchemas === undefined ||
+      !transportBindingsAreValid(
+        parsed.data.cases,
+        parsed.data.methods,
+        parsed.data.transportSchemas,
+      ))
+  )
+    return {
+      ok: false,
+      error: [
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Experiment transport-schema bindings failed verification.",
+        ),
+      ],
+    };
   if (
     duplicate(
       parsed.data.caps.providerCostCaps.map((cap) => cap.billingProvider),

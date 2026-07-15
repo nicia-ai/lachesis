@@ -5,6 +5,8 @@ import type {
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
+import type { StructuredOutputTransport } from "./transport.js";
+
 export type GenerationOutcome =
   | Readonly<{ kind: "plan"; plan: unknown }>
   | Readonly<{
@@ -58,6 +60,7 @@ export type InitialGenerationRequest = Readonly<{
   languageManifest: PlanLanguageManifest;
   publicExamples: ReadonlyArray<PublicExample>;
   constraint: GenerationConstraint;
+  structuredOutputTransport: StructuredOutputTransport | null;
 }>;
 
 /** Deliberately excludes examples, hidden evaluations, and execution results. */
@@ -68,6 +71,7 @@ export type RepairGenerationRequest = Readonly<{
   languageManifest: PlanLanguageManifest;
   previousProposal: unknown;
   diagnostics: ReadonlyArray<Diagnostic>;
+  structuredOutputTransport: StructuredOutputTransport;
 }>;
 
 export type ModelRequest = InitialGenerationRequest | RepairGenerationRequest;
@@ -136,6 +140,9 @@ export const inferenceSettingsSchema = z
         "anthropic-json-tool",
         "bedrock-json-tool",
         "recorded-json-schema",
+        "openai-responses-portable-json-schema",
+        "anthropic-json-tool-portable-json-schema",
+        "bedrock-json-tool-portable-json-schema",
       ])
       .optional(),
   })
@@ -157,6 +164,11 @@ export type ModelAdapter = Readonly<{
   identity: ModelIdentity;
   inference: InferenceSettings;
   pricingEntryId: string;
+  preflightStructuredOutput?:
+    | ((
+        transport: StructuredOutputTransport,
+      ) => Promise<Result<void, ModelAdapterFailure>>)
+    | undefined;
   generate: (
     request: ModelRequest,
   ) => Promise<Result<ModelResponse, ModelAdapterFailure>>;

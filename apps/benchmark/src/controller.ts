@@ -94,14 +94,24 @@ export type LoadedPhase = Readonly<{
   resumeOnly: boolean;
 }>;
 
-const IMMUTABLE_ORIGINAL_SMOKE = Object.freeze({
-  campaignDigest:
-    "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
-  experimentDigest:
-    "723b08db9b8a627e423bdf785eaa8b4d4c349171c0aaaa5072eb549db4224a98",
-  phaseManifestDigest:
-    "b64ec5405841923bc683fcba0da861509ec8bcea5ab5d4359216d4650e5fb198",
-});
+const IMMUTABLE_SMOKE_IDENTITIES = Object.freeze([
+  Object.freeze({
+    campaignDigest:
+      "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+    experimentDigest:
+      "723b08db9b8a627e423bdf785eaa8b4d4c349171c0aaaa5072eb549db4224a98",
+    phaseManifestDigest:
+      "b64ec5405841923bc683fcba0da861509ec8bcea5ab5d4359216d4650e5fb198",
+  }),
+  Object.freeze({
+    campaignDigest:
+      "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+    experimentDigest:
+      "2fe30988638aba282955cbeb94c19c41f41ab224a0c5794ffe9c37343a27ce6d",
+    phaseManifestDigest:
+      "7dc8660c02cbda0c58b0339f2c660456af4e3057f6d29b3f81600a63bd5b7352",
+  }),
+]);
 
 async function readJson(path: string): Promise<Result<unknown, Diagnostic>> {
   try {
@@ -157,15 +167,13 @@ export async function loadPhaseFiles(
     materialized.value.manifest.phaseManifestDigest !==
     phase.value.phaseManifestDigest
   ) {
-    if (
-      campaign.value.campaignDigest ===
-        IMMUTABLE_ORIGINAL_SMOKE.campaignDigest &&
-      phase.value.experimentDigest ===
-        IMMUTABLE_ORIGINAL_SMOKE.experimentDigest &&
-      phase.value.phaseManifestDigest ===
-        IMMUTABLE_ORIGINAL_SMOKE.phaseManifestDigest &&
-      phase.value.phase === "smoke"
-    ) {
+    const immutableSmoke = IMMUTABLE_SMOKE_IDENTITIES.some(
+      (identity) =>
+        campaign.value.campaignDigest === identity.campaignDigest &&
+        phase.value.experimentDigest === identity.experimentDigest &&
+        phase.value.phaseManifestDigest === identity.phaseManifestDigest,
+    );
+    if (immutableSmoke && phase.value.phase === "smoke") {
       const caseDigests = new Map(
         phase.value.experiment.cases.map((item) => [item.id, item.caseDigest]),
       );
@@ -338,10 +346,12 @@ export async function preflightPhase(
     input.environment ?? process.env,
   );
   const counts = matrixCounts(input.loaded.phase);
-  const heldout = input.loaded.phase.phase === "heldout";
-  const cleanWorktree = !heldout || git.value.clean;
+  const gitBound =
+    input.loaded.phase.phase === "heldout" ||
+    input.loaded.phase.phase === "transport-probe";
+  const cleanWorktree = !gitBound || git.value.clean;
   const commitMatches =
-    !heldout ||
+    !gitBound ||
     git.value.commit === input.loaded.phase.experiment.versions.gitCommit;
   const acknowledgementMatches = acknowledged(
     input.loaded.phase,

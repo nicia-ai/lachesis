@@ -32,6 +32,10 @@ import type {
   GenerationFinalKind,
   GenerationRecord,
 } from "./records.js";
+import {
+  compileStructuredOutputTransport,
+  type StructuredOutputTransport,
+} from "./transport.js";
 
 export type AttemptPhase = "initial" | "repair";
 
@@ -56,6 +60,7 @@ export type GeneratePlanInput = Readonly<{
   publicExamples: ReadonlyArray<PublicExample>;
   adapter: ModelAdapter;
   strategy: GenerationStrategy;
+  structuredOutputTransport?: StructuredOutputTransport | undefined;
   modelCallLimit?: number | undefined;
 }>;
 
@@ -405,6 +410,40 @@ export async function generatePlan(
     input.policy,
   );
   if (!manifest.ok) return manifest;
+  const compiledTransport =
+    input.strategy.constraint === "json-schema"
+      ? await compileStructuredOutputTransport(manifest.value)
+      : { ok: true as const, value: null };
+  if (!compiledTransport.ok) return compiledTransport;
+  if (
+    input.structuredOutputTransport !== undefined &&
+    (input.structuredOutputTransport.manifestDigest !==
+      compiledTransport.value?.manifestDigest ||
+      input.structuredOutputTransport.schemaDigest !==
+        compiledTransport.value.schemaDigest)
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "The supplied structured-output transport does not match the language manifest.",
+      ),
+    };
+  const transport = input.structuredOutputTransport ?? compiledTransport.value;
+  if (
+    transport !== null &&
+    input.adapter.preflightStructuredOutput !== undefined
+  ) {
+    const preflight = await input.adapter.preflightStructuredOutput(transport);
+    if (!preflight.ok)
+      return {
+        ok: false,
+        error: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          `Structured-output preflight failed before dispatch: ${preflight.error.message}`,
+        ),
+      };
+  }
   const attempts: Array<AttemptRecord> = [];
   let request: ModelRequest = {
     kind: "initial",
@@ -413,6 +452,7 @@ export async function generatePlan(
     languageManifest: manifest.value,
     publicExamples: input.publicExamples,
     constraint: input.strategy.constraint,
+    structuredOutputTransport: transport,
   };
 
   for (
@@ -494,6 +534,14 @@ export async function generatePlan(
             }
           : record;
       }
+      if (transport === null)
+        return {
+          ok: false,
+          error: diagnostic(
+            "INTERNAL_INVARIANT_VIOLATION",
+            "A constrained repair request requires a structured-output transport.",
+          ),
+        };
       request = {
         kind: "repair",
         originalTask: input.task,
@@ -501,6 +549,7 @@ export async function generatePlan(
         languageManifest: manifest.value,
         previousProposal: parsedOutput.previousProposal,
         diagnostics: parsedOutput.diagnostics,
+        structuredOutputTransport: transport,
       };
       continue;
     }
@@ -598,6 +647,14 @@ export async function generatePlan(
           }
         : record;
     }
+    if (transport === null)
+      return {
+        ok: false,
+        error: diagnostic(
+          "INTERNAL_INVARIANT_VIOLATION",
+          "A constrained repair request requires a structured-output transport.",
+        ),
+      };
     request = {
       kind: "repair",
       originalTask: input.task,
@@ -605,6 +662,7 @@ export async function generatePlan(
       languageManifest: manifest.value,
       previousProposal: parsedOutput.outcome.plan,
       diagnostics: compilation.diagnostics,
+      structuredOutputTransport: transport,
     };
   }
   return {

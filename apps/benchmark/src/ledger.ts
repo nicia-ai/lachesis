@@ -47,7 +47,7 @@ const ledgerEventBodySchema = z.discriminatedUnion("kind", [
     kind: z.literal("manifest-registered"),
     phaseManifestDigest: z.string().min(1),
     experimentDigest: z.string().min(1),
-    phase: z.enum(["smoke", "calibration", "heldout"]),
+    phase: z.enum(["transport-probe", "smoke", "calibration", "heldout"]),
     budgetPoolId: poolIdSchema,
     storageNamespace: z.string().min(1),
   }),

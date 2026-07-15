@@ -154,6 +154,13 @@ silently substitute for direct Anthropic. No live calls or frozen held-out
 experiment are made by this substrate; prompt calibration remains
 development-only and precedes the separately frozen held-out manifest.
 
+M1b.4 separates runtime validation from provider transport. A versioned compiler
+builds a strict root-object schema from each exact language manifest, inlines
+wire alternatives, constrains catalog references and constants, and rejects
+unsupported schema dialects before reservation. The compiler version and schema
+digest are bound into the experiment and every constrained request. Anthropic's
+`json` tool is an internal structured-output transport, not an external tool.
+
 The deterministic fixtures prove the measurement machinery, not these empirical
 rates. Prompts, cases, manifests, scoring code, providers, capability tiers,
 repetition count, and a hard spend cap must be frozen before the M1b pilot.
@@ -170,7 +177,7 @@ durable head, and is protected by an exclusive stale-aware filesystem lock.
 
 Phase validation prevents development/held-out mixing, rejects Bedrock and
 model-setting drift from the primary matrix, and requires a clean matching Git
-commit for held-out. Live execution requires exact experiment, phase, and pool
-cap acknowledgement. Dry-run and reporting do not construct provider models or
-make network requests. The operational protocol is in
-[`m1b-runbook.md`](m1b-runbook.md).
+commit for held-out and the two-call transport probe. Live execution requires
+exact experiment, phase, and pool cap acknowledgement. Dry-run and reporting do
+not construct provider models or make network requests. The operational protocol
+is in [`m1b-runbook.md`](m1b-runbook.md).

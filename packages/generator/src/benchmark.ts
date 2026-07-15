@@ -9,6 +9,7 @@ import {
   executePlan,
   inspectExecutablePlan,
   parseJson,
+  type PlanLanguageManifest,
   type Result,
   type WireNode,
   wirePlanSchema,
@@ -48,6 +49,10 @@ import {
   generationStrategySchema,
   modelIdentitySchema,
 } from "./records.js";
+import {
+  compileStructuredOutputTransport,
+  type StructuredOutputTransport,
+} from "./transport.js";
 
 const hiddenScoreSchema = z
   .strictObject({
@@ -660,6 +665,12 @@ type RunContext = Readonly<{
   methodBindings: ReadonlyMap<string, ExperimentMethod>;
 }>;
 
+type PreparedCase = Readonly<{
+  catalog: Catalog;
+  manifest: PlanLanguageManifest;
+  transport: StructuredOutputTransport;
+}>;
+
 async function validateRunInput(
   input: BenchmarkRunInput,
 ): Promise<Result<RunContext, Diagnostic>> {
@@ -765,6 +776,58 @@ export async function runBenchmark(
       cap.maxCostUsdMicros,
     ]),
   );
+  const preparedCases = new Map<string, PreparedCase>();
+  const preflighted = new Set<string>();
+  for (const frozenCase of input.cases) {
+    const catalog = input.resolveCatalog(frozenCase.case.catalogId);
+    if (!catalog.ok) return catalog;
+    const manifest = await createPlanLanguageManifest(
+      catalog.value,
+      frozenCase.case.policy,
+    );
+    if (!manifest.ok) return manifest;
+    const transport = await compileStructuredOutputTransport(manifest.value);
+    if (!transport.ok) return transport;
+    preparedCases.set(frozenCase.case.id, {
+      catalog: catalog.value,
+      manifest: manifest.value,
+      transport: transport.value,
+    });
+    for (const method of input.methods) {
+      if (method.strategy.constraint !== "json-schema") continue;
+      const binding = runContext.experiment.transportSchemas?.find(
+        (item) =>
+          item.caseDigest === frozenCase.digest && item.methodId === method.id,
+      );
+      if (
+        binding?.manifestDigest !== transport.value.manifestDigest ||
+        binding.compilerVersion !== transport.value.compilerVersion ||
+        binding.schemaDigest !== transport.value.schemaDigest
+      )
+        return {
+          ok: false,
+          error: diagnostic(
+            "INVALID_WIRE_SCHEMA",
+            `Structured-output identity mismatch for ${frozenCase.case.id}/${method.id}.`,
+          ),
+        };
+      const preflightKey = `${transport.value.manifestDigest}\u0000${method.adapter.identity.provider}`;
+      if (preflighted.has(preflightKey)) continue;
+      const preflight =
+        method.adapter.preflightStructuredOutput === undefined
+          ? { ok: true as const, value: undefined }
+          : await method.adapter.preflightStructuredOutput(transport.value);
+      if (!preflight.ok)
+        return {
+          ok: false,
+          error: diagnostic(
+            "INVALID_WIRE_SCHEMA",
+            `Structured-output preflight failed before budget reservation: ${preflight.error.message}`,
+          ),
+        };
+      preflighted.add(preflightKey);
+    }
+  }
 
   function meteredAdapter(
     adapter: ModelAdapter,
@@ -979,13 +1042,15 @@ export async function runBenchmark(
         error: diagnostic("INVALID_WIRE_SCHEMA", "Missing experiment split."),
       };
     }
-    const catalog = input.resolveCatalog(frozenCase.case.catalogId);
-    if (!catalog.ok) return catalog;
-    const manifest = await createPlanLanguageManifest(
-      catalog.value,
-      frozenCase.case.policy,
-    );
-    if (!manifest.ok) return manifest;
+    const prepared = preparedCases.get(frozenCase.case.id);
+    if (prepared === undefined)
+      return {
+        ok: false,
+        error: diagnostic(
+          "INTERNAL_INVARIANT_VIOLATION",
+          "Benchmark case was not prepared before execution.",
+        ),
+      };
     for (const method of input.methods) {
       const experimentMethod = context.value.methodBindings.get(method.id);
       if (experimentMethod === undefined) {
@@ -1016,7 +1081,7 @@ export async function runBenchmark(
           experimentDigest: context.value.experiment.experimentDigest,
           caseDigest: frozenCase.digest,
           split: caseBinding.split,
-          languageManifestDigest: manifest.value.manifestDigest,
+          languageManifestDigest: prepared.manifest.manifestDigest,
           methodId: method.id,
           repetition,
         });
@@ -1029,7 +1094,7 @@ export async function runBenchmark(
             stored.value.experimentDigest !==
               context.value.experiment.experimentDigest ||
             stored.value.caseDigest !== frozenCase.digest ||
-            stored.value.manifestDigest !== manifest.value.manifestDigest ||
+            stored.value.manifestDigest !== prepared.manifest.manifestDigest ||
             stored.value.split !== caseBinding.split ||
             stored.value.methodId !== method.id ||
             stored.value.pricingEntryId !== experimentMethod.pricingEntryId ||
@@ -1072,7 +1137,7 @@ export async function runBenchmark(
         const session = await generatePlan({
           task: frozenCase.case.instruction,
           taskInputs: frozenCase.case.taskInputs,
-          catalog: catalog.value,
+          catalog: prepared.catalog,
           policy: frozenCase.case.policy,
           publicExamples: toPublicExamples(frozenCase.case.publicExamples),
           adapter: meteredAdapter(
@@ -1082,6 +1147,10 @@ export async function runBenchmark(
             method.id,
           ),
           strategy: method.strategy,
+          structuredOutputTransport:
+            method.strategy.constraint === "json-schema"
+              ? prepared.transport
+              : undefined,
           modelCallLimit: Math.min(MAX_REPAIR_ATTEMPTS + 1, remainingCalls),
         });
         if (!session.ok) return session;

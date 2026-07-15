@@ -1,8 +1,16 @@
-import { type Diagnostics, digestValue, type Result } from "@nicia-ai/lachesis";
 import {
+  diagnostic,
+  type Diagnostics,
+  digestValue,
+  type Result,
+} from "@nicia-ai/lachesis";
+import {
+  compileCaseStructuredOutputTransports,
   createExperimentManifest,
+  createM1aCatalogResolver,
   type ExperimentCaps,
   type ExperimentMethodInput,
+  type ExperimentTransportSchemaBinding,
   freezePlanGenerationCase,
   type FrozenPlanGenerationCase,
   loadM1aCorpus,
@@ -49,11 +57,27 @@ const SMOKE_CAPS: ExperimentCaps = Object.freeze({
   maxCalls: 20,
 });
 
+const TRANSPORT_PROBE_CAPS: ExperimentCaps = Object.freeze({
+  ...DEVELOPMENT_CAPS,
+  maxCalls: 2,
+  maxCostUsdMicros: 564_800,
+  providerCostCaps: Object.freeze([
+    Object.freeze({
+      billingProvider: "openai",
+      maxCostUsdMicros: 282_880,
+    }),
+    Object.freeze({
+      billingProvider: "anthropic",
+      maxCostUsdMicros: 281_920,
+    }),
+  ]),
+});
+
 export const M1B_PROMPT_CANDIDATE = Object.freeze({
   id: "lachesis-m1b-plan-generator",
-  version: "development-candidate-2",
+  version: "development-candidate-3",
   instruction:
-    'Propose only registered Lachesis operators and schemas. Return raw JSON as exactly { "kind": "plan", "plan": ... } or { "kind": "unplannable", "reasons": [...] }; never use Markdown fences or alternate field names. Use unplannable only when the supplied manifest, public input contract, and policy cannot satisfy the task.',
+    'Propose only registered Lachesis operators and schemas. Return raw JSON as exactly { "kind": "plan", "plan": ... } or { "kind": "unplannable", "reasons": [...] }; never use Markdown fences or alternate field names. A constrained provider may carry that exact logical outcome inside the internal structured-output transport envelope { "outcome": ... }; this JSON tool is output transport only and does not authorize external tools. Use unplannable only when the supplied manifest, public input contract, and policy cannot satisfy the task.',
 });
 
 export type MaterializedPhase = Readonly<{
@@ -145,7 +169,7 @@ async function phaseCases(
     };
   }
   const ids =
-    phase === "smoke"
+    phase === "smoke" || phase === "transport-probe"
       ? ["numbers/double", "numbers/missing-average"]
       : [
           "numbers/increment-positive",
@@ -157,7 +181,7 @@ async function phaseCases(
           "numbers/missing-average",
         ];
   const selected: Array<FrozenPlanGenerationCase> = [];
-  for (const id of ids) {
+  for (const id of phase === "transport-probe" ? ids.slice(0, 1) : ids) {
     const item = requiredCase(partition.development, id);
     if (!item.ok) return item;
     selected.push(item.value);
@@ -170,8 +194,16 @@ async function phaseCases(
   return { ok: true, value: Object.freeze(selected) };
 }
 
-function experimentMethods(): ReadonlyArray<ExperimentMethodInput> {
-  return M1A_GENERATION_STRATEGIES.flatMap((strategy) => {
+function experimentMethods(
+  phase: CampaignPhase,
+): ReadonlyArray<ExperimentMethodInput> {
+  const strategies =
+    phase === "transport-probe"
+      ? M1A_GENERATION_STRATEGIES.filter(
+          (strategy) => strategy.id === "json-schema",
+        )
+      : M1A_GENERATION_STRATEGIES;
+  return strategies.flatMap((strategy) => {
     const adapters = createM1bPrimaryAdapters({
       constraint: strategy.constraint,
     });
@@ -183,6 +215,79 @@ function experimentMethods(): ReadonlyArray<ExperimentMethodInput> {
       pricingEntryId: adapter.pricingEntryId,
     }));
   });
+}
+
+async function transportSchemaBindings(
+  cases: ReadonlyArray<FrozenPlanGenerationCase>,
+  methods: ReadonlyArray<ExperimentMethodInput>,
+): Promise<
+  Result<ReadonlyArray<ExperimentTransportSchemaBinding>, Diagnostics>
+> {
+  const resolver = createM1aCatalogResolver();
+  if (!resolver.ok) return resolver;
+  const compiled = await compileCaseStructuredOutputTransports(
+    cases,
+    resolver.value,
+  );
+  if (!compiled.ok) return { ok: false, error: [compiled.error] };
+  const adapters = createM1bPrimaryAdapters({ constraint: "json-schema" });
+  const byProvider = new Map([
+    [adapters.openai.identity.provider, adapters.openai],
+    [adapters.anthropic.identity.provider, adapters.anthropic],
+  ]);
+  const preflighted = new Set<string>();
+  const bindings: Array<ExperimentTransportSchemaBinding> = [];
+  for (const item of compiled.value) {
+    for (const method of methods) {
+      if (method.strategy.constraint !== "json-schema") continue;
+      const adapter = byProvider.get(method.model.provider);
+      if (adapter === undefined)
+        return {
+          ok: false,
+          error: [
+            diagnostic(
+              "INVALID_WIRE_SCHEMA",
+              `No structured-output adapter exists for ${method.model.provider}.`,
+            ),
+          ],
+        };
+      const preflightKey = `${item.transport.manifestDigest}\u0000${method.model.provider}`;
+      if (!preflighted.has(preflightKey)) {
+        if (adapter.preflightStructuredOutput === undefined)
+          return {
+            ok: false,
+            error: [
+              diagnostic(
+                "INVALID_WIRE_SCHEMA",
+                `Adapter ${method.model.provider} has no structured-output preflight.`,
+              ),
+            ],
+          };
+        const preflight = await adapter.preflightStructuredOutput(
+          item.transport,
+        );
+        if (!preflight.ok)
+          return {
+            ok: false,
+            error: [
+              diagnostic(
+                "INVALID_WIRE_SCHEMA",
+                `Structured-output preflight failed for ${method.model.provider}: ${preflight.error.message}`,
+              ),
+            ],
+          };
+        preflighted.add(preflightKey);
+      }
+      bindings.push({
+        caseDigest: item.caseDigest,
+        methodId: method.id,
+        manifestDigest: item.transport.manifestDigest,
+        compilerVersion: item.transport.compilerVersion,
+        schemaDigest: item.transport.schemaDigest,
+      });
+    }
+  }
+  return { ok: true, value: Object.freeze(bindings) };
 }
 
 export async function materializeM1bPhase(
@@ -198,6 +303,9 @@ export async function materializeM1bPhase(
   if (!cases.ok) return cases;
   const pricing = await createM1bPricingSnapshot();
   if (!pricing.ok) return pricing;
+  const methods = experimentMethods(input.phase);
+  const transportSchemas = await transportSchemaBindings(cases.value, methods);
+  if (!transportSchemas.ok) return transportSchemas;
   const corpusDigest = await digestValue(
     cases.value.map((item) => ({ id: item.case.id, digest: item.digest })),
   );
@@ -221,15 +329,18 @@ export async function materializeM1bPhase(
               : "heldout-phrasing"
           : "development",
     })),
-    methods: experimentMethods(),
+    methods,
+    transportSchemas: transportSchemas.value,
     pricingSnapshot: pricing.value,
     repetitions: input.phase === "heldout" ? 2 : 1,
     caps:
       input.phase === "heldout"
         ? M1B_PILOT_CAPS
-        : input.phase === "smoke"
-          ? SMOKE_CAPS
-          : DEVELOPMENT_CAPS,
+        : input.phase === "transport-probe"
+          ? TRANSPORT_PROBE_CAPS
+          : input.phase === "smoke"
+            ? SMOKE_CAPS
+            : DEVELOPMENT_CAPS,
     versions: {
       gitCommit: input.gitCommit,
       workspaceVersion: "0.1.0",

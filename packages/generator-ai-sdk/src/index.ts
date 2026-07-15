@@ -4,7 +4,6 @@ import {
   createPricingSnapshot,
   type ExperimentCaps,
   type GenerationConstraint,
-  generationOutcomeSchema,
   type InferenceSettings,
   type ModelAdapter,
   type ModelAdapterFailure,
@@ -12,12 +11,15 @@ import {
   type ModelRequest,
   type ModelResponseMetadata,
   type ModelUsage,
+  normalizeStructuredOutputEnvelope,
   type PricingEntry,
+  type StructuredOutputTransport,
+  validatePortableStructuredOutputSchema,
 } from "@nicia-ai/lachesis-generator";
 import { z } from "zod";
 
 export const AI_SDK_VERSION = "7.0.28";
-export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/2;ai-sdk/${AI_SDK_VERSION}`;
+export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/3;ai-sdk/${AI_SDK_VERSION}`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -37,7 +39,7 @@ export const GENERATION_OUTCOME_PROMPT_CONTRACT = Object.freeze({
 
 export const M1B_PROMPT_PROTOCOL = Object.freeze({
   id: "lachesis-plan-generation",
-  version: "2",
+  version: "3",
   outputContract: GENERATION_OUTCOME_PROMPT_CONTRACT,
   repairVisibility: Object.freeze([
     "original task",
@@ -49,7 +51,7 @@ export const M1B_PROMPT_PROTOCOL = Object.freeze({
   hiddenExecutionResultsVisible: false,
   toolsEnabled: false,
   internalOutputTransport:
-    "Anthropic's json tool is an internal structured-output transport only; external tools remain disabled.",
+    "Constrained methods use a versioned root-object outcome envelope that normalizes to GenerationOutcome. Anthropic's json tool is an internal structured-output transport only; external tools remain disabled.",
 });
 
 export const M1B_PILOT_CAPS: ExperimentCaps = Object.freeze({
@@ -129,6 +131,7 @@ type UnknownFunction = (...arguments_: ReadonlyArray<unknown>) => unknown;
 export type AiSdkRuntime = Readonly<{
   generateText: UnknownFunction;
   outputObject: UnknownFunction;
+  jsonSchema: UnknownFunction;
 }>;
 
 export type DispatchObserver = Readonly<{
@@ -196,12 +199,24 @@ const structuredGenerationErrorSchema = z.looseObject({
 });
 
 function renderRequest(request: ModelRequest): string {
+  const transport =
+    request.structuredOutputTransport === null
+      ? null
+      : {
+          formatVersion: request.structuredOutputTransport.formatVersion,
+          compilerVersion: request.structuredOutputTransport.compilerVersion,
+          manifestDigest: request.structuredOutputTransport.manifestDigest,
+          schemaDigest: request.structuredOutputTransport.schemaDigest,
+          envelope:
+            '{ "outcome": { "kind": "plan", "plan": ... } } or { "outcome": { "kind": "unplannable", "reasons": [...] } }',
+        };
   const shared = {
     protocol: M1B_PROMPT_PROTOCOL,
     generationOutcomeContract: GENERATION_OUTCOME_PROMPT_CONTRACT,
     originalTask: request.originalTask,
     taskInputs: request.taskInputs,
     languageManifest: request.languageManifest,
+    structuredOutputTransport: transport,
   };
   return JSON.stringify(
     request.kind === "initial"
@@ -272,10 +287,17 @@ async function loadAiSdk(): Promise<AiSdkRuntime> {
   const module = await importModule(["a", "i"].join(""));
   const generateText = property(module, "generateText");
   const outputObject = property(property(module, "Output"), "object");
-  if (!callable(generateText) || !callable(outputObject)) {
-    throw new Error("AI SDK 7 generateText or Output.object is unavailable.");
+  const jsonSchema = property(module, "jsonSchema");
+  if (
+    !callable(generateText) ||
+    !callable(outputObject) ||
+    !callable(jsonSchema)
+  ) {
+    throw new Error(
+      "AI SDK 7 generateText, Output.object, or jsonSchema is unavailable.",
+    );
   }
-  return { generateText, outputObject };
+  return { generateText, outputObject, jsonSchema };
 }
 
 async function providerModel(
@@ -417,6 +439,29 @@ function failureEvidence(
     : "not-dispatched";
 }
 
+function portableSchemaFailure(message: string): ModelAdapterFailure {
+  return {
+    code: "PROVIDER_FAILURE",
+    message,
+    dispatchEvidence: "not-dispatched",
+  };
+}
+
+type AdapterPreflightResult =
+  | Readonly<{ ok: true; value: undefined }>
+  | Readonly<{ ok: false; error: ModelAdapterFailure }>;
+
+function preflightStructuredOutput(
+  transport: StructuredOutputTransport,
+): Promise<AdapterPreflightResult> {
+  const portable = validatePortableStructuredOutputSchema(transport.jsonSchema);
+  return Promise.resolve(
+    portable.ok
+      ? { ok: true, value: undefined }
+      : { ok: false, error: portableSchemaFailure(portable.error.message) },
+  );
+}
+
 export function createAiSdkModelAdapter(
   input: AiSdkModelAdapterInput,
 ): ModelAdapter {
@@ -424,6 +469,7 @@ export function createAiSdkModelAdapter(
     identity: input.identity,
     inference: input.inference,
     pricingEntryId: input.pricing.id,
+    preflightStructuredOutput,
     async generate(request) {
       const started = performance.now();
       let dispatched = false;
@@ -438,17 +484,27 @@ export function createAiSdkModelAdapter(
       try {
         const prompt = renderRequest(request);
         const sdk = input.runtime ?? (await loadAiSdk());
-        const structured = !(
-          request.kind === "initial" &&
-          request.constraint === "unconstrained-json"
-        );
-        const output = structured
-          ? sdk.outputObject({
-              name: "generation_outcome",
-              description: "A Lachesis plan proposal or principled abstention.",
-              schema: generationOutcomeSchema,
-            })
-          : undefined;
+        const transport = request.structuredOutputTransport;
+        const structured = transport !== null;
+        const output =
+          transport !== null
+            ? sdk.outputObject({
+                name: "generation_outcome",
+                description:
+                  "A Lachesis plan proposal or principled abstention.",
+                schema: sdk.jsonSchema(transport.jsonSchema, {
+                  validate: (value: unknown) => {
+                    const normalized = normalizeStructuredOutputEnvelope(value);
+                    return normalized.ok
+                      ? { success: true, value: normalized.value }
+                      : {
+                          success: false,
+                          error: new Error(normalized.error.message),
+                        };
+                  },
+                }),
+              })
+            : undefined;
         const raw = await sdk.generateText({
           model: await input.loadModel(observer),
           prompt,
@@ -603,7 +659,7 @@ export function createOpenAiPlanAdapter(
     inference: inference(
       input.constraint,
       { mode: "reasoning", effort: "low" },
-      "openai-responses-json-schema",
+      "openai-responses-portable-json-schema",
     ),
     pricing: OPENAI_PRICING,
     loadModel: (observer) =>
@@ -651,7 +707,7 @@ export function createAnthropicPlanAdapter(
     inference: inference(
       input.constraint,
       { mode: "adaptive", effort: "low" },
-      "anthropic-json-tool",
+      "anthropic-json-tool-portable-json-schema",
     ),
     pricing: ANTHROPIC_DIRECT_PRICING,
     loadModel: (observer) =>
@@ -724,7 +780,7 @@ export function createBedrockAnthropicPlanAdapter(
     inference: inference(
       input.constraint,
       { mode: "adaptive", effort: "low", route: "aws-bedrock" },
-      "bedrock-json-tool",
+      "bedrock-json-tool-portable-json-schema",
     ),
     pricing: ANTHROPIC_BEDROCK_PRICING,
     loadModel: (observer) =>

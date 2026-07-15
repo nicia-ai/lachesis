@@ -5,6 +5,7 @@ import {
   type Result,
 } from "@nicia-ai/lachesis";
 import {
+  compileStructuredOutputTransport,
   createM1aCatalogResolver,
   generatePlan,
   type GenerationStrategy,
@@ -74,6 +75,7 @@ function runtimeReturning(
       captured.push(arguments_[0]);
       return { kind: "output-object-fixture" };
     },
+    jsonSchema: (...arguments_) => arguments_[0],
   };
 }
 
@@ -118,16 +120,63 @@ function interceptedFetch(
   };
 }
 
-function expectGenerationOutcomeSchema(value: unknown): void {
-  const canonical = unwrap(canonicalizeJson(value));
-  expect(canonical).toContain('"kind"');
-  expect(canonical).toContain('"plan"');
-  expect(canonical).toContain('"unplannable"');
-  expect(canonical).toContain('"reasons"');
-  expect(canonical).toContain('"const":"plan"');
-  expect(canonical).toContain('"const":"unplannable"');
-  expect(canonical).toContain('"required":["kind","plan"]');
-  expect(canonical).toContain('"required":["kind","reasons"]');
+const FORBIDDEN_SCHEMA_KEYWORDS = new Set([
+  "$defs",
+  "$ref",
+  "definitions",
+  "propertyNames",
+  "readOnly",
+]);
+
+function schemaObject(value: unknown): Readonly<Record<string, unknown>> {
+  return z.record(z.string(), z.unknown()).parse(value);
+}
+
+function expectPortableSchema(value: unknown, root = true): void {
+  const node = schemaObject(value);
+  if (root) expect(node["type"]).toBe("object");
+  for (const key of Object.keys(node))
+    expect(FORBIDDEN_SCHEMA_KEYWORDS.has(key)).toBe(false);
+  if (node["type"] === "object") {
+    const properties = schemaObject(node["properties"]);
+    const required = z.array(z.string()).parse(node["required"]);
+    expect(node["additionalProperties"]).toBe(false);
+    expect([...required].toSorted()).toEqual(
+      Object.keys(properties).toSorted(),
+    );
+    for (const child of Object.values(properties))
+      expectPortableSchema(child, false);
+  }
+  if (node["items"] !== undefined) expectPortableSchema(node["items"], false);
+  if (node["anyOf"] !== undefined)
+    for (const child of z.array(z.unknown()).min(1).parse(node["anyOf"]))
+      expectPortableSchema(child, false);
+}
+
+function schemasWithOperation(
+  value: unknown,
+  operation: string,
+): ReadonlyArray<Readonly<Record<string, unknown>>> {
+  const found: Array<Readonly<Record<string, unknown>>> = [];
+  const visit = (candidate: unknown): void => {
+    const parsed = z.record(z.string(), z.unknown()).safeParse(candidate);
+    if (!parsed.success) return;
+    const properties = z
+      .record(z.string(), z.unknown())
+      .safeParse(parsed.data["properties"]);
+    if (properties.success) {
+      const op = z
+        .record(z.string(), z.unknown())
+        .safeParse(properties.data["op"]);
+      if (op.success && op.data["const"] === operation) found.push(parsed.data);
+      for (const child of Object.values(properties.data)) visit(child);
+    }
+    if (parsed.data["items"] !== undefined) visit(parsed.data["items"]);
+    const variants = z.array(z.unknown()).safeParse(parsed.data["anyOf"]);
+    if (variants.success) for (const child of variants.data) visit(child);
+  };
+  visit(value);
+  return found;
 }
 
 describe("AI SDK provider adapters", () => {
@@ -297,6 +346,7 @@ describe("AI SDK provider adapters", () => {
           });
         },
         outputObject: () => ({ kind: "output-object-fixture" }),
+        jsonSchema: (...arguments_) => arguments_[0],
       },
     });
     const { benchmarkCase, catalog } = await generationInput();
@@ -335,7 +385,7 @@ describe("AI SDK provider adapters", () => {
       effort: "low",
     });
     expect(openai.inference.structuredOutputTransport).toBe(
-      "openai-responses-json-schema",
+      "openai-responses-portable-json-schema",
     );
     expect(anthropic.identity.model).toBe(M1B_ANTHROPIC_MODEL);
     expect(anthropic.pricingEntryId).toContain("/direct/");
@@ -344,7 +394,7 @@ describe("AI SDK provider adapters", () => {
       effort: "low",
     });
     expect(anthropic.inference.structuredOutputTransport).toBe(
-      "anthropic-json-tool",
+      "anthropic-json-tool-portable-json-schema",
     );
     expect(bedrock.identity.model).toBe(M1B_BEDROCK_ANTHROPIC_MODEL);
     expect(bedrock.inference.reasoningSettings).toEqual({
@@ -366,7 +416,7 @@ describe("AI SDK provider adapters", () => {
     expect(M1B_REPETITIONS).toBe(2);
   });
 
-  it("uses real provider packages and serializes both routes through intercepted fetch", async () => {
+  it("uses real packages and portable schemas for every catalog/provider path without network", async () => {
     const openaiRequests: Array<CapturedFetchRequest> = [];
     const anthropicRequests: Array<CapturedFetchRequest> = [];
     const openaiFetch = interceptedFetch(openaiRequests);
@@ -384,95 +434,172 @@ describe("AI SDK provider adapters", () => {
       "function",
     );
 
-    const adapters = createM1bPrimaryAdapters({
-      constraint: "json-schema",
-      openai: { apiKey: "offline-dummy", fetch: openaiFetch },
-      anthropic: { apiKey: "offline-dummy", fetch: anthropicFetch },
-    });
-    const { benchmarkCase, catalog } = await generationInput();
-    const common = {
-      task: benchmarkCase.case.instruction,
-      taskInputs: benchmarkCase.case.taskInputs,
-      catalog,
-      policy: benchmarkCase.case.policy,
-      publicExamples: [],
-      strategy: strategy("json-schema"),
-    };
-    const openaiSession = unwrap(
-      await generatePlan({ ...common, adapter: adapters.openai }),
-    );
-    const anthropicSession = unwrap(
-      await generatePlan({ ...common, adapter: adapters.anthropic }),
-    );
+    const corpus = unwrap(await loadM1aCorpus());
+    const selected = [
+      required(
+        corpus.find((item) => item.case.id === "numbers/tax-map"),
+        "Missing numeric transport case.",
+      ),
+      required(
+        corpus.find((item) => item.case.catalogId === "benchmark.text"),
+        "Missing text transport case.",
+      ),
+      required(
+        corpus.find((item) => item.case.catalogId === "benchmark.decisions"),
+        "Missing decision transport case.",
+      ),
+      required(
+        corpus.find((item) => item.case.catalogId === "benchmark.workflow"),
+        "Missing workflow transport case.",
+      ),
+    ];
+    const resolver = unwrap(createM1aCatalogResolver());
+    const expectedSchemas: Array<unknown> = [];
+    const declaredSchemaCounts: Array<number> = [];
+    for (const benchmarkCase of selected) {
+      const catalog = unwrap(resolver(benchmarkCase.case.catalogId));
+      const manifest = unwrap(
+        await createPlanLanguageManifest(catalog, benchmarkCase.case.policy),
+      );
+      const transport = unwrap(
+        await compileStructuredOutputTransport(manifest),
+      );
+      expectedSchemas.push(transport.jsonSchema);
+      declaredSchemaCounts.push(manifest.schemas.length);
+      const adapters = createM1bPrimaryAdapters({
+        constraint: "json-schema",
+        openai: { apiKey: "offline-dummy", fetch: openaiFetch },
+        anthropic: { apiKey: "offline-dummy", fetch: anthropicFetch },
+      });
+      const common = {
+        task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
+        catalog,
+        policy: benchmarkCase.case.policy,
+        publicExamples: [],
+        strategy: strategy("json-schema"),
+        structuredOutputTransport: transport,
+      };
+      const openaiSession = unwrap(
+        await generatePlan({ ...common, adapter: adapters.openai }),
+      );
+      const anthropicSession = unwrap(
+        await generatePlan({ ...common, adapter: adapters.anthropic }),
+      );
+      expect(openaiSession.kind).toBe("adapterFailure");
+      expect(anthropicSession.kind).toBe("adapterFailure");
+      expect(
+        openaiSession.record.attempts[0]?.adapterFailure?.dispatchEvidence,
+      ).toBe("dispatched-usage-unknown");
+      expect(
+        anthropicSession.record.attempts[0]?.adapterFailure?.dispatchEvidence,
+      ).toBe("dispatched-usage-unknown");
+    }
+    expect(openaiRequests).toHaveLength(selected.length);
+    expect(anthropicRequests).toHaveLength(selected.length);
 
-    expect(openaiSession.kind).toBe("adapterFailure");
-    expect(anthropicSession.kind).toBe("adapterFailure");
-    expect(
-      openaiSession.record.attempts[0]?.adapterFailure?.dispatchEvidence,
-    ).toBe("dispatched-usage-unknown");
-    expect(
-      anthropicSession.record.attempts[0]?.adapterFailure?.dispatchEvidence,
-    ).toBe("dispatched-usage-unknown");
-    expect(openaiRequests).toHaveLength(1);
-    expect(anthropicRequests).toHaveLength(1);
+    const observedOperations = new Set<string>();
+    for (let index = 0; index < selected.length; index += 1) {
+      const openaiRequest = required(
+        openaiRequests[index],
+        "Missing OpenAI request.",
+      );
+      expect(openaiRequest.url).toMatch(/\/v1\/responses$/u);
+      const openaiBody = z
+        .looseObject({
+          model: z.string(),
+          reasoning: z.looseObject({ effort: z.string() }),
+          store: z.boolean(),
+          service_tier: z.string(),
+          text: z.looseObject({
+            format: z.looseObject({ type: z.string(), schema: z.unknown() }),
+          }),
+          tools: z.array(z.unknown()).optional(),
+        })
+        .parse(openaiRequest.body);
+      expect(openaiBody.model).toBe(M1B_OPENAI_MODEL);
+      expect(openaiBody.reasoning.effort).toBe("low");
+      expect(openaiBody.store).toBe(false);
+      expect(openaiBody.service_tier).toBe("default");
+      expect(openaiBody.text.format.type).toBe("json_schema");
+      expect(openaiBody.tools).toBeUndefined();
 
-    const openaiRequest = required(
-      openaiRequests[0],
-      "Missing OpenAI request.",
-    );
-    expect(openaiRequest.url).toMatch(/\/v1\/responses$/u);
-    const openaiBody = z
-      .looseObject({
-        model: z.string(),
-        reasoning: z.looseObject({ effort: z.string() }),
-        store: z.boolean(),
-        service_tier: z.string(),
-        text: z.looseObject({
-          format: z.looseObject({ type: z.string(), schema: z.unknown() }),
-        }),
-        tools: z.array(z.unknown()).optional(),
-      })
-      .parse(openaiRequest.body);
-    expect(openaiBody.model).toBe(M1B_OPENAI_MODEL);
-    expect(openaiBody.reasoning.effort).toBe("low");
-    expect(openaiBody.store).toBe(false);
-    expect(openaiBody.service_tier).toBe("default");
-    expect(openaiBody.text.format.type).toBe("json_schema");
-    expect(openaiBody.tools).toBeUndefined();
-    expectGenerationOutcomeSchema(openaiBody.text.format.schema);
+      const anthropicRequest = required(
+        anthropicRequests[index],
+        "Missing Anthropic request.",
+      );
+      expect(anthropicRequest.url).toMatch(/\/v1\/messages$/u);
+      const anthropicBody = z
+        .looseObject({
+          model: z.string(),
+          thinking: z.looseObject({ type: z.string() }),
+          output_config: z.looseObject({
+            effort: z.string(),
+            format: z.unknown().optional(),
+          }),
+          tools: z.array(
+            z.looseObject({ name: z.string(), input_schema: z.unknown() }),
+          ),
+          tool_choice: z.looseObject({
+            type: z.string(),
+            disable_parallel_tool_use: z.boolean(),
+          }),
+        })
+        .parse(anthropicRequest.body);
+      expect(anthropicBody.model).toBe(M1B_ANTHROPIC_MODEL);
+      expect(anthropicBody.thinking.type).toBe("adaptive");
+      expect(anthropicBody.output_config.effort).toBe("low");
+      expect(anthropicBody.output_config.format).toBeUndefined();
+      expect(anthropicBody.tools.map((tool) => tool.name)).toEqual(["json"]);
+      expect(anthropicBody.tool_choice).toEqual({
+        type: "any",
+        disable_parallel_tool_use: true,
+      });
 
-    const anthropicRequest = required(
-      anthropicRequests[0],
-      "Missing Anthropic request.",
+      const expectedSchema = required(
+        expectedSchemas[index],
+        "Missing expected transport schema.",
+      );
+      expectPortableSchema(openaiBody.text.format.schema);
+      expectPortableSchema(anthropicBody.tools[0]?.input_schema);
+      expect(unwrap(canonicalizeJson(openaiBody.text.format.schema))).toBe(
+        unwrap(canonicalizeJson(expectedSchema)),
+      );
+      expect(
+        unwrap(canonicalizeJson(anthropicBody.tools[0]?.input_schema)),
+      ).toBe(unwrap(canonicalizeJson(expectedSchema)));
+      expect(schemasWithOperation(expectedSchema, "constant")).toHaveLength(
+        required(declaredSchemaCounts[index], "Missing declared schema count."),
+      );
+      for (const operation of [
+        "input",
+        "constant",
+        "invoke",
+        "map",
+        "filter",
+        "fold",
+        "select",
+        "effect",
+        "checkpoint",
+        "boundedFix",
+      ])
+        if (schemasWithOperation(expectedSchema, operation).length > 0)
+          observedOperations.add(operation);
+    }
+    expect([...observedOperations].toSorted()).toEqual(
+      [
+        "boundedFix",
+        "checkpoint",
+        "constant",
+        "effect",
+        "filter",
+        "fold",
+        "input",
+        "invoke",
+        "map",
+        "select",
+      ].toSorted(),
     );
-    expect(anthropicRequest.url).toMatch(/\/v1\/messages$/u);
-    const anthropicBody = z
-      .looseObject({
-        model: z.string(),
-        thinking: z.looseObject({ type: z.string() }),
-        output_config: z.looseObject({
-          effort: z.string(),
-          format: z.unknown().optional(),
-        }),
-        tools: z.array(
-          z.looseObject({ name: z.string(), input_schema: z.unknown() }),
-        ),
-        tool_choice: z.looseObject({
-          type: z.string(),
-          disable_parallel_tool_use: z.boolean(),
-        }),
-      })
-      .parse(anthropicRequest.body);
-    expect(anthropicBody.model).toBe(M1B_ANTHROPIC_MODEL);
-    expect(anthropicBody.thinking.type).toBe("adaptive");
-    expect(anthropicBody.output_config.effort).toBe("low");
-    expect(anthropicBody.output_config.format).toBeUndefined();
-    expect(anthropicBody.tools.map((tool) => tool.name)).toEqual(["json"]);
-    expect(anthropicBody.tool_choice).toEqual({
-      type: "any",
-      disable_parallel_tool_use: true,
-    });
-    expectGenerationOutcomeSchema(anthropicBody.tools[0]?.input_schema);
   });
 
   it("renders the exact outcome and public-input contract on every turn without hostile fields", async () => {
@@ -480,6 +607,7 @@ describe("AI SDK provider adapters", () => {
     const pricing = required(M1B_PRICING_ENTRIES[0], "Missing OpenAI pricing.");
     const runtime: AiSdkRuntime = {
       outputObject: () => ({ kind: "output-object-fixture" }),
+      jsonSchema: (...arguments_) => arguments_[0],
       generateText: (...arguments_) => {
         const options = z
           .looseObject({ prompt: z.string() })
@@ -506,7 +634,7 @@ describe("AI SDK provider adapters", () => {
         maxInputTokens: 64_000,
         maxOutputTokens: 8_192,
         structuredOutputMode: "json-schema",
-        structuredOutputTransport: "openai-responses-json-schema",
+        structuredOutputTransport: "openai-responses-portable-json-schema",
       },
       pricing,
       loadModel: () => Promise.resolve({ id: "model-fixture" }),
@@ -516,6 +644,7 @@ describe("AI SDK provider adapters", () => {
     const manifest = unwrap(
       await createPlanLanguageManifest(catalog, benchmarkCase.case.policy),
     );
+    const transport = unwrap(await compileStructuredOutputTransport(manifest));
     const hostile = {
       hiddenInputs: "HOSTILE_HIDDEN_INPUT",
       expectedOutputs: "HOSTILE_EXPECTED_OUTPUT",
@@ -530,10 +659,12 @@ describe("AI SDK provider adapters", () => {
       languageManifest: manifest,
       publicExamples: [],
       constraint: "json-schema",
+      structuredOutputTransport: transport,
     };
     const unconstrained: ModelRequest & typeof hostile = {
       ...initial,
       constraint: "unconstrained-json",
+      structuredOutputTransport: null,
     };
     const repair: ModelRequest & typeof hostile = {
       ...hostile,
@@ -543,6 +674,7 @@ describe("AI SDK provider adapters", () => {
       languageManifest: manifest,
       previousProposal: { kind: "plan", plan: {} },
       diagnostics: [],
+      structuredOutputTransport: transport,
     };
     await adapter.generate(initial);
     await adapter.generate(unconstrained);
