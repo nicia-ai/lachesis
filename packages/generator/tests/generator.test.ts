@@ -9,9 +9,12 @@ import {
   benchmarkCaseRecordSchema,
   type BenchmarkMethod,
   type BenchmarkSplit,
+  calculateCostUsdMicros,
+  calculateMaximumCostUsdMicros,
   createExperimentManifest,
   createInMemoryBenchmarkStore,
   createM1aCatalogResolver,
+  createPricingSnapshot,
   createRecordedModelAdapter,
   DEFAULT_INFERENCE_SETTINGS,
   evaluateResearchGates,
@@ -30,11 +33,13 @@ import {
   M1A_GENERATION_STRATEGIES,
   type ModelAdapter,
   partitionM1aCorpus,
+  type PricingSnapshot,
   RECORDED_DOUBLE_PLAN,
   runBenchmark,
   scoreGeneration,
   summarizeBenchmark,
   verifyExperimentManifest,
+  verifyPricingSnapshot,
 } from "../src/index.js";
 import { createJsonFileBenchmarkStore } from "../src/node-store.js";
 
@@ -72,6 +77,35 @@ async function recordedFixture(
   );
 }
 
+async function pricingFor(
+  methods: ReadonlyArray<BenchmarkMethod>,
+): Promise<PricingSnapshot> {
+  const entries = new Map(
+    methods.map((method) => [
+      method.adapter.pricingEntryId,
+      {
+        id: method.adapter.pricingEntryId,
+        billingProvider: method.adapter.identity.provider,
+        route: "recorded",
+        model: "recorded-fixture",
+        inputUsdMicrosPerMillionTokens: 1_000_000,
+        cachedInputUsdMicrosPerMillionTokens: 1_000_000,
+        cacheWriteInputUsdMicrosPerMillionTokens: 1_000_000,
+        outputUsdMicrosPerMillionTokens: 1_000_000,
+        effectiveFrom: "2026-01-01",
+        effectiveUntil: null,
+        sourceUrl: "https://example.invalid/recorded-pricing",
+      },
+    ]),
+  );
+  return unwrap(
+    await createPricingSnapshot({
+      capturedAt: "2026-07-15T00:00:00Z",
+      entries: [...entries.values()],
+    }),
+  );
+}
+
 async function experimentFor(
   cases: ReadonlyArray<FrozenPlanGenerationCase>,
   methods: ReadonlyArray<BenchmarkMethod>,
@@ -83,7 +117,11 @@ async function experimentFor(
     maxInputTokens: 100_000,
     maxOutputTokens: 100_000,
     maxTotalTokens: 200_000,
+    maxOutputTokensPerCall: 100_000,
     maxCostUsdMicros: 1_000_000,
+    providerCostCaps: [
+      { billingProvider: "recorded", maxCostUsdMicros: 1_000_000 },
+    ],
   },
 ): Promise<ExperimentManifest> {
   return unwrap(
@@ -96,7 +134,9 @@ async function experimentFor(
         model: method.adapter.identity,
         strategy: method.strategy,
         inference: method.adapter.inference,
+        pricingEntryId: method.adapter.pricingEntryId,
       })),
+      pricingSnapshot: await pricingFor(methods),
       repetitions,
       caps,
       versions: {
@@ -152,6 +192,111 @@ async function sessionFor(
 }
 
 describe("M1a frozen substrate", () => {
+  it("content-addresses immutable pricing and prices cache usage exactly", async () => {
+    const method: BenchmarkMethod = {
+      id: "schema",
+      adapter: createRecordedModelAdapter(await recordedFixture(0)),
+      strategy: strategy("json-schema"),
+    };
+    const first = await pricingFor([method]);
+    const second = await pricingFor([method]);
+    const entry = required(first.entries[0], "Missing recorded pricing entry.");
+
+    expect(first.digest).toBe(second.digest);
+    expect(Object.isFrozen(first)).toBe(true);
+    expect(Object.isFrozen(first.entries)).toBe(true);
+    expect(
+      unwrap(
+        calculateCostUsdMicros(entry, {
+          inputTokens: 10,
+          cachedInputTokens: 2,
+          cacheWriteInputTokens: 3,
+          outputTokens: 4,
+        }),
+      ),
+    ).toBe(14);
+    expect(unwrap(calculateMaximumCostUsdMicros(entry, 10, 4))).toBe(14);
+    expect(
+      calculateCostUsdMicros(entry, {
+        inputTokens: 10,
+        cachedInputTokens: 8,
+        cacheWriteInputTokens: 3,
+        outputTokens: 4,
+      }).ok,
+    ).toBe(false);
+    expect((await verifyPricingSnapshot(first)).ok).toBe(true);
+    expect(
+      (
+        await verifyPricingSnapshot({
+          ...first,
+          entries: [
+            {
+              ...entry,
+              outputUsdMicrosPerMillionTokens:
+                entry.outputUsdMicrosPerMillionTokens + 1,
+            },
+          ],
+        })
+      ).ok,
+    ).toBe(false);
+    expect((await verifyPricingSnapshot({ formatVersion: "1" })).ok).toBe(
+      false,
+    );
+    expect(
+      (
+        await verifyPricingSnapshot({
+          ...first,
+          entries: [entry, entry],
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await createPricingSnapshot({
+          capturedAt: "not-a-timestamp",
+          entries: [entry],
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await createPricingSnapshot({
+          capturedAt: first.capturedAt,
+          entries: [entry, entry],
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      calculateCostUsdMicros(
+        {
+          ...entry,
+          inputUsdMicrosPerMillionTokens: Number.MAX_SAFE_INTEGER,
+          outputUsdMicrosPerMillionTokens: Number.MAX_SAFE_INTEGER,
+        },
+        {
+          inputTokens: Number.MAX_SAFE_INTEGER,
+          cachedInputTokens: 0,
+          cacheWriteInputTokens: 0,
+          outputTokens: Number.MAX_SAFE_INTEGER,
+        },
+      ).ok,
+    ).toBe(false);
+
+    const repriced = unwrap(
+      await createPricingSnapshot({
+        capturedAt: first.capturedAt,
+        entries: [
+          {
+            ...entry,
+            outputUsdMicrosPerMillionTokens:
+              entry.outputUsdMicrosPerMillionTokens + 1,
+          },
+        ],
+      }),
+    );
+    expect(repriced.digest).not.toBe(first.digest);
+  });
+
   it("loads 42 content-addressed cases across unrelated catalogs", async () => {
     const first = unwrap(await loadM1aCorpus());
     const second = unwrap(await loadM1aCorpus());
@@ -286,15 +431,21 @@ describe("M1a frozen substrate", () => {
             maxOutputTokens: 100,
             structuredOutputMode: "json-schema",
           },
+          pricingEntryId: methods[0]?.adapter.pricingEntryId ?? "recorded/free",
         },
       ],
+      pricingSnapshot: await pricingFor(methods),
       repetitions: 1,
       caps: {
         maxCalls: 1,
         maxInputTokens: 1,
         maxOutputTokens: 1,
         maxTotalTokens: 1,
+        maxOutputTokensPerCall: 100,
         maxCostUsdMicros: 1,
+        providerCostCaps: [
+          { billingProvider: "recorded", maxCostUsdMicros: 1 },
+        ],
       },
       versions: {
         gitCommit: "test",
@@ -304,6 +455,84 @@ describe("M1a frozen substrate", () => {
       },
     });
     expect(invalidMode.ok).toBe(false);
+  });
+
+  it("rejects duplicate and unpriced experiment identities", async () => {
+    const benchmarkCase = await corpusCase("numbers/double");
+    const method: BenchmarkMethod = {
+      id: "schema",
+      adapter: createRecordedModelAdapter(await recordedFixture(0)),
+      strategy: strategy("json-schema"),
+    };
+    const pricingSnapshot = await pricingFor([method]);
+    const methodInput = {
+      id: method.id,
+      model: method.adapter.identity,
+      strategy: method.strategy,
+      inference: method.adapter.inference,
+      pricingEntryId: method.adapter.pricingEntryId,
+    };
+    const common = {
+      prompt: "prompt",
+      protocol: "protocol",
+      pricingSnapshot,
+      repetitions: 1,
+      caps: {
+        maxCalls: 2,
+        maxInputTokens: 100_000,
+        maxOutputTokens: 100_000,
+        maxTotalTokens: 200_000,
+        maxOutputTokensPerCall: 100_000,
+        maxCostUsdMicros: 1_000_000,
+        providerCostCaps: [
+          { billingProvider: "recorded", maxCostUsdMicros: 1_000_000 },
+        ],
+      },
+      versions: {
+        gitCommit: "test",
+        workspaceVersion: "test",
+        kernelVersion: "test",
+        generatorVersion: "test",
+      },
+    };
+
+    const duplicateCase = await createExperimentManifest({
+      ...common,
+      cases: [
+        { frozenCase: benchmarkCase, split: "development" },
+        { frozenCase: benchmarkCase, split: "heldout-phrasing" },
+      ],
+      methods: [methodInput],
+    });
+    expect(duplicateCase.ok).toBe(false);
+
+    const duplicateMethod = await createExperimentManifest({
+      ...common,
+      cases: [{ frozenCase: benchmarkCase, split: "development" }],
+      methods: [methodInput, methodInput],
+    });
+    expect(duplicateMethod.ok).toBe(false);
+
+    const duplicateProviderCap = await createExperimentManifest({
+      ...common,
+      cases: [{ frozenCase: benchmarkCase, split: "development" }],
+      methods: [methodInput],
+      caps: {
+        ...common.caps,
+        providerCostCaps: [
+          ...common.caps.providerCostCaps,
+          ...common.caps.providerCostCaps,
+        ],
+      },
+    });
+    expect(duplicateProviderCap.ok).toBe(false);
+
+    const unpricedMethod = await createExperimentManifest({
+      ...common,
+      cases: [{ frozenCase: benchmarkCase, split: "development" }],
+      methods: [{ ...methodInput, pricingEntryId: "recorded/missing" }],
+    });
+    expect(unpricedMethod.ok).toBe(false);
   });
 });
 
@@ -489,6 +718,7 @@ describe("generate, compile, and bounded repair", () => {
         adapterVersion: "1",
       },
       inference: DEFAULT_INFERENCE_SETTINGS,
+      pricingEntryId: "recorded/free",
       generate: () =>
         Promise.resolve({
           ok: true,
@@ -793,7 +1023,11 @@ describe("behavioral benchmark runner", () => {
           maxInputTokens: 100_000,
           maxOutputTokens: 100_000,
           maxTotalTokens: 200_000,
+          maxOutputTokensPerCall: 100_000,
           maxCostUsdMicros: 1_000_000,
+          providerCostCaps: [
+            { billingProvider: "recorded", maxCostUsdMicros: 1_000_000 },
+          ],
         },
       ),
       cases: [benchmarkCase],
@@ -806,10 +1040,11 @@ describe("behavioral benchmark runner", () => {
       "BUDGET_EXCEEDED",
     );
 
+    const directAdapter = createRecordedModelAdapter(await recordedFixture(0));
     const directMethods: ReadonlyArray<BenchmarkMethod> = [
       {
         id: "schema",
-        adapter: createRecordedModelAdapter(await recordedFixture(0)),
+        adapter: directAdapter,
         strategy: strategy("json-schema"),
       },
     ];
@@ -825,7 +1060,11 @@ describe("behavioral benchmark runner", () => {
           maxInputTokens: 100_000,
           maxOutputTokens: 100_000,
           maxTotalTokens: 200_000,
+          maxOutputTokensPerCall: 100_000,
           maxCostUsdMicros: 100,
+          providerCostCaps: [
+            { billingProvider: "recorded", maxCostUsdMicros: 100 },
+          ],
         },
       ),
       cases: [benchmarkCase],
@@ -837,6 +1076,105 @@ describe("behavioral benchmark runner", () => {
     expect(costLimited.ok ? undefined : costLimited.error.code).toBe(
       "BUDGET_EXCEEDED",
     );
+    expect(directAdapter.requests()).toHaveLength(0);
+
+    const providerLimitedAdapter = createRecordedModelAdapter(
+      await recordedFixture(0),
+    );
+    const providerLimitedMethods: ReadonlyArray<BenchmarkMethod> = [
+      {
+        id: "schema",
+        adapter: providerLimitedAdapter,
+        strategy: strategy("json-schema"),
+      },
+    ];
+    const providerLimited = await runBenchmark({
+      experiment: await experimentFor(
+        [benchmarkCase],
+        providerLimitedMethods,
+        1,
+        "heldout-phrasing",
+        "provider-cost-cap",
+        {
+          maxCalls: 2,
+          maxInputTokens: 100_000,
+          maxOutputTokens: 100_000,
+          maxTotalTokens: 200_000,
+          maxOutputTokensPerCall: 100_000,
+          maxCostUsdMicros: 1_000_000,
+          providerCostCaps: [
+            { billingProvider: "recorded", maxCostUsdMicros: 100 },
+          ],
+        },
+      ),
+      cases: [benchmarkCase],
+      methods: providerLimitedMethods,
+      resolveCatalog: unwrap(createM1aCatalogResolver()),
+      store: createInMemoryBenchmarkStore(),
+    });
+    expect(providerLimited.ok).toBe(false);
+    expect(providerLimited.ok ? undefined : providerLimited.error.code).toBe(
+      "BUDGET_EXCEEDED",
+    );
+    expect(providerLimitedAdapter.requests()).toHaveLength(0);
+  });
+
+  it("retains worst-case reservation when provider usage is unavailable", async () => {
+    const benchmarkCase = await corpusCase("numbers/double");
+    const fixture = unwrap(
+      await freezeRecordedModelFixture({
+        identity: {
+          provider: "recorded",
+          model: "transport-failure",
+          adapterVersion: "1",
+        },
+        responses: [
+          {
+            kind: "failure",
+            failure: {
+              code: "PROVIDER_FAILURE",
+              message: "Connection closed after request dispatch.",
+            },
+          },
+        ],
+      }),
+    );
+    const adapter = createRecordedModelAdapter(fixture);
+    const methods: ReadonlyArray<BenchmarkMethod> = [
+      { id: "schema", adapter, strategy: strategy("json-schema") },
+    ];
+    const run = unwrap(
+      await runBenchmark({
+        experiment: await experimentFor(
+          [benchmarkCase],
+          methods,
+          1,
+          "heldout-phrasing",
+          "unknown-provider-usage",
+          {
+            maxCalls: 2,
+            maxInputTokens: 20_000,
+            maxOutputTokens: 5_000,
+            maxTotalTokens: 25_000,
+            maxOutputTokensPerCall: 2_000,
+            maxCostUsdMicros: 20_000,
+            providerCostCaps: [
+              { billingProvider: "recorded", maxCostUsdMicros: 20_000 },
+            ],
+          },
+        ),
+        cases: [benchmarkCase],
+        methods,
+        resolveCatalog: unwrap(createM1aCatalogResolver()),
+        store: createInMemoryBenchmarkStore(),
+      }),
+    );
+    const record = required(run.records[0], "Missing failure record.");
+    expect(record.generation.finalKind).toBe("adapterFailure");
+    expect(record.generation.totalInputTokens).toBe(8_000);
+    expect(record.generation.totalOutputTokens).toBe(2_000);
+    expect(record.generation.totalCostUsdMicros).toBe(10_000);
+    expect(adapter.requests()).toHaveLength(1);
   });
 
   it("executes effectful maps only through hidden deterministic fixtures", async () => {
@@ -1264,7 +1602,7 @@ describe("behavioral benchmark runner", () => {
     expect(summary.firstAttemptCompilation.confidenceInterval).not.toBeNull();
     expect(summary.semanticSuccess.rate).toBe(1);
     expect(summary.totalInputTokens).toBe(120);
-    expect(summary.totalCostUsdMicros).toBe(240);
+    expect(summary.totalCostUsdMicros).toBe(200);
     const gates = evaluateResearchGates(run.records);
     expect(
       gates.find((gate) => gate.id === "functional-ir-outperforms-codemode")
@@ -1373,15 +1711,21 @@ describe("behavioral benchmark runner", () => {
             maxOutputTokens: 100,
             structuredOutputMode: "json-schema",
           },
+          pricingEntryId: method.adapter.pricingEntryId,
         },
       ],
+      pricingSnapshot: await pricingFor([method]),
       repetitions: 0,
       caps: {
         maxCalls: 1,
         maxInputTokens: 1,
         maxOutputTokens: 1,
         maxTotalTokens: 1,
+        maxOutputTokensPerCall: 100,
         maxCostUsdMicros: 1,
+        providerCostCaps: [
+          { billingProvider: "recorded", maxCostUsdMicros: 1 },
+        ],
       },
       versions: {
         gitCommit: "test",

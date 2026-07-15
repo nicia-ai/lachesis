@@ -34,6 +34,9 @@ plan-generation benchmark substrate.
   records, recorded-model fixtures, and resumable hidden-case semantic scoring.
 - Central model-output parsing, digest-bound experiment manifests, enforced
   inference caps, and paired held-out research gates with confidence intervals.
+- A Node-only Vercel AI SDK 7 adapter package whose primary comparison is direct
+  OpenAI Responses and Anthropic Messages, with optional Anthropic-through-
+  Bedrock support, frozen pricing, and worst-case spend reservation.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -71,6 +74,8 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
 - `packages/kernel` — portable public package `@nicia-ai/lachesis`.
 - `packages/generator` — provider-neutral package
   `@nicia-ai/lachesis-generator`; no live provider SDKs.
+- `packages/generator-ai-sdk` — Node-only live-provider adapter package; kept
+  outside the kernel and portable generator.
 - `apps/cli` — Node-only public package `@nicia-ai/lachesis-cli` and `lachesis`
   binary.
 - `fixtures` — valid/invalid plans, inputs, and effect recordings.
@@ -96,11 +101,11 @@ git diff --check
 
 ## Not yet implemented
 
-The milestone intentionally excludes live model/provider handlers, CodeMode,
-TypeGraph, SQL/Drizzle, knowledge-graph persistence, graph-native traversal,
-joins, `boundedExplore`, optimizer rewrites, durable/distributed scheduling,
-general adaptive loops, package publication, and deployment. The next research
-milestone is the M1b live provider pilot over the frozen M1a benchmark, not a
+The milestone still excludes a live M1b run, CodeMode, TypeGraph, SQL/Drizzle,
+knowledge-graph persistence, graph-native traversal, joins, `boundedExplore`,
+optimizer rewrites, durable/distributed scheduling, general adaptive loops,
+package publication, and deployment. The next research step is development-only
+prompt calibration and then a frozen held-out M1b provider pilot, not a
 TypeGraph integration.
 
 Licensed under [Apache License 2.0](LICENSE).

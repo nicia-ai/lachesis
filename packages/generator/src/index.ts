@@ -73,6 +73,7 @@ export {
   type ModelIdentity,
   type ModelRequest,
   type ModelResponse,
+  type ModelResponseMetadata,
   type ModelUsage,
   type PublicExample,
   type RepairGenerationRequest,
@@ -83,6 +84,17 @@ export {
   type GeneratePlanInput,
   type GenerationSession,
 } from "./pipeline.js";
+export {
+  calculateCostUsdMicros,
+  calculateMaximumCostUsdMicros,
+  createPricingSnapshot,
+  type PricingEntry,
+  pricingEntrySchema,
+  type PricingSnapshot,
+  type PricingSnapshotInput,
+  pricingSnapshotSchema,
+  verifyPricingSnapshot,
+} from "./pricing.js";
 export {
   createRecordedModelAdapter,
   freezeRecordedModelFixture,

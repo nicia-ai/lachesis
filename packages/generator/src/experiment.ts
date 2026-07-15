@@ -14,6 +14,11 @@ import {
   inferenceSettingsSchema,
   type ModelIdentity,
 } from "./model.js";
+import {
+  type PricingSnapshot,
+  pricingSnapshotSchema,
+  verifyPricingSnapshot,
+} from "./pricing.js";
 import { generationStrategySchema, modelIdentitySchema } from "./records.js";
 
 export const benchmarkSplitSchema = z.enum([
@@ -47,6 +52,7 @@ const experimentMethodSchema = z
     model: modelIdentitySchema,
     strategy: generationStrategySchema,
     inference: inferenceSettingsSchema,
+    pricingEntryId: z.string().min(1),
     modelConfigurationDigest: z.string().min(1),
   })
   .readonly();
@@ -57,7 +63,19 @@ const experimentCapsSchema = z
     maxInputTokens: z.number().int().positive(),
     maxOutputTokens: z.number().int().positive(),
     maxTotalTokens: z.number().int().positive(),
+    maxOutputTokensPerCall: z.number().int().positive(),
     maxCostUsdMicros: z.number().int().positive(),
+    providerCostCaps: z
+      .array(
+        z
+          .strictObject({
+            billingProvider: z.string().min(1),
+            maxCostUsdMicros: z.number().int().positive(),
+          })
+          .readonly(),
+      )
+      .min(1)
+      .readonly(),
   })
   .readonly();
 
@@ -72,13 +90,14 @@ const experimentVersionsSchema = z
 
 export const experimentManifestSchema = z
   .strictObject({
-    formatVersion: z.literal("1"),
+    formatVersion: z.literal("2"),
     promptDigest: z.string().min(1),
     protocolDigest: z.string().min(1),
     cases: z.array(experimentCaseSchema).min(1).readonly(),
     caseSetDigest: z.string().min(1),
     splits: z.array(experimentSplitSchema).min(1).readonly(),
     methods: z.array(experimentMethodSchema).min(1).readonly(),
+    pricingSnapshot: pricingSnapshotSchema,
     repetitions: z.number().int().positive(),
     caps: experimentCapsSchema,
     versions: experimentVersionsSchema,
@@ -96,6 +115,7 @@ export type ExperimentMethodInput = Readonly<{
   model: ModelIdentity;
   strategy: GenerationStrategy;
   inference: InferenceSettings;
+  pricingEntryId: string;
 }>;
 
 export type ExperimentManifestInput = Readonly<{
@@ -108,6 +128,7 @@ export type ExperimentManifestInput = Readonly<{
     }>
   >;
   methods: ReadonlyArray<ExperimentMethodInput>;
+  pricingSnapshot: PricingSnapshot;
   repetitions: number;
   caps: ExperimentCaps;
   versions: ExperimentVersions;
@@ -179,6 +200,23 @@ function methodModeIsValid(method: ExperimentMethodInput): boolean {
     : method.inference.structuredOutputMode !== "none";
 }
 
+function pricingBindingsAreValid(
+  methods: ReadonlyArray<ExperimentMethodInput>,
+  pricingSnapshot: PricingSnapshot,
+  caps: ExperimentCaps,
+): boolean {
+  const entries = new Map(
+    pricingSnapshot.entries.map((entry) => [entry.id, entry]),
+  );
+  const providers = new Set(
+    caps.providerCostCaps.map((cap) => cap.billingProvider),
+  );
+  return methods.every((method) => {
+    const entry = entries.get(method.pricingEntryId);
+    return entry !== undefined && providers.has(entry.billingProvider);
+  });
+}
+
 export async function createExperimentManifest(
   input: ExperimentManifestInput,
 ): Promise<Result<ExperimentManifest, Diagnostics>> {
@@ -209,6 +247,27 @@ export async function createExperimentManifest(
         diagnostic(
           "INVALID_WIRE_SCHEMA",
           `Method ${invalidMode.id} has an incompatible structured-output mode.`,
+        ),
+      ],
+    };
+  }
+  const pricing = await verifyPricingSnapshot(input.pricingSnapshot);
+  if (!pricing.ok) return pricing;
+  const duplicateProviderCap = duplicate(
+    input.caps.providerCostCaps.map((cap) => cap.billingProvider),
+  );
+  if (
+    duplicateProviderCap !== undefined ||
+    !pricingBindingsAreValid(input.methods, pricing.value, input.caps)
+  ) {
+    return {
+      ok: false,
+      error: [
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          duplicateProviderCap === undefined
+            ? "Every experiment method must reference a priced model with a provider cost cap."
+            : `Duplicate provider cost cap ${duplicateProviderCap}.`,
         ),
       ],
     };
@@ -250,7 +309,7 @@ export async function createExperimentManifest(
   methods.sort((left, right) =>
     left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
   );
-  const formatVersion = "1";
+  const formatVersion = "2";
   const body = {
     formatVersion,
     promptDigest: promptDigest.value,
@@ -259,6 +318,7 @@ export async function createExperimentManifest(
     caseSetDigest: caseSetDigest.value,
     splits,
     methods,
+    pricingSnapshot: pricing.value,
     repetitions: input.repetitions,
     caps: input.caps,
     versions: input.versions,
@@ -299,6 +359,8 @@ export async function verifyExperimentManifest(
       ],
     };
   }
+  const pricing = await verifyPricingSnapshot(parsed.data.pricingSnapshot);
+  if (!pricing.ok) return pricing;
   const duplicateCase = duplicate(parsed.data.cases.map((item) => item.id));
   const duplicateMethod = duplicate(parsed.data.methods.map((item) => item.id));
   const caseSetDigest = await digestValue(parsed.data.cases);
@@ -391,6 +453,26 @@ export async function verifyExperimentManifest(
         ],
       };
     }
+  }
+  if (
+    duplicate(
+      parsed.data.caps.providerCostCaps.map((cap) => cap.billingProvider),
+    ) !== undefined ||
+    !pricingBindingsAreValid(
+      parsed.data.methods,
+      pricing.value,
+      parsed.data.caps,
+    )
+  ) {
+    return {
+      ok: false,
+      error: [
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Experiment pricing or provider-cap bindings are inconsistent.",
+        ),
+      ],
+    };
   }
   deepFreeze(parsed.data);
   return { ok: true, value: parsed.data };

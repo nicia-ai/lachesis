@@ -27,7 +27,10 @@ const identitySchema = z
 const usageSchema = z
   .strictObject({
     inputTokens: z.number().int().nonnegative(),
+    cachedInputTokens: z.number().int().nonnegative().default(0),
+    cacheWriteInputTokens: z.number().int().nonnegative().default(0),
     outputTokens: z.number().int().nonnegative(),
+    reasoningTokens: z.number().int().nonnegative().default(0),
     costUsdMicros: z.number().int().nonnegative(),
   })
   .readonly();
@@ -41,6 +44,16 @@ const responseSchema = z
         structuredOutput: z.json().optional(),
         usage: usageSchema,
         latencyMs: z.number().int().nonnegative(),
+        metadata: z
+          .strictObject({
+            providerRequestId: z.string().nullable(),
+            providerResponseId: z.string().nullable(),
+            returnedModelId: z.string().min(1),
+            finishReason: z.string().min(1),
+            rawFinishReason: z.string().nullable(),
+          })
+          .readonly()
+          .optional(),
       })
       .readonly(),
   })
@@ -51,8 +64,25 @@ const failureSchema = z
     kind: z.literal("failure"),
     failure: z
       .strictObject({
-        code: z.enum(["RECORDED_RESPONSE_MISSING", "PROVIDER_FAILURE"]),
+        code: z.enum([
+          "RECORDED_RESPONSE_MISSING",
+          "PROVIDER_FAILURE",
+          "PROVIDER_REFUSAL",
+          "BUDGET_RESERVATION_FAILED",
+        ]),
         message: z.string().min(1),
+        metadata: z
+          .strictObject({
+            providerRequestId: z.string().nullable(),
+            providerResponseId: z.string().nullable(),
+            returnedModelId: z.string().min(1),
+            finishReason: z.string().min(1),
+            rawFinishReason: z.string().nullable(),
+          })
+          .readonly()
+          .optional(),
+        usage: usageSchema.optional(),
+        latencyMs: z.number().int().nonnegative().optional(),
       })
       .readonly(),
   })
@@ -61,6 +91,7 @@ const failureSchema = z
 export const recordedModelFixtureSchema = z
   .strictObject({
     identity: identitySchema,
+    pricingEntryId: z.string().min(1).default("recorded/free"),
     inference: inferenceSettingsSchema.default(DEFAULT_INFERENCE_SETTINGS),
     responses: z
       .array(z.discriminatedUnion("kind", [responseSchema, failureSchema]))
@@ -121,6 +152,7 @@ export function createRecordedModelAdapter(
   return {
     identity: frozen.fixture.identity,
     inference: frozen.fixture.inference,
+    pricingEntryId: frozen.fixture.pricingEntryId,
     fixtureDigest: frozen.digest,
     requests: () => [...requests],
     generate(

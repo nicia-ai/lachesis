@@ -31,10 +31,17 @@ import {
 import type {
   GenerationStrategy,
   ModelAdapter,
+  ModelAdapterFailure,
   ModelIdentity,
+  ModelResponse,
 } from "./model.js";
 import { MAX_REPAIR_ATTEMPTS } from "./model.js";
 import { generatePlan, type GenerationSession } from "./pipeline.js";
+import {
+  calculateCostUsdMicros,
+  calculateMaximumCostUsdMicros,
+  type PricingEntry,
+} from "./pricing.js";
 import {
   type GenerationRecord,
   generationRecordSchema,
@@ -80,6 +87,7 @@ export const benchmarkCaseRecordSchema = z
     manifestDigest: z.string(),
     methodId: z.string(),
     modelConfigurationDigest: z.string(),
+    pricingEntryId: z.string(),
     model: modelIdentitySchema,
     strategy: generationStrategySchema,
     repetition: z.number().int().nonnegative(),
@@ -445,6 +453,7 @@ async function caseRecord(
     manifestDigest: input.session.manifest.manifestDigest,
     methodId: input.method.id,
     modelConfigurationDigest: input.experimentMethod.modelConfigurationDigest,
+    pricingEntryId: input.experimentMethod.pricingEntryId,
     model: input.method.adapter.identity,
     strategy: input.method.strategy,
     repetition: input.repetition,
@@ -461,14 +470,20 @@ async function caseRecord(
 type RunUsage = Readonly<{
   calls: number;
   inputTokens: number;
+  cachedInputTokens: number;
+  cacheWriteInputTokens: number;
   outputTokens: number;
+  reasoningTokens: number;
   costUsdMicros: number;
 }>;
 
 const ZERO_RUN_USAGE: RunUsage = {
   calls: 0,
   inputTokens: 0,
+  cachedInputTokens: 0,
+  cacheWriteInputTokens: 0,
   outputTokens: 0,
+  reasoningTokens: 0,
   costUsdMicros: 0,
 };
 
@@ -479,7 +494,14 @@ function addRecordUsage(
   return {
     calls: usage.calls + record.generation.attempts.length,
     inputTokens: usage.inputTokens + record.generation.totalInputTokens,
+    cachedInputTokens:
+      usage.cachedInputTokens + record.generation.totalCachedInputTokens,
+    cacheWriteInputTokens:
+      usage.cacheWriteInputTokens +
+      record.generation.totalCacheWriteInputTokens,
     outputTokens: usage.outputTokens + record.generation.totalOutputTokens,
+    reasoningTokens:
+      usage.reasoningTokens + record.generation.totalReasoningTokens,
     costUsdMicros: usage.costUsdMicros + record.generation.totalCostUsdMicros,
   };
 }
@@ -528,6 +550,65 @@ function capViolation(
         [],
         { limit: exceeded },
       );
+}
+
+function perCallCapViolation(
+  record: BenchmarkCaseRecord,
+  experiment: ExperimentManifest,
+): Diagnostic | undefined {
+  const exceeded = record.generation.attempts.find(
+    (attempt) =>
+      attempt.usage.outputTokens > experiment.caps.maxOutputTokensPerCall,
+  );
+  return exceeded === undefined
+    ? undefined
+    : diagnostic(
+        "BUDGET_EXCEEDED",
+        `Model call exceeded output token limit: ${exceeded.usage.outputTokens} > ${experiment.caps.maxOutputTokensPerCall}.`,
+        {},
+        [],
+        {
+          limit: {
+            resource: "outputTokensPerCall",
+            actual: exceeded.usage.outputTokens,
+            limit: experiment.caps.maxOutputTokensPerCall,
+          },
+        },
+      );
+}
+
+function providerCapViolation(
+  providerCosts: ReadonlyMap<string, number>,
+  experiment: ExperimentManifest,
+): Diagnostic | undefined {
+  for (const cap of experiment.caps.providerCostCaps) {
+    const actual = providerCosts.get(cap.billingProvider) ?? 0;
+    if (actual > cap.maxCostUsdMicros) {
+      return diagnostic(
+        "BUDGET_EXCEEDED",
+        `Experiment exceeded ${cap.billingProvider} cost: ${actual} > ${cap.maxCostUsdMicros}.`,
+        {},
+        [],
+        {
+          limit: {
+            resource: `${cap.billingProvider}.costUsdMicros`,
+            actual,
+            limit: cap.maxCostUsdMicros,
+          },
+        },
+      );
+    }
+  }
+  return undefined;
+}
+
+function reservationFailure(
+  message: string,
+): Result<ModelResponse, ModelAdapterFailure> {
+  return {
+    ok: false,
+    error: { code: "BUDGET_RESERVATION_FAILED", message },
+  };
 }
 
 function sameCanonical(left: unknown, right: unknown): boolean {
@@ -583,6 +664,7 @@ async function validateRunInput(
         expected === undefined ||
         !sameCanonical(expected.model, method.adapter.identity) ||
         !sameCanonical(expected.inference, method.adapter.inference) ||
+        expected.pricingEntryId !== method.adapter.pricingEntryId ||
         !sameCanonical(expected.strategy, method.strategy)
       );
     })
@@ -592,6 +674,21 @@ async function validateRunInput(
       error: diagnostic(
         "INVALID_WIRE_SCHEMA",
         "Benchmark methods do not exactly match the experiment manifest.",
+      ),
+    };
+  }
+  if (
+    input.methods.some(
+      (method) =>
+        method.adapter.inference.maxOutputTokens >
+        verified.value.caps.maxOutputTokensPerCall,
+    )
+  ) {
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "A method output limit exceeds the experiment per-call output cap.",
       ),
     };
   }
@@ -614,10 +711,164 @@ export async function runBenchmark(
 ): Promise<Result<BenchmarkRunResult, Diagnostic>> {
   const context = await validateRunInput(input);
   if (!context.ok) return context;
+  const runContext = context.value;
   const records: Array<BenchmarkCaseRecord> = [];
   let resumed = 0;
   let generated = 0;
   let usage = ZERO_RUN_USAGE;
+  const providerCosts = new Map<string, number>();
+  const pricingEntries = new Map(
+    runContext.experiment.pricingSnapshot.entries.map((entry) => [
+      entry.id,
+      entry,
+    ]),
+  );
+  const providerCaps = new Map(
+    runContext.experiment.caps.providerCostCaps.map((cap) => [
+      cap.billingProvider,
+      cap.maxCostUsdMicros,
+    ]),
+  );
+
+  function meteredAdapter(
+    adapter: ModelAdapter,
+    pricingEntry: PricingEntry,
+  ): ModelAdapter {
+    return {
+      ...adapter,
+      async generate(request) {
+        const reservedCost = calculateMaximumCostUsdMicros(
+          pricingEntry,
+          adapter.inference.maxInputTokens,
+          adapter.inference.maxOutputTokens,
+        );
+        if (!reservedCost.ok) {
+          return reservationFailure(reservedCost.error.message);
+        }
+        const providerCap = providerCaps.get(pricingEntry.billingProvider);
+        if (providerCap === undefined) {
+          return reservationFailure(
+            `No cost cap exists for ${pricingEntry.billingProvider}.`,
+          );
+        }
+        const reservedInput =
+          usage.inputTokens + adapter.inference.maxInputTokens;
+        const reservedOutput =
+          usage.outputTokens + adapter.inference.maxOutputTokens;
+        const reservedTotal = reservedInput + reservedOutput;
+        const reservedGlobalCost = usage.costUsdMicros + reservedCost.value;
+        const reservedProviderCost =
+          (providerCosts.get(pricingEntry.billingProvider) ?? 0) +
+          reservedCost.value;
+        if (
+          usage.calls + 1 > runContext.experiment.caps.maxCalls ||
+          reservedInput > runContext.experiment.caps.maxInputTokens ||
+          reservedOutput > runContext.experiment.caps.maxOutputTokens ||
+          reservedTotal > runContext.experiment.caps.maxTotalTokens ||
+          reservedGlobalCost > runContext.experiment.caps.maxCostUsdMicros ||
+          reservedProviderCost > providerCap
+        ) {
+          return reservationFailure(
+            `Worst-case request reservation would exceed an experiment or ${pricingEntry.billingProvider} cap.`,
+          );
+        }
+        usage = { ...usage, calls: usage.calls + 1 };
+        const response = await adapter.generate(request);
+        const reconcileUsage = (
+          pricedUsage: Readonly<{
+            inputTokens: number;
+            cachedInputTokens: number;
+            cacheWriteInputTokens: number;
+            outputTokens: number;
+            reasoningTokens: number;
+            costUsdMicros: number;
+          }>,
+        ): void => {
+          usage = {
+            calls: usage.calls,
+            inputTokens: usage.inputTokens + pricedUsage.inputTokens,
+            cachedInputTokens:
+              usage.cachedInputTokens + pricedUsage.cachedInputTokens,
+            cacheWriteInputTokens:
+              usage.cacheWriteInputTokens + pricedUsage.cacheWriteInputTokens,
+            outputTokens: usage.outputTokens + pricedUsage.outputTokens,
+            reasoningTokens:
+              usage.reasoningTokens + pricedUsage.reasoningTokens,
+            costUsdMicros: usage.costUsdMicros + pricedUsage.costUsdMicros,
+          };
+          providerCosts.set(
+            pricingEntry.billingProvider,
+            (providerCosts.get(pricingEntry.billingProvider) ?? 0) +
+              pricedUsage.costUsdMicros,
+          );
+        };
+        const conservativeUsage = {
+          inputTokens: adapter.inference.maxInputTokens,
+          cachedInputTokens: 0,
+          cacheWriteInputTokens: 0,
+          outputTokens: adapter.inference.maxOutputTokens,
+          reasoningTokens: 0,
+          costUsdMicros: reservedCost.value,
+        };
+        if (!response.ok && response.error.usage === undefined) {
+          reconcileUsage(conservativeUsage);
+          return {
+            ok: false,
+            error: { ...response.error, usage: conservativeUsage },
+          };
+        }
+        const responseUsage = response.ok
+          ? response.value.usage
+          : response.error.usage;
+        if (responseUsage === undefined) {
+          reconcileUsage(conservativeUsage);
+          return reservationFailure(
+            "Provider response omitted usage after a billable request.",
+          );
+        }
+        const completeUsage = {
+          inputTokens: responseUsage.inputTokens,
+          cachedInputTokens: responseUsage.cachedInputTokens ?? 0,
+          cacheWriteInputTokens: responseUsage.cacheWriteInputTokens ?? 0,
+          outputTokens: responseUsage.outputTokens,
+          reasoningTokens: responseUsage.reasoningTokens ?? 0,
+        };
+        const actualCost = calculateCostUsdMicros(pricingEntry, completeUsage);
+        if (!actualCost.ok) {
+          reconcileUsage(conservativeUsage);
+          return {
+            ok: false,
+            error: {
+              code: "PROVIDER_FAILURE",
+              message: actualCost.error.message,
+              usage: conservativeUsage,
+              ...(response.ok
+                ? response.value.metadata === undefined
+                  ? {}
+                  : { metadata: response.value.metadata }
+                : response.error.metadata === undefined
+                  ? {}
+                  : { metadata: response.error.metadata }),
+            },
+          };
+        }
+        const pricedUsage = {
+          ...completeUsage,
+          costUsdMicros: actualCost.value,
+        };
+        reconcileUsage(pricedUsage);
+        return response.ok
+          ? {
+              ok: true,
+              value: { ...response.value, usage: pricedUsage },
+            }
+          : {
+              ok: false,
+              error: { ...response.error, usage: pricedUsage },
+            };
+      },
+    };
+  }
   for (const frozenCase of input.cases) {
     const caseBinding = context.value.caseBindings.get(frozenCase.case.id);
     if (caseBinding === undefined) {
@@ -651,6 +902,16 @@ export async function runBenchmark(
           ),
         };
       }
+      const pricingEntry = pricingEntries.get(experimentMethod.pricingEntryId);
+      if (pricingEntry === undefined) {
+        return {
+          ok: false,
+          error: diagnostic(
+            "INVALID_WIRE_SCHEMA",
+            `Missing pricing entry ${experimentMethod.pricingEntryId}.`,
+          ),
+        };
+      }
       for (
         let repetition = 0;
         repetition < context.value.experiment.repetitions;
@@ -676,6 +937,7 @@ export async function runBenchmark(
             stored.value.manifestDigest !== manifest.value.manifestDigest ||
             stored.value.split !== caseBinding.split ||
             stored.value.methodId !== method.id ||
+            stored.value.pricingEntryId !== experimentMethod.pricingEntryId ||
             stored.value.repetition !== repetition
           ) {
             return {
@@ -687,7 +949,15 @@ export async function runBenchmark(
             };
           }
           usage = addRecordUsage(usage, stored.value);
-          const violation = capViolation(usage, context.value.experiment);
+          providerCosts.set(
+            pricingEntry.billingProvider,
+            (providerCosts.get(pricingEntry.billingProvider) ?? 0) +
+              stored.value.generation.totalCostUsdMicros,
+          );
+          const violation =
+            capViolation(usage, context.value.experiment) ??
+            perCallCapViolation(stored.value, context.value.experiment) ??
+            providerCapViolation(providerCosts, context.value.experiment);
           if (violation !== undefined) return { ok: false, error: violation };
           records.push(stored.value);
           resumed += 1;
@@ -709,11 +979,25 @@ export async function runBenchmark(
           catalog: catalog.value,
           policy: frozenCase.case.policy,
           publicExamples: toPublicExamples(frozenCase.case.publicExamples),
-          adapter: method.adapter,
+          adapter: meteredAdapter(method.adapter, pricingEntry),
           strategy: method.strategy,
           modelCallLimit: Math.min(MAX_REPAIR_ATTEMPTS + 1, remainingCalls),
         });
         if (!session.ok) return session;
+        if (
+          session.value.record.attempts.some(
+            (attempt) =>
+              attempt.adapterFailure?.code === "BUDGET_RESERVATION_FAILED",
+          )
+        ) {
+          return {
+            ok: false,
+            error: diagnostic(
+              "BUDGET_EXCEEDED",
+              "Worst-case model request reservation was denied before provider invocation.",
+            ),
+          };
+        }
         const score = await scoreGeneration(frozenCase.case, session.value);
         if (!score.ok) return score;
         const record = await caseRecord(keyDigest.value, {
@@ -728,13 +1012,14 @@ export async function runBenchmark(
           score: score.value,
         });
         if (!record.ok) return record;
-        const nextUsage = addRecordUsage(usage, record.value);
-        const violation = capViolation(nextUsage, context.value.experiment);
+        const violation =
+          capViolation(usage, context.value.experiment) ??
+          perCallCapViolation(record.value, context.value.experiment) ??
+          providerCapViolation(providerCosts, context.value.experiment);
         if (violation !== undefined) return { ok: false, error: violation };
         const saved = await input.store.save(record.value);
         if (!saved.ok) return saved;
         records.push(record.value);
-        usage = nextUsage;
         generated += 1;
       }
     }
@@ -763,9 +1048,13 @@ export type BenchmarkSummary = Readonly<{
   postRepairCompilation: RateEstimate;
   semanticSuccess: RateEstimate;
   correctAbstention: RateEstimate;
+  providerRefusals: number;
   meanRepairCount: number;
   totalInputTokens: number;
+  totalCachedInputTokens: number;
+  totalCacheWriteInputTokens: number;
   totalOutputTokens: number;
+  totalReasoningTokens: number;
   totalCostUsdMicros: number;
   totalLatencyMs: number;
   topologyVariants: number;
@@ -847,6 +1136,9 @@ export function summarizeBenchmark(
       impossible.filter((record) => record.score.correctAbstention).length,
       impossible.length,
     ),
+    providerRefusals: records.filter(
+      (record) => record.generation.finalKind === "providerRefusal",
+    ).length,
     meanRepairCount:
       records.length === 0
         ? 0
@@ -858,8 +1150,20 @@ export function summarizeBenchmark(
       (total, record) => total + record.generation.totalInputTokens,
       0,
     ),
+    totalCachedInputTokens: records.reduce(
+      (total, record) => total + record.generation.totalCachedInputTokens,
+      0,
+    ),
+    totalCacheWriteInputTokens: records.reduce(
+      (total, record) => total + record.generation.totalCacheWriteInputTokens,
+      0,
+    ),
     totalOutputTokens: records.reduce(
       (total, record) => total + record.generation.totalOutputTokens,
+      0,
+    ),
+    totalReasoningTokens: records.reduce(
+      (total, record) => total + record.generation.totalReasoningTokens,
       0,
     ),
     totalCostUsdMicros: records.reduce(

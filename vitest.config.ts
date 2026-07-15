@@ -7,6 +7,14 @@ export default defineConfig({
         "./packages/kernel/src/index.ts",
         import.meta.url,
       ).pathname,
+      "@nicia-ai/lachesis-generator": new URL(
+        "./packages/generator/src/index.ts",
+        import.meta.url,
+      ).pathname,
+      "@nicia-ai/lachesis-generator-ai-sdk": new URL(
+        "./packages/generator-ai-sdk/src/index.ts",
+        import.meta.url,
+      ).pathname,
     },
   },
   test: {

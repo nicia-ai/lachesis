@@ -83,15 +83,36 @@ export const generationStrategySchema = z
 const modelUsageSchema = z
   .strictObject({
     inputTokens: z.number().int().nonnegative(),
+    cachedInputTokens: z.number().int().nonnegative(),
+    cacheWriteInputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),
+    reasoningTokens: z.number().int().nonnegative(),
     costUsdMicros: z.number().int().nonnegative(),
+  })
+  .readonly();
+
+const modelResponseMetadataSchema = z
+  .strictObject({
+    providerRequestId: z.string().nullable(),
+    providerResponseId: z.string().nullable(),
+    returnedModelId: z.string().min(1),
+    finishReason: z.string().min(1),
+    rawFinishReason: z.string().nullable(),
   })
   .readonly();
 
 const adapterFailureSchema = z
   .strictObject({
-    code: z.enum(["RECORDED_RESPONSE_MISSING", "PROVIDER_FAILURE"]),
+    code: z.enum([
+      "RECORDED_RESPONSE_MISSING",
+      "PROVIDER_FAILURE",
+      "PROVIDER_REFUSAL",
+      "BUDGET_RESERVATION_FAILED",
+    ]),
     message: z.string(),
+    metadata: modelResponseMetadataSchema.optional(),
+    usage: modelUsageSchema.optional(),
+    latencyMs: z.number().int().nonnegative().optional(),
   })
   .readonly();
 
@@ -104,6 +125,7 @@ export const attemptRecordSchema = z
       "plan",
       "unplannable",
       "invalidOutput",
+      "providerRefusal",
       "adapterFailure",
     ]),
     rawResponse: z.string().nullable(),
@@ -116,6 +138,7 @@ export const attemptRecordSchema = z
     wireValidation: z.boolean().nullable(),
     compiled: z.boolean(),
     usage: modelUsageSchema,
+    responseMetadata: modelResponseMetadataSchema.nullable(),
     latencyMs: z.number().int().nonnegative(),
     digest: z.string(),
   })
@@ -133,12 +156,16 @@ export const generationRecordSchema = z
       "compiled",
       "unplannable",
       "rejected",
+      "providerRefusal",
       "adapterFailure",
     ]),
     planHash: z.string().nullable(),
     repairCount: z.number().int().nonnegative(),
     totalInputTokens: z.number().int().nonnegative(),
+    totalCachedInputTokens: z.number().int().nonnegative(),
+    totalCacheWriteInputTokens: z.number().int().nonnegative(),
     totalOutputTokens: z.number().int().nonnegative(),
+    totalReasoningTokens: z.number().int().nonnegative(),
     totalCostUsdMicros: z.number().int().nonnegative(),
     totalLatencyMs: z.number().int().nonnegative(),
     digest: z.string(),

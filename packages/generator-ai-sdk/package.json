@@ -1,0 +1,39 @@
+{
+  "name": "@nicia-ai/lachesis-generator-ai-sdk",
+  "version": "0.1.0",
+  "description": "Vercel AI SDK provider adapters for Lachesis plan generation",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Nicia AI",
+  "private": true,
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "5.0.23",
+    "@ai-sdk/anthropic": "4.0.15",
+    "@ai-sdk/openai": "4.0.15",
+    "@nicia-ai/lachesis-generator": "workspace:*",
+    "ai": "7.0.28",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3"
+  }
+}

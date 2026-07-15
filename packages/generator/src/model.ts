@@ -50,8 +50,19 @@ export type ModelRequest = InitialGenerationRequest | RepairGenerationRequest;
 
 export type ModelUsage = Readonly<{
   inputTokens: number;
+  cachedInputTokens?: number | undefined;
+  cacheWriteInputTokens?: number | undefined;
   outputTokens: number;
+  reasoningTokens?: number | undefined;
   costUsdMicros: number;
+}>;
+
+export type ModelResponseMetadata = Readonly<{
+  providerRequestId: string | null;
+  providerResponseId: string | null;
+  returnedModelId: string;
+  finishReason: string;
+  rawFinishReason: string | null;
 }>;
 
 export type ModelResponse = Readonly<{
@@ -59,11 +70,19 @@ export type ModelResponse = Readonly<{
   structuredOutput?: unknown;
   usage: ModelUsage;
   latencyMs: number;
+  metadata?: ModelResponseMetadata | undefined;
 }>;
 
 export type ModelAdapterFailure = Readonly<{
-  code: "RECORDED_RESPONSE_MISSING" | "PROVIDER_FAILURE";
+  code:
+    | "RECORDED_RESPONSE_MISSING"
+    | "PROVIDER_FAILURE"
+    | "PROVIDER_REFUSAL"
+    | "BUDGET_RESERVATION_FAILED";
   message: string;
+  metadata?: ModelResponseMetadata | undefined;
+  usage?: ModelUsage | undefined;
+  latencyMs?: number | undefined;
 }>;
 
 export type ModelIdentity = Readonly<{
@@ -97,6 +116,7 @@ export const DEFAULT_INFERENCE_SETTINGS: InferenceSettings = Object.freeze({
 export type ModelAdapter = Readonly<{
   identity: ModelIdentity;
   inference: InferenceSettings;
+  pricingEntryId: string;
   generate: (
     request: ModelRequest,
   ) => Promise<Result<ModelResponse, ModelAdapterFailure>>;

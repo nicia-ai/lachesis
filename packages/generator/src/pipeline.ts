@@ -42,7 +42,7 @@ export type GenerationSession =
       record: GenerationRecord;
     }>
   | Readonly<{
-      kind: "unplannable" | "rejected" | "adapterFailure";
+      kind: "unplannable" | "rejected" | "providerRefusal" | "adapterFailure";
       manifest: PlanLanguageManifest;
       record: GenerationRecord;
     }>;
@@ -77,9 +77,35 @@ type ParsedModelOutput =
 
 const ZERO_USAGE: ModelUsage = {
   inputTokens: 0,
+  cachedInputTokens: 0,
+  cacheWriteInputTokens: 0,
   outputTokens: 0,
+  reasoningTokens: 0,
   costUsdMicros: 0,
 };
+
+type CompleteModelUsage = Readonly<{
+  inputTokens: number;
+  cachedInputTokens: number;
+  cacheWriteInputTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+  costUsdMicros: number;
+}>;
+
+type RecordedAdapterFailure = Omit<ModelAdapterFailure, "usage"> &
+  Readonly<{ usage?: CompleteModelUsage | undefined }>;
+
+function completeUsage(usage: ModelUsage): CompleteModelUsage {
+  return {
+    inputTokens: usage.inputTokens,
+    cachedInputTokens: usage.cachedInputTokens ?? 0,
+    cacheWriteInputTokens: usage.cacheWriteInputTokens ?? 0,
+    outputTokens: usage.outputTokens,
+    reasoningTokens: usage.reasoningTokens ?? 0,
+    costUsdMicros: usage.costUsdMicros,
+  };
+}
 
 function deepFreeze(value: unknown): void {
   if (value === null || typeof value !== "object") return;
@@ -209,22 +235,31 @@ async function adapterFailureAttempt(
   digest: string,
   failure: ModelAdapterFailure,
 ): Promise<Result<AttemptRecord, Diagnostic>> {
+  const { usage: failureUsage, ...failureWithoutUsage } = failure;
+  const recordedFailure: RecordedAdapterFailure =
+    failureUsage === undefined
+      ? failureWithoutUsage
+      : { ...failureWithoutUsage, usage: completeUsage(failureUsage) };
   return withDigest({
     attemptIndex,
     phase,
     requestDigest: digest,
-    responseKind: "adapterFailure",
+    responseKind:
+      failure.code === "PROVIDER_REFUSAL"
+        ? "providerRefusal"
+        : "adapterFailure",
     rawResponse: null,
     structuredOutputCanonical: null,
     proposalCanonical: null,
     abstentionReasons: [],
     diagnostics: [],
-    adapterFailure: failure,
+    adapterFailure: recordedFailure,
     parseSuccess: null,
     wireValidation: null,
     compiled: false,
-    usage: ZERO_USAGE,
-    latencyMs: 0,
+    usage: completeUsage(failure.usage ?? ZERO_USAGE),
+    responseMetadata: failure.metadata ?? null,
+    latencyMs: failure.latencyMs ?? 0,
   });
 }
 
@@ -237,6 +272,7 @@ async function outcomeAttempt(
     rawResponse: string;
     usage: ModelUsage;
     latencyMs: number;
+    metadata?: ModelResponse["metadata"];
   }>,
   compilation: CompiledProposal | undefined,
 ): Promise<Result<AttemptRecord, Diagnostic>> {
@@ -255,7 +291,8 @@ async function outcomeAttempt(
     parseSuccess: true,
     wireValidation: compilation?.wireValidation ?? null,
     compiled: compilation?.executablePlan !== undefined,
-    usage: response.usage,
+    usage: completeUsage(response.usage),
+    responseMetadata: response.metadata ?? null,
     latencyMs: response.latencyMs,
   });
 }
@@ -281,7 +318,8 @@ async function invalidOutputAttempt(
     parseSuccess: false,
     wireValidation: null,
     compiled: false,
-    usage: response.usage,
+    usage: completeUsage(response.usage),
+    responseMetadata: response.metadata ?? null,
     latencyMs: response.latencyMs,
   });
 }
@@ -296,11 +334,24 @@ async function generationRecord(
   const totals = attempts.reduce(
     (current, attempt) => ({
       inputTokens: current.inputTokens + attempt.usage.inputTokens,
+      cachedInputTokens:
+        current.cachedInputTokens + attempt.usage.cachedInputTokens,
+      cacheWriteInputTokens:
+        current.cacheWriteInputTokens + attempt.usage.cacheWriteInputTokens,
       outputTokens: current.outputTokens + attempt.usage.outputTokens,
+      reasoningTokens: current.reasoningTokens + attempt.usage.reasoningTokens,
       costUsdMicros: current.costUsdMicros + attempt.usage.costUsdMicros,
       latencyMs: current.latencyMs + attempt.latencyMs,
     }),
-    { inputTokens: 0, outputTokens: 0, costUsdMicros: 0, latencyMs: 0 },
+    {
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      cacheWriteInputTokens: 0,
+      outputTokens: 0,
+      reasoningTokens: 0,
+      costUsdMicros: 0,
+      latencyMs: 0,
+    },
   );
   const body = {
     task: input.task,
@@ -313,7 +364,10 @@ async function generationRecord(
     planHash,
     repairCount: Math.max(0, attempts.length - 1),
     totalInputTokens: totals.inputTokens,
+    totalCachedInputTokens: totals.cachedInputTokens,
+    totalCacheWriteInputTokens: totals.cacheWriteInputTokens,
     totalOutputTokens: totals.outputTokens,
+    totalReasoningTokens: totals.reasoningTokens,
     totalCostUsdMicros: totals.costUsdMicros,
     totalLatencyMs: totals.latencyMs,
   };
@@ -365,6 +419,10 @@ export async function generatePlan(
     if (!requestHash.ok) return requestHash;
     const response = await input.adapter.generate(request);
     if (!response.ok) {
+      const finalKind =
+        response.error.code === "PROVIDER_REFUSAL"
+          ? "providerRefusal"
+          : "adapterFailure";
       const attempt = await adapterFailureAttempt(
         attemptIndex,
         phase,
@@ -377,14 +435,14 @@ export async function generatePlan(
         input,
         manifest.value,
         attempts,
-        "adapterFailure",
+        finalKind,
         null,
       );
       return record.ok
         ? {
             ok: true,
             value: {
-              kind: "adapterFailure",
+              kind: finalKind,
               manifest: manifest.value,
               record: record.value,
             },

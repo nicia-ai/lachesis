@@ -100,6 +100,31 @@ importers:
         specifier: 24.13.3
         version: 24.13.3
 
+  packages/generator-ai-sdk:
+    dependencies:
+      "@ai-sdk/amazon-bedrock":
+        specifier: 5.0.23
+        version: 5.0.23(zod@4.4.3)
+      "@ai-sdk/anthropic":
+        specifier: 4.0.15
+        version: 4.0.15(zod@4.4.3)
+      "@ai-sdk/openai":
+        specifier: 4.0.15
+        version: 4.0.15(zod@4.4.3)
+      "@nicia-ai/lachesis-generator":
+        specifier: workspace:*
+        version: link:../generator
+      ai:
+        specifier: 7.0.28
+        version: 7.0.28(zod@4.4.3)
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      "@types/node":
+        specifier: 24.13.3
+        version: 24.13.3
+
   packages/kernel:
     dependencies:
       zod:
@@ -107,6 +132,58 @@ importers:
         version: 4.4.3
 
 packages:
+  "@ai-sdk/amazon-bedrock@5.0.23":
+    resolution:
+      {
+        integrity: sha512-+lTvw0ko1Hr/HCAizaa7bXLLkkDU9ILfDPv5A6QfWsdUdz/3+KnD/jynL4yv0DnJP/4u8NeJlpWUY8u1Gketfw==,
+      }
+    engines: { node: ">=22" }
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  "@ai-sdk/anthropic@4.0.15":
+    resolution:
+      {
+        integrity: sha512-6iVlzqZjqqoHTmgO1WU9id/33pYykIRasWJFAMf1+d+nhju6d7566VRFsOGZ2W2GzgNtzKs8DGsYN7X5/wOGuw==,
+      }
+    engines: { node: ">=22" }
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  "@ai-sdk/gateway@4.0.20":
+    resolution:
+      {
+        integrity: sha512-m3PdYs0yqSxswsrEhVj64wDLgFs35Zxl8liLNuWGzE7bwBLF6Mhu0E5rPpDNJbIjyQpA4aMKOOWBfjERw2zvPw==,
+      }
+    engines: { node: ">=22" }
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  "@ai-sdk/openai@4.0.15":
+    resolution:
+      {
+        integrity: sha512-JpTLQp5RUbRcs5nOyPEu5NRdxZLUnD/uCyT3qzy26D+iunCeL7KJV58ER9kwisAKnTjWravfNblaQNiWr20M9A==,
+      }
+    engines: { node: ">=22" }
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  "@ai-sdk/provider-utils@5.0.10":
+    resolution:
+      {
+        integrity: sha512-uPyec0+85dwxZYXtb8qe8gCjhjDfxP4LCDo/uRQS/iG+FIgYbHPRhr/ys281udG90bTaE18+5cxWraYaf8oHCw==,
+      }
+    engines: { node: ">=22" }
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  "@ai-sdk/provider@4.0.3":
+    resolution:
+      {
+        integrity: sha512-e0CpNWJUY7OxAFAnCZkw+ri9QOHWwTs1tXP42782KFGCU07qt8NiXCrCVowyCB5dP2r5/Uls+g2oPd8kOJn9dw==,
+      }
+    engines: { node: ">=22" }
+
   "@babel/helper-string-parser@7.29.7":
     resolution:
       {
@@ -1009,6 +1086,34 @@ packages:
       }
     engines: { node: ">=18" }
 
+  "@smithy/core@3.29.4":
+    resolution:
+      {
+        integrity: sha512-G1GRglAabzEhqghJMBAd54FkRS7SAFGHEwbhcI9r+O+LIMuFsLyXkLZkCoFSgAglRu8s/URVXJB0hglq3ZipIg==,
+      }
+    engines: { node: ">=18.0.0" }
+
+  "@smithy/eventstream-codec@4.4.9":
+    resolution:
+      {
+        integrity: sha512-ffxNSw4njY6KAsFg5rz23PqzstUr5i+yULUD+KQXV9EgqcK2FJUvkAjir3yDgoOUoFdP+2k6KIek2BFU4JyGcQ==,
+      }
+    engines: { node: ">=18.0.0" }
+
+  "@smithy/types@4.16.1":
+    resolution:
+      {
+        integrity: sha512-0JFs3V2y2M9tKW5na/qxe69Zv+uxLMO7QBbhxF/FHu/Gp2NFZAAL9tWl9PU02xxo07pb3G9FTyjNc6D5uZrJIg==,
+      }
+    engines: { node: ">=18.0.0" }
+
+  "@smithy/util-utf8@4.4.9":
+    resolution:
+      {
+        integrity: sha512-uHhshFHe243cUkI6FFpjhjMwak3NoD988da8cS4DV4I0FugzvVJ1RNRzaR4f1sgXNlEASeKv/EthmmRMudUI3w==,
+      }
+    engines: { node: ">=18.0.0" }
+
   "@speed-highlight/core@1.2.17":
     resolution:
       {
@@ -1152,6 +1257,13 @@ packages:
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
 
+  "@vercel/oidc@3.2.0":
+    resolution:
+      {
+        integrity: sha512-UycprH3T6n3jH0k44NHMa7pnFHGu/N05MjojYr+Mc6I7obkoLIJujSWwin1pCvdy/eOxrI/l3uDLQsmcrOb4ug==,
+      }
+    engines: { node: ">= 20" }
+
   "@vitest/coverage-v8@4.1.10":
     resolution:
       {
@@ -1233,6 +1345,12 @@ packages:
         integrity: sha512-fy9am/HWxbaGt/Sawrp90vt6Y6jQwf1RX77cz3uwoJwJVMli/e1IEwRPnMNJ7vKfPTwo0diXifkpPvwH9v7nGA==,
       }
 
+  "@workflow/serde@4.1.0":
+    resolution:
+      {
+        integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==,
+      }
+
   acorn-jsx@5.3.2:
     resolution:
       {
@@ -1248,6 +1366,15 @@ packages:
       }
     engines: { node: ">=0.4.0" }
     hasBin: true
+
+  ai@7.0.28:
+    resolution:
+      {
+        integrity: sha512-RtynA4e6rWH2YiMX0OJz2h2i+sdJgiItuwqmstYZAiTZ0ZkZzQ8s4KVh7tQfZuDCfzIhRTg+q1h1xirT8AClkw==,
+      }
+    engines: { node: ">=22" }
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   ajv@6.15.0:
     resolution:
@@ -1266,6 +1393,12 @@ packages:
     resolution:
       {
         integrity: sha512-UPAgKJFSEGMWSDr3LX4tqnAb4f7KGT8O40Tyx8wbYmmZ/yn58lNCm8h3svs3eXgiGd5AXxz8NDOvXWvicq+rJA==,
+      }
+
+  aws4fetch@1.0.20:
+    resolution:
+      {
+        integrity: sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g==,
       }
 
   balanced-match@4.0.4:
@@ -1570,6 +1703,13 @@ packages:
       }
     engines: { node: ">=0.10.0" }
 
+  eventsource-parser@3.1.0:
+    resolution:
+      {
+        integrity: sha512-kJezFj9YFAMLeORyi7aCLxLbD5/qWMQnoMVlVPyHIll7lgRJCc3JVln9Vgl9nwQi0YkMnhdGTMNn7CkRRAptMg==,
+      }
+    engines: { node: ">=18.0.0" }
+
   expect-type@1.4.0:
     resolution:
       {
@@ -1813,6 +1953,12 @@ packages:
     resolution:
       {
         integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==,
+      }
+
+  json-schema@0.4.0:
+    resolution:
+      {
+        integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==,
       }
 
   json-stable-stringify-without-jsonify@1.0.1:
@@ -2564,6 +2710,48 @@ packages:
       }
 
 snapshots:
+  "@ai-sdk/amazon-bedrock@5.0.23(zod@4.4.3)":
+    dependencies:
+      "@ai-sdk/anthropic": 4.0.15(zod@4.4.3)
+      "@ai-sdk/openai": 4.0.15(zod@4.4.3)
+      "@ai-sdk/provider": 4.0.3
+      "@ai-sdk/provider-utils": 5.0.10(zod@4.4.3)
+      "@smithy/eventstream-codec": 4.4.9
+      "@smithy/util-utf8": 4.4.9
+      aws4fetch: 1.0.20
+      zod: 4.4.3
+
+  "@ai-sdk/anthropic@4.0.15(zod@4.4.3)":
+    dependencies:
+      "@ai-sdk/provider": 4.0.3
+      "@ai-sdk/provider-utils": 5.0.10(zod@4.4.3)
+      zod: 4.4.3
+
+  "@ai-sdk/gateway@4.0.20(zod@4.4.3)":
+    dependencies:
+      "@ai-sdk/provider": 4.0.3
+      "@ai-sdk/provider-utils": 5.0.10(zod@4.4.3)
+      "@vercel/oidc": 3.2.0
+      zod: 4.4.3
+
+  "@ai-sdk/openai@4.0.15(zod@4.4.3)":
+    dependencies:
+      "@ai-sdk/provider": 4.0.3
+      "@ai-sdk/provider-utils": 5.0.10(zod@4.4.3)
+      zod: 4.4.3
+
+  "@ai-sdk/provider-utils@5.0.10(zod@4.4.3)":
+    dependencies:
+      "@ai-sdk/provider": 4.0.3
+      "@standard-schema/spec": 1.1.0
+      "@workflow/serde": 4.1.0
+      eventsource-parser: 3.1.0
+      zod: 4.4.3
+
+  "@ai-sdk/provider@4.0.3":
+    dependencies:
+      json-schema: 0.4.0
+
   "@babel/helper-string-parser@7.29.7": {}
 
   "@babel/helper-validator-identifier@7.29.7": {}
@@ -2939,6 +3127,25 @@ snapshots:
 
   "@sindresorhus/is@7.2.0": {}
 
+  "@smithy/core@3.29.4":
+    dependencies:
+      "@smithy/types": 4.16.1
+      tslib: 2.8.1
+
+  "@smithy/eventstream-codec@4.4.9":
+    dependencies:
+      "@smithy/core": 3.29.4
+      tslib: 2.8.1
+
+  "@smithy/types@4.16.1":
+    dependencies:
+      tslib: 2.8.1
+
+  "@smithy/util-utf8@4.4.9":
+    dependencies:
+      "@smithy/core": 3.29.4
+      tslib: 2.8.1
+
   "@speed-highlight/core@1.2.17": {}
 
   "@standard-schema/spec@1.1.0": {}
@@ -3056,6 +3263,8 @@ snapshots:
       "@typescript-eslint/types": 8.64.0
       eslint-visitor-keys: 5.0.1
 
+  "@vercel/oidc@3.2.0": {}
+
   "@vitest/coverage-v8@4.1.10(vitest@4.1.10)":
     dependencies:
       "@bcoe/v8-coverage": 1.0.2
@@ -3123,11 +3332,20 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
+  "@workflow/serde@4.1.0": {}
+
   acorn-jsx@5.3.2(acorn@8.17.0):
     dependencies:
       acorn: 8.17.0
 
   acorn@8.17.0: {}
+
+  ai@7.0.28(zod@4.4.3):
+    dependencies:
+      "@ai-sdk/gateway": 4.0.20(zod@4.4.3)
+      "@ai-sdk/provider": 4.0.3
+      "@ai-sdk/provider-utils": 5.0.10(zod@4.4.3)
+      zod: 4.4.3
 
   ajv@6.15.0:
     dependencies:
@@ -3143,6 +3361,8 @@ snapshots:
       "@jridgewell/trace-mapping": 0.3.31
       estree-walker: 3.0.3
       js-tokens: 10.0.0
+
+  aws4fetch@1.0.20: {}
 
   balanced-match@4.0.4: {}
 
@@ -3352,6 +3572,8 @@ snapshots:
 
   esutils@2.0.3: {}
 
+  eventsource-parser@3.1.0: {}
+
   expect-type@1.4.0: {}
 
   fast-check@4.8.0:
@@ -3460,6 +3682,8 @@ snapshots:
   json-buffer@3.0.1: {}
 
   json-schema-traverse@0.4.1: {}
+
+  json-schema@0.4.0: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
@@ -3738,8 +3962,7 @@ snapshots:
       picomatch: 4.0.5
       typescript: 6.0.3
 
-  tslib@2.8.1:
-    optional: true
+  tslib@2.8.1: {}
 
   type-check@0.4.0:
     dependencies:

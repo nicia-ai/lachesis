@@ -59,11 +59,13 @@ Recorded-provider fixtures cover direct compilation, compiler-guided repair, and
 correct abstention. They are validated, deeply frozen, and content-addressed
 before use.
 
-Every run requires a deeply frozen `ExperimentManifest`. Its digest binds the
-case set and split digests, prompt and protocol content digests, provider/model
-and adapter version, inference settings, structured-output mode, methods,
-repetitions, call/token/cost caps, and Git/package versions. The runner verifies
-the manifest and exact case/method coverage before the first request.
+Every run requires a deeply frozen `ExperimentManifest` (format version 2). Its
+digest binds the case set and split digests, prompt and protocol content
+digests, provider/model and adapter version, inference settings,
+structured-output mode, methods, repetitions, call/token/cost caps, Git/package
+versions, and a separately content-addressed pricing snapshot. The runner
+verifies the manifest, pricing digest, provider cap bindings, and exact
+case/method coverage before the first request.
 
 ## Behavioral scoring
 
@@ -74,11 +76,22 @@ constant-answer plans while allowing different valid decompositions.
 
 Every canonical run record contains raw model responses, compiler diagnostics,
 attempt and repair counts, parse/wire/compile outcomes, token and micro-dollar
-usage, latency, hidden semantic results, split identity, and a node-name-
-independent topology digest. Resumption keys derive from the experiment digest,
-case, split, method, and repetition; there is no caller-chosen run ID. The Node
-store verifies content digests and writes records atomically in canonical key
-order.
+usage, cached and cache-write input tokens, reasoning tokens where reported,
+latency, returned model and provider request/response identifiers, hidden
+semantic results, split identity, and a node-name-independent topology digest.
+Provider safety refusals are distinct from a model's Lachesis `unplannable`
+outcome. Resumption keys derive from the experiment digest, case, split, method,
+and repetition; there is no caller-chosen run ID. The Node store verifies
+content digests and writes records atomically in canonical key order.
+
+Before every provider invocation, the runner temporarily reserves the method's
+maximum input and output tokens at the most expensive applicable frozen input
+rate. It checks the total call, token, dollar, per-call output, and per-provider
+dollar caps before allowing the adapter call, then reconciles the reservation
+against returned usage. Cost is recomputed from the frozen pricing snapshot; an
+adapter cannot supply a cheaper cost. If a dispatched request fails without
+usage, the worst-case reservation is retained. A denied reservation never
+reaches the provider.
 
 M1a supports these live-comparison method labels without embedding provider
 SDKs:
@@ -114,6 +127,27 @@ success counts, sample counts, and 95% Wilson confidence intervals.
 The portable entrypoint targets ES2022 with WebWorker declarations and no Node
 ambient types. Filesystem persistence is compiled separately behind `./node`.
 The Workers compatibility bundle exercises generation with the recorded adapter.
+
+## M1b provider substrate
+
+`@nicia-ai/lachesis-generator-ai-sdk` is a separate Node-only package pinned to
+Vercel AI SDK 7. The primary comparison uses OpenAI Responses with
+`gpt-5.6-terra` at low reasoning effort and direct Anthropic Messages with
+`claude-sonnet-5` at adaptive/low thinking. An Anthropic-on-AWS-Bedrock adapter
+remains available as an optional secondary route. No model SDK enters the kernel
+or portable generator.
+
+The pilot constants encode a $50 total cap, $25 per billing provider, 400 calls,
+5,000,000 input tokens, 1,000,000 output tokens, 8,192 output tokens per call,
+and two-provider pricing entries. AI SDK retries are disabled so every recorded
+model attempt corresponds to at most one billable provider request. Importing
+the package never starts inference.
+
+The primary method identities record the reasoning configuration and direct
+provider routes. AWS Bedrock is excluded from the primary comparison and cannot
+silently substitute for direct Anthropic. No live calls or frozen held-out
+experiment are made by this substrate; prompt calibration remains
+development-only and precedes the separately frozen held-out manifest.
 
 The deterministic fixtures prove the measurement machinery, not these empirical
 rates. Prompts, cases, manifests, scoring code, providers, capability tiers,
