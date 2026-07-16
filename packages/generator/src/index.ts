@@ -67,6 +67,12 @@ export {
 } from "./experiment.js";
 export { loadM1aRecordedFixtures, RECORDED_DOUBLE_PLAN } from "./fixtures.js";
 export {
+  assertNoM1bHeldOutReuse,
+  loadM1cPreregisteredCorpus,
+  M1C_CORPUS_PROTOCOL,
+  type M1cPreregisteredCorpus,
+} from "./m1c-corpus.js";
+export {
   type AdapterDispatchEvidence,
   DEFAULT_INFERENCE_SETTINGS,
   type GenerationConstraint,
@@ -90,9 +96,13 @@ export {
   type TaskInput,
   taskInputBoundSchema,
   taskInputSchema,
+  type UnplannableWitness,
+  type UnplannableWitnessInput,
+  unplannableWitnessSchema,
 } from "./model.js";
 export {
   type AttemptPhase,
+  compileModelPlanProposal,
   generatePlan,
   type GeneratePlanInput,
   type GenerationSession,
@@ -128,6 +138,14 @@ export {
   modelIdentitySchema,
 } from "./records.js";
 export {
+  applyDeterministicPlanMutation,
+  type DeterministicPlanMutation,
+  type DeterministicPlanMutationInput,
+  deterministicPlanMutationSchema,
+  prepareSharedRepairTrial,
+  type SharedRepairTrial,
+} from "./repair-benchmark.js";
+export {
   type CaseStructuredOutputTransport,
   compileCaseStructuredOutputTransports,
   compileStructuredOutputTransport,
@@ -143,3 +161,4 @@ export {
   blindPlanGenerationValidityAudit,
   validatePlanGenerationCases,
 } from "./validity.js";
+export { validateUnplannableWitness } from "./witness.js";

@@ -95,10 +95,14 @@ const ABSTENTION_FIXTURE = {
       response: {
         structuredOutput: {
           kind: "unplannable",
-          reasons: ["The required capability is forbidden by policy."],
+          witness: {
+            kind: "deniedCapability",
+            operation: { id: "quote-tax", version: "1.0.0" },
+            capability: "finance.read",
+          },
         },
         rawResponse:
-          '{"kind":"unplannable","reasons":["The required capability is forbidden by policy."]}',
+          '{"kind":"unplannable","witness":{"kind":"deniedCapability","operation":{"id":"quote-tax","version":"1.0.0"},"capability":"finance.read"}}',
         usage: { inputTokens: 100, outputTokens: 22, costUsdMicros: 144 },
         latencyMs: 8,
       },

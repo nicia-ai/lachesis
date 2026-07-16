@@ -3,6 +3,7 @@ import {
   createCatalog,
   defineSchema,
   inspectExecutablePlan,
+  semanticObligationSchema,
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
@@ -19,6 +20,10 @@ const catalogResult = createCatalog({
   operations: [],
 });
 if (!catalogResult.ok) throw new Error("Node smoke catalog failed");
+if (
+  !semanticObligationSchema.safeParse({ kind: "requiresStateChange" }).success
+)
+  throw new Error("Node smoke semantic-obligation export failed");
 const planText = JSON.stringify({
   formatVersion: "1",
   catalog: { id: "smoke/catalog", version: "1" },

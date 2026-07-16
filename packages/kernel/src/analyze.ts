@@ -3,6 +3,7 @@ import { type Diagnostic, diagnostic } from "./diagnostic.js";
 import { nodeDependencies } from "./normalize.js";
 import type { Bound, CheckedNode, CheckedPlan, PlanAnalysis } from "./plan.js";
 import { err, ok, type Result } from "./result.js";
+import { analyzeRootProvenance } from "./semantic.js";
 import type { NodeId } from "./wire.js";
 
 type Metrics = Readonly<{
@@ -329,6 +330,7 @@ export function analyzePlan(
     maximumDeclaredWallClockMs: rootMetrics.wallClockMs,
     maximumParallelism: rootMetrics.parallelism,
     everyRelevantBoundProven: true,
+    rootProvenance: analyzeRootProvenance(plan),
   });
 }
 

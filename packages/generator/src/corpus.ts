@@ -21,6 +21,7 @@ import {
   freezePlanGenerationCase,
   type FrozenPlanGenerationCase,
   type InfeasibilityWitnessInput,
+  planPropertySchema,
 } from "./case.js";
 import type { TaskInput } from "./model.js";
 
@@ -69,6 +70,7 @@ function numericCatalog(): Result<Catalog, Diagnostics> {
         description: "Multiply a number by two.",
         input: number,
         output: number,
+        stateChanging: true,
         implementation: (value) => value * 2,
       }),
       defineFunction({
@@ -77,6 +79,7 @@ function numericCatalog(): Result<Catalog, Diagnostics> {
         description: "Add one to a number.",
         input: number,
         output: number,
+        stateChanging: true,
         implementation: (value) => value + 1,
       }),
       defineFunction({
@@ -85,6 +88,7 @@ function numericCatalog(): Result<Catalog, Diagnostics> {
         description: "Return the absolute value of a number.",
         input: number,
         output: number,
+        stateChanging: true,
         implementation: Math.abs,
       }),
       definePredicate({
@@ -109,6 +113,7 @@ function numericCatalog(): Result<Catalog, Diagnostics> {
         accumulator: number,
         identity: 0,
         laws: { associative: true, commutative: true, idempotent: false },
+        stateChanging: true,
         implementation: (total, value) => total + value,
       }),
       defineEffect({
@@ -122,6 +127,7 @@ function numericCatalog(): Result<Catalog, Diagnostics> {
         maxTokens: 12,
         maxWallClockMs: 20,
         replayable: true,
+        stateChanging: true,
       }),
     ],
   });
@@ -152,6 +158,7 @@ function textCatalog(): Result<Catalog, Diagnostics> {
         description: "Convert text to uppercase.",
         input: text,
         output: text,
+        stateChanging: true,
         implementation: (value) => value.toUpperCase(),
       }),
       defineFunction({
@@ -160,6 +167,7 @@ function textCatalog(): Result<Catalog, Diagnostics> {
         description: "Remove leading and trailing whitespace.",
         input: text,
         output: text,
+        stateChanging: true,
         implementation: (value) => value.trim(),
       }),
       defineFunction({
@@ -168,6 +176,7 @@ function textCatalog(): Result<Catalog, Diagnostics> {
         description: "Append one exclamation mark.",
         input: text,
         output: text,
+        stateChanging: true,
         implementation: (value) => `${value}!`,
       }),
       definePredicate({
@@ -185,6 +194,7 @@ function textCatalog(): Result<Catalog, Diagnostics> {
         accumulator: text,
         identity: "",
         laws: { associative: true, commutative: false, idempotent: false },
+        stateChanging: true,
         implementation: (total, value) => total + value,
       }),
       defineEffect({
@@ -198,6 +208,7 @@ function textCatalog(): Result<Catalog, Diagnostics> {
         maxTokens: 64,
         maxWallClockMs: 50,
         replayable: true,
+        stateChanging: true,
       }),
     ],
   });
@@ -227,6 +238,7 @@ function decisionCatalog(): Result<Catalog, Diagnostics> {
         description: "Normalize a label as an approval message.",
         input: label,
         output: label,
+        stateChanging: true,
         implementation: (value) => `approved:${value}`,
       }),
       defineFunction({
@@ -235,6 +247,7 @@ function decisionCatalog(): Result<Catalog, Diagnostics> {
         description: "Normalize a label as a rejection message.",
         input: label,
         output: label,
+        stateChanging: true,
         implementation: (value) => `rejected:${value}`,
       }),
     ],
@@ -265,6 +278,7 @@ function workflowCatalog(): Result<Catalog, Diagnostics> {
         description:
           "Decrement remaining and increment value until remaining is zero.",
         state,
+        stateChanging: true,
         implementation: (value) =>
           value.remaining === 0
             ? value
@@ -289,6 +303,7 @@ function workflowCatalog(): Result<Catalog, Diagnostics> {
         maxTokens: 32,
         maxWallClockMs: 40,
         replayable: true,
+        stateChanging: true,
       }),
     ],
   });
@@ -353,6 +368,7 @@ type CaseSeed = Readonly<{
   budget?: CompilationPolicy["budget"] | undefined;
   forbidden?: ReadonlyArray<string> | undefined;
   infeasibilityWitness?: InfeasibilityWitnessInput | undefined;
+  semanticObligations?: ReadonlyArray<unknown> | undefined;
 }>;
 
 const collectionBound: TaskInput["declaredBounds"] = Object.freeze([
@@ -425,8 +441,59 @@ function caseValue(seed: CaseSeed): unknown {
     expectedFeasibility: seed.feasible === false ? "unplannable" : "plannable",
     infeasibilityWitness: seed.infeasibilityWitness ?? null,
     requiredProperties: seed.properties,
+    semanticObligations:
+      seed.semanticObligations ?? derivedSemanticObligations(seed),
     forbiddenCapabilities: seed.forbidden ?? [],
   };
+}
+
+function derivedSemanticObligations(seed: CaseSeed): ReadonlyArray<unknown> {
+  const obligations: Array<unknown> = [];
+  for (const value of seed.properties) {
+    const property = planPropertySchema.safeParse(value);
+    if (!property.success) continue;
+    switch (property.data.kind) {
+      case "usesOperation":
+        obligations.push({
+          kind: "requiresOperation",
+          operation: {
+            id: property.data.id,
+            version: property.data.version,
+          },
+        });
+        break;
+      case "usesEffect":
+        obligations.push({
+          kind: "requiresEffect",
+          effectName: property.data.name,
+        });
+        break;
+      case "usesInput":
+        obligations.push({
+          kind: "rootDependsOnInput",
+          inputKey: property.data.inputKey,
+        });
+        break;
+      case "maximumNodes":
+      case "rootSchema":
+        break;
+    }
+  }
+  if (
+    seed.infeasibilityWitness?.kind === "missingOperation" &&
+    !obligations.some(
+      (value) =>
+        typeof value === "object" && value !== null && "operation" in value,
+    )
+  )
+    return [
+      ...obligations,
+      {
+        kind: "requiresOperation",
+        operation: seed.infeasibilityWitness.operation,
+      },
+    ];
+  return obligations;
 }
 
 const op = (id: string, version = VERSION): unknown => ({

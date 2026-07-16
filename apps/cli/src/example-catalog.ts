@@ -88,6 +88,7 @@ export const fragmentToClaim = defineFunction({
   description: "Converts a fragment to an equivalent claim.",
   input: fragmentSchema,
   output: claimSchema,
+  stateChanging: true,
   implementation: (fragment) => ({ id: fragment.id, text: fragment.text }),
 });
 export const claimIsNonempty = definePredicate({
@@ -128,6 +129,7 @@ export const extractionEffect = defineEffect({
   maxTokens: 200,
   maxWallClockMs: 1_000,
   replayable: true,
+  stateChanging: true,
 });
 export const synthesisEffect = defineEffect({
   id: "example/synthesize",
@@ -140,12 +142,14 @@ export const synthesisEffect = defineEffect({
   maxTokens: 500,
   maxWallClockMs: 2_000,
   replayable: true,
+  stateChanging: true,
 });
 export const countdownStep = defineFixedPointStep({
   id: "example/countdown-step",
   version: "1",
   description: "Decrements a positive countdown by one.",
   state: countdownSchema,
+  stateChanging: true,
   implementation: (state) => ({ remaining: Math.max(0, state.remaining - 1) }),
 });
 export const stuckCountdownStep = defineFixedPointStep({

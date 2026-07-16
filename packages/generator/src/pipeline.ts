@@ -13,6 +13,7 @@ import {
   parseJson,
   type PlanLanguageManifest,
   type Result,
+  type SemanticObligation,
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
@@ -38,6 +39,7 @@ import {
   compileStructuredOutputTransport,
   type StructuredOutputTransport,
 } from "./transport.js";
+import { validateUnplannableWitness } from "./witness.js";
 
 export type AttemptPhase = "initial" | "repair";
 
@@ -59,6 +61,7 @@ export type GeneratePlanInput = Readonly<{
   catalog: Catalog;
   policy: CompilationPolicy;
   taskInputs: ReadonlyArray<TaskInput>;
+  semanticObligations?: ReadonlyArray<SemanticObligation> | undefined;
   publicExamples: ReadonlyArray<PublicExample>;
   adapter: ModelAdapter;
   strategy: GenerationStrategy;
@@ -66,7 +69,7 @@ export type GeneratePlanInput = Readonly<{
   modelCallLimit?: number | undefined;
 }>;
 
-type CompiledProposal = Readonly<{
+export type ModelProposalCompilation = Readonly<{
   canonical: string | null;
   diagnostics: ReadonlyArray<Diagnostic>;
   wireValidation: boolean;
@@ -139,12 +142,13 @@ function structuredOutputCanonical(
   return canonical.ok ? canonical.value : null;
 }
 
-async function compileProposal(
+export async function compileModelPlanProposal(
   plan: unknown,
   catalog: Catalog,
   policy: CompilationPolicy,
   taskInputs: ReadonlyArray<TaskInput>,
-): Promise<CompiledProposal> {
+  semanticObligations: ReadonlyArray<SemanticObligation>,
+): Promise<ModelProposalCompilation> {
   const proposal = modelPlanProposalSchema.safeParse(plan);
   if (!proposal.success) {
     return {
@@ -207,7 +211,12 @@ async function compileProposal(
       wireValidation: false,
     };
   }
-  const compiled = await compilePlanJson(trustedPlan.value, catalog, policy);
+  const compiled = await compilePlanJson(
+    trustedPlan.value,
+    catalog,
+    policy,
+    semanticObligations,
+  );
   return compiled.ok
     ? {
         canonical: canonical.value,
@@ -407,7 +416,7 @@ async function outcomeAttempt(
     latencyMs: number;
     metadata?: ModelResponse["metadata"];
   }>,
-  compilation: CompiledProposal | undefined,
+  compilation: ModelProposalCompilation | undefined,
 ): Promise<Result<AttemptRecord, Diagnostic>> {
   const unplannable = response.outcome.kind === "unplannable";
   return withDigest({
@@ -418,7 +427,8 @@ async function outcomeAttempt(
     rawResponse: response.rawResponse,
     structuredOutputCanonical: structuredOutputCanonical(response),
     proposalCanonical: compilation?.canonical ?? null,
-    abstentionReasons: unplannable ? response.outcome.reasons : [],
+    abstentionReasons: [],
+    abstentionWitness: unplannable ? response.outcome.witness : null,
     diagnostics: compilation?.diagnostics ?? [],
     adapterFailure: null,
     dispatchEvidence: "dispatched-with-usage",
@@ -447,6 +457,7 @@ async function invalidOutputAttempt(
     structuredOutputCanonical: structuredOutputCanonical(response),
     proposalCanonical: null,
     abstentionReasons: [],
+    abstentionWitness: null,
     diagnostics,
     adapterFailure: null,
     dispatchEvidence: "dispatched-with-usage",
@@ -572,6 +583,7 @@ export async function generatePlan(
     originalTask: input.task,
     taskInputs: input.taskInputs,
     languageManifest: manifest.value,
+    semanticObligations: input.semanticObligations ?? [],
     publicExamples: input.publicExamples,
     constraint: input.strategy.constraint,
     structuredOutputTransport: transport,
@@ -666,6 +678,7 @@ export async function generatePlan(
         originalTask: input.task,
         taskInputs: input.taskInputs,
         languageManifest: manifest.value,
+        semanticObligations: input.semanticObligations ?? [],
         previousProposal: parsedOutput.previousProposal,
         diagnostics: parsedOutput.diagnostics,
         structuredOutputTransport: transport,
@@ -673,38 +686,94 @@ export async function generatePlan(
       continue;
     }
     if (parsedOutput.outcome.kind === "unplannable") {
+      const witnessDiagnostics = validateUnplannableWitness(
+        parsedOutput.outcome.witness,
+        manifest.value,
+        input.policy,
+        input.semanticObligations ?? [],
+      );
       const attempt = await outcomeAttempt(
         attemptIndex,
         phase,
         requestHash.value,
         { ...response.value, outcome: parsedOutput.outcome },
-        undefined,
+        witnessDiagnostics.length === 0
+          ? undefined
+          : {
+              canonical: null,
+              diagnostics: witnessDiagnostics,
+              wireValidation: true,
+            },
       );
       if (!attempt.ok) return attempt;
       attempts.push(attempt.value);
-      const record = await generationRecord(
-        input,
-        manifest.value,
-        attempts,
-        "unplannable",
-        null,
-      );
-      return record.ok
-        ? {
-            ok: true,
-            value: {
-              kind: "unplannable",
-              manifest: manifest.value,
-              record: record.value,
-            },
-          }
-        : record;
+      if (witnessDiagnostics.length === 0) {
+        const record = await generationRecord(
+          input,
+          manifest.value,
+          attempts,
+          "unplannable",
+          null,
+        );
+        return record.ok
+          ? {
+              ok: true,
+              value: {
+                kind: "unplannable",
+                manifest: manifest.value,
+                record: record.value,
+              },
+            }
+          : record;
+      }
+      if (
+        input.strategy.repair === "none" ||
+        attemptIndex === MAX_REPAIR_ATTEMPTS
+      ) {
+        const record = await generationRecord(
+          input,
+          manifest.value,
+          attempts,
+          "rejected",
+          null,
+        );
+        return record.ok
+          ? {
+              ok: true,
+              value: {
+                kind: "rejected",
+                manifest: manifest.value,
+                record: record.value,
+              },
+            }
+          : record;
+      }
+      if (transport === null)
+        return {
+          ok: false,
+          error: diagnostic(
+            "INTERNAL_INVARIANT_VIOLATION",
+            "A constrained repair request requires a structured-output transport.",
+          ),
+        };
+      request = {
+        kind: "repair",
+        originalTask: input.task,
+        taskInputs: input.taskInputs,
+        languageManifest: manifest.value,
+        semanticObligations: input.semanticObligations ?? [],
+        previousProposal: parsedOutput.outcome,
+        diagnostics: witnessDiagnostics,
+        structuredOutputTransport: transport,
+      };
+      continue;
     }
-    const compilation = await compileProposal(
+    const compilation = await compileModelPlanProposal(
       parsedOutput.outcome.plan,
       input.catalog,
       input.policy,
       input.taskInputs,
+      input.semanticObligations ?? [],
     );
     const attempt = await outcomeAttempt(
       attemptIndex,
@@ -780,6 +849,7 @@ export async function generatePlan(
       originalTask: input.task,
       taskInputs: input.taskInputs,
       languageManifest: manifest.value,
+      semanticObligations: input.semanticObligations ?? [],
       previousProposal: parsedOutput.outcome.plan,
       diagnostics: compilation.diagnostics,
       structuredOutputTransport: transport,

@@ -120,6 +120,49 @@ function referenceDiagnostics(
         break;
     }
   }
+  for (const obligation of frozenCase.case.semanticObligations ?? []) {
+    switch (obligation.kind) {
+      case "requiresOperation":
+      case "operationDominatesRoot": {
+        const registered = operations.has(referenceKey(obligation.operation));
+        const missingWitness =
+          frozenCase.case.expectedFeasibility === "unplannable" &&
+          frozenCase.case.infeasibilityWitness?.kind === "missingOperation" &&
+          operationMatches(
+            obligation.operation,
+            frozenCase.case.infeasibilityWitness.operation,
+          );
+        if (!registered && !missingWitness)
+          diagnostics.push(
+            fixtureDiagnostic(
+              frozenCase.case.id,
+              `semantic obligation references unknown operation ${referenceKey(obligation.operation)}`,
+            ),
+          );
+        break;
+      }
+      case "requiresEffect":
+        if (!effects.has(obligation.effectName))
+          diagnostics.push(
+            fixtureDiagnostic(
+              frozenCase.case.id,
+              `semantic obligation references unknown effect ${obligation.effectName}`,
+            ),
+          );
+        break;
+      case "rootDependsOnInput":
+        if (!inputs.has(obligation.inputKey))
+          diagnostics.push(
+            fixtureDiagnostic(
+              frozenCase.case.id,
+              `semantic obligation references unknown public input ${obligation.inputKey}`,
+            ),
+          );
+        break;
+      case "requiresStateChange":
+        break;
+    }
+  }
   return diagnostics;
 }
 
@@ -249,7 +292,9 @@ function referenceProposal(
   frozenCase: FrozenPlanGenerationCase,
   manifest: PlanLanguageManifest,
 ): Result<ModelPlanProposal, Diagnostic> {
-  const [family, slug] = frozenCase.case.id.split("/");
+  const parts = frozenCase.case.id.split("/");
+  const family = parts[0] === "m1c" ? parts[1] : parts[0];
+  const slug = parts[0] === "m1c" ? parts[2] : parts[1];
   const input = frozenCase.case.taskInputs[0];
   let candidate: unknown;
   if (family === "numbers" && input !== undefined) {
@@ -289,6 +334,36 @@ function referenceProposal(
         ],
       ],
       ["tax-map", [{ kind: "map-effect", operation: "quote-tax" }]],
+      [
+        "even-then-double",
+        [
+          { kind: "filter", operation: "even" },
+          { kind: "map-function", operation: "double" },
+        ],
+      ],
+      [
+        "increment-magnitude-total",
+        [
+          { kind: "map-function", operation: "increment" },
+          { kind: "map-function", operation: "absolute" },
+          { kind: "fold", operation: "sum" },
+        ],
+      ],
+      [
+        "even-double-total",
+        [
+          { kind: "filter", operation: "even" },
+          { kind: "map-function", operation: "double" },
+          { kind: "fold", operation: "sum" },
+        ],
+      ],
+      [
+        "magnitude-tax-quotes",
+        [
+          { kind: "map-function", operation: "absolute" },
+          { kind: "map-effect", operation: "quote-tax" },
+        ],
+      ],
     ]);
     const steps = plans.get(slug ?? "");
     if (steps === undefined)
@@ -336,6 +411,36 @@ function referenceProposal(
         ],
       ],
       ["translation-map", [{ kind: "map-effect", operation: "translate" }]],
+      [
+        "trim-then-exclaim",
+        [
+          { kind: "map-function", operation: "trim" },
+          { kind: "map-function", operation: "exclaim" },
+        ],
+      ],
+      [
+        "trim-uppercase-exclaim",
+        [
+          { kind: "map-function", operation: "trim" },
+          { kind: "map-function", operation: "uppercase" },
+          { kind: "map-function", operation: "exclaim" },
+        ],
+      ],
+      [
+        "trim-filter-concatenate",
+        [
+          { kind: "map-function", operation: "trim" },
+          { kind: "filter", operation: "nonempty" },
+          { kind: "fold", operation: "concatenate" },
+        ],
+      ],
+      [
+        "trim-before-translation",
+        [
+          { kind: "map-function", operation: "trim" },
+          { kind: "map-effect", operation: "translate" },
+        ],
+      ],
     ]);
     const steps = plans.get(slug ?? "");
     if (steps === undefined)
@@ -513,6 +618,7 @@ function runWitness(
     task: frozenCase.case.instruction,
     catalog,
     policy: frozenCase.case.policy,
+    semanticObligations: frozenCase.case.semanticObligations ?? [],
     taskInputs: frozenCase.case.taskInputs,
     publicExamples: [],
     adapter: witnessAdapter(proposal),

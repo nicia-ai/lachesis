@@ -3,6 +3,12 @@
 Provider-neutral generation, bounded compiler-guided repair, deterministic
 recorded adapters, and resumable semantic benchmarks for Lachesis.
 
+M1c adds public typed semantic obligations, deterministic infeasibility-witness
+validation, and a dedicated shared-proposal repair benchmark. Obligation and
+witness diagnostics enter the same bounded repair loop without exposing hidden
+evaluation data. See
+[the M1c design](../../docs/m1c-typed-semantic-obligations.md).
+
 The core export owns model-output parsing and is portable to Workers. Adapters
 return raw provider text plus optional provider-decoded structure; malformed
 model output is measured separately from provider transport failure.

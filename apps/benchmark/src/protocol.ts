@@ -307,14 +307,17 @@ function primaryMethodsAreValid(
             : phaseFormatVersion === "3"
               ? "anthropic-json-tool-portable-json-schema"
               : "anthropic-json-tool";
-      const expectedAdapterVersion =
+      const expectedAdapterVersions =
         phaseFormatVersion === "1"
-          ? `ai-sdk/${AI_SDK_VERSION}`
+          ? [`ai-sdk/${AI_SDK_VERSION}`]
           : phaseFormatVersion === "2"
-            ? `lachesis-ai-sdk-adapter/2;ai-sdk/${AI_SDK_VERSION}`
-            : AI_SDK_ADAPTER_VERSION;
+            ? [`lachesis-ai-sdk-adapter/2;ai-sdk/${AI_SDK_VERSION}`]
+            : [
+                `lachesis-ai-sdk-adapter/3;ai-sdk/${AI_SDK_VERSION}`,
+                AI_SDK_ADAPTER_VERSION,
+              ];
       if (
-        method.model.adapterVersion !== expectedAdapterVersion ||
+        !expectedAdapterVersions.includes(method.model.adapterVersion) ||
         method.inference.structuredOutputTransport !==
           (phaseFormatVersion === "1" ? undefined : expectedTransport)
       )

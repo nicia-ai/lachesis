@@ -3,6 +3,8 @@ import {
   digestValue,
   operationReferenceSchema,
   type Result,
+  type SemanticObligation,
+  semanticObligationSchema,
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
@@ -129,6 +131,10 @@ export const planGenerationCaseSchema = z
     expectedFeasibility: z.enum(["plannable", "unplannable"]),
     infeasibilityWitness: infeasibilityWitnessSchema.nullable(),
     requiredProperties: z.array(planPropertySchema).readonly(),
+    semanticObligations: z
+      .array(semanticObligationSchema)
+      .readonly()
+      .optional(),
     forbiddenCapabilities: z.array(z.string().min(1)).readonly(),
   })
   .superRefine((value, context) => {
@@ -162,6 +168,7 @@ export type InfeasibilityWitnessInput = z.input<
   typeof infeasibilityWitnessSchema
 >;
 export type PlanGenerationCase = z.infer<typeof planGenerationCaseSchema>;
+export type { SemanticObligation };
 
 export type FrozenPlanGenerationCase = Readonly<{
   case: PlanGenerationCase;

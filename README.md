@@ -6,20 +6,23 @@ callbacks, hidden loops, or undeclared effects. The kernel parses, resolves,
 type-checks, bounds, content-addresses, and executes the plan through explicit
 effect interpreters.
 
-This repository contains the measured plan kernel, the deterministic M1a
-plan-generation benchmark substrate, and the Node-only M1b controlled experiment
-controller.
+This repository contains the measured plan kernel, deterministic generation
+benchmark substrate, the frozen Node-only M1b controlled experiment controller,
+and the offline M1c typed-semantic-obligation layer.
 
 ## What works
 
 - Strict Zod validation for an untrusted, versioned graph wire format.
-- Duplicate-ID, dangling-reference, missing-root, and cycle detection.
+- Duplicate-ID, dangling-reference, missing-root, cycle, and dead-node
+  detection.
 - A versioned nominal schema and operation catalog with safe erased runtime
   boundaries.
 - All initial operators: `input`, `constant`, `invoke`, `map`, `filter`, `fold`,
   `select`, `effect`, `checkpoint`, and `boundedFix`.
 - Complete schema inference, effect/capability inference, conservative resource
   maxima, and budget rejection.
+- Root provenance and typed input-dependency, operation-dominance, state-change,
+  required-operation, and required-effect obligations.
 - Portable canonical JSON and SHA-256 hashing through Web Crypto.
 - An opaque compile/execute boundary that binds successful analysis, policy,
   plan hash, and immutable catalog fingerprint.
@@ -33,6 +36,8 @@ controller.
   exports.
 - A provider-neutral generate/compile/two-repair pipeline with canonical attempt
   records, recorded-model fixtures, and resumable hidden-case semantic scoring.
+- Deterministic typed validation of missing-operation, denied-capability, and
+  insufficient-budget witnesses before an `unplannable` result is credited.
 - Central model-output parsing, digest-bound experiment manifests, enforced
   inference caps, and paired held-out research gates with confidence intervals.
 - A Node-only Vercel AI SDK 7 adapter package whose primary comparison is direct

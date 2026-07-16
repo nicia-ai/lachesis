@@ -28,7 +28,7 @@ import {
   createM1bPricingSnapshot,
   createM1bPrimaryAdapters,
   M1B_PILOT_CAPS,
-  M1B_PROMPT_PROTOCOL,
+  M1C_PROMPT_PROTOCOL,
 } from "@nicia-ai/lachesis-generator-ai-sdk";
 
 import {
@@ -76,7 +76,7 @@ export const M1B_PROMPT_CANDIDATE = Object.freeze({
       "Corrects model/runtime authority and benchmark-validity defects discovered in development calibration; it is not a fourth discretionary prompt candidate.",
   }),
   instruction:
-    'Propose only registered Lachesis operator topology and arguments. Do not author budget, allowedCapabilities, or input maxItems fields; the trusted runtime supplies public input bounds, capabilities, and policy limits, the analyzer derives requirements, and the compiler checks those requirements. Return raw JSON as exactly { "kind": "plan", "plan": ... } or { "kind": "unplannable", "reasons": [...] }; never use Markdown fences or alternate field names. A constrained provider may carry that exact logical outcome inside the internal structured-output transport envelope { "outcome": ... }; this JSON tool is output transport only and does not authorize external tools. Use unplannable only when the supplied manifest, public input contract, and trusted policy cannot satisfy the task.',
+    'Propose only registered Lachesis operator topology and arguments. Do not author budget, allowedCapabilities, or input maxItems fields; the trusted runtime supplies public input bounds, capabilities, policy limits, and typed semantic obligations, the analyzer derives requirements and root provenance, and the compiler checks both. Return raw JSON as exactly { "kind": "plan", "plan": ... } or { "kind": "unplannable", "witness": { "kind": "missingOperation" | "deniedCapability" | "insufficientBudget", ... } }; never use Markdown fences or alternate field names. A constrained provider may carry that exact logical outcome inside the internal structured-output transport envelope { "outcome": ... }; this JSON tool is output transport only and does not authorize external tools. Use unplannable only when its typed witness is proven by the supplied public obligations, exact manifest, and trusted policy.',
 });
 
 export type MaterializedPhase = Readonly<{
@@ -581,7 +581,7 @@ export async function materializeM1bPhase(
   if (!corpusDigest.ok) return { ok: false, error: [corpusDigest.error] };
   const experiment = await createExperimentManifest({
     prompt: M1B_PROMPT_CANDIDATE,
-    protocol: M1B_PROMPT_PROTOCOL,
+    protocol: M1C_PROMPT_PROTOCOL,
     cases: cases.value.map((frozenCase) => ({
       frozenCase,
       split:

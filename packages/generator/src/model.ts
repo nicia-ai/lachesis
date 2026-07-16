@@ -4,6 +4,10 @@ import type {
   Result,
 } from "@nicia-ai/lachesis";
 import { modelPlanProposalSchema } from "@nicia-ai/lachesis";
+import {
+  operationReferenceSchema,
+  type SemanticObligation,
+} from "@nicia-ai/lachesis";
 import { z } from "zod";
 
 import type { StructuredOutputTransport } from "./transport.js";
@@ -12,8 +16,40 @@ export type GenerationOutcome =
   | Readonly<{ kind: "plan"; plan: unknown }>
   | Readonly<{
       kind: "unplannable";
-      reasons: ReadonlyArray<string>;
+      witness: UnplannableWitness;
     }>;
+
+export const unplannableWitnessSchema = z.discriminatedUnion("kind", [
+  z
+    .strictObject({
+      kind: z.literal("missingOperation"),
+      operation: operationReferenceSchema,
+    })
+    .readonly(),
+  z
+    .strictObject({
+      kind: z.literal("deniedCapability"),
+      operation: operationReferenceSchema,
+      capability: z.string().min(1),
+    })
+    .readonly(),
+  z
+    .strictObject({
+      kind: z.literal("insufficientBudget"),
+      operation: operationReferenceSchema,
+      resource: z.enum([
+        "maxEffectCalls",
+        "maxRecursionDepth",
+        "maxTokens",
+        "maxWallClockMs",
+      ]),
+      requiredMinimum: z.number().int().positive(),
+    })
+    .readonly(),
+]);
+
+export type UnplannableWitness = z.infer<typeof unplannableWitnessSchema>;
+export type UnplannableWitnessInput = z.input<typeof unplannableWitnessSchema>;
 
 export const generationOutcomeSchema = z.discriminatedUnion("kind", [
   z
@@ -22,7 +58,7 @@ export const generationOutcomeSchema = z.discriminatedUnion("kind", [
   z
     .strictObject({
       kind: z.literal("unplannable"),
-      reasons: z.array(z.string().min(1)).min(1).readonly(),
+      witness: unplannableWitnessSchema,
     })
     .readonly(),
 ]);
@@ -61,6 +97,7 @@ export type InitialGenerationRequest = Readonly<{
   originalTask: string;
   taskInputs: ReadonlyArray<TaskInput>;
   languageManifest: PlanLanguageManifest;
+  semanticObligations: ReadonlyArray<SemanticObligation>;
   publicExamples: ReadonlyArray<PublicExample>;
   constraint: GenerationConstraint;
   structuredOutputTransport: StructuredOutputTransport | null;
@@ -72,6 +109,7 @@ export type RepairGenerationRequest = Readonly<{
   originalTask: string;
   taskInputs: ReadonlyArray<TaskInput>;
   languageManifest: PlanLanguageManifest;
+  semanticObligations: ReadonlyArray<SemanticObligation>;
   previousProposal: unknown;
   diagnostics: ReadonlyArray<Diagnostic>;
   structuredOutputTransport: StructuredOutputTransport;

@@ -140,6 +140,7 @@ export const attemptRecordSchema = z
     structuredOutputCanonical: z.string().nullable(),
     proposalCanonical: z.string().nullable(),
     abstentionReasons: z.array(z.string()).readonly(),
+    abstentionWitness: z.json().nullable().optional(),
     diagnostics: z.array(diagnosticRecordSchema).readonly(),
     adapterFailure: adapterFailureSchema.nullable(),
     dispatchEvidence: z

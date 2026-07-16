@@ -31,6 +31,14 @@ diagnostics. A declaration contains only an input name, schema reference, and
 declared bounds. Hidden input values, expected outputs, effect results, and
 semantic scores are excluded from both initial and repair requests.
 
+M1c adds public typed semantic obligations to both request kinds. They expose
+task intent without hidden examples: root input dependencies, required
+operations/effects, operation dominance, and trusted state-change requirements.
+The compiler checks them after graph/resource analysis. An `unplannable` outcome
+carries a typed missing-operation, denied-capability, or insufficient- budget
+witness; the generator validates it against the public obligations, exact
+manifest, and trusted policy before crediting abstention.
+
 M1b.5 makes the authority boundary structural. The model-authored proposal may
 contain only registered operator topology and arguments. It cannot declare a
 budget, capability authorization, or a narrower input collection bound. The
@@ -143,7 +151,8 @@ baseline.
 - at least 98% compilation after no more than two repairs;
 - at least 90% semantic success on hidden deterministic inputs;
 - at least 90% correct abstention on impossible cases;
-- repair adds at least ten percentage points of semantic executable-plan success
+- among shared initial proposals that fail compilation or a typed obligation,
+  repair adds at least ten percentage points of semantic executable-plan success
   or halves the failure rate;
 - functional IR materially outperforms CodeMode on repair turns and runtime
   failures before making the broader claim.
@@ -151,9 +160,12 @@ baseline.
 Development records are excluded from every research gate. The compile,
 semantic, and abstention thresholds are evaluated on held-out
 JSON-Schema-with-repair records. Repair uplift and CodeMode comparisons require
-identical experiment, case, model configuration, and repetition keys; missing or
-duplicate coverage makes the comparative gate unevaluated. Rate reports include
-success counts, sample counts, and 95% Wilson confidence intervals.
+identical experiment, case, model configuration, repetition keys, and initial
+proposal digests; missing, duplicate, or independently sampled coverage makes
+the comparative gate unevaluated. If no shared proposal is eligible, reporting
+says `repair unnecessary` rather than treating zero uplift as failure. Rate
+reports include success counts, sample counts, and 95% Wilson confidence
+intervals.
 
 The portable entrypoint targets ES2022 with WebWorker declarations and no Node
 ambient types. Filesystem persistence is compiled separately behind `./node`.

@@ -44,6 +44,7 @@ export type ManifestOperation = Readonly<{
   reference: OperationReference;
   kind: RuntimeOperation["kind"];
   description: string;
+  semantics: RuntimeOperation["semantics"];
   input?: SchemaReference | undefined;
   output?: SchemaReference | undefined;
   element?: SchemaReference | undefined;
@@ -103,6 +104,7 @@ function operationManifest(operation: RuntimeOperation): ManifestOperation {
     reference: operationReference(operation),
     kind: operation.kind,
     description: operation.description,
+    semantics: operation.semantics,
   };
   if (operation.kind === "reducer") {
     return {

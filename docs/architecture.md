@@ -93,3 +93,13 @@ effect name, and input digest. Recorded output digests are checked before a
 value is returned. Replay does not claim that rerunning a provider would
 reproduce a recording, nor that a semantically incorrect recorded answer becomes
 correct.
+
+## Typed semantic obligations
+
+The compiler accepts public, typed task obligations separately from the
+model-authored plan and trusted execution policy. The analyzer records root
+provenance—contributing nodes, public inputs, operations, effects, trusted
+state-changing operations, and graph dominators—then the compiler checks each
+obligation before creating an executable artifact. Nodes outside root provenance
+are rejected during normalization. See
+[M1c typed semantic obligations](./m1c-typed-semantic-obligations.md).

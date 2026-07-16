@@ -44,6 +44,11 @@ type OperationBase = Readonly<{
   version: string;
   description: string;
   input: SchemaReference;
+  semantics: OperationSemantics;
+}>;
+
+export type OperationSemantics = Readonly<{
+  stateChanging: boolean;
 }>;
 
 export type RuntimeFunction = OperationBase &
@@ -75,6 +80,7 @@ export type RuntimeReducer = Readonly<{
   accumulator: SchemaReference;
   identity: unknown;
   laws: ReducerLaws;
+  semantics: OperationSemantics;
   reduce: (
     accumulator: unknown,
     element: unknown,
@@ -144,6 +150,7 @@ export type CatalogDescription = Readonly<{
       kind: RuntimeOperation["kind"];
       description: string;
       input?: SchemaReference | undefined;
+      semantics: OperationSemantics;
     }>
   >;
 }>;
@@ -371,6 +378,7 @@ export function defineFunction<I, O>(
     output: SchemaRegistration<O>;
     implementation: (input: I) => O;
     maxOutputItems?: number | undefined;
+    stateChanging?: boolean | undefined;
   }>,
 ): RuntimeFunction {
   return {
@@ -379,6 +387,9 @@ export function defineFunction<I, O>(
     version: definition.version,
     description: definition.description,
     input: schemaReference(definition.input.id, definition.input.version),
+    semantics: Object.freeze({
+      stateChanging: definition.stateChanging ?? false,
+    }),
     output: schemaReference(definition.output.id, definition.output.version),
     ...(definition.maxOutputItems === undefined
       ? {}
@@ -402,6 +413,7 @@ export function definePredicate<I>(
     description: string;
     input: SchemaRegistration<I>;
     implementation: (input: I) => boolean;
+    stateChanging?: boolean | undefined;
   }>,
 ): RuntimePredicate {
   return {
@@ -410,6 +422,9 @@ export function definePredicate<I>(
     version: definition.version,
     description: definition.description,
     input: schemaReference(definition.input.id, definition.input.version),
+    semantics: Object.freeze({
+      stateChanging: definition.stateChanging ?? false,
+    }),
     test(input: unknown): Result<boolean, Diagnostic> {
       const parsed = definition.input.parse(input);
       return parsed.ok ? ok(definition.implementation(parsed.value)) : parsed;
@@ -428,6 +443,7 @@ export function defineReducer<E, A>(
     identity: A;
     laws: ReducerLaws;
     implementation: (accumulator: A, element: E) => A;
+    stateChanging?: boolean | undefined;
   }>,
 ): RuntimeReducer {
   const identity = definition.accumulator.parse(definition.identity);
@@ -448,6 +464,9 @@ export function defineReducer<E, A>(
     ),
     identity: identity.value,
     laws: definition.laws,
+    semantics: Object.freeze({
+      stateChanging: definition.stateChanging ?? false,
+    }),
     reduce(
       accumulator: unknown,
       element: unknown,
@@ -481,6 +500,7 @@ export function defineEffect<I, O>(
     maxWallClockMs: number;
     replayable: boolean;
     maxOutputItems?: number | undefined;
+    stateChanging?: boolean | undefined;
   }>,
 ): RuntimeEffect {
   return {
@@ -489,6 +509,9 @@ export function defineEffect<I, O>(
     version: definition.version,
     description: definition.description,
     input: schemaReference(definition.input.id, definition.input.version),
+    semantics: Object.freeze({
+      stateChanging: definition.stateChanging ?? false,
+    }),
     output: schemaReference(definition.output.id, definition.output.version),
     effectName: definition.effectName,
     capability: definition.capability,
@@ -509,6 +532,7 @@ export function defineFixedPointStep<T>(
     description: string;
     state: SchemaRegistration<T>;
     implementation: (state: T) => T;
+    stateChanging?: boolean | undefined;
   }>,
 ): RuntimeFixedPointStep {
   return {
@@ -517,6 +541,9 @@ export function defineFixedPointStep<T>(
     version: definition.version,
     description: definition.description,
     input: schemaReference(definition.state.id, definition.state.version),
+    semantics: Object.freeze({
+      stateChanging: definition.stateChanging ?? false,
+    }),
     output: schemaReference(definition.state.id, definition.state.version),
     invoke: (input) =>
       runTyped(
@@ -537,6 +564,7 @@ export function defineMeasure<T>(
     description: string;
     input: SchemaRegistration<T>;
     implementation: (input: T) => number;
+    stateChanging?: boolean | undefined;
   }>,
 ): RuntimeMeasure {
   return {
@@ -545,6 +573,9 @@ export function defineMeasure<T>(
     version: definition.version,
     description: definition.description,
     input: schemaReference(definition.input.id, definition.input.version),
+    semantics: Object.freeze({
+      stateChanging: definition.stateChanging ?? false,
+    }),
     measure(input: unknown): Result<number, Diagnostic> {
       const parsed = definition.input.parse(input);
       if (!parsed.ok) return parsed;
@@ -674,6 +705,7 @@ export function describeCatalog(catalog: Catalog): CatalogDescription {
         version: operation.version,
         kind: operation.kind,
         description: operation.description,
+        semantics: operation.semantics,
         ...(operation.kind === "reducer" ? {} : { input: operation.input }),
       }))
       .toSorted((left, right) => compareKeys(left, right)),

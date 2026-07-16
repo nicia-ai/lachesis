@@ -256,6 +256,7 @@ describe("AI SDK provider adapters", () => {
         taskInputs: benchmarkCase.case.taskInputs,
         catalog,
         policy: benchmarkCase.case.policy,
+        semanticObligations: benchmarkCase.case.semanticObligations ?? [],
         publicExamples: [],
         adapter,
         strategy: strategy("json-schema"),
@@ -589,6 +590,11 @@ describe("AI SDK provider adapters", () => {
       expectPortableSchema(anthropicBody.tools[0]?.input_schema);
       expectNoModelAuthorityProperties(openaiBody.text.format.schema);
       expectNoModelAuthorityProperties(anthropicBody.tools[0]?.input_schema);
+      const expectedSchemaText = JSON.stringify(expectedSchema);
+      expect(expectedSchemaText).toContain("missingOperation");
+      expect(expectedSchemaText).toContain("deniedCapability");
+      expect(expectedSchemaText).toContain("insufficientBudget");
+      expect(expectedSchemaText).not.toContain('"reasons"');
       expect(unwrap(canonicalizeJson(openaiBody.text.format.schema))).toBe(
         unwrap(canonicalizeJson(expectedSchema)),
       );
@@ -641,8 +647,14 @@ describe("AI SDK provider adapters", () => {
           .parse(arguments_[0]);
         prompts.push(options.prompt);
         return Promise.resolve({
-          text: '{"kind":"unplannable","reasons":["offline"]}',
-          output: { kind: "unplannable", reasons: ["offline"] },
+          text: '{"kind":"unplannable","witness":{"kind":"missingOperation","operation":{"id":"offline","version":"1"}}}',
+          output: {
+            kind: "unplannable",
+            witness: {
+              kind: "missingOperation",
+              operation: { id: "offline", version: "1" },
+            },
+          },
           usage: { inputTokens: 1, outputTokens: 1 },
           finishReason: "stop",
         });
@@ -684,6 +696,7 @@ describe("AI SDK provider adapters", () => {
       originalTask: benchmarkCase.case.instruction,
       taskInputs: benchmarkCase.case.taskInputs,
       languageManifest: manifest,
+      semanticObligations: benchmarkCase.case.semanticObligations ?? [],
       publicExamples: [],
       constraint: "json-schema",
       structuredOutputTransport: transport,
@@ -699,6 +712,7 @@ describe("AI SDK provider adapters", () => {
       originalTask: benchmarkCase.case.instruction,
       taskInputs: benchmarkCase.case.taskInputs,
       languageManifest: manifest,
+      semanticObligations: benchmarkCase.case.semanticObligations ?? [],
       previousProposal: { kind: "plan", plan: {} },
       diagnostics: [],
       structuredOutputTransport: transport,
@@ -711,7 +725,7 @@ describe("AI SDK provider adapters", () => {
     for (const prompt of prompts) {
       expect(prompt).toContain('{ \\"kind\\": \\"plan\\", \\"plan\\": ... }');
       expect(prompt).toContain(
-        '{ \\"kind\\": \\"unplannable\\", \\"reasons\\": [...] }',
+        '{ \\"kind\\": \\"unplannable\\", \\"witness\\": { \\"kind\\": \\"missingOperation\\" | \\"deniedCapability\\" | \\"insufficientBudget\\", ... } }',
       );
       expect(prompt).toContain("Return raw JSON only.");
       expect(prompt).toContain("Do not use Markdown fences.");
@@ -723,6 +737,7 @@ describe("AI SDK provider adapters", () => {
         "Do not return budget, allowedCapabilities, or input maxItems fields",
       );
       expect(prompt).toContain('"taskInputs"');
+      expect(prompt).toContain('"semanticObligations"');
       for (const value of Object.values(hostile))
         expect(prompt).not.toContain(value);
     }

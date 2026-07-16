@@ -13,6 +13,8 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import {
+  applyDeterministicPlanMutation,
+  assertNoM1bHeldOutReuse,
   benchmarkCaseRecordSchema,
   type BenchmarkMethod,
   type BenchmarkSplit,
@@ -41,10 +43,13 @@ import {
   type GenerationStrategy,
   loadM1aCorpus,
   loadM1aRecordedFixtures,
+  loadM1cPreregisteredCorpus,
   M1A_GENERATION_STRATEGIES,
+  M1A_HOLDOUTS,
   type ModelAdapter,
   normalizeStructuredOutputEnvelope,
   partitionM1aCorpus,
+  prepareSharedRepairTrial,
   type PricingSnapshot,
   RECORDED_DOUBLE_PLAN,
   runBenchmark,
@@ -52,6 +57,7 @@ import {
   summarizeBenchmark,
   validatePlanGenerationCases,
   validatePortableStructuredOutputSchema,
+  validateUnplannableWitness,
   verifyExperimentManifest,
   verifyPricingSnapshot,
 } from "../src/index.js";
@@ -377,16 +383,28 @@ describe("M1a frozen substrate", () => {
     expect(
       unwrap(
         normalizeStructuredOutputEnvelope({
-          outcome: { kind: "unplannable", reasons: ["offline"] },
+          outcome: {
+            kind: "unplannable",
+            witness: {
+              kind: "missingOperation",
+              operation: { id: "offline", version: "1" },
+            },
+          },
         }),
       ),
-    ).toEqual({ kind: "unplannable", reasons: ["offline"] });
+    ).toEqual({
+      kind: "unplannable",
+      witness: {
+        kind: "missingOperation",
+        operation: { id: "offline", version: "1" },
+      },
+    });
 
     for (const malformed of [
       null,
       {},
       { outcome: { kind: "other" } },
-      { outcome: { kind: "unplannable", reasons: [] } },
+      { outcome: { kind: "unplannable", witness: {} } },
       { outcome: { kind: "plan" } },
       { outcome: { kind: "plan", plan: "not-an-object" } },
       { outcome: { kind: "plan", plan: {} } },
@@ -692,6 +710,12 @@ describe("M1a frozen substrate", () => {
           kind: "missingOperation",
           operation: { id: "double", version: "1.0.0" },
         },
+        semanticObligations: [
+          {
+            kind: "requiresOperation",
+            operation: { id: "double", version: "1.0.0" },
+          },
+        ],
       }),
     );
     const denied = await corpusCase("numbers/forbidden-tax");
@@ -1132,6 +1156,36 @@ describe("M1a frozen substrate", () => {
   });
 });
 
+describe("M1c preregistered corpus boundary", () => {
+  it("uses only fresh case identities and passes the blind offline validity audit", async () => {
+    const corpus = unwrap(await loadM1cPreregisteredCorpus());
+    expect(corpus.development).toHaveLength(4);
+    expect(corpus.heldOut).toHaveLength(9);
+    const priorIds = [
+      ...M1A_HOLDOUTS.catalogs,
+      ...M1A_HOLDOUTS.operatorCombinations,
+      ...M1A_HOLDOUTS.phrasings,
+    ];
+    expect(assertNoM1bHeldOutReuse(corpus, priorIds).ok).toBe(true);
+    const all = [...corpus.development, ...corpus.heldOut];
+    expect(
+      await blindPlanGenerationValidityAudit(
+        all,
+        unwrap(createM1aCatalogResolver()),
+      ),
+    ).toEqual({
+      totalCases: 13,
+      plannableCases: 11,
+      unplannableCases: 2,
+      referencesValid: 13,
+      witnessesCompiled: 11,
+      hiddenPropertiesPassed: 11,
+      infeasibilityWitnessesPassed: 2,
+      invalidCases: 0,
+    });
+  });
+});
+
 describe("generate, compile, and bounded repair", () => {
   it("rejects model-authored authority and narrowed public input bounds", async () => {
     const benchmarkCase = await corpusCase("numbers/double");
@@ -1246,12 +1300,268 @@ describe("generate, compile, and bounded repair", () => {
       "languageManifest",
       "originalTask",
       "previousProposal",
+      "semanticObligations",
       "structuredOutputTransport",
       "taskInputs",
     ]);
     expect("hiddenEvaluations" in repair).toBe(false);
     expect("executionResults" in repair).toBe(false);
     expect("publicExamples" in repair).toBe(false);
+  });
+
+  it("feeds dead-root topology failures into bounded repair", async () => {
+    const benchmarkCase = await corpusCase("text/uppercase-exclaim");
+    const version = "1.0.0";
+    const badPlan = {
+      formatVersion: "1",
+      catalog: { id: "benchmark.text", version },
+      root: "uppercase",
+      nodes: [
+        {
+          id: "items",
+          op: "input",
+          inputKey: "items",
+          schema: { id: "texts", version },
+        },
+        {
+          id: "uppercase",
+          op: "map",
+          source: "items",
+          operation: { kind: "function", id: "uppercase", version },
+          outputCollectionSchema: { id: "texts", version },
+          parallelism: 1,
+        },
+        {
+          id: "exclaim",
+          op: "map",
+          source: "uppercase",
+          operation: { kind: "function", id: "exclaim", version },
+          outputCollectionSchema: { id: "texts", version },
+          parallelism: 1,
+        },
+      ],
+    };
+    const goodPlan = { ...badPlan, root: "exclaim" };
+    const fixture = unwrap(
+      await freezeRecordedModelFixture({
+        identity: {
+          provider: "recorded",
+          model: "dead-root-repair",
+          adapterVersion: "1",
+        },
+        responses: [badPlan, goodPlan].map((plan) => ({
+          kind: "response" as const,
+          response: {
+            structuredOutput: { kind: "plan", plan },
+            rawResponse: JSON.stringify({ kind: "plan", plan }),
+            usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
+            latencyMs: 1,
+          },
+        })),
+      }),
+    );
+    const session = unwrap(
+      await generatePlan({
+        task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
+        catalog: unwrap(
+          unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
+        ),
+        policy: benchmarkCase.case.policy,
+        semanticObligations: benchmarkCase.case.semanticObligations ?? [],
+        publicExamples: [],
+        adapter: createRecordedModelAdapter(fixture),
+        strategy: strategy("json-schema-with-repair"),
+      }),
+    );
+    expect(session.kind).toBe("compiled");
+    expect(session.record.repairCount).toBe(1);
+    expect(session.record.attempts[0]?.diagnostics[0]?.code).toBe("DEAD_NODE");
+  });
+
+  it("validates typed infeasibility witnesses and repairs an irrelevant abstention", async () => {
+    const benchmarkCase = await corpusCase("numbers/double");
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
+    );
+    const manifest = unwrap(
+      await createPlanLanguageManifest(catalog, benchmarkCase.case.policy),
+    );
+    const irrelevantWitness = {
+      kind: "missingOperation" as const,
+      operation: { id: "offline", version: "1" },
+    };
+    expect(
+      validateUnplannableWitness(
+        irrelevantWitness,
+        manifest,
+        benchmarkCase.case.policy,
+        benchmarkCase.case.semanticObligations ?? [],
+      )[0]?.code,
+    ).toBe("INVALID_INFEASIBILITY_WITNESS");
+    const fixture = unwrap(
+      await freezeRecordedModelFixture({
+        identity: {
+          provider: "recorded",
+          model: "witness-repair",
+          adapterVersion: "1",
+        },
+        responses: [
+          {
+            kind: "response",
+            response: {
+              structuredOutput: {
+                kind: "unplannable",
+                witness: irrelevantWitness,
+              },
+              rawResponse: JSON.stringify({
+                kind: "unplannable",
+                witness: irrelevantWitness,
+              }),
+              usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
+              latencyMs: 1,
+            },
+          },
+          {
+            kind: "response",
+            response: {
+              structuredOutput: {
+                kind: "plan",
+                plan: modelProposal(RECORDED_DOUBLE_PLAN),
+              },
+              rawResponse: JSON.stringify({
+                kind: "plan",
+                plan: modelProposal(RECORDED_DOUBLE_PLAN),
+              }),
+              usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
+              latencyMs: 1,
+            },
+          },
+        ],
+      }),
+    );
+    const session = unwrap(
+      await generatePlan({
+        task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
+        catalog,
+        policy: benchmarkCase.case.policy,
+        semanticObligations: benchmarkCase.case.semanticObligations ?? [],
+        publicExamples: [],
+        adapter: createRecordedModelAdapter(fixture),
+        strategy: strategy("json-schema-with-repair"),
+      }),
+    );
+    expect(session.kind).toBe("compiled");
+    expect(session.record.repairCount).toBe(1);
+    expect(session.record.attempts[0]?.diagnostics[0]?.code).toBe(
+      "INVALID_INFEASIBILITY_WITNESS",
+    );
+  });
+
+  it("proves missing-operation and exact insufficient-budget witnesses", async () => {
+    const resolver = unwrap(createM1aCatalogResolver());
+    const missing = await corpusCase("numbers/missing-average");
+    const missingCatalog = unwrap(resolver(missing.case.catalogId));
+    const missingManifest = unwrap(
+      await createPlanLanguageManifest(missingCatalog, missing.case.policy),
+    );
+    expect(
+      validateUnplannableWitness(
+        {
+          kind: "missingOperation",
+          operation: { id: "average", version: "1.0.0" },
+        },
+        missingManifest,
+        missing.case.policy,
+        missing.case.semanticObligations ?? [],
+      ),
+    ).toEqual([]);
+
+    const budget = await corpusCase("numbers/zero-effect-budget");
+    const budgetCatalog = unwrap(resolver(budget.case.catalogId));
+    const budgetManifest = unwrap(
+      await createPlanLanguageManifest(budgetCatalog, budget.case.policy),
+    );
+    expect(
+      validateUnplannableWitness(
+        {
+          kind: "insufficientBudget",
+          operation: { id: "quote-tax", version: "1.0.0" },
+          resource: "maxEffectCalls",
+          requiredMinimum: 1,
+        },
+        budgetManifest,
+        budget.case.policy,
+        budget.case.semanticObligations ?? [],
+      ),
+    ).toEqual([]);
+    expect(
+      validateUnplannableWitness(
+        {
+          kind: "insufficientBudget",
+          operation: { id: "quote-tax", version: "1.0.0" },
+          resource: "maxEffectCalls",
+          requiredMinimum: 2,
+        },
+        budgetManifest,
+        budget.case.policy,
+        budget.case.semanticObligations ?? [],
+      )[0]?.code,
+    ).toBe("INVALID_INFEASIBILITY_WITNESS");
+  });
+
+  it("uses one deterministic initial proposal for both repair arms", async () => {
+    const benchmarkCase = await corpusCase("numbers/double");
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
+    );
+    const common = {
+      validProposal: modelProposal(RECORDED_DOUBLE_PLAN),
+      catalog,
+      policy: benchmarkCase.case.policy,
+      taskInputs: benchmarkCase.case.taskInputs,
+      semanticObligations: benchmarkCase.case.semanticObligations ?? [],
+    };
+    const eligible = unwrap(
+      await prepareSharedRepairTrial({
+        ...common,
+        mutation: { kind: "bypassUnaryNode", nodeId: "doubled" },
+      }),
+    );
+    expect(eligible.eligibility).toBe("eligible");
+    expect(eligible.arms.withoutRepair).toBe(
+      eligible.arms.compilerGuidedRepair,
+    );
+    expect(eligible.diagnostics[0]?.code).toBe("SEMANTIC_OBLIGATION_FAILED");
+
+    const unnecessary = unwrap(
+      await prepareSharedRepairTrial({
+        ...common,
+        mutation: { kind: "redirectRoot", root: "doubled" },
+      }),
+    );
+    expect(unnecessary.eligibility).toBe("repair-unnecessary");
+    expect(unnecessary.diagnostics).toEqual([]);
+
+    expect(
+      applyDeterministicPlanMutation(
+        {},
+        { kind: "redirectRoot", root: "missing" },
+      ).ok,
+    ).toBe(false);
+    expect(
+      applyDeterministicPlanMutation(common.validProposal, {
+        kind: "redirectRoot",
+        root: "missing",
+      }).ok,
+    ).toBe(false);
+    expect(
+      applyDeterministicPlanMutation(common.validProposal, {
+        kind: "bypassUnaryNode",
+        nodeId: "items",
+      }).ok,
+    ).toBe(false);
   });
 
   it("stops after exactly two repair attempts", async () => {
@@ -1305,13 +1615,19 @@ describe("generate, compile, and bounded repair", () => {
         taskInputs: impossible.case.taskInputs,
         catalog: unwrap(resolver(impossible.case.catalogId)),
         policy: impossible.case.policy,
+        semanticObligations: impossible.case.semanticObligations ?? [],
         publicExamples: [],
         adapter: createRecordedModelAdapter(await recordedFixture(2)),
         strategy: strategy("json-schema-with-repair"),
       }),
     );
     expect(abstained.kind).toBe("unplannable");
-    expect(abstained.record.attempts[0]?.abstentionReasons).toHaveLength(1);
+    expect(abstained.record.attempts[0]?.abstentionReasons).toHaveLength(0);
+    expect(abstained.record.attempts[0]?.abstentionWitness).toEqual({
+      kind: "deniedCapability",
+      operation: { id: "quote-tax", version: "1.0.0" },
+      capability: "finance.read",
+    });
 
     const exhausted = createRecordedModelAdapter(await recordedFixture(2));
     const transport = unwrap(
@@ -1322,6 +1638,7 @@ describe("generate, compile, and bounded repair", () => {
       originalTask: "first",
       taskInputs: impossible.case.taskInputs,
       languageManifest: abstained.manifest,
+      semanticObligations: [],
       publicExamples: [],
       constraint: "json-schema",
       structuredOutputTransport: transport,
@@ -1331,6 +1648,7 @@ describe("generate, compile, and bounded repair", () => {
       originalTask: "second",
       taskInputs: impossible.case.taskInputs,
       languageManifest: abstained.manifest,
+      semanticObligations: [],
       publicExamples: [],
       constraint: "json-schema",
       structuredOutputTransport: transport,
@@ -2211,6 +2529,7 @@ describe("behavioral benchmark runner", () => {
         taskInputs: impossible.case.taskInputs,
         catalog,
         policy: impossible.case.policy,
+        semanticObligations: impossible.case.semanticObligations ?? [],
         publicExamples: [],
         adapter: createRecordedModelAdapter(rejectedFixture),
         strategy: strategy("json-schema"),
@@ -2228,6 +2547,7 @@ describe("behavioral benchmark runner", () => {
         taskInputs: impossible.case.taskInputs,
         catalog,
         policy: impossible.case.policy,
+        semanticObligations: impossible.case.semanticObligations ?? [],
         publicExamples: [],
         adapter: createRecordedModelAdapter(await recordedFixture(2)),
         strategy: strategy("json-schema-with-repair"),
@@ -2415,7 +2735,10 @@ describe("behavioral benchmark runner", () => {
     expect(
       compared.find((gate) => gate.id === "repair-materially-improves")
         ?.sampleCount,
-    ).toBe(1);
+    ).toBe(0);
+    expect(
+      compared.find((gate) => gate.id === "repair-materially-improves")?.target,
+    ).toContain("repair unnecessary");
     const unmatched = evaluateResearchGates([repairedRecord]);
     expect(
       unmatched.find((gate) => gate.id === "repair-materially-improves")

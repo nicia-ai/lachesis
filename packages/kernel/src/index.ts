@@ -2,6 +2,7 @@ export { canonicalizeJson, digestValue } from "./canonical.js";
 export type {
   Catalog,
   CatalogDescription,
+  OperationSemantics,
   ReducerLaws,
   SchemaKind,
   SchemaRegistration,
@@ -77,9 +78,14 @@ export type {
   PlanLanguageManifest,
 } from "./manifest.js";
 export { createPlanLanguageManifest, fingerprintCatalog } from "./manifest.js";
-export type { Bound, PlanAnalysis } from "./plan.js";
+export type { Bound, PlanAnalysis, RootProvenance } from "./plan.js";
 export type { Result } from "./result.js";
 export { err, ok } from "./result.js";
+export type {
+  SemanticObligation,
+  SemanticObligationInput,
+} from "./semantic.js";
+export { semanticObligationSchema } from "./semantic.js";
 export type {
   CatalogReference,
   ModelPlanProposal,

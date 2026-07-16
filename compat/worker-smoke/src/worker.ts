@@ -31,6 +31,7 @@ const echoEffect = defineEffect({
   maxTokens: 0,
   maxWallClockMs: 1,
   replayable: true,
+  stateChanging: true,
 });
 
 async function exerciseKernel(): Promise<Response> {
@@ -106,6 +107,10 @@ async function exerciseKernel(): Promise<Response> {
       allowedCapabilities: ["worker.echo"],
       budget: plan.budget,
     },
+    semanticObligations: [
+      { kind: "requiresEffect", effectName: "worker.echo" },
+      { kind: "requiresStateChange" },
+    ],
     publicExamples: [],
     adapter: createRecordedModelAdapter(fixture.value),
     strategy: {
@@ -116,17 +121,25 @@ async function exerciseKernel(): Promise<Response> {
   });
   if (!generated.ok || generated.value.kind !== "compiled")
     return Response.json({ ok: false }, { status: 500 });
-  const compiled = await compilePlanJson(planText, catalog.value, {
-    allowedCapabilities: ["worker.echo"],
-    budget: {
-      maxEffectCalls: 1,
-      maxCollectionItems: 1,
-      maxRecursionDepth: 0,
-      maxTokens: 0,
-      maxWallClockMs: 1,
-      maxParallelism: 1,
+  const compiled = await compilePlanJson(
+    planText,
+    catalog.value,
+    {
+      allowedCapabilities: ["worker.echo"],
+      budget: {
+        maxEffectCalls: 1,
+        maxCollectionItems: 1,
+        maxRecursionDepth: 0,
+        maxTokens: 0,
+        maxWallClockMs: 1,
+        maxParallelism: 1,
+      },
     },
-  });
+    [
+      { kind: "requiresEffect", effectName: "worker.echo" },
+      { kind: "requiresStateChange" },
+    ],
+  );
   if (!compiled.ok) return Response.json({ ok: false }, { status: 500 });
   const summary = inspectExecutablePlan(compiled.value);
   if (summary === undefined)

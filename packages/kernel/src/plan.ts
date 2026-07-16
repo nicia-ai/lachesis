@@ -1,5 +1,6 @@
 import type { RuntimeOperation, RuntimeSchema } from "./catalog.js";
 import type { NodeId, WireNode, WirePlan } from "./wire.js";
+import type { OperationReference } from "./wire.js";
 
 export type Bound =
   | Readonly<{ kind: "known"; value: number }>
@@ -41,4 +42,14 @@ export type PlanAnalysis = Readonly<{
   maximumDeclaredWallClockMs: Bound;
   maximumParallelism: Bound;
   everyRelevantBoundProven: boolean;
+  rootProvenance: RootProvenance;
+}>;
+
+export type RootProvenance = Readonly<{
+  nodeDependencies: ReadonlySet<NodeId>;
+  inputDependencies: ReadonlySet<string>;
+  operationDependencies: ReadonlyMap<string, OperationReference>;
+  effectDependencies: ReadonlySet<string>;
+  stateChangingOperations: ReadonlyMap<string, OperationReference>;
+  dominators: ReadonlySet<NodeId>;
 }>;

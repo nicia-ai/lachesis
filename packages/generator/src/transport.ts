@@ -16,9 +16,10 @@ import { type GenerationOutcome, generationOutcomeSchema } from "./model.js";
 type JsonValue = z.infer<ReturnType<typeof z.json>>;
 
 export const PORTABLE_TRANSPORT_COMPILER_VERSION =
-  "lachesis-portable-transport-schema/2";
+  "lachesis-portable-transport-schema/3";
 export const SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS = Object.freeze([
   "lachesis-portable-transport-schema/1",
+  "lachesis-portable-transport-schema/2",
   PORTABLE_TRANSPORT_COMPILER_VERSION,
 ] as const);
 
@@ -632,11 +633,75 @@ export async function compileStructuredOutputTransport(
           strictObject([
             ["kind", { type: "string", const: "unplannable" }],
             [
-              "reasons",
+              "witness",
               {
-                type: "array",
-                items: { type: "string", minLength: 1 },
-                minItems: 1,
+                anyOf: [
+                  strictObject([
+                    ["kind", { type: "string", const: "missingOperation" }],
+                    [
+                      "operation",
+                      strictObject([
+                        [
+                          "id",
+                          { type: "string", minLength: 1, maxLength: 128 },
+                        ],
+                        [
+                          "version",
+                          { type: "string", minLength: 1, maxLength: 64 },
+                        ],
+                      ]),
+                    ],
+                  ]),
+                  strictObject([
+                    ["kind", { type: "string", const: "deniedCapability" }],
+                    [
+                      "operation",
+                      strictObject([
+                        [
+                          "id",
+                          { type: "string", minLength: 1, maxLength: 128 },
+                        ],
+                        [
+                          "version",
+                          { type: "string", minLength: 1, maxLength: 64 },
+                        ],
+                      ]),
+                    ],
+                    [
+                      "capability",
+                      { type: "string", minLength: 1, maxLength: 128 },
+                    ],
+                  ]),
+                  strictObject([
+                    ["kind", { type: "string", const: "insufficientBudget" }],
+                    [
+                      "operation",
+                      strictObject([
+                        [
+                          "id",
+                          { type: "string", minLength: 1, maxLength: 128 },
+                        ],
+                        [
+                          "version",
+                          { type: "string", minLength: 1, maxLength: 64 },
+                        ],
+                      ]),
+                    ],
+                    [
+                      "resource",
+                      {
+                        type: "string",
+                        enum: [
+                          "maxEffectCalls",
+                          "maxRecursionDepth",
+                          "maxTokens",
+                          "maxWallClockMs",
+                        ],
+                      },
+                    ],
+                    ["requiredMinimum", { type: "integer", minimum: 1 }],
+                  ]),
+                ],
               },
             ],
           ]),

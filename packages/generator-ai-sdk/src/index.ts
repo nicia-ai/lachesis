@@ -19,7 +19,7 @@ import {
 import { z } from "zod";
 
 export const AI_SDK_VERSION = "7.0.28";
-export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/3;ai-sdk/${AI_SDK_VERSION}`;
+export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/4;ai-sdk/${AI_SDK_VERSION}`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -28,7 +28,8 @@ export const M1B_TIMEOUT_MS = 120_000;
 
 export const GENERATION_OUTCOME_PROMPT_CONTRACT = Object.freeze({
   plan: '{ "kind": "plan", "plan": ... }',
-  unplannable: '{ "kind": "unplannable", "reasons": [...] }',
+  unplannable:
+    '{ "kind": "unplannable", "witness": { "kind": "missingOperation" | "deniedCapability" | "insufficientBudget", ... } }',
   rules: Object.freeze([
     "Return raw JSON only.",
     "Do not use Markdown fences.",
@@ -39,14 +40,15 @@ export const GENERATION_OUTCOME_PROMPT_CONTRACT = Object.freeze({
   ]),
 });
 
-export const M1B_PROMPT_PROTOCOL = Object.freeze({
+export const M1C_PROMPT_PROTOCOL = Object.freeze({
   id: "lachesis-plan-generation",
-  version: "4",
+  version: "5",
   outputContract: GENERATION_OUTCOME_PROMPT_CONTRACT,
   repairVisibility: Object.freeze([
     "original task",
     "public task-input declarations",
     "exact language manifest",
+    "public typed semantic obligations",
     "previous proposal",
     "structured compiler diagnostics",
   ]),
@@ -57,6 +59,9 @@ export const M1B_PROMPT_PROTOCOL = Object.freeze({
   internalOutputTransport:
     "Constrained methods use a versioned root-object outcome envelope that normalizes to GenerationOutcome. Anthropic's json tool is an internal structured-output transport only; external tools remain disabled.",
 });
+
+/** Frozen name retained for consumers that report historical M1b identities. */
+export const M1B_PROMPT_PROTOCOL = M1C_PROMPT_PROTOCOL;
 
 export const M1B_PILOT_CAPS: ExperimentCaps = Object.freeze({
   maxCalls: 400,
@@ -212,14 +217,15 @@ function renderRequest(request: ModelRequest): string {
           manifestDigest: request.structuredOutputTransport.manifestDigest,
           schemaDigest: request.structuredOutputTransport.schemaDigest,
           envelope:
-            '{ "outcome": { "kind": "plan", "plan": ... } } or { "outcome": { "kind": "unplannable", "reasons": [...] } }',
+            '{ "outcome": { "kind": "plan", "plan": ... } } or { "outcome": { "kind": "unplannable", "witness": ... } }',
         };
   const shared = {
-    protocol: M1B_PROMPT_PROTOCOL,
+    protocol: M1C_PROMPT_PROTOCOL,
     generationOutcomeContract: GENERATION_OUTCOME_PROMPT_CONTRACT,
     originalTask: request.originalTask,
     taskInputs: request.taskInputs,
     languageManifest: request.languageManifest,
+    semanticObligations: request.semanticObligations,
     structuredOutputTransport: transport,
   };
   return JSON.stringify(

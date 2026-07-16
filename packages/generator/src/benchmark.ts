@@ -1139,6 +1139,7 @@ export async function runBenchmark(
           taskInputs: frozenCase.case.taskInputs,
           catalog: prepared.catalog,
           policy: frozenCase.case.policy,
+          semanticObligations: frozenCase.case.semanticObligations ?? [],
           publicExamples: toPublicExamples(frozenCase.case.publicExamples),
           adapter: meteredAdapter(
             method.adapter,
@@ -1481,15 +1482,33 @@ export function evaluateResearchGates(
     "json-schema",
     "json-schema-with-repair",
   );
+  const sharedRepairPairs = repairPairs.pairs.filter(
+    (pair) =>
+      pair.left.generation.attempts[0]?.proposalCanonical ===
+      pair.right.generation.attempts[0]?.proposalCanonical,
+  );
+  const repairPairsShareInitial =
+    repairPairs.complete &&
+    sharedRepairPairs.length === repairPairs.pairs.length;
+  const eligibleRepairPairs = sharedRepairPairs.filter((pair) => {
+    const initial = pair.left.generation.attempts[0];
+    return (
+      initial !== undefined &&
+      (!initial.compiled ||
+        initial.diagnostics.some(
+          (item) => item.code === "SEMANTIC_OBLIGATION_FAILED",
+        ))
+    );
+  });
   const baseSemantic = estimate(
-    repairPairs.pairs.filter((pair) => semanticallyExecutable(pair.left))
+    eligibleRepairPairs.filter((pair) => semanticallyExecutable(pair.left))
       .length,
-    repairPairs.pairs.length,
+    eligibleRepairPairs.length,
   );
   const repairedSemantic = estimate(
-    repairPairs.pairs.filter((pair) => semanticallyExecutable(pair.right))
+    eligibleRepairPairs.filter((pair) => semanticallyExecutable(pair.right))
       .length,
-    repairPairs.pairs.length,
+    eligibleRepairPairs.length,
   );
   const repairUplift =
     baseSemantic.rate === null || repairedSemantic.rate === null
@@ -1576,15 +1595,18 @@ export function evaluateResearchGates(
     {
       id: "repair-materially-improves",
       status:
-        !repairPairs.complete || repairImproved === null
+        !repairPairsShareInitial || repairImproved === null
           ? "notEvaluated"
           : repairImproved
             ? "pass"
             : "fail",
-      actual: repairPairs.complete ? repairUplift : null,
-      target: ">=10 percentage points or halves failure rate",
-      sampleCount: repairPairs.pairs.length,
-      confidenceInterval: repairPairs.complete
+      actual: repairPairsShareInitial ? repairUplift : null,
+      target:
+        repairPairsShareInitial && eligibleRepairPairs.length === 0
+          ? "repair unnecessary: no shared initial proposal failed compilation or a semantic obligation"
+          : ">=10 percentage points or halves failure rate among eligible shared proposals",
+      sampleCount: eligibleRepairPairs.length,
+      confidenceInterval: repairPairsShareInitial
         ? differenceInterval(repairedSemantic, baseSemantic)
         : null,
     },

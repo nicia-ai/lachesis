@@ -86,6 +86,30 @@ export function normalizePlan(
     return valid;
   }
   for (const nodeId of nodes.keys()) visit(nodeId);
+  if (diagnostics.length === 0) {
+    const contributing = new Set<NodeId>();
+    function markContributing(nodeId: NodeId): void {
+      if (contributing.has(nodeId)) return;
+      contributing.add(nodeId);
+      const node = nodes.get(nodeId);
+      if (node === undefined) return;
+      for (const dependency of nodeDependencies(node))
+        markContributing(dependency);
+    }
+    markContributing(plan.root);
+    for (const nodeId of nodes.keys()) {
+      if (contributing.has(nodeId)) continue;
+      diagnostics.push(
+        diagnostic(
+          "DEAD_NODE",
+          `Node ${nodeId} does not contribute to root ${plan.root}.`,
+          { nodeId },
+          [],
+          { repair: { nodeId } },
+        ),
+      );
+    }
+  }
   return diagnostics.length === 0
     ? ok({ wire: plan, nodes, topologicalOrder: order })
     : err(diagnostics);

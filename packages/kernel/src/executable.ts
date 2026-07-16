@@ -41,6 +41,18 @@ function cloneAnalysis(analysis: PlanAnalysis): PlanAnalysis {
     capabilitiesRequired: new Set(analysis.capabilitiesRequired),
     cacheableNodes: new Set(analysis.cacheableNodes),
     replayableNodes: new Set(analysis.replayableNodes),
+    rootProvenance: {
+      nodeDependencies: new Set(analysis.rootProvenance.nodeDependencies),
+      inputDependencies: new Set(analysis.rootProvenance.inputDependencies),
+      operationDependencies: new Map(
+        analysis.rootProvenance.operationDependencies,
+      ),
+      effectDependencies: new Set(analysis.rootProvenance.effectDependencies),
+      stateChangingOperations: new Map(
+        analysis.rootProvenance.stateChangingOperations,
+      ),
+      dominators: new Set(analysis.rootProvenance.dominators),
+    },
   };
 }
 

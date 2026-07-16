@@ -244,6 +244,192 @@ describe("unskippable compilation", () => {
     }
   });
 
+  it("rejects nodes that do not contribute to the root", async () => {
+    const result = await compilePlanJson(
+      planText(
+        [
+          {
+            id: "root",
+            op: "constant",
+            schema: { id: "core/boolean", version: "1" },
+            value: true,
+          },
+          {
+            id: "dead",
+            op: "constant",
+            schema: { id: "core/boolean", version: "1" },
+            value: false,
+          },
+        ],
+        "root",
+      ),
+      createExampleCatalog(),
+      examplePolicy,
+    );
+    expect(firstCode(result)).toBe("DEAD_NODE");
+    const errors = result.ok ? [] : result.error;
+    expect(errors[0]?.location.nodeId).toBe("dead");
+    expect(errors[0]?.repair?.nodeId).toBe("dead");
+  });
+
+  it("tracks root provenance and enforces typed semantic obligations", async () => {
+    const text = planText(
+      [
+        {
+          id: "state",
+          op: "input",
+          inputKey: "state",
+          schema: { id: "example/countdown", version: "1" },
+        },
+        {
+          id: "fixed",
+          op: "boundedFix",
+          seed: "state",
+          step: { id: "example/countdown-step", version: "1" },
+          measure: { id: "example/countdown-measure", version: "1" },
+          maxIterations: 4,
+        },
+      ],
+      "fixed",
+    );
+    const compiled = await compilePlanJson(
+      text,
+      createExampleCatalog(),
+      examplePolicy,
+      [
+        { kind: "rootDependsOnInput", inputKey: "state" },
+        {
+          kind: "requiresOperation",
+          operation: { id: "example/countdown-step", version: "1" },
+        },
+        {
+          kind: "operationDominatesRoot",
+          operation: { id: "example/countdown-step", version: "1" },
+        },
+        { kind: "requiresStateChange" },
+      ],
+    );
+    expect(compiled.ok).toBe(true);
+    if (!compiled.ok) throw new Error(compiled.error[0]?.message);
+    const summary = inspectExecutablePlan(compiled.value);
+    expect(summary?.analysis.rootProvenance.inputDependencies).toEqual(
+      new Set(["state"]),
+    );
+    expect(
+      summary?.analysis.rootProvenance.operationDependencies.has(
+        "example/countdown-step@1",
+      ),
+    ).toBe(true);
+    expect(summary?.analysis.rootProvenance.dominators).toEqual(
+      new Set(["state", "fixed"]),
+    );
+  });
+
+  it("rejects an operation that occurs on only one path to the root", async () => {
+    const result = await compilePlanJson(
+      planText(
+        [
+          {
+            id: "condition",
+            op: "constant",
+            schema: { id: "core/boolean", version: "1" },
+            value: true,
+          },
+          {
+            id: "fragment",
+            op: "constant",
+            schema: { id: "example/fragment", version: "1" },
+            value: { id: "f", text: "text" },
+          },
+          {
+            id: "transformed",
+            op: "invoke",
+            source: "fragment",
+            function: { id: "example/fragment-to-claim", version: "1" },
+          },
+          {
+            id: "fallback",
+            op: "constant",
+            schema: { id: "example/claim", version: "1" },
+            value: { id: "f", text: "text" },
+          },
+          {
+            id: "selected",
+            op: "select",
+            condition: "condition",
+            whenTrue: "transformed",
+            whenFalse: "fallback",
+          },
+        ],
+        "selected",
+      ),
+      createExampleCatalog(),
+      examplePolicy,
+      [
+        {
+          kind: "operationDominatesRoot",
+          operation: { id: "example/fragment-to-claim", version: "1" },
+        },
+      ],
+    );
+    expect(firstCode(result)).toBe("SEMANTIC_OBLIGATION_FAILED");
+  });
+
+  it("rejects structurally valid checkpoint chains when state change is required", async () => {
+    const result = await compilePlanJson(
+      planText(
+        [
+          {
+            id: "state",
+            op: "input",
+            inputKey: "state",
+            schema: { id: "example/countdown", version: "1" },
+          },
+          {
+            id: "one",
+            op: "checkpoint",
+            source: "state",
+            label: "one",
+          },
+          {
+            id: "two",
+            op: "checkpoint",
+            source: "one",
+            label: "two",
+          },
+        ],
+        "two",
+      ),
+      createExampleCatalog(),
+      examplePolicy,
+      [
+        { kind: "rootDependsOnInput", inputKey: "state" },
+        { kind: "requiresStateChange" },
+      ],
+    );
+    expect(firstCode(result)).toBe("SEMANTIC_OBLIGATION_FAILED");
+  });
+
+  it("rejects a constant root that ignores a required public input", async () => {
+    const result = await compilePlanJson(
+      planText(
+        [
+          {
+            id: "reset",
+            op: "constant",
+            schema: { id: "example/countdown", version: "1" },
+            value: { remaining: 0 },
+          },
+        ],
+        "reset",
+      ),
+      createExampleCatalog(),
+      examplePolicy,
+      [{ kind: "rootDependsOnInput", inputKey: "state" }],
+    );
+    expect(firstCode(result)).toBe("SEMANTIC_OBLIGATION_FAILED");
+  });
+
   it("rejects catalog, schema, operation, kind, type, and branch mismatches", async () => {
     const cases: ReadonlyArray<readonly [string, DiagnosticCode]> = [
       [
@@ -364,7 +550,7 @@ describe("unskippable compilation", () => {
     expect(firstCode(result)).toBe("RUNTIME_SCHEMA_VIOLATION");
   });
 
-  it("checks every node form and binds analysis into an opaque summary", async () => {
+  it("binds reachable plan analysis into an opaque summary", async () => {
     const text = planText(
       [
         {
@@ -373,18 +559,6 @@ describe("unskippable compilation", () => {
           inputKey: "fragments",
           schema: { id: "example/fragments", version: "1" },
           maxItems: 2,
-        },
-        {
-          id: "fragment",
-          op: "constant",
-          schema: { id: "example/fragment", version: "1" },
-          value: { id: "f", text: "claim" },
-        },
-        {
-          id: "invoked",
-          op: "invoke",
-          source: "fragment",
-          function: { id: "example/fragment-to-claim", version: "1" },
         },
         {
           id: "mapped",
@@ -435,20 +609,6 @@ describe("unskippable compilation", () => {
           op: "effect",
           source: "cp",
           effect: { id: "example/synthesize", version: "1" },
-        },
-        {
-          id: "seed",
-          op: "constant",
-          schema: { id: "example/countdown", version: "1" },
-          value: { remaining: 2 },
-        },
-        {
-          id: "fix",
-          op: "boundedFix",
-          seed: "seed",
-          step: { id: "example/countdown-step", version: "1" },
-          measure: { id: "example/countdown-measure", version: "1" },
-          maxIterations: 2,
         },
       ],
       "effect",
@@ -1068,18 +1228,6 @@ describe("request-bound replay and execution", () => {
           whenFalse: "folded",
         },
         { id: "cp", op: "checkpoint", source: "selected", label: "done" },
-        {
-          id: "fragment",
-          op: "constant",
-          schema: { id: "example/fragment", version: "1" },
-          value: { id: "single", text: "invoked" },
-        },
-        {
-          id: "invoked",
-          op: "invoke",
-          source: "fragment",
-          function: { id: "example/fragment-to-claim", version: "1" },
-        },
       ],
       "cp",
     );

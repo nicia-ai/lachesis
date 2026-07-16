@@ -15,6 +15,11 @@ import {
 import { normalizePlan } from "./normalize.js";
 import type { PlanAnalysis } from "./plan.js";
 import { err, ok, type Result } from "./result.js";
+import {
+  enforceSemanticObligations,
+  type SemanticObligationInput,
+  semanticObligationSchema,
+} from "./semantic.js";
 import { planBudgetSchema } from "./wire.js";
 
 const compilationPolicySchema = z
@@ -96,6 +101,7 @@ export async function compilePlanJson(
   text: string,
   catalog: Catalog,
   policy: CompilationPolicy,
+  semanticObligations: ReadonlyArray<SemanticObligationInput> = [],
 ): Promise<Result<ExecutablePlan, Diagnostics>> {
   const parsedPolicy = compilationPolicySchema.safeParse(policy);
   if (!parsedPolicy.success) {
@@ -123,6 +129,30 @@ export async function compilePlanJson(
   if (!checked.ok) return checked;
   const analysis = analyzePlan(checked.value);
   if (!analysis.ok) return analysis;
+  const parsedObligations = z
+    .array(semanticObligationSchema)
+    .readonly()
+    .safeParse(semanticObligations);
+  if (!parsedObligations.success)
+    return err(
+      parsedObligations.error.issues.map((issue) =>
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          `Invalid semantic obligation: ${issue.message}`,
+          {
+            path: issue.path.map((part) =>
+              typeof part === "symbol" ? String(part) : part,
+            ),
+          },
+        ),
+      ),
+    );
+  const semanticDiagnostics = enforceSemanticObligations(
+    checked.value,
+    analysis.value,
+    parsedObligations.data,
+  );
+  if (semanticDiagnostics.length > 0) return err(semanticDiagnostics);
   const requirementDiagnostics = enforceRequirements(
     analysis.value,
     parsedPolicy.data,
