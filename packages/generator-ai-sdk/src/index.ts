@@ -1,10 +1,14 @@
 import {
   type AdapterDispatchEvidence,
   calculateCostUsdMicros,
+  type CodeModeModelAdapter,
+  type CodeModeModelRequest,
+  codeModeOutcomeSchema,
   createPricingSnapshot,
   type ExperimentCaps,
   type GenerationConstraint,
   type InferenceSettings,
+  M2_CODEMODE_PROMPT_PROTOCOL,
   type ModelAdapter,
   type ModelAdapterFailure,
   type ModelIdentity,
@@ -20,6 +24,7 @@ import { z } from "zod";
 
 export const AI_SDK_VERSION = "7.0.28";
 export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/4;ai-sdk/${AI_SDK_VERSION}`;
+export const M2_CODEMODE_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};restricted-typescript/1`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -240,6 +245,39 @@ function renderRequest(request: ModelRequest): string {
           ...shared,
           turn: "repair",
           previousProposal: request.previousProposal,
+          compilerDiagnostics: request.diagnostics,
+        },
+  );
+}
+
+function renderCodeModeRequest(request: CodeModeModelRequest): string {
+  const transport = {
+    formatVersion: request.structuredOutputTransport?.formatVersion ?? null,
+    compilerVersion: request.structuredOutputTransport?.compilerVersion ?? null,
+    manifestDigest: request.structuredOutputTransport?.manifestDigest ?? null,
+    schemaDigest: request.structuredOutputTransport?.schemaDigest ?? null,
+    envelope:
+      '{ "outcome": { "kind": "program", "source": "..." } } or { "outcome": { "kind": "unplannable", "witness": ... } }',
+  };
+  const shared = {
+    protocol: M2_CODEMODE_PROMPT_PROTOCOL,
+    originalTask: request.originalTask,
+    taskInputs: request.taskInputs,
+    languageManifest: request.languageManifest,
+    semanticObligations: request.semanticObligations,
+    structuredOutputTransport: transport,
+  };
+  return JSON.stringify(
+    request.kind === "initial"
+      ? {
+          ...shared,
+          turn: "initial",
+          constraint: request.constraint,
+        }
+      : {
+          ...shared,
+          turn: "repair",
+          previousProgram: request.previousProgram,
           compilerDiagnostics: request.diagnostics,
         },
   );
@@ -475,6 +513,64 @@ function preflightStructuredOutput(
 export function createAiSdkModelAdapter(
   input: AiSdkModelAdapterInput,
 ): ModelAdapter {
+  return createAiSdkAdapter(
+    input,
+    renderRequest,
+    normalizeStructuredOutputEnvelope,
+    "generation_outcome",
+    "A Lachesis plan proposal or principled abstention.",
+  );
+}
+
+type AiSdkRequest = Readonly<{
+  structuredOutputTransport: StructuredOutputTransport | null;
+}>;
+
+type AiSdkAdapter<Request extends AiSdkRequest> = Readonly<{
+  identity: ModelIdentity;
+  inference: InferenceSettings;
+  pricingEntryId: string;
+  preflightStructuredOutput: (
+    transport: StructuredOutputTransport,
+  ) => Promise<AdapterPreflightResult>;
+  generate: (
+    request: Request,
+  ) => Promise<
+    ReturnType<ModelAdapter["generate"]> extends Promise<infer Output>
+      ? Output
+      : never
+  >;
+}>;
+
+type StructuredNormalizerResult =
+  | Readonly<{ ok: true; value: unknown }>
+  | Readonly<{ ok: false; error: Readonly<{ message: string }> }>;
+
+type StructuredNormalizer = (value: unknown) => StructuredNormalizerResult;
+
+function normalizeCodeModeEnvelope(value: unknown): StructuredNormalizerResult {
+  const envelope = z
+    .strictObject({ outcome: codeModeOutcomeSchema })
+    .safeParse(value);
+  if (envelope.success) return { ok: true, value: envelope.data.outcome };
+  const direct = codeModeOutcomeSchema.safeParse(value);
+  return direct.success
+    ? { ok: true, value: direct.data }
+    : {
+        ok: false,
+        error: {
+          message: `Invalid CodeMode outcome: ${envelope.error.issues.map((issue) => issue.message).join("; ")}`,
+        },
+      };
+}
+
+function createAiSdkAdapter<Request extends AiSdkRequest>(
+  input: AiSdkModelAdapterInput,
+  render: (request: Request) => string,
+  normalize: StructuredNormalizer,
+  outputName: string,
+  outputDescription: string,
+): AiSdkAdapter<Request> {
   return {
     identity: input.identity,
     inference: input.inference,
@@ -492,19 +588,18 @@ export function createAiSdkModelAdapter(
         input.timeoutMs ?? M1B_TIMEOUT_MS,
       );
       try {
-        const prompt = renderRequest(request);
+        const prompt = render(request);
         const sdk = input.runtime ?? (await loadAiSdk());
         const transport = request.structuredOutputTransport;
         const structured = transport !== null;
         const output =
           transport !== null
             ? sdk.outputObject({
-                name: "generation_outcome",
-                description:
-                  "A Lachesis plan proposal or principled abstention.",
+                name: outputName,
+                description: outputDescription,
                 schema: sdk.jsonSchema(transport.jsonSchema, {
                   validate: (value: unknown) => {
-                    const normalized = normalizeStructuredOutputEnvelope(value);
+                    const normalized = normalize(value);
                     return normalized.ok
                       ? { success: true, value: normalized.value }
                       : {
@@ -621,6 +716,18 @@ export function createAiSdkModelAdapter(
   };
 }
 
+export function createAiSdkCodeModeAdapter(
+  input: AiSdkModelAdapterInput,
+): CodeModeModelAdapter {
+  return createAiSdkAdapter(
+    input,
+    renderCodeModeRequest,
+    normalizeCodeModeEnvelope,
+    "codemode_outcome",
+    "A restricted TypeScript program or typed infeasibility witness.",
+  );
+}
+
 function inference(
   constraint: GenerationConstraint,
   reasoningSettings: InferenceSettings["reasoningSettings"],
@@ -691,6 +798,40 @@ export function createOpenAiPlanAdapter(
   });
 }
 
+export function createOpenAiCodeModeAdapter(
+  input: OpenAiAdapterInput,
+): CodeModeModelAdapter {
+  return createAiSdkCodeModeAdapter({
+    identity: {
+      provider: "openai",
+      model: M1B_OPENAI_MODEL,
+      adapterVersion: M2_CODEMODE_ADAPTER_VERSION,
+    },
+    inference: inference(
+      input.constraint,
+      { mode: "reasoning", effort: "low" },
+      "openai-responses-portable-json-schema",
+    ),
+    pricing: OPENAI_PRICING,
+    loadModel: (observer) =>
+      providerModel(
+        ["@ai-sdk", "openai"].join("/"),
+        "createOpenAI",
+        providerSettings(input.provider),
+        M1B_OPENAI_MODEL,
+        observer,
+        "responses",
+      ),
+    providerOptions: {
+      openai: {
+        reasoningEffort: "low",
+        store: false,
+        serviceTier: "default",
+      },
+    },
+  });
+}
+
 type AdaptiveThinkingAcknowledgement = Readonly<{
   acknowledgeAdaptiveThinking: true;
   constraint: GenerationConstraint;
@@ -735,6 +876,60 @@ export function createAnthropicPlanAdapter(
         structuredOutputMode: "jsonTool",
       },
     },
+  });
+}
+
+export function createAnthropicCodeModeAdapter(
+  input: AnthropicAdapterInput,
+): CodeModeModelAdapter {
+  return createAiSdkCodeModeAdapter({
+    identity: {
+      provider: "anthropic",
+      model: M1B_ANTHROPIC_MODEL,
+      adapterVersion: M2_CODEMODE_ADAPTER_VERSION,
+    },
+    inference: inference(
+      input.constraint,
+      { mode: "adaptive", effort: "low" },
+      "anthropic-json-tool-portable-json-schema",
+    ),
+    pricing: ANTHROPIC_DIRECT_PRICING,
+    loadModel: (observer) =>
+      providerModel(
+        ["@ai-sdk", "anthropic"].join("/"),
+        "createAnthropic",
+        providerSettings(input.provider),
+        M1B_ANTHROPIC_MODEL,
+        observer,
+      ),
+    providerOptions: {
+      anthropic: {
+        thinking: { type: "adaptive" },
+        effort: "low",
+        structuredOutputMode: "jsonTool",
+      },
+    },
+  });
+}
+
+export type M2CodeModePrimaryAdapters = Readonly<{
+  openai: CodeModeModelAdapter;
+  anthropic: CodeModeModelAdapter;
+}>;
+
+export function createM2CodeModePrimaryAdapters(
+  input: M1bPrimaryAdaptersInput,
+): M2CodeModePrimaryAdapters {
+  return Object.freeze({
+    openai: createOpenAiCodeModeAdapter({
+      constraint: input.constraint,
+      ...(input.openai === undefined ? {} : { provider: input.openai }),
+    }),
+    anthropic: createAnthropicCodeModeAdapter({
+      constraint: input.constraint,
+      acknowledgeAdaptiveThinking: true,
+      ...(input.anthropic === undefined ? {} : { provider: input.anthropic }),
+    }),
   });
 }
 

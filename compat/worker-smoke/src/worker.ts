@@ -8,7 +8,9 @@ import {
   inspectExecutablePlan,
 } from "@nicia-ai/lachesis";
 import {
+  compileCodeMode,
   createRecordedModelAdapter,
+  executeCodeMode,
   freezeRecordedModelFixture,
   generatePlan,
 } from "@nicia-ai/lachesis-generator";
@@ -157,10 +159,45 @@ async function exerciseKernel(): Promise<Response> {
     clock: { now: () => "2026-01-01T00:00:00.000Z" },
     runIdProvider: { next: () => "worker-smoke" },
   });
+  const codeMode = await compileCodeMode({
+    source: `export default async function main(input, ops) {
+      const echoed = await ops.effect("worker/echo@1", input.message);
+      return echoed;
+    }`,
+    catalog: catalog.value,
+    policy: {
+      allowedCapabilities: ["worker.echo"],
+      budget: plan.budget,
+    },
+    taskInputs: [
+      {
+        name: "message",
+        schema: { id: "worker/text", version: "1" },
+        declaredBounds: [],
+      },
+    ],
+    semanticObligations: [
+      { kind: "requiresEffect", effectName: "worker.echo" },
+      { kind: "requiresStateChange" },
+    ],
+  });
+  if (!codeMode.ok) return Response.json({ ok: false }, { status: 500 });
+  const codeModeRun = await executeCodeMode(codeMode.value, {
+    inputs: new Map([["message", "portable"]]),
+    effectHandler: () =>
+      Promise.resolve({
+        ok: true,
+        value: {
+          value: "portable",
+          usage: { tokens: 0, wallClockMs: 1 },
+        },
+      }),
+  });
   return Response.json({
-    ok: executed.ok,
+    ok: executed.ok && codeModeRun.ok,
     planHash: summary.planHash,
     canonicalLength: summary.canonicalPlan.length,
+    codeModeOutput: codeModeRun.ok ? codeModeRun.value.output : null,
   });
 }
 

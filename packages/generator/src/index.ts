@@ -43,6 +43,41 @@ export {
   toPublicExamples,
 } from "./case.js";
 export {
+  CODEMODE_PROTOCOL,
+  type CodeModeArtifact,
+  type CodeModeArtifactSummary,
+  type CodeModeCapabilityMethod,
+  type CodeModeEffectHandler,
+  type CodeModeEffectRequest,
+  type CodeModeEffectResult,
+  type CodeModeExecutionFailure,
+  type CodeModeExecutionResult,
+  type CodeModeRuntimeUsage,
+  type CodeModeStaticAnalysis,
+  compileCodeMode,
+  type CompileCodeModeInput,
+  executeCodeMode,
+  type ExecuteCodeModeOptions,
+  inspectCodeModeArtifact,
+  validateCodeModeSourceSyntax,
+} from "./codemode.js";
+export {
+  type CodeModeAttemptRecord,
+  type CodeModeGenerationRecord,
+  type CodeModeGenerationSession,
+  type CodeModeGenerationStrategy,
+  type CodeModeInitialRequest,
+  type CodeModeModelAdapter,
+  type CodeModeModelRequest,
+  type CodeModeOutcome,
+  codeModeOutcomeSchema,
+  type CodeModeRepairRequest,
+  compileCodeModeStructuredOutputTransport,
+  generateCodeMode,
+  type GenerateCodeModeInput,
+  M2_CODEMODE_PROMPT_PROTOCOL,
+} from "./codemode-model.js";
+export {
   createM1aCatalogResolver,
   loadM1aCorpus,
   M1A_CATALOG_IDS,
@@ -75,6 +110,30 @@ export {
   M1C_CORPUS_PROTOCOL,
   type M1cPreregisteredCorpus,
 } from "./m1c-corpus.js";
+export {
+  createInMemoryM2CodeModeStore,
+  createM2PairedExperimentDigest,
+  M2_COMPARISON_PROTOCOL,
+  type M2CodeModeMethod,
+  type M2CodeModeRecord,
+  type M2CodeModeRunInput,
+  type M2CodeModeRunResult,
+  type M2CodeModeScore,
+  type M2CodeModeStore,
+  type M2MatchedRecord,
+  type M2PairedRunInput,
+  type M2PairedRunResult,
+  type M2ResourceComparison,
+  runM2CodeModeBenchmark,
+  runM2PairedBenchmark,
+} from "./m2-benchmark.js";
+export {
+  assertM2CorpusNamespaceDisjoint,
+  createM2CatalogResolver,
+  loadM2PreregisteredCorpus,
+  M2_CORPUS_PROTOCOL,
+  type M2PreregisteredCorpus,
+} from "./m2-corpus.js";
 export {
   type AdapterDispatchEvidence,
   DEFAULT_INFERENCE_SETTINGS,

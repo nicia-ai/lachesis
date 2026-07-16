@@ -2,8 +2,12 @@ export { canonicalizeJson, digestValue } from "./canonical.js";
 export type {
   Catalog,
   CatalogDescription,
+  CatalogState,
   OperationSemantics,
   ReducerLaws,
+  RuntimeEffect,
+  RuntimeOperation,
+  RuntimeSchema,
   SchemaKind,
   SchemaRegistration,
 } from "./catalog.js";
@@ -18,6 +22,7 @@ export {
   defineReducer,
   defineSchema,
   describeCatalog,
+  readCatalog,
 } from "./catalog.js";
 export { compilePlanJson } from "./compiler.js";
 export type {

@@ -11,6 +11,7 @@ import {
   parseJson,
   type PlanLanguageManifest,
   type Result,
+  type RuntimeUsage,
   semanticObligationSchema,
   type WireNode,
   wirePlanSchema,
@@ -79,6 +80,33 @@ export const benchmarkScoreSchema = z
     budgetViolation: z.boolean(),
     hiddenEvaluations: z.array(hiddenScoreSchema).readonly(),
     topologyDigest: z.string().nullable(),
+    runtimeMetrics: z
+      .strictObject({
+        staticallyAnalyzable: z.boolean(),
+        predicted: z
+          .strictObject({
+            effectCalls: z.number().int().nonnegative(),
+            tokens: z.number().int().nonnegative(),
+            wallClockMs: z.number().int().nonnegative(),
+            recursionDepth: z.number().int().nonnegative(),
+            maximumParallelism: z.number().int().nonnegative(),
+          })
+          .readonly(),
+        actual: z
+          .strictObject({
+            effectCalls: z.number().int().nonnegative(),
+            tokens: z.number().int().nonnegative(),
+            wallClockMs: z.number().int().nonnegative(),
+            recursionDepth: z.number().int().nonnegative(),
+            maximumParallelism: z.number().int().nonnegative(),
+          })
+          .readonly(),
+        actualWithinPrediction: z.boolean(),
+        runtimeExceptions: z.number().int().nonnegative(),
+        timeouts: z.number().int().nonnegative(),
+      })
+      .readonly()
+      .optional(),
   })
   .readonly();
 
@@ -365,10 +393,24 @@ function deterministicHandler(evaluation: HiddenEvaluation): EffectHandler {
   };
 }
 
+type EvaluatedHidden = Readonly<{
+  score: HiddenEvaluationScore;
+  usage: RuntimeUsage;
+  failed: boolean;
+}>;
+
+const ZERO_RUNTIME_USAGE: RuntimeUsage = Object.freeze({
+  effectCalls: 0,
+  tokens: 0,
+  wallClockMs: 0,
+  recursionDepth: 0,
+  maximumParallelism: 0,
+});
+
 async function evaluateHidden(
   session: Extract<GenerationSession, Readonly<{ kind: "compiled" }>>,
   evaluation: HiddenEvaluation,
-): Promise<HiddenEvaluationScore> {
+): Promise<EvaluatedHidden> {
   let tick = 0;
   const executed = await executePlan(session.executablePlan, {
     inputs: new Map(Object.entries(evaluation.inputs)),
@@ -378,17 +420,49 @@ async function evaluateHidden(
   });
   if (!executed.ok) {
     return {
-      id: evaluation.id,
-      success: false,
-      diagnostics: executed.error.diagnostics.map((item) => item.code),
+      score: {
+        id: evaluation.id,
+        success: false,
+        diagnostics: executed.error.diagnostics.map((item) => item.code),
+      },
+      usage: executed.error.trace?.finalUsage ?? ZERO_RUNTIME_USAGE,
+      failed: true,
     };
   }
   const expected = canonicalizeJson(evaluation.expectedOutput);
   const actual = canonicalizeJson(executed.value.output);
   return {
-    id: evaluation.id,
-    success: expected.ok && actual.ok && expected.value === actual.value,
-    diagnostics: expected.ok && actual.ok ? [] : ["RUNTIME_SCHEMA_VIOLATION"],
+    score: {
+      id: evaluation.id,
+      success: expected.ok && actual.ok && expected.value === actual.value,
+      diagnostics: expected.ok && actual.ok ? [] : ["RUNTIME_SCHEMA_VIOLATION"],
+    },
+    usage: executed.value.trace.finalUsage,
+    failed: false,
+  };
+}
+
+function knownBound(
+  bound:
+    | Readonly<{ kind: "known"; value: number }>
+    | Readonly<{ kind: "unknown"; reason: string }>,
+): number {
+  return bound.kind === "known" ? bound.value : 0;
+}
+
+function addRuntimeUsage(
+  left: RuntimeUsage,
+  right: RuntimeUsage,
+): RuntimeUsage {
+  return {
+    effectCalls: left.effectCalls + right.effectCalls,
+    tokens: left.tokens + right.tokens,
+    wallClockMs: left.wallClockMs + right.wallClockMs,
+    recursionDepth: Math.max(left.recursionDepth, right.recursionDepth),
+    maximumParallelism: Math.max(
+      left.maximumParallelism,
+      right.maximumParallelism,
+    ),
   };
 }
 
@@ -466,8 +540,23 @@ export async function scoreGeneration(
     };
   }
   const hidden: Array<HiddenEvaluationScore> = [];
-  for (const evaluation of benchmarkCase.hiddenEvaluations)
-    hidden.push(await evaluateHidden(session, evaluation));
+  let actualUsage = ZERO_RUNTIME_USAGE;
+  let runtimeExceptions = 0;
+  for (const evaluation of benchmarkCase.hiddenEvaluations) {
+    const evaluated = await evaluateHidden(session, evaluation);
+    hidden.push(evaluated.score);
+    actualUsage = addRuntimeUsage(actualUsage, evaluated.usage);
+    if (evaluated.failed) runtimeExceptions += 1;
+  }
+  const evaluations = benchmarkCase.hiddenEvaluations.length;
+  const predicted = {
+    effectCalls: knownBound(summary.analysis.maximumEffectCalls) * evaluations,
+    tokens: knownBound(summary.analysis.maximumDeclaredTokens) * evaluations,
+    wallClockMs:
+      knownBound(summary.analysis.maximumDeclaredWallClockMs) * evaluations,
+    recursionDepth: knownBound(summary.analysis.maximumRecursionDepth),
+    maximumParallelism: knownBound(summary.analysis.maximumParallelism),
+  };
   return {
     ok: true,
     value: {
@@ -483,6 +572,19 @@ export async function scoreGeneration(
       budgetViolation: flags.budgetViolation,
       hiddenEvaluations: hidden,
       topologyDigest: topology.value,
+      runtimeMetrics: {
+        staticallyAnalyzable: summary.analysis.everyRelevantBoundProven,
+        predicted,
+        actual: actualUsage,
+        actualWithinPrediction:
+          actualUsage.effectCalls <= predicted.effectCalls &&
+          actualUsage.tokens <= predicted.tokens &&
+          actualUsage.wallClockMs <= predicted.wallClockMs &&
+          actualUsage.recursionDepth <= predicted.recursionDepth &&
+          actualUsage.maximumParallelism <= predicted.maximumParallelism,
+        runtimeExceptions,
+        timeouts: 0,
+      },
     },
   };
 }

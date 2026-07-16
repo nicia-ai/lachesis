@@ -108,6 +108,12 @@ importers:
 
   packages/generator:
     dependencies:
+      "@babel/parser":
+        specifier: 7.29.7
+        version: 7.29.7
+      "@babel/types":
+        specifier: 7.29.7
+        version: 7.29.7
       "@nicia-ai/lachesis":
         specifier: workspace:*
         version: link:../kernel

@@ -5,8 +5,10 @@ import {
   type Result,
 } from "@nicia-ai/lachesis";
 import {
+  compileCodeModeStructuredOutputTransport,
   compileStructuredOutputTransport,
   createM1aCatalogResolver,
+  generateCodeMode,
   generatePlan,
   type GenerationStrategy,
   loadM1aCorpus,
@@ -21,9 +23,11 @@ import {
   AI_SDK_ADAPTER_VERSION,
   type AiSdkRuntime,
   createAiSdkModelAdapter,
+  createAnthropicCodeModeAdapter,
   createBedrockAnthropicPlanAdapter,
   createM1bPricingSnapshot,
   createM1bPrimaryAdapters,
+  createOpenAiCodeModeAdapter,
   M1B_ANTHROPIC_MODEL,
   M1B_BEDROCK_ANTHROPIC_MODEL,
   M1B_OPENAI_MODEL,
@@ -633,6 +637,101 @@ describe("AI SDK provider adapters", () => {
         "select",
       ].toSorted(),
     );
+  });
+
+  it("serializes the restricted CodeMode schema through both real provider routes without network", async () => {
+    const openaiRequests: Array<CapturedFetchRequest> = [];
+    const anthropicRequests: Array<CapturedFetchRequest> = [];
+    const { benchmarkCase, catalog } = await generationInput();
+    const manifest = unwrap(
+      await createPlanLanguageManifest(catalog, benchmarkCase.case.policy),
+    );
+    const obligations = [
+      { kind: "rootDependsOnInput" as const, inputKey: "items" },
+      {
+        kind: "requiresOperation" as const,
+        operation: { id: "double", version: "1.0.0" },
+      },
+    ];
+    const transport = unwrap(
+      await compileCodeModeStructuredOutputTransport(manifest, obligations),
+    );
+    const openai = createOpenAiCodeModeAdapter({
+      constraint: "json-schema",
+      provider: {
+        apiKey: "offline-dummy",
+        fetch: interceptedFetch(openaiRequests),
+      },
+    });
+    const anthropic = createAnthropicCodeModeAdapter({
+      constraint: "json-schema",
+      acknowledgeAdaptiveThinking: true,
+      provider: {
+        apiKey: "offline-dummy",
+        fetch: interceptedFetch(anthropicRequests),
+      },
+    });
+    const common = {
+      task: "Double every input item.",
+      catalog,
+      policy: benchmarkCase.case.policy,
+      taskInputs: benchmarkCase.case.taskInputs,
+      semanticObligations: obligations,
+      strategy: {
+        constraint: "json-schema" as const,
+        repair: "none" as const,
+      },
+      structuredOutputTransport: transport,
+    };
+    expect(
+      unwrap(await generateCodeMode({ ...common, adapter: openai })).kind,
+    ).toBe("adapter-failure");
+    expect(
+      unwrap(await generateCodeMode({ ...common, adapter: anthropic })).kind,
+    ).toBe("adapter-failure");
+    expect(openaiRequests).toHaveLength(1);
+    expect(anthropicRequests).toHaveLength(1);
+
+    const openaiBody = z
+      .looseObject({
+        model: z.string(),
+        reasoning: z.looseObject({ effort: z.string() }),
+        text: z.looseObject({
+          format: z.looseObject({ schema: z.unknown() }),
+        }),
+        tools: z.array(z.unknown()).optional(),
+      })
+      .parse(
+        required(openaiRequests[0], "Missing OpenAI CodeMode request.").body,
+      );
+    const anthropicBody = z
+      .looseObject({
+        model: z.string(),
+        thinking: z.looseObject({ type: z.string() }),
+        output_config: z.looseObject({ effort: z.string() }),
+        tools: z.array(
+          z.looseObject({ name: z.string(), input_schema: z.unknown() }),
+        ),
+      })
+      .parse(
+        required(anthropicRequests[0], "Missing Anthropic CodeMode request.")
+          .body,
+      );
+    expect(openaiBody.model).toBe(M1B_OPENAI_MODEL);
+    expect(openaiBody.reasoning.effort).toBe("low");
+    expect(openaiBody.tools).toBeUndefined();
+    expect(anthropicBody.model).toBe(M1B_ANTHROPIC_MODEL);
+    expect(anthropicBody.thinking.type).toBe("adaptive");
+    expect(anthropicBody.output_config.effort).toBe("low");
+    expect(anthropicBody.tools.map((tool) => tool.name)).toEqual(["json"]);
+    expect(unwrap(canonicalizeJson(openaiBody.text.format.schema))).toBe(
+      unwrap(canonicalizeJson(transport.jsonSchema)),
+    );
+    expect(unwrap(canonicalizeJson(anthropicBody.tools[0]?.input_schema))).toBe(
+      unwrap(canonicalizeJson(transport.jsonSchema)),
+    );
+    expectPortableSchema(openaiBody.text.format.schema);
+    expectPortableSchema(anthropicBody.tools[0]?.input_schema);
   });
 
   it("renders the exact outcome and public-input contract on every turn without hostile fields", async () => {

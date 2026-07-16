@@ -5,8 +5,11 @@ import { join } from "node:path";
 import {
   createCatalog,
   createPlanLanguageManifest,
+  defineFixedPointStep,
+  defineMeasure,
   defineSchema,
   digestValue,
+  executePlan,
   modelPlanProposalSchema,
   type Result,
 } from "@nicia-ai/lachesis";
@@ -15,22 +18,35 @@ import { z } from "zod";
 
 import {
   applyDeterministicPlanMutation,
+  assertM2CorpusNamespaceDisjoint,
   assertNoM1bHeldOutReuse,
+  type BenchmarkBudgetController,
   benchmarkCaseRecordSchema,
   type BenchmarkMethod,
   type BenchmarkSplit,
   blindPlanGenerationValidityAudit,
   calculateCostUsdMicros,
   calculateMaximumCostUsdMicros,
+  type CatalogResolver,
+  CODEMODE_PROTOCOL,
+  type CodeModeModelAdapter,
+  type CodeModeModelRequest,
   compileCaseStructuredOutputTransports,
+  compileCodeMode,
+  compileCodeModeStructuredOutputTransport,
+  compileModelPlanProposal,
   compileStructuredOutputTransport,
   createExperimentManifest,
   createInMemoryBenchmarkStore,
+  createInMemoryM2CodeModeStore,
   createM1aCatalogResolver,
+  createM2CatalogResolver,
+  createM2PairedExperimentDigest,
   createPricingSnapshot,
   createRecordedModelAdapter,
   DEFAULT_INFERENCE_SETTINGS,
   evaluateResearchGates,
+  executeCodeMode,
   type ExperimentCaps,
   type ExperimentManifest,
   type ExperimentTransportSchemaBinding,
@@ -38,15 +54,19 @@ import {
   freezeRecordedModelFixture,
   type FrozenPlanGenerationCase,
   type FrozenRecordedModelFixture,
+  generateCodeMode,
   generatePlan,
   generationRecordSchema,
   type GenerationSession,
   type GenerationStrategy,
+  inspectCodeModeArtifact,
   loadM1aCorpus,
   loadM1aRecordedFixtures,
   loadM1cPreregisteredCorpus,
+  loadM2PreregisteredCorpus,
   M1A_GENERATION_STRATEGIES,
   M1A_HOLDOUTS,
+  type M2CodeModeMethod,
   type ModelAdapter,
   normalizeStructuredOutputEnvelope,
   partitionM1aCorpus,
@@ -54,6 +74,8 @@ import {
   type PricingSnapshot,
   RECORDED_DOUBLE_PLAN,
   runBenchmark,
+  runM2CodeModeBenchmark,
+  runM2PairedBenchmark,
   scoreGeneration,
   summarizeBenchmark,
   validatePlanGenerationCases,
@@ -164,6 +186,7 @@ async function experimentFor(
       { billingProvider: "recorded", maxCostUsdMicros: 1_000_000 },
     ],
   },
+  resolverOverride?: CatalogResolver,
 ): Promise<ExperimentManifest> {
   const methodInputs = methods.map((method) => ({
     id: method.id,
@@ -172,7 +195,7 @@ async function experimentFor(
     inference: method.adapter.inference,
     pricingEntryId: method.adapter.pricingEntryId,
   }));
-  const resolver = unwrap(createM1aCatalogResolver());
+  const resolver = resolverOverride ?? unwrap(createM1aCatalogResolver());
   const transports = unwrap(
     await compileCaseStructuredOutputTransports(cases, resolver),
   );
@@ -2943,6 +2966,1968 @@ describe("behavioral benchmark runner", () => {
       },
     });
     expect(invalid.ok).toBe(false);
+  });
+});
+
+describe("M2 disjoint paired corpus", () => {
+  const operationOrder = new Map<string, ReadonlyArray<string>>([
+    ["m2/dev/numbers/nonnegative-squares", ["nonnegative", "square"]],
+    ["m2/dev/numbers/add-ten-product", ["add-ten", "product"]],
+    ["m2/dev/text/reverse-surround", ["reverse", "surround"]],
+    ["m2/heldout/numbers/square-add-ten", ["square", "add-ten"]],
+    [
+      "m2/heldout/numbers/nonnegative-adjusted-product",
+      ["nonnegative", "add-ten", "product"],
+    ],
+    ["m2/heldout/text/dashed-reversed", ["has-dash", "reverse"]],
+    ["m2/heldout/text/surrounded-slash-join", ["surround", "join-slash"]],
+  ]);
+  const predicates = new Set(["nonnegative", "has-dash"]);
+  const reducers = new Set(["product", "join-slash"]);
+
+  function pairedWitness(
+    benchmarkCase: FrozenPlanGenerationCase,
+    operations: ReadonlyArray<string>,
+  ): Readonly<{ plan: unknown; source: string }> {
+    const input = required(
+      benchmarkCase.case.taskInputs[0],
+      "M2 fixture requires an items input.",
+    );
+    const nodes: Array<Readonly<Record<string, unknown>>> = [
+      {
+        id: "input",
+        op: "input",
+        inputKey: "items",
+        schema: input.schema,
+      },
+    ];
+    const statements: Array<string> = [];
+    let prior = "input";
+    let codePrior = "input.items";
+    for (const [index, operation] of operations.entries()) {
+      const id = `step-${index + 1}`;
+      const method = predicates.has(operation)
+        ? "filter"
+        : reducers.has(operation)
+          ? "fold"
+          : "map";
+      nodes.push({
+        id,
+        op: method,
+        source: prior,
+        ...(method === "filter"
+          ? { predicate: { id: operation, version: "1.0.0" } }
+          : method === "fold"
+            ? { reducer: { id: operation, version: "1.0.0" } }
+            : {
+                operation: {
+                  kind: "function",
+                  id: operation,
+                  version: "1.0.0",
+                },
+                outputCollectionSchema: input.schema,
+                parallelism: 4,
+              }),
+      });
+      const binding = `step${index + 1}`;
+      statements.push(
+        `const ${binding} = await ops.${method}("${operation}@1.0.0", ${codePrior});`,
+      );
+      prior = id;
+      codePrior = binding;
+    }
+    return {
+      plan: {
+        formatVersion: "1",
+        catalog: {
+          id: benchmarkCase.case.catalogId,
+          version: "1.0.0",
+        },
+        root: prior,
+        nodes,
+      },
+      source: `export default async function main(input, ops) {
+        ${statements.join("\n")}
+        return ${codePrior};
+      }`,
+    };
+  }
+
+  it("uses a fresh namespace and covers every typed witness kind in both splits", async () => {
+    const corpus = unwrap(await loadM2PreregisteredCorpus());
+    expect(corpus.development).toHaveLength(6);
+    expect(corpus.heldOut).toHaveLength(7);
+    expect(
+      assertM2CorpusNamespaceDisjoint([
+        ...corpus.development,
+        ...corpus.heldOut,
+      ]).ok,
+    ).toBe(true);
+    const first = required(corpus.development[0], "Missing M2 case.");
+    expect(
+      assertM2CorpusNamespaceDisjoint([
+        { ...first, case: { ...first.case, id: "legacy/reused-case" } },
+      ]).ok,
+    ).toBe(false);
+    for (const split of [corpus.development, corpus.heldOut])
+      expect(
+        split
+          .filter((item) => item.case.expectedFeasibility === "unplannable")
+          .map((item) => item.case.infeasibilityWitness?.kind)
+          .toSorted(),
+      ).toEqual(
+        [
+          "deniedCapability",
+          "insufficientBudget",
+          "missingOperation",
+        ].toSorted(),
+      );
+  });
+
+  it("has paired offline witnesses that compile and produce identical hidden outputs", async () => {
+    const corpus = unwrap(await loadM2PreregisteredCorpus());
+    const resolver = unwrap(createM2CatalogResolver());
+    const feasible = [...corpus.development, ...corpus.heldOut].filter(
+      (item) => item.case.expectedFeasibility === "plannable",
+    );
+    expect(feasible).toHaveLength(7);
+    for (const benchmarkCase of feasible) {
+      const operations = required(
+        operationOrder.get(benchmarkCase.case.id),
+        `Missing paired witness for ${benchmarkCase.case.id}.`,
+      );
+      const catalog = unwrap(resolver(benchmarkCase.case.catalogId));
+      const witness = pairedWitness(benchmarkCase, operations);
+      const compiledPlan = await compileModelPlanProposal(
+        witness.plan,
+        catalog,
+        benchmarkCase.case.policy,
+        benchmarkCase.case.taskInputs,
+        benchmarkCase.case.semanticObligations ?? [],
+      );
+      if (compiledPlan.executablePlan === undefined)
+        throw new Error(
+          `${benchmarkCase.case.id}: ${JSON.stringify(compiledPlan.diagnostics)}`,
+        );
+      const compiledCode = await compileCodeMode({
+        source: witness.source,
+        catalog,
+        policy: benchmarkCase.case.policy,
+        taskInputs: benchmarkCase.case.taskInputs,
+        semanticObligations: benchmarkCase.case.semanticObligations ?? [],
+      });
+      expect(compiledCode.ok).toBe(true);
+      if (!compiledCode.ok) continue;
+      for (const evaluation of benchmarkCase.case.hiddenEvaluations) {
+        const inputs = new Map(Object.entries(evaluation.inputs));
+        const ir = await executePlan(compiledPlan.executablePlan, {
+          inputs,
+          effectHandler: () =>
+            Promise.resolve({
+              ok: false,
+              error: {
+                code: "UNDECLARED_EFFECT",
+                message: "M2 witness has no effects.",
+                location: {},
+                details: [],
+              },
+            }),
+          clock: { now: () => "2026-07-15T00:00:00.000Z" },
+          runIdProvider: { next: () => `m2-ir/${evaluation.id}` },
+        });
+        const code = await executeCodeMode(compiledCode.value, {
+          inputs,
+          effectHandler: () =>
+            Promise.resolve({
+              ok: false,
+              error: {
+                code: "UNDECLARED_EFFECT",
+                message: "M2 witness has no effects.",
+                location: {},
+                details: [],
+              },
+            }),
+        });
+        expect(ir.ok ? ir.value.output : ir.error).toEqual(
+          evaluation.expectedOutput,
+        );
+        expect(code.ok ? code.value.output : code.error).toEqual(
+          evaluation.expectedOutput,
+        );
+      }
+    }
+  });
+
+  it("runs, accounts, scores, and safely resumes CodeMode records", async () => {
+    const corpus = unwrap(await loadM2PreregisteredCorpus());
+    const benchmarkCase = required(
+      corpus.development.find(
+        (item) => item.case.id === "m2/dev/numbers/nonnegative-squares",
+      ),
+      "Missing M2 development case.",
+    );
+    const witness = pairedWitness(
+      benchmarkCase,
+      required(
+        operationOrder.get(benchmarkCase.case.id),
+        "Missing operations.",
+      ),
+    );
+    let providerCalls = 0;
+    const adapter: CodeModeModelAdapter = {
+      identity: {
+        provider: "recorded",
+        model: "m2-codemode",
+        adapterVersion: "m2-codemode-test/1",
+      },
+      inference: {
+        ...DEFAULT_INFERENCE_SETTINGS,
+        maxInputTokens: 1_000,
+        maxOutputTokens: 500,
+      },
+      pricingEntryId: "recorded/m2-codemode/1",
+      preflightStructuredOutput: () =>
+        Promise.resolve({ ok: true, value: undefined }),
+      generate: () => {
+        providerCalls += 1;
+        return Promise.resolve({
+          ok: true,
+          value: {
+            rawResponse: JSON.stringify({
+              kind: "program",
+              source: witness.source,
+            }),
+            structuredOutput: {
+              outcome: { kind: "program", source: witness.source },
+            },
+            usage: {
+              inputTokens: 100,
+              outputTokens: 50,
+              costUsdMicros: 150,
+            },
+            latencyMs: 9,
+            dispatchEvidence: "dispatched-with-usage",
+          },
+        });
+      },
+    };
+    const method: M2CodeModeMethod = {
+      id: "recorded/codemode/schema",
+      adapter,
+      strategy: { constraint: "json-schema", repair: "compiler-guided" },
+      pricing: {
+        id: adapter.pricingEntryId,
+        billingProvider: "recorded",
+        route: "offline",
+        model: "m2-codemode",
+        inputUsdMicrosPerMillionTokens: 1_000_000,
+        cachedInputUsdMicrosPerMillionTokens: 1_000_000,
+        cacheWriteInputUsdMicrosPerMillionTokens: 1_000_000,
+        outputUsdMicrosPerMillionTokens: 1_000_000,
+        effectiveFrom: "2026-07-15",
+        effectiveUntil: null,
+        sourceUrl: "https://example.invalid/m2-pricing",
+      },
+    };
+    const reservations: Array<unknown> = [];
+    const settlements: Array<unknown> = [];
+    const store = createInMemoryM2CodeModeStore();
+    const budgetController: BenchmarkBudgetController = {
+      reserve: (reservation) => {
+        reservations.push(reservation);
+        return Promise.resolve({ ok: true, value: undefined });
+      },
+      settle: (settlement) => {
+        settlements.push(settlement);
+        return Promise.resolve({ ok: true, value: undefined });
+      },
+    };
+    const runInput = {
+      experimentDigest: "m2-test-experiment",
+      split: "development" as const,
+      splitDigest: "m2-test-split",
+      cases: [benchmarkCase],
+      methods: [method],
+      repetitions: 1,
+      resolveCatalog: unwrap(createM2CatalogResolver()),
+      store,
+      budgetController,
+    };
+    const first = unwrap(await runM2CodeModeBenchmark(runInput));
+    expect(first).toMatchObject({ generated: 1, resumed: 0 });
+    expect(first.records[0]?.score).toMatchObject({
+      parseTranspileSuccess: true,
+      firstCompilationSuccess: true,
+      finalCompilationSuccess: true,
+      firstExecutionSuccess: true,
+      finalExecutionSuccess: true,
+      semanticSuccess: true,
+      runtimeExceptions: 0,
+      timeouts: 0,
+      capabilityViolations: 0,
+      repairCalls: 0,
+      costUsdMicros: 150,
+      staticallyAnalyzable: true,
+      resources: { actualWithinPrediction: true },
+    });
+    expect(reservations).toHaveLength(1);
+    expect(settlements).toHaveLength(1);
+    expect(
+      (
+        await store.save({
+          ...required(first.records[0], "Missing first M2 record."),
+          digest: "collision",
+        })
+      ).ok,
+    ).toBe(false);
+    const resumed = unwrap(await runM2CodeModeBenchmark(runInput));
+    expect(resumed).toMatchObject({ generated: 0, resumed: 1 });
+    expect(providerCalls).toBe(1);
+  });
+
+  it("replays only preregistered CodeMode effects while scoring hidden evaluations", async () => {
+    const benchmarkCase = unwrap(
+      await freezePlanGenerationCase({
+        id: "m2/test/numbers/risk-quote",
+        instruction: "Obtain the required deterministic risk quote.",
+        catalogId: "m2.numbers",
+        policy: {
+          allowedCapabilities: ["m2.risk.read"],
+          budget: {
+            maxEffectCalls: 1,
+            maxCollectionItems: 1,
+            maxRecursionDepth: 0,
+            maxTokens: 80,
+            maxWallClockMs: 40,
+            maxParallelism: 1,
+          },
+        },
+        taskInputs: [
+          {
+            name: "value",
+            schema: { id: "m2-number", version: "1.0.0" },
+            declaredBounds: [],
+          },
+        ],
+        publicExamples: [],
+        hiddenEvaluations: [
+          {
+            id: "m2/test/risk/matched",
+            inputs: { value: 4 },
+            effects: [
+              {
+                effectName: "m2.risk.quote",
+                input: 4,
+                output: 9,
+                replayResultId: "m2/test/risk/fixture",
+                usage: { tokens: 3, wallClockMs: 2 },
+              },
+            ],
+            expectedOutput: 9,
+          },
+          {
+            id: "m2/test/risk/missing",
+            inputs: { value: 5 },
+            effects: [],
+            expectedOutput: 10,
+          },
+        ],
+        expectedFeasibility: "plannable",
+        infeasibilityWitness: null,
+        requiredProperties: [
+          { kind: "usesInput", inputKey: "value" },
+          { kind: "usesEffect", name: "m2.risk.quote" },
+        ],
+        semanticObligations: [
+          { kind: "rootDependsOnInput", inputKey: "value" },
+          { kind: "requiresEffect", effectName: "m2.risk.quote" },
+        ],
+        forbiddenCapabilities: [],
+      }),
+    );
+    const adapter: CodeModeModelAdapter = {
+      identity: {
+        provider: "recorded",
+        model: "m2-effect-replay",
+        adapterVersion: "m2-effect-test/1",
+      },
+      inference: DEFAULT_INFERENCE_SETTINGS,
+      pricingEntryId: "recorded/m2-effect/1",
+      preflightStructuredOutput: () =>
+        Promise.resolve({ ok: true, value: undefined }),
+      generate: () =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            rawResponse: "offline",
+            structuredOutput: {
+              outcome: {
+                kind: "program",
+                source: `export default async function main(input, ops) {
+                  const quote = await ops.effect("risk-quote@1.0.0", input.value);
+                  return quote;
+                }`,
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 0 },
+            latencyMs: 1,
+            dispatchEvidence: "dispatched-with-usage",
+          },
+        }),
+    };
+    const result = unwrap(
+      await runM2CodeModeBenchmark({
+        experimentDigest: "m2-effect-replay",
+        split: "development",
+        splitDigest: "m2-effect-replay-split",
+        cases: [benchmarkCase],
+        methods: [
+          {
+            id: "recorded/m2-effect",
+            adapter,
+            strategy: { constraint: "json-schema", repair: "none" },
+            pricing: {
+              id: adapter.pricingEntryId,
+              billingProvider: "recorded",
+              route: "offline",
+              model: "m2-effect-replay",
+              inputUsdMicrosPerMillionTokens: 0,
+              cachedInputUsdMicrosPerMillionTokens: 0,
+              cacheWriteInputUsdMicrosPerMillionTokens: 0,
+              outputUsdMicrosPerMillionTokens: 0,
+              effectiveFrom: "2026-07-15",
+              effectiveUntil: null,
+              sourceUrl: "https://example.invalid/m2-effect-replay",
+            },
+          },
+        ],
+        repetitions: 1,
+        resolveCatalog: unwrap(createM2CatalogResolver()),
+        store: createInMemoryM2CodeModeStore(),
+      }),
+    );
+    expect(result.records[0]?.score).toMatchObject({
+      firstCompilationSuccess: true,
+      finalCompilationSuccess: true,
+      firstExecutionSuccess: false,
+      finalExecutionSuccess: false,
+      semanticSuccess: false,
+      runtimeExceptions: 1,
+      resources: {
+        actual: {
+          operationCalls: 2,
+          effectCalls: 2,
+          tokens: 3,
+          wallClockMs: 2,
+        },
+        actualWithinPrediction: true,
+      },
+    });
+  });
+
+  it("runs the preregistered IR and CodeMode arms as exact matched pairs", async () => {
+    const corpus = unwrap(await loadM2PreregisteredCorpus());
+    const benchmarkCase = required(
+      corpus.development.find(
+        (item) => item.case.id === "m2/dev/numbers/nonnegative-squares",
+      ),
+      "Missing paired M2 case.",
+    );
+    const witness = pairedWitness(
+      benchmarkCase,
+      required(
+        operationOrder.get(benchmarkCase.case.id),
+        "Missing operations.",
+      ),
+    );
+    const fixture = unwrap(
+      await freezeRecordedModelFixture({
+        identity: {
+          provider: "recorded",
+          model: "m2-paired-model",
+          adapterVersion: "ir-test/1",
+        },
+        pricingEntryId: "recorded/free",
+        inference: DEFAULT_INFERENCE_SETTINGS,
+        responses: [
+          {
+            kind: "response",
+            response: {
+              rawResponse: JSON.stringify({ kind: "plan", plan: witness.plan }),
+              structuredOutput: { kind: "plan", plan: witness.plan },
+              usage: { inputTokens: 10, outputTokens: 10, costUsdMicros: 0 },
+              latencyMs: 2,
+            },
+          },
+        ],
+      }),
+    );
+    const irAdapter = createRecordedModelAdapter(fixture);
+    const irMethod: BenchmarkMethod = {
+      id: "recorded/functional-ir/schema-with-repair",
+      adapter: irAdapter,
+      strategy: strategy("json-schema-with-repair"),
+    };
+    const codeAdapter: CodeModeModelAdapter = {
+      identity: {
+        provider: "recorded",
+        model: "m2-paired-model",
+        adapterVersion: "codemode-test/1",
+      },
+      inference: DEFAULT_INFERENCE_SETTINGS,
+      pricingEntryId: "recorded/free",
+      preflightStructuredOutput: () =>
+        Promise.resolve({ ok: true, value: undefined }),
+      generate: () =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            rawResponse: JSON.stringify({
+              kind: "program",
+              source: witness.source,
+            }),
+            structuredOutput: {
+              outcome: { kind: "program", source: witness.source },
+            },
+            usage: { inputTokens: 10, outputTokens: 10, costUsdMicros: 0 },
+            latencyMs: 2,
+            dispatchEvidence: "dispatched-with-usage",
+          },
+        }),
+    };
+    const pricing = {
+      id: "recorded/free",
+      billingProvider: "recorded",
+      route: "offline",
+      model: "m2-paired-model",
+      inputUsdMicrosPerMillionTokens: 0,
+      cachedInputUsdMicrosPerMillionTokens: 0,
+      cacheWriteInputUsdMicrosPerMillionTokens: 0,
+      outputUsdMicrosPerMillionTokens: 0,
+      effectiveFrom: "2026-07-15",
+      effectiveUntil: null,
+      sourceUrl: "https://example.invalid/free",
+    };
+    const codeMethod: M2CodeModeMethod = {
+      id: "recorded/restricted-typescript/schema-with-repair",
+      adapter: codeAdapter,
+      strategy: { constraint: "json-schema", repair: "compiler-guided" },
+      pricing,
+    };
+    const resolver = unwrap(createM2CatalogResolver());
+    const caps: ExperimentCaps = {
+      maxCalls: 4,
+      maxInputTokens: 100_000,
+      maxOutputTokens: 100_000,
+      maxTotalTokens: 200_000,
+      maxOutputTokensPerCall: 100_000,
+      maxCostUsdMicros: 1_000_000,
+      providerCostCaps: [
+        { billingProvider: "recorded", maxCostUsdMicros: 1_000_000 },
+      ],
+    };
+    const irExperiment = await experimentFor(
+      [benchmarkCase],
+      [irMethod],
+      1,
+      "development",
+      "m2-paired-test",
+      caps,
+      resolver,
+    );
+    const experimentDigest = unwrap(
+      await createM2PairedExperimentDigest({
+        irExperiment,
+        cases: [benchmarkCase],
+        repetitions: 1,
+        codeModeMethods: [codeMethod],
+      }),
+    );
+    const pairedBudget: BenchmarkBudgetController = {
+      reserve: () => Promise.resolve({ ok: true, value: undefined }),
+      settle: () => Promise.resolve({ ok: true, value: undefined }),
+    };
+    const pairedInput = {
+      experimentDigest,
+      irExperiment,
+      split: "development" as const,
+      splitDigest: required(
+        irExperiment.splits.find((item) => item.id === "development"),
+        "Missing development split.",
+      ).digest,
+      cases: [benchmarkCase],
+      repetitions: 1,
+      irMethods: [irMethod],
+      codeModeMethods: [codeMethod],
+      resolveCatalog: resolver,
+      irStore: createInMemoryBenchmarkStore(),
+      codeModeStore: createInMemoryM2CodeModeStore(),
+      budgetController: pairedBudget,
+    };
+    const paired = unwrap(await runM2PairedBenchmark(pairedInput));
+    expect(paired.matched).toHaveLength(1);
+    expect(paired.matched[0]).toMatchObject({
+      provider: "recorded",
+      model: "m2-paired-model",
+      functionalIr: {
+        firstCompilationSuccess: true,
+        finalExecutionSuccess: true,
+        semanticSuccess: true,
+        staticallyAnalyzable: true,
+        predictedActualReconciled: true,
+      },
+      codeMode: {
+        firstCompilationSuccess: true,
+        finalExecutionSuccess: true,
+        semanticSuccess: true,
+        staticallyAnalyzable: true,
+        resources: { actualWithinPrediction: true },
+      },
+    });
+    expect(
+      (
+        await runM2PairedBenchmark({
+          ...pairedInput,
+          experimentDigest: "wrong-m2-digest",
+        })
+      ).ok,
+    ).toBe(false);
+    const emptyDigest = unwrap(
+      await createM2PairedExperimentDigest({
+        irExperiment,
+        cases: [benchmarkCase],
+        repetitions: 1,
+        codeModeMethods: [],
+      }),
+    );
+    expect(
+      (
+        await runM2PairedBenchmark({
+          ...pairedInput,
+          experimentDigest: emptyDigest,
+          codeModeMethods: [],
+        })
+      ).ok,
+    ).toBe(false);
+  });
+
+  it("scores typed abstention and fails closed across reservation and unknown-usage paths", async () => {
+    const corpus = unwrap(await loadM2PreregisteredCorpus());
+    const resolver = unwrap(createM2CatalogResolver());
+    const impossible = required(
+      corpus.development.find(
+        (item) => item.case.id === "m2/dev/numbers/missing-median",
+      ),
+      "Missing M2 abstention case.",
+    );
+    const feasible = required(
+      corpus.development.find(
+        (item) => item.case.id === "m2/dev/numbers/nonnegative-squares",
+      ),
+      "Missing M2 feasible case.",
+    );
+    const pricing = {
+      id: "recorded/m2/failure-paths",
+      billingProvider: "recorded",
+      route: "offline",
+      model: "m2-failure-paths",
+      inputUsdMicrosPerMillionTokens: 1_000_000,
+      cachedInputUsdMicrosPerMillionTokens: 1_000_000,
+      cacheWriteInputUsdMicrosPerMillionTokens: 1_000_000,
+      outputUsdMicrosPerMillionTokens: 1_000_000,
+      effectiveFrom: "2026-07-15",
+      effectiveUntil: null,
+      sourceUrl: "https://example.invalid/m2-failure-paths",
+    };
+    const adapterBase = {
+      identity: {
+        provider: "recorded",
+        model: "m2-failure-paths",
+        adapterVersion: "m2-test/1",
+      },
+      inference: {
+        ...DEFAULT_INFERENCE_SETTINGS,
+        maxInputTokens: 100,
+        maxOutputTokens: 100,
+      },
+      pricingEntryId: pricing.id,
+      preflightStructuredOutput: () =>
+        Promise.resolve({ ok: true as const, value: undefined }),
+    };
+    const witness = impossible.case.infeasibilityWitness;
+    if (witness === null) throw new Error("Missing M2 witness.");
+    const abstaining: CodeModeModelAdapter = {
+      ...adapterBase,
+      generate: () =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            rawResponse: JSON.stringify({ kind: "unplannable", witness }),
+            structuredOutput: { outcome: { kind: "unplannable", witness } },
+            usage: { inputTokens: 2, outputTokens: 2, costUsdMicros: 4 },
+            latencyMs: 3,
+            dispatchEvidence: "dispatched-with-usage",
+          },
+        }),
+    };
+    const abstentionMethod: M2CodeModeMethod = {
+      id: "recorded/m2/abstention",
+      adapter: abstaining,
+      strategy: { constraint: "json-schema", repair: "compiler-guided" },
+      pricing,
+    };
+    const abstention = unwrap(
+      await runM2CodeModeBenchmark({
+        experimentDigest: "m2-abstention",
+        split: "development",
+        splitDigest: "m2-development",
+        cases: [impossible],
+        methods: [abstentionMethod],
+        repetitions: 1,
+        resolveCatalog: resolver,
+        store: createInMemoryM2CodeModeStore(),
+      }),
+    );
+    expect(abstention.records[0]?.score).toMatchObject({
+      correctTypedAbstention: true,
+      semanticSuccess: null,
+      finalExecutionSuccess: null,
+    });
+
+    let forbiddenDispatches = 0;
+    const dispatching: CodeModeModelAdapter = {
+      ...adapterBase,
+      generate: () => {
+        forbiddenDispatches += 1;
+        return Promise.resolve({
+          ok: false,
+          error: {
+            code: "PROVIDER_FAILURE",
+            message: "must not dispatch",
+            dispatchEvidence: "not-dispatched",
+          },
+        });
+      },
+    };
+    const deniedController: BenchmarkBudgetController = {
+      reserve: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "BUDGET_EXCEEDED",
+            message: "offline denial",
+            location: {},
+            details: [],
+          },
+        }),
+      settle: () => Promise.resolve({ ok: true, value: undefined }),
+    };
+    const denied = unwrap(
+      await runM2CodeModeBenchmark({
+        experimentDigest: "m2-denied",
+        split: "development",
+        splitDigest: "m2-development",
+        cases: [feasible],
+        methods: [
+          {
+            id: "recorded/m2/denied",
+            adapter: dispatching,
+            strategy: { constraint: "json-schema", repair: "compiler-guided" },
+            pricing,
+          },
+        ],
+        repetitions: 1,
+        resolveCatalog: resolver,
+        store: createInMemoryM2CodeModeStore(),
+        budgetController: deniedController,
+      }),
+    );
+    expect(denied.records[0]?.score.finalCompilationSuccess).toBe(false);
+    expect(forbiddenDispatches).toBe(0);
+
+    const settlements: Array<unknown> = [];
+    const unknownUsage: CodeModeModelAdapter = {
+      ...adapterBase,
+      generate: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "PROVIDER_FAILURE",
+            message: "usage unavailable",
+            dispatchEvidence: "dispatched-usage-unknown",
+          },
+        }),
+    };
+    const conservativeController: BenchmarkBudgetController = {
+      reserve: () => Promise.resolve({ ok: true, value: undefined }),
+      settle: (value) => {
+        settlements.push(value);
+        return Promise.resolve({ ok: true, value: undefined });
+      },
+    };
+    unwrap(
+      await runM2CodeModeBenchmark({
+        experimentDigest: "m2-conservative",
+        split: "development",
+        splitDigest: "m2-development",
+        cases: [feasible],
+        methods: [
+          {
+            id: "recorded/m2/conservative",
+            adapter: unknownUsage,
+            strategy: { constraint: "json-schema", repair: "compiler-guided" },
+            pricing,
+          },
+        ],
+        repetitions: 1,
+        resolveCatalog: resolver,
+        store: createInMemoryM2CodeModeStore(),
+        budgetController: conservativeController,
+      }),
+    );
+    expect(settlements).toHaveLength(1);
+    expect(settlements[0]).toMatchObject({
+      conservative: true,
+      accountingBasis: "authorized-conservative",
+      actualCostUsdMicros: 200,
+    });
+    const observedSettlements: Array<unknown> = [];
+    const observedController: BenchmarkBudgetController = {
+      reserve: () => Promise.resolve({ ok: true, value: undefined }),
+      settle: (value) => {
+        observedSettlements.push(value);
+        return Promise.resolve({ ok: true, value: undefined });
+      },
+    };
+    const failureAdapters: ReadonlyArray<CodeModeModelAdapter> = [
+      {
+        ...adapterBase,
+        generate: () =>
+          Promise.resolve({
+            ok: false,
+            error: {
+              code: "PROVIDER_FAILURE",
+              message: "offline pre-dispatch failure",
+              dispatchEvidence: "not-dispatched",
+            },
+          }),
+      },
+      {
+        ...adapterBase,
+        generate: () =>
+          Promise.resolve({
+            ok: false,
+            error: {
+              code: "PROVIDER_FAILURE",
+              message: "offline post-dispatch failure",
+              dispatchEvidence: "dispatched-with-usage",
+              usage: { inputTokens: 7, outputTokens: 3, costUsdMicros: 10 },
+            },
+          }),
+      },
+    ];
+    for (const [index, adapter] of failureAdapters.entries())
+      unwrap(
+        await runM2CodeModeBenchmark({
+          experimentDigest: `m2-observed-failure-${index}`,
+          split: "development",
+          splitDigest: "m2-development",
+          cases: [feasible],
+          methods: [
+            {
+              id: `recorded/m2/observed-failure-${index}`,
+              adapter,
+              strategy: { constraint: "json-schema", repair: "none" },
+              pricing,
+            },
+          ],
+          repetitions: 1,
+          resolveCatalog: resolver,
+          store: createInMemoryM2CodeModeStore(),
+          budgetController: observedController,
+        }),
+      );
+    expect(observedSettlements).toEqual([
+      expect.objectContaining({
+        accountingBasis: "not-dispatched",
+        actualCostUsdMicros: 0,
+        conservative: false,
+      }),
+      expect.objectContaining({
+        accountingBasis: "provider-reported",
+        actualCostUsdMicros: 10,
+        conservative: false,
+      }),
+    ]);
+    expect(
+      observedSettlements.some(
+        (value) =>
+          typeof value === "object" && value !== null && "result" in value,
+      ),
+    ).toBe(false);
+    unwrap(
+      await runM2CodeModeBenchmark({
+        experimentDigest: "m2-invalid-token-cap",
+        split: "development",
+        splitDigest: "m2-development",
+        cases: [feasible],
+        methods: [
+          {
+            id: "recorded/m2/invalid-token-cap",
+            adapter: {
+              ...abstaining,
+              inference: { ...abstaining.inference, maxInputTokens: -1 },
+            },
+            strategy: { constraint: "json-schema", repair: "none" },
+            pricing,
+          },
+        ],
+        repetitions: 1,
+        resolveCatalog: resolver,
+        store: createInMemoryM2CodeModeStore(),
+      }),
+    );
+    const storageError = {
+      code: "INTERNAL_INVARIANT_VIOLATION" as const,
+      message: "offline store failure",
+      location: {},
+      details: [],
+    };
+    expect(
+      (
+        await runM2CodeModeBenchmark({
+          experimentDigest: "m2-catalog-error",
+          split: "development",
+          splitDigest: "m2-development",
+          cases: [impossible],
+          methods: [abstentionMethod],
+          repetitions: 1,
+          resolveCatalog: () => ({
+            ok: false,
+            error: storageError,
+          }),
+          store: createInMemoryM2CodeModeStore(),
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await runM2CodeModeBenchmark({
+          experimentDigest: "m2-load-error",
+          split: "development",
+          splitDigest: "m2-development",
+          cases: [impossible],
+          methods: [abstentionMethod],
+          repetitions: 1,
+          resolveCatalog: resolver,
+          store: {
+            load: () => Promise.resolve({ ok: false, error: storageError }),
+            save: () => Promise.resolve({ ok: true, value: undefined }),
+          },
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await runM2CodeModeBenchmark({
+          experimentDigest: "m2-save-error",
+          split: "development",
+          splitDigest: "m2-development",
+          cases: [impossible],
+          methods: [abstentionMethod],
+          repetitions: 1,
+          resolveCatalog: resolver,
+          store: {
+            load: () => Promise.resolve({ ok: true, value: undefined }),
+            save: () => Promise.resolve({ ok: false, error: storageError }),
+          },
+        })
+      ).ok,
+    ).toBe(false);
+  });
+});
+
+describe("restricted TypeScript CodeMode", () => {
+  const policy = {
+    allowedCapabilities: [] as ReadonlyArray<string>,
+    budget: {
+      maxEffectCalls: 4,
+      maxCollectionItems: 128,
+      maxRecursionDepth: 16,
+      maxTokens: 1_000,
+      maxWallClockMs: 1_000,
+      maxParallelism: 1,
+    },
+  };
+  const taskInputs = [
+    {
+      name: "items",
+      schema: { id: "numbers", version: "1.0.0" },
+      declaredBounds: [{ kind: "maximumCollectionItems" as const, value: 128 }],
+    },
+  ];
+
+  it("compiles and interprets a closed capability-only TypeScript program", async () => {
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())("benchmark.numbers"),
+    );
+    const compiled = await compileCodeMode({
+      source: `
+        export default async function main(
+          input: Readonly<{ items: ReadonlyArray<number> }>,
+          ops: Operations,
+        ): Promise<unknown> {
+          const evens = await ops.filter("even@1.0.0", input.items);
+          const doubled = await ops.map("double@1.0.0", evens);
+          return doubled;
+        }
+      `,
+      catalog,
+      policy,
+      taskInputs,
+      semanticObligations: [
+        { kind: "rootDependsOnInput", inputKey: "items" },
+        {
+          kind: "requiresOperation",
+          operation: { id: "even", version: "1.0.0" },
+        },
+        {
+          kind: "requiresOperation",
+          operation: { id: "double", version: "1.0.0" },
+        },
+        { kind: "requiresStateChange" },
+      ],
+    });
+    expect(compiled.ok).toBe(true);
+    if (!compiled.ok) return;
+    const summary = inspectCodeModeArtifact(compiled.value);
+    expect(summary).toMatchObject({
+      protocol: CODEMODE_PROTOCOL,
+      analysis: {
+        maximumOperationCalls: 256,
+        predictedResourcesKnown: true,
+        inputDependencies: ["items"],
+        operationDependencies: ["double@1.0.0", "even@1.0.0"],
+      },
+    });
+    const executed = await executeCodeMode(compiled.value, {
+      inputs: new Map([["items", [-3, 2, 5, 4]]]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "UNDECLARED_EFFECT",
+            message: "not used",
+            location: {},
+            details: [],
+          },
+        }),
+    });
+    expect(executed).toMatchObject({
+      ok: true,
+      value: {
+        output: [4, 8],
+        usage: { operationCalls: 6, effectCalls: 0 },
+      },
+    });
+    const invalidInput = await executeCodeMode(compiled.value, {
+      inputs: new Map([["items", "not-an-array"]]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "UNDECLARED_EFFECT",
+            message: "unused",
+            location: {},
+            details: [],
+          },
+        }),
+    });
+    expect(invalidInput.ok ? null : invalidInput.error.kind).toBe(
+      "runtime-exception",
+    );
+  });
+
+  it("executes select, invoke, and boundedFix without ambient JavaScript", async () => {
+    const resolver = unwrap(createM1aCatalogResolver());
+    const decisions = unwrap(resolver("benchmark.decisions"));
+    const decisionProgram = await compileCodeMode({
+      source: `export default async function main(input, ops) {
+        const selected = await ops.select(input.condition, input.primary, input.fallback);
+        const approved = await ops.invoke("approve-label@1.0.0", selected);
+        return approved;
+      }`,
+      catalog: decisions,
+      policy,
+      taskInputs: [
+        {
+          name: "condition",
+          schema: { id: "boolean", version: "1.0.0" },
+          declaredBounds: [],
+        },
+        {
+          name: "primary",
+          schema: { id: "label", version: "1.0.0" },
+          declaredBounds: [],
+        },
+        {
+          name: "fallback",
+          schema: { id: "label", version: "1.0.0" },
+          declaredBounds: [],
+        },
+      ],
+      semanticObligations: [
+        { kind: "rootDependsOnInput", inputKey: "condition" },
+        {
+          kind: "operationDominatesRoot",
+          operation: { id: "approve-label", version: "1.0.0" },
+        },
+      ],
+    });
+    expect(decisionProgram.ok).toBe(true);
+    if (!decisionProgram.ok) return;
+    const decision = await executeCodeMode(decisionProgram.value, {
+      inputs: new Map<string, unknown>([
+        ["condition", false],
+        ["primary", "north"],
+        ["fallback", "south"],
+      ]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "UNDECLARED_EFFECT",
+            message: "unused",
+            location: {},
+            details: [],
+          },
+        }),
+    });
+    expect(decision.ok ? decision.value.output : null).toBe("approved:south");
+    const invalidConditionProgram = await compileCodeMode({
+      source: `export default async function main(input, ops) {
+        const selected = await ops.select(input.primary, input.primary, input.fallback);
+        return selected;
+      }`,
+      catalog: decisions,
+      policy,
+      taskInputs: [
+        {
+          name: "primary",
+          schema: { id: "label", version: "1.0.0" },
+          declaredBounds: [],
+        },
+        {
+          name: "fallback",
+          schema: { id: "label", version: "1.0.0" },
+          declaredBounds: [],
+        },
+      ],
+      semanticObligations: [],
+    });
+    expect(invalidConditionProgram.ok).toBe(true);
+    if (!invalidConditionProgram.ok) return;
+    const invalidCondition = await executeCodeMode(
+      invalidConditionProgram.value,
+      {
+        inputs: new Map([
+          ["primary", "north"],
+          ["fallback", "south"],
+        ]),
+        effectHandler: () =>
+          Promise.resolve({
+            ok: false,
+            error: {
+              code: "UNDECLARED_EFFECT",
+              message: "unused",
+              location: {},
+              details: [],
+            },
+          }),
+      },
+    );
+    expect(invalidCondition.ok ? null : invalidCondition.error.kind).toBe(
+      "runtime-exception",
+    );
+
+    const workflow = unwrap(resolver("benchmark.workflow"));
+    const workflowProgram = await compileCodeMode({
+      source: `export default async function main(input, ops) {
+        const completed = await ops.boundedFix("countdown-step@1.1.0", "remaining@1.1.0", input.state, 16);
+        return completed;
+      }`,
+      catalog: workflow,
+      policy,
+      taskInputs: [
+        {
+          name: "state",
+          schema: { id: "workflow-state", version: "1.1.0" },
+          declaredBounds: [],
+        },
+      ],
+      semanticObligations: [
+        {
+          kind: "requiresOperation",
+          operation: { id: "countdown-step", version: "1.1.0" },
+        },
+      ],
+    });
+    expect(workflowProgram.ok).toBe(true);
+    if (!workflowProgram.ok) return;
+    const completed = await executeCodeMode(workflowProgram.value, {
+      inputs: new Map([["state", { remaining: 3, value: 7 }]]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "UNDECLARED_EFFECT",
+            message: "unused",
+            location: {},
+            details: [],
+          },
+        }),
+    });
+    expect(completed.ok ? completed.value.output : null).toEqual({
+      remaining: 0,
+      value: 10,
+    });
+    const shortProgram = await compileCodeMode({
+      source: `export default async function main(input, ops) {
+        const completed = await ops.boundedFix("countdown-step@1.1.0", "remaining@1.1.0", input.state, 1);
+        return completed;
+      }`,
+      catalog: workflow,
+      policy,
+      taskInputs: [
+        {
+          name: "state",
+          schema: { id: "workflow-state", version: "1.1.0" },
+          declaredBounds: [],
+        },
+      ],
+      semanticObligations: [],
+    });
+    expect(shortProgram.ok).toBe(true);
+    if (!shortProgram.ok) return;
+    const exhausted = await executeCodeMode(shortProgram.value, {
+      inputs: new Map([["state", { remaining: 3, value: 7 }]]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "UNDECLARED_EFFECT",
+            message: "unused",
+            location: {},
+            details: [],
+          },
+        }),
+    });
+    expect(exhausted.ok ? null : exhausted.error.kind).toBe("budget-violation");
+    const alreadyComplete = await executeCodeMode(shortProgram.value, {
+      inputs: new Map([["state", { remaining: 0, value: 7 }]]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "UNDECLARED_EFFECT",
+            message: "unused",
+            location: {},
+            details: [],
+          },
+        }),
+    });
+    expect(alreadyComplete.ok ? alreadyComplete.value.output : null).toEqual({
+      remaining: 0,
+      value: 7,
+    });
+
+    const stalledState = defineSchema({
+      id: "stalled-state",
+      version: "1",
+      description: "Offline non-progressing state.",
+      validator: z.strictObject({ remaining: z.number().int().nonnegative() }),
+    });
+    const stalledCatalog = unwrap(
+      createCatalog({
+        identity: { id: "test.stalled", version: "1" },
+        schemas: [stalledState.runtime],
+        operations: [
+          defineFixedPointStep({
+            id: "stall",
+            version: "1",
+            description: "Return the same state.",
+            state: stalledState,
+            implementation: (state) => state,
+          }),
+          defineMeasure({
+            id: "remaining",
+            version: "1",
+            description: "Read remaining work.",
+            input: stalledState,
+            implementation: (state) => state.remaining,
+          }),
+        ],
+      }),
+    );
+    const stalledProgram = await compileCodeMode({
+      source: `export default async function main(input, ops) {
+        const result = await ops.boundedFix("stall@1", "remaining@1", input.state, 1);
+        return result;
+      }`,
+      catalog: stalledCatalog,
+      policy,
+      taskInputs: [
+        {
+          name: "state",
+          schema: { id: "stalled-state", version: "1" },
+          declaredBounds: [],
+        },
+      ],
+      semanticObligations: [],
+    });
+    expect(stalledProgram.ok).toBe(true);
+    if (!stalledProgram.ok) return;
+    const stalled = await executeCodeMode(stalledProgram.value, {
+      inputs: new Map([["state", { remaining: 2 }]]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "UNDECLARED_EFFECT",
+            message: "unused",
+            location: {},
+            details: [],
+          },
+        }),
+    });
+    expect(stalled.ok ? null : stalled.error.diagnostics[0]?.code).toBe(
+      "NON_DECREASING_RECURSION_MEASURE",
+    );
+  });
+
+  it.each([
+    [
+      "program directives",
+      `"use strict"; export default async function main(input, ops) { return input.items; }`,
+    ],
+    [
+      "function directives",
+      `export default async function main(input, ops) { "use strict"; return input.items; }`,
+    ],
+    [
+      "imports",
+      `import fs from "node:fs"; export default async function main(input, ops) { return input.items; }`,
+    ],
+    [
+      "network",
+      `export default async function main(input, ops) { const x = await fetch("https://example.com"); return x; }`,
+    ],
+    [
+      "environment",
+      `export default async function main(input, ops) { return process.env.SECRET; }`,
+    ],
+    [
+      "ambient global",
+      `export default async function main(input, ops) { return globalThis; }`,
+    ],
+    [
+      "dynamic code",
+      `export default async function main(input, ops) { return Function("return 1")(); }`,
+    ],
+    [
+      "loop",
+      `export default async function main(input, ops) { while (true) {} return input.items; }`,
+    ],
+    [
+      "unregistered method",
+      `export default async function main(input, ops) { const x = await ops.network("x@1", input.items); return x; }`,
+    ],
+  ])("rejects %s before runtime", async (_name, source) => {
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())("benchmark.numbers"),
+    );
+    const compiled = await compileCodeMode({
+      source,
+      catalog,
+      policy,
+      taskInputs,
+      semanticObligations: [],
+    });
+    expect(compiled.ok).toBe(false);
+  });
+
+  it.each([
+    ["empty module", ``],
+    [
+      "ordinary function",
+      `async function main(input, ops) { return input.items; }`,
+    ],
+    [
+      "non-async entry",
+      `export default function main(input, ops) { return input.items; }`,
+    ],
+    [
+      "wrong entry name",
+      `export default async function run(input, ops) { return input.items; }`,
+    ],
+    [
+      "wrong parameters",
+      `export default async function main(value) { return value; }`,
+    ],
+    [
+      "generator entry",
+      `export default async function* main(input, ops) { return input.items; }`,
+    ],
+    [
+      "let binding",
+      `export default async function main(input, ops) { let value = input.items; return value; }`,
+    ],
+    [
+      "multiple declarators",
+      `export default async function main(input, ops) { const a = input.items, b = input.items; return a; }`,
+    ],
+    [
+      "destructuring",
+      `export default async function main(input, ops) { const { value } = input; return value; }`,
+    ],
+    [
+      "missing initializer",
+      `export default async function main(input, ops) { const value; return input.items; }`,
+    ],
+    [
+      "unawaited capability",
+      `export default async function main(input, ops) { const value = ops.map("double@1.0.0", input.items); return value; }`,
+    ],
+    [
+      "indirect capability",
+      `export default async function main(input, ops) { const value = await other.map("double@1.0.0", input.items); return value; }`,
+    ],
+    [
+      "computed capability",
+      `export default async function main(input, ops) { const value = await ops["map"]("double@1.0.0", input.items); return value; }`,
+    ],
+    [
+      "wrong map arity",
+      `export default async function main(input, ops) { const value = await ops.map("double@1.0.0"); return value; }`,
+    ],
+    [
+      "spread argument",
+      `export default async function main(input, ops) { const value = await ops.map(...input.items); return value; }`,
+    ],
+    [
+      "bad reference",
+      `export default async function main(input, ops) { const value = await ops.map("double", input.items); return value; }`,
+    ],
+    [
+      "computed input",
+      `export default async function main(input, ops) { const value = await ops.map("double@1.0.0", input["items"]); return value; }`,
+    ],
+    [
+      "unknown binding",
+      `export default async function main(input, ops) { const value = await ops.map("double@1.0.0", absent); return value; }`,
+    ],
+    [
+      "duplicate binding",
+      `export default async function main(input, ops) { const value = await ops.map("double@1.0.0", input.items); const value = await ops.map("double@1.0.0", input.items); return value; }`,
+    ],
+    [
+      "reserved binding",
+      `export default async function main(input, ops) { const input = await ops.map("double@1.0.0", input.items); return input; }`,
+    ],
+    [
+      "return before end",
+      `export default async function main(input, ops) { return input.items; const value = await ops.map("double@1.0.0", input.items); }`,
+    ],
+    [
+      "no return",
+      `export default async function main(input, ops) { const value = await ops.map("double@1.0.0", input.items); }`,
+    ],
+    [
+      "select arity",
+      `export default async function main(input, ops) { const value = await ops.select(input.items, input.items); return value; }`,
+    ],
+    [
+      "bounded arity",
+      `export default async function main(input, ops) { const value = await ops.boundedFix("a@1", "b@1", input.items); return value; }`,
+    ],
+    [
+      "bounded negative",
+      `export default async function main(input, ops) { const value = await ops.boundedFix("a@1", "b@1", input.items, -1); return value; }`,
+    ],
+    [
+      "unknown operation",
+      `export default async function main(input, ops) { const value = await ops.map("missing@1", input.items); return value; }`,
+    ],
+    [
+      "map kind mismatch",
+      `export default async function main(input, ops) { const value = await ops.map("even@1.0.0", input.items); return value; }`,
+    ],
+    [
+      "filter kind mismatch",
+      `export default async function main(input, ops) { const value = await ops.filter("double@1.0.0", input.items); return value; }`,
+    ],
+    [
+      "fold kind mismatch",
+      `export default async function main(input, ops) { const value = await ops.fold("double@1.0.0", input.items); return value; }`,
+    ],
+    [
+      "effect kind mismatch",
+      `export default async function main(input, ops) { const value = await ops.effect("double@1.0.0", input.items); return value; }`,
+    ],
+    [
+      "invoke kind mismatch",
+      `export default async function main(input, ops) { const value = await ops.invoke("sum@1.0.0", input.items); return value; }`,
+    ],
+  ])("rejects restricted grammar case: %s", async (_name, source) => {
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())("benchmark.numbers"),
+    );
+    expect(
+      (
+        await compileCodeMode({
+          source,
+          catalog,
+          policy,
+          taskInputs,
+          semanticObligations: [],
+        })
+      ).ok,
+    ).toBe(false);
+  });
+
+  it("rejects dead work and failed trusted obligations statically", async () => {
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())("benchmark.numbers"),
+    );
+    const dead = await compileCodeMode({
+      source: `export default async function main(input, ops) {
+        const ignored = await ops.map("double@1.0.0", input.items);
+        return input.items;
+      }`,
+      catalog,
+      policy,
+      taskInputs,
+      semanticObligations: [],
+    });
+    expect(dead.ok ? [] : dead.error.map((item) => item.message)).toContain(
+      "Restricted CodeMode: binding ignored does not contribute to the return value",
+    );
+    const obligation = await compileCodeMode({
+      source: `export default async function main(input, ops) { return input.items; }`,
+      catalog,
+      policy,
+      taskInputs,
+      semanticObligations: [
+        {
+          kind: "requiresOperation",
+          operation: { id: "double", version: "1.0.0" },
+        },
+      ],
+    });
+    expect(
+      obligation.ok ? [] : obligation.error.map((item) => item.code),
+    ).toContain("SEMANTIC_OBLIGATION_FAILED");
+  });
+
+  it("enforces capability policy before an effect can dispatch", async () => {
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())("benchmark.numbers"),
+    );
+    let dispatches = 0;
+    const compiled = await compileCodeMode({
+      source: `export default async function main(input, ops) {
+        const quoted = await ops.effect("quote-tax@1.0.0", input.value);
+        return quoted;
+      }`,
+      catalog,
+      policy,
+      taskInputs: [
+        {
+          name: "value",
+          schema: { id: "number", version: "1.0.0" },
+          declaredBounds: [],
+        },
+      ],
+      semanticObligations: [],
+    });
+    expect(compiled.ok).toBe(false);
+    if (compiled.ok) {
+      await executeCodeMode(compiled.value, {
+        inputs: new Map([["value", 1]]),
+        effectHandler: () => {
+          dispatches += 1;
+          return Promise.resolve({
+            ok: true,
+            value: { value: 1, usage: { tokens: 0, wallClockMs: 0 } },
+          });
+        },
+      });
+    }
+    expect(dispatches).toBe(0);
+  });
+
+  it("validates effect outputs, actual budgets, and hard timeouts in the closed runtime", async () => {
+    const catalog = unwrap(unwrap(createM2CatalogResolver())("m2.numbers"));
+    const effectPolicy = {
+      allowedCapabilities: ["m2.risk.read"],
+      budget: {
+        maxEffectCalls: 1,
+        maxCollectionItems: 1,
+        maxRecursionDepth: 0,
+        maxTokens: 80,
+        maxWallClockMs: 40,
+        maxParallelism: 1,
+      },
+    };
+    const compiled = await compileCodeMode({
+      source: `export default async function main(input, ops) {
+        const quote = await ops.effect("risk-quote@1.0.0", input.value);
+        return quote;
+      }`,
+      catalog,
+      policy: effectPolicy,
+      taskInputs: [
+        {
+          name: "value",
+          schema: { id: "m2-number", version: "1.0.0" },
+          declaredBounds: [],
+        },
+      ],
+      semanticObligations: [
+        { kind: "requiresEffect", effectName: "m2.risk.quote" },
+      ],
+    });
+    expect(compiled.ok).toBe(true);
+    if (!compiled.ok) return;
+    const invalidOutput = await executeCodeMode(compiled.value, {
+      inputs: new Map([["value", 4]]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            value: "not-a-number",
+            usage: { tokens: 1, wallClockMs: 1 },
+          },
+        }),
+    });
+    expect(invalidOutput.ok ? null : invalidOutput.error.kind).toBe(
+      "runtime-exception",
+    );
+    const failedEffect = await executeCodeMode(compiled.value, {
+      inputs: new Map([["value", 4]]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "MISSING_REPLAY_RESULT",
+            message: "offline effect failure",
+            location: {},
+            details: [],
+          },
+        }),
+    });
+    expect(failedEffect.ok ? null : failedEffect.error.kind).toBe(
+      "runtime-exception",
+    );
+    const budget = await executeCodeMode(compiled.value, {
+      inputs: new Map([["value", 4]]),
+      effectHandler: () =>
+        Promise.resolve({
+          ok: true,
+          value: { value: 4, usage: { tokens: 81, wallClockMs: 1 } },
+        }),
+    });
+    expect(budget.ok ? null : budget.error.kind).toBe("budget-violation");
+    const timedOut = await executeCodeMode(compiled.value, {
+      inputs: new Map([["value", 4]]),
+      timeoutMs: 1,
+      effectHandler: () =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              ok: true,
+              value: { value: 4, usage: { tokens: 1, wallClockMs: 1 } },
+            });
+          }, 10);
+        }),
+    });
+    expect(timedOut.ok ? null : timedOut.error.kind).toBe("timeout");
+  });
+
+  it("compiles a portable root-object provider schema for programs and all witness kinds", async () => {
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())("benchmark.numbers"),
+    );
+    const manifest = unwrap(await createPlanLanguageManifest(catalog, policy));
+    const transport = unwrap(
+      await compileCodeModeStructuredOutputTransport(manifest, [
+        {
+          kind: "requiresOperation",
+          operation: { id: "missing-product", version: "1.0.0" },
+        },
+      ]),
+    );
+    expect(
+      validatePortableStructuredOutputSchema(transport.jsonSchema).ok,
+    ).toBe(true);
+    expect(JSON.stringify(transport.jsonSchema)).toContain("missing-product");
+    expect(JSON.stringify(transport.jsonSchema)).toContain(
+      "insufficientBudget",
+    );
+    expect(JSON.stringify(transport.jsonSchema)).not.toContain("propertyNames");
+  });
+
+  it("repairs one shared CodeMode proposal without exposing hidden evaluation data", async () => {
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())("benchmark.numbers"),
+    );
+    const captured: Array<CodeModeModelRequest> = [];
+    const sources = [
+      `export default async function main(input, ops) { return input.items; }`,
+      `export default async function main(input, ops) {
+        const doubled = await ops.map("double@1.0.0", input.items);
+        return doubled;
+      }`,
+    ];
+    const adapter: CodeModeModelAdapter = {
+      identity: {
+        provider: "recorded",
+        model: "codemode-fixture",
+        adapterVersion: "codemode-test/1",
+      },
+      inference: DEFAULT_INFERENCE_SETTINGS,
+      pricingEntryId: "recorded/codemode/1",
+      preflightStructuredOutput: () =>
+        Promise.resolve({ ok: true, value: undefined }),
+      generate: (request) => {
+        captured.push(request);
+        const source = required(
+          sources[captured.length - 1],
+          "Missing CodeMode response source.",
+        );
+        return Promise.resolve({
+          ok: true,
+          value: {
+            rawResponse: JSON.stringify({ kind: "program", source }),
+            structuredOutput: { outcome: { kind: "program", source } },
+            usage: {
+              inputTokens: 10,
+              outputTokens: 10,
+              costUsdMicros: 20,
+            },
+            latencyMs: 5,
+            dispatchEvidence: "dispatched-with-usage",
+          },
+        });
+      },
+    };
+    const generated = unwrap(
+      await generateCodeMode({
+        task: "Double every public item.",
+        catalog,
+        policy,
+        taskInputs,
+        semanticObligations: [
+          { kind: "rootDependsOnInput", inputKey: "items" },
+          {
+            kind: "requiresOperation",
+            operation: { id: "double", version: "1.0.0" },
+          },
+        ],
+        adapter,
+        strategy: {
+          constraint: "json-schema",
+          repair: "compiler-guided",
+        },
+      }),
+    );
+    expect(generated.kind).toBe("compiled");
+    expect(generated.record.repairCount).toBe(1);
+    expect(
+      generated.record.attempts.map((attempt) => attempt.responseKind),
+    ).toEqual(["program", "program"]);
+    expect(captured).toHaveLength(2);
+    const initial = JSON.stringify(captured[0]);
+    const repair = JSON.stringify(captured[1]);
+    expect(initial).not.toContain("expectedOutput");
+    expect(repair).not.toContain("expectedOutput");
+    expect(initial).not.toContain("SECRET-HIDDEN-VALUE");
+    expect(repair).not.toContain("SECRET-HIDDEN-VALUE");
+    expect(repair).toContain("SEMANTIC_OBLIGATION_FAILED");
+  });
+
+  it("records typed abstention, invalid output, adapter failure, and preflight failure distinctly", async () => {
+    const corpus = unwrap(await loadM2PreregisteredCorpus());
+    const impossible = required(
+      corpus.development.find(
+        (item) => item.case.id === "m2/dev/numbers/missing-median",
+      ),
+      "Missing M2 impossible case.",
+    );
+    const catalog = unwrap(
+      unwrap(createM2CatalogResolver())(impossible.case.catalogId),
+    );
+    const base = {
+      identity: {
+        provider: "recorded",
+        model: "codemode-outcomes",
+        adapterVersion: "codemode-test/1",
+      },
+      inference: DEFAULT_INFERENCE_SETTINGS,
+      pricingEntryId: "recorded/codemode/outcomes",
+      preflightStructuredOutput: () =>
+        Promise.resolve({ ok: true as const, value: undefined }),
+    };
+    const witness = impossible.case.infeasibilityWitness;
+    if (witness === null) throw new Error("Missing infeasibility witness.");
+    const abstaining: CodeModeModelAdapter = {
+      ...base,
+      generate: () =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            rawResponse: JSON.stringify({ kind: "unplannable", witness }),
+            structuredOutput: { outcome: { kind: "unplannable", witness } },
+            usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 0 },
+            latencyMs: 1,
+            dispatchEvidence: "dispatched-with-usage",
+          },
+        }),
+    };
+    const common = {
+      task: impossible.case.instruction,
+      catalog,
+      policy: impossible.case.policy,
+      taskInputs: impossible.case.taskInputs,
+      semanticObligations: impossible.case.semanticObligations ?? [],
+      strategy: { constraint: "json-schema" as const, repair: "none" as const },
+    };
+    const abstained = unwrap(
+      await generateCodeMode({ ...common, adapter: abstaining }),
+    );
+    expect(abstained.kind).toBe("unplannable");
+
+    const invalid: CodeModeModelAdapter = {
+      ...base,
+      generate: () =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            rawResponse: "{}",
+            structuredOutput: {},
+            usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 0 },
+            latencyMs: 1,
+            dispatchEvidence: "dispatched-with-usage",
+          },
+        }),
+    };
+    const rejected = unwrap(
+      await generateCodeMode({ ...common, adapter: invalid }),
+    );
+    expect(rejected.kind).toBe("rejected");
+    expect(rejected.record.attempts[0]?.responseKind).toBe("invalid-output");
+
+    const failing: CodeModeModelAdapter = {
+      ...base,
+      generate: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "PROVIDER_FAILURE",
+            message: "offline failure",
+            dispatchEvidence: "not-dispatched",
+          },
+        }),
+    };
+    const failed = unwrap(
+      await generateCodeMode({ ...common, adapter: failing }),
+    );
+    expect(failed.kind).toBe("adapter-failure");
+    expect(failed.record.totalUsage.costUsdMicros).toBe(0);
+
+    const preflight: CodeModeModelAdapter = {
+      ...abstaining,
+      preflightStructuredOutput: () =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: "PROVIDER_FAILURE",
+            message: "schema rejected offline",
+            dispatchEvidence: "not-dispatched",
+          },
+        }),
+    };
+    expect((await generateCodeMode({ ...common, adapter: preflight })).ok).toBe(
+      false,
+    );
+    expect(
+      (
+        await generateCodeMode({
+          ...common,
+          adapter: abstaining,
+          semanticObligations: [
+            {
+              kind: "requiresOperation",
+              operation: { id: "", version: "" },
+            },
+          ],
+        })
+      ).ok,
+    ).toBe(false);
+
+    const source = `export default async function main(input, ops) {
+      const squared = await ops.map("square@1.0.0", input.items);
+      return squared;
+    }`;
+    const unconstrained: CodeModeModelAdapter = {
+      ...base,
+      generate: () =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            rawResponse: JSON.stringify({ kind: "program", source }),
+            usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 0 },
+            latencyMs: 1,
+            dispatchEvidence: "dispatched-with-usage",
+          },
+        }),
+    };
+    const feasible = required(
+      corpus.heldOut.find(
+        (item) => item.case.id === "m2/heldout/numbers/square-add-ten",
+      ),
+      "Missing unconstrained fixture.",
+    );
+    expect(
+      (
+        await generateCodeMode({
+          task: "Square the inputs.",
+          catalog,
+          policy: feasible.case.policy,
+          taskInputs: feasible.case.taskInputs,
+          semanticObligations: [
+            {
+              kind: "requiresOperation",
+              operation: { id: "square", version: "1.0.0" },
+            },
+          ],
+          adapter: unconstrained,
+          strategy: { constraint: "unconstrained-json", repair: "none" },
+        })
+      ).ok,
+    ).toBe(true);
+    expect(
+      (
+        await generateCodeMode({
+          ...common,
+          adapter: unconstrained,
+          strategy: {
+            constraint: "unconstrained-json",
+            repair: "compiler-guided",
+          },
+        })
+      ).ok,
+    ).toBe(false);
   });
 });
 

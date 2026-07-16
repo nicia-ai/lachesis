@@ -7,8 +7,8 @@ type-checks, bounds, content-addresses, and executes the plan through explicit
 effect interpreters.
 
 This repository contains the measured plan kernel, deterministic generation
-benchmark substrate, the frozen Node-only M1b controlled experiment controller,
-and the offline M1c typed-semantic-obligation layer.
+benchmark substrate, the frozen M1b/M1c experiment controllers, and the offline
+M2 functional-IR versus restricted-TypeScript comparison substrate.
 
 ## What works
 
@@ -46,6 +46,11 @@ and the offline M1c typed-semantic-obligation layer.
 - A phase-aware Node experiment controller with shared campaign budgets,
   zero-network dry-run, append-only ledger accounting, safe resume, and offline
   reporting.
+- A Worker-compatible restricted TypeScript CodeMode compiler/interpreter that
+  never evaluates model source, exposes only registered capability calls, and
+  records matched static and runtime resource measurements.
+- A disjoint paired M2 corpus and controller for functional IR versus CodeMode,
+  including content-addressed resume and shared conservative accounting.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -94,7 +99,9 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
 
 See [the architecture](docs/architecture.md) for the kernel guarantees, the
 [benchmark protocol](docs/generator-benchmark.md) for generation and scoring
-boundaries, and the [M1b runbook](docs/m1b-runbook.md) before any live use.
+boundaries, the [M1b runbook](docs/m1b-runbook.md) for the frozen M1 study, and
+the [M2 CodeMode baseline](docs/m2-codemode-baseline.md) for the new isolation
+and comparison boundary.
 
 ## Validation
 
@@ -111,11 +118,11 @@ git diff --check
 
 ## Not yet implemented
 
-The milestone still excludes CodeMode, TypeGraph, SQL/Drizzle, knowledge-graph
-persistence, graph-native traversal, joins, `boundedExplore`, optimizer
-rewrites, durable/distributed scheduling, general adaptive loops, package
-publication, and deployment. M1c live work requires its separately materialized
-campaign and an explicit new budget authorization; it cannot reuse M1b
-authority. TypeGraph remains deferred.
+The milestone still excludes unrestricted CodeMode, TypeGraph, SQL/Drizzle,
+knowledge-graph persistence, graph-native traversal, joins, `boundedExplore`,
+optimizer rewrites, durable/distributed scheduling, general adaptive loops,
+package publication, and deployment. M2 has not been materialized or run live;
+it requires a new campaign, frozen prospective gates, and explicit budget and
+phase authorization. TypeGraph remains deferred.
 
 Licensed under [Apache License 2.0](LICENSE).
