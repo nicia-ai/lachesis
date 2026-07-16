@@ -67,6 +67,14 @@ const SMOKE_CAPS: ExperimentCaps = Object.freeze({
 export const M1B_PROMPT_CANDIDATE = Object.freeze({
   id: "lachesis-m1b-plan-generator",
   version: "development-candidate-4",
+  amendment: Object.freeze({
+    classification: "non-discretionary-protocol-correction",
+    supersedesInvalidCalibration:
+      "ca742c6d0c8a4245ec06472870dcacb43fb7e1af15e53f5f00ea5814732b2e95",
+    heldOutAccessOccurred: false,
+    rationale:
+      "Corrects model/runtime authority and benchmark-validity defects discovered in development calibration; it is not a fourth discretionary prompt candidate.",
+  }),
   instruction:
     'Propose only registered Lachesis operator topology and arguments. Do not author budget, allowedCapabilities, or input maxItems fields; the trusted runtime supplies public input bounds, capabilities, and policy limits, the analyzer derives requirements, and the compiler checks those requirements. Return raw JSON as exactly { "kind": "plan", "plan": ... } or { "kind": "unplannable", "reasons": [...] }; never use Markdown fences or alternate field names. A constrained provider may carry that exact logical outcome inside the internal structured-output transport envelope { "outcome": ... }; this JSON tool is output transport only and does not authorize external tools. Use unplannable only when the supplied manifest, public input contract, and trusted policy cannot satisfy the task.',
 });
@@ -114,6 +122,7 @@ async function calibrationWorkflowCase(): Promise<
       },
     ],
     expectedFeasibility: "plannable",
+    infeasibilityWitness: null,
     requiredProperties: [
       { kind: "usesInput", inputKey: "state" },
       {

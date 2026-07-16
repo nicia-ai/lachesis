@@ -1,4 +1,9 @@
-import { type Diagnostic, digestValue, type Result } from "@nicia-ai/lachesis";
+import {
+  type Diagnostic,
+  digestValue,
+  operationReferenceSchema,
+  type Result,
+} from "@nicia-ai/lachesis";
 import { z } from "zod";
 
 import {
@@ -88,6 +93,30 @@ const compilationPolicySchema = z
   })
   .readonly();
 
+export const infeasibilityWitnessSchema = z.discriminatedUnion("kind", [
+  z
+    .strictObject({
+      kind: z.literal("missingOperation"),
+      operation: operationReferenceSchema,
+    })
+    .readonly(),
+  z
+    .strictObject({
+      kind: z.literal("deniedCapability"),
+      operation: operationReferenceSchema,
+      capability: z.string().min(1),
+    })
+    .readonly(),
+  z
+    .strictObject({
+      kind: z.literal("budgetExceeded"),
+      operation: operationReferenceSchema,
+      resource: z.enum(["maxEffectCalls", "maxRecursionDepth"]),
+      requiredMinimum: z.number().int().positive(),
+    })
+    .readonly(),
+]);
+
 export const planGenerationCaseSchema = z
   .strictObject({
     id: z.string().min(1),
@@ -98,8 +127,29 @@ export const planGenerationCaseSchema = z
     publicExamples: z.array(exampleSchema).readonly(),
     hiddenEvaluations: z.array(hiddenEvaluationSchema).readonly(),
     expectedFeasibility: z.enum(["plannable", "unplannable"]),
+    infeasibilityWitness: infeasibilityWitnessSchema.nullable(),
     requiredProperties: z.array(planPropertySchema).readonly(),
     forbiddenCapabilities: z.array(z.string().min(1)).readonly(),
+  })
+  .superRefine((value, context) => {
+    if (
+      value.expectedFeasibility === "plannable" &&
+      value.infeasibilityWitness !== null
+    )
+      context.addIssue({
+        code: "custom",
+        message: "Plannable cases cannot declare an infeasibility witness.",
+        path: ["infeasibilityWitness"],
+      });
+    if (
+      value.expectedFeasibility === "unplannable" &&
+      value.infeasibilityWitness === null
+    )
+      context.addIssue({
+        code: "custom",
+        message: "Unplannable cases require an infeasibility witness.",
+        path: ["infeasibilityWitness"],
+      });
   })
   .readonly();
 
@@ -107,6 +157,10 @@ export type Example = z.infer<typeof exampleSchema>;
 export type PlanProperty = z.infer<typeof planPropertySchema>;
 export type DeterministicEffect = z.infer<typeof deterministicEffectSchema>;
 export type HiddenEvaluation = z.infer<typeof hiddenEvaluationSchema>;
+export type InfeasibilityWitness = z.infer<typeof infeasibilityWitnessSchema>;
+export type InfeasibilityWitnessInput = z.input<
+  typeof infeasibilityWitnessSchema
+>;
 export type PlanGenerationCase = z.infer<typeof planGenerationCaseSchema>;
 
 export type FrozenPlanGenerationCase = Readonly<{

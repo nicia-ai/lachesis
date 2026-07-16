@@ -603,6 +603,16 @@ describe("M1a frozen substrate", () => {
       ok: true,
       value: undefined,
     });
+    expect(await blindPlanGenerationValidityAudit(corpus, resolver)).toEqual({
+      totalCases: 42,
+      plannableCases: 32,
+      unplannableCases: 10,
+      referencesValid: 42,
+      witnessesCompiled: 32,
+      hiddenPropertiesPassed: 32,
+      infeasibilityWitnessesPassed: 10,
+      invalidCases: 0,
+    });
     const partition = partitionM1aCorpus(corpus);
     const heldOut = [
       ...partition.heldOutCatalogs,
@@ -617,11 +627,134 @@ describe("M1a frozen substrate", () => {
       referencesValid: 17,
       witnessesCompiled: 13,
       hiddenPropertiesPassed: 13,
+      infeasibilityWitnessesPassed: 4,
       invalidCases: 0,
     });
     expect(
       Object.values(audit).every((value) => typeof value === "number"),
     ).toBe(true);
+  });
+
+  it("audits compilation, hidden semantics, and infeasibility independently", async () => {
+    const resolver = unwrap(createM1aCatalogResolver());
+    const feasible = await corpusCase("numbers/double");
+    const semanticFailure = unwrap(
+      await freezePlanGenerationCase({
+        ...feasible.case,
+        hiddenEvaluations: feasible.case.hiddenEvaluations.map(
+          (evaluation) => ({
+            ...evaluation,
+            expectedOutput: ["deliberately-wrong"],
+          }),
+        ),
+      }),
+    );
+    expect(
+      await blindPlanGenerationValidityAudit([semanticFailure], resolver),
+    ).toEqual({
+      totalCases: 1,
+      plannableCases: 1,
+      unplannableCases: 0,
+      referencesValid: 1,
+      witnessesCompiled: 1,
+      hiddenPropertiesPassed: 0,
+      infeasibilityWitnessesPassed: 0,
+      invalidCases: 1,
+    });
+    const semanticValidation = await validatePlanGenerationCases(
+      [semanticFailure],
+      resolver,
+    );
+    expect(
+      semanticValidation.ok
+        ? []
+        : semanticValidation.error.map((item) => item.message),
+    ).toContain(
+      "numbers/double: compiled offline reference witness did not pass hidden properties",
+    );
+
+    const missingFeasibleWitness = unwrap(
+      await freezePlanGenerationCase({
+        ...feasible.case,
+        id: "audit/no-reference-witness",
+      }),
+    );
+    expect(
+      (await validatePlanGenerationCases([missingFeasibleWitness], resolver))
+        .ok,
+    ).toBe(false);
+
+    const missing = await corpusCase("numbers/missing-average");
+    const falseMissingWitness = unwrap(
+      await freezePlanGenerationCase({
+        ...missing.case,
+        infeasibilityWitness: {
+          kind: "missingOperation",
+          operation: { id: "double", version: "1.0.0" },
+        },
+      }),
+    );
+    const denied = await corpusCase("numbers/forbidden-tax");
+    const falseDeniedWitness = unwrap(
+      await freezePlanGenerationCase({
+        ...denied.case,
+        policy: {
+          ...denied.case.policy,
+          allowedCapabilities: ["finance.read"],
+        },
+      }),
+    );
+    const budget = await corpusCase("numbers/zero-effect-budget");
+    const falseBudgetWitness = unwrap(
+      await freezePlanGenerationCase({
+        ...budget.case,
+        policy: {
+          ...budget.case.policy,
+          budget: { ...budget.case.policy.budget, maxEffectCalls: 1 },
+        },
+      }),
+    );
+    for (const invalid of [
+      falseMissingWitness,
+      falseDeniedWitness,
+      falseBudgetWitness,
+    ])
+      expect((await validatePlanGenerationCases([invalid], resolver)).ok).toBe(
+        false,
+      );
+
+    expect(
+      await blindPlanGenerationValidityAudit([falseMissingWitness], resolver),
+    ).toEqual({
+      totalCases: 1,
+      plannableCases: 0,
+      unplannableCases: 1,
+      referencesValid: 1,
+      witnessesCompiled: 0,
+      hiddenPropertiesPassed: 0,
+      infeasibilityWitnessesPassed: 0,
+      invalidCases: 1,
+    });
+
+    expect(
+      (
+        await freezePlanGenerationCase({
+          ...missing.case,
+          infeasibilityWitness: null,
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await freezePlanGenerationCase({
+          ...feasible.case,
+          infeasibilityWitness: {
+            kind: "missingOperation",
+            operation: { id: "average", version: "1.0.0" },
+          },
+        })
+      ).ok,
+    ).toBe(false);
   });
 
   it("rejects unresolved public and required fixture references", async () => {
@@ -689,6 +822,7 @@ describe("M1a frozen substrate", () => {
       referencesValid: 0,
       witnessesCompiled: 0,
       hiddenPropertiesPassed: 0,
+      infeasibilityWitnessesPassed: 0,
       invalidCases: 2,
     });
   });
@@ -1847,6 +1981,11 @@ describe("behavioral benchmark runner", () => {
       await freezePlanGenerationCase({
         ...benchmarkCase.case,
         expectedFeasibility: "unplannable",
+        infeasibilityWitness: {
+          kind: "deniedCapability",
+          operation: { id: "quote-tax", version: "1.0.0" },
+          capability: "finance.read",
+        },
         forbiddenCapabilities: ["finance.read"],
       }),
     );

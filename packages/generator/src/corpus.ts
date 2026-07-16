@@ -20,6 +20,7 @@ import type { CatalogResolver } from "./benchmark.js";
 import {
   freezePlanGenerationCase,
   type FrozenPlanGenerationCase,
+  type InfeasibilityWitnessInput,
 } from "./case.js";
 import type { TaskInput } from "./model.js";
 
@@ -351,6 +352,7 @@ type CaseSeed = Readonly<{
   feasible?: boolean | undefined;
   budget?: CompilationPolicy["budget"] | undefined;
   forbidden?: ReadonlyArray<string> | undefined;
+  infeasibilityWitness?: InfeasibilityWitnessInput | undefined;
 }>;
 
 const collectionBound: TaskInput["declaredBounds"] = Object.freeze([
@@ -421,6 +423,7 @@ function caseValue(seed: CaseSeed): unknown {
     publicExamples: [],
     hiddenEvaluations,
     expectedFeasibility: seed.feasible === false ? "unplannable" : "plannable",
+    infeasibilityWitness: seed.infeasibilityWitness ?? null,
     requiredProperties: seed.properties,
     forbiddenCapabilities: seed.forbidden ?? [],
   };
@@ -815,6 +818,11 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     properties: [effect("tax.quote")],
     feasible: false,
     forbidden: ["finance.read"],
+    infeasibilityWitness: {
+      kind: "deniedCapability",
+      operation: { id: "quote-tax", version: VERSION },
+      capability: "finance.read",
+    },
   },
   {
     id: "numbers/zero-effect-budget",
@@ -826,6 +834,12 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     allowedCapabilities: ["finance.read"],
     budget: impossibleBudget,
     feasible: false,
+    infeasibilityWitness: {
+      kind: "budgetExceeded",
+      operation: { id: "quote-tax", version: VERSION },
+      resource: "maxEffectCalls",
+      requiredMinimum: 1,
+    },
   },
   {
     id: "numbers/missing-average",
@@ -836,6 +850,10 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     outputs: [],
     properties: [],
     feasible: false,
+    infeasibilityWitness: {
+      kind: "missingOperation",
+      operation: { id: "average", version: VERSION },
+    },
   },
   {
     id: "text/forbidden-translation",
@@ -847,6 +865,11 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     properties: [effect("language.translate")],
     feasible: false,
     forbidden: ["language.translate"],
+    infeasibilityWitness: {
+      kind: "deniedCapability",
+      operation: { id: "translate", version: VERSION },
+      capability: "language.translate",
+    },
   },
   {
     id: "text/missing-sort",
@@ -857,6 +880,10 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     outputs: [],
     properties: [],
     feasible: false,
+    infeasibilityWitness: {
+      kind: "missingOperation",
+      operation: { id: "sort", version: VERSION },
+    },
   },
   {
     id: "decisions/missing-negation",
@@ -867,6 +894,10 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     outputs: [],
     properties: [],
     feasible: false,
+    infeasibilityWitness: {
+      kind: "missingOperation",
+      operation: { id: "negate", version: VERSION },
+    },
   },
   {
     id: "workflow/recursion-forbidden",
@@ -878,6 +909,15 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     properties: [op("countdown-step", M1A_WORKFLOW_VERSION)],
     feasible: false,
     budget: { ...DEFAULT_BUDGET, maxRecursionDepth: 0 },
+    infeasibilityWitness: {
+      kind: "budgetExceeded",
+      operation: {
+        id: "countdown-step",
+        version: M1A_WORKFLOW_VERSION,
+      },
+      resource: "maxRecursionDepth",
+      requiredMinimum: 1,
+    },
   },
   {
     id: "workflow/forbidden-enrichment",
@@ -889,6 +929,11 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     properties: [effect("workflow.enrich")],
     feasible: false,
     forbidden: ["workflow.remote"],
+    infeasibilityWitness: {
+      kind: "deniedCapability",
+      operation: { id: "enrich-state", version: M1A_WORKFLOW_VERSION },
+      capability: "workflow.remote",
+    },
   },
   {
     id: "workflow/zero-effect-budget",
@@ -900,6 +945,12 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     feasible: false,
     allowedCapabilities: ["workflow.remote"],
     budget: impossibleBudget,
+    infeasibilityWitness: {
+      kind: "budgetExceeded",
+      operation: { id: "enrich-state", version: M1A_WORKFLOW_VERSION },
+      resource: "maxEffectCalls",
+      requiredMinimum: 1,
+    },
   },
   {
     id: "workflow/missing-reset",
@@ -910,6 +961,10 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     outputs: [],
     properties: [],
     feasible: false,
+    infeasibilityWitness: {
+      kind: "missingOperation",
+      operation: { id: "reset-value", version: M1A_WORKFLOW_VERSION },
+    },
   },
 ];
 

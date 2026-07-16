@@ -36,7 +36,8 @@ M1b.5 also resolves every required case reference and compiles a hidden offline
 reference witness for every plannable fixture before materialization. The model
 proposes computation only; trusted public bounds and policy are bound locally.
 `audit-heldout` reports only aggregate validity counts and never returns
-held-out case content.
+held-out case content. It separately counts compiled feasible witnesses,
+hidden-property passes, and machine-verified infeasibility witnesses.
 
 M1b.4 stores each phase under a namespace derived from the complete experiment
 digest. A repaired smoke can therefore register beside the immutable original

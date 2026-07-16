@@ -210,10 +210,20 @@ resumed. It exposed workflow reference-version drift and benchmark domains that
 exceeded trusted limits; its model-quality results therefore cannot select a
 prompt.
 
-Before calibration, preregister no more than three prompt candidates. Record
-every candidate body, version, digest, rationale, and result, including failed
-candidates. Never open, print, render, or score held-out examples while revising
-prompts. Do not add candidates after seeing held-out outcomes.
+Before calibration, preregister no more than three discretionary prompt
+candidates. Record every candidate body, version, digest, rationale, and result,
+including failed candidates. Never open, print, render, or score held-out
+examples while revising prompts. Do not add candidates after seeing held-out
+outcomes.
+
+`development-candidate-4` is not a fourth discretionary candidate. It is a
+non-discretionary protocol correction forced by the benchmark-invalid M1b.4.1
+calibration: the model/runtime authority boundary and fixture validity checks
+changed, so the prior candidate could not be carried forward honestly. This
+amendment was made before any held-out case content or outcome was accessed. Its
+classification, rationale, invalid predecessor experiment, and
+`heldOutAccessOccurred: false` declaration are included in the prompt object
+whose digest is bound into every M1b.5.1 experiment.
 
 Select the prompt by development semantic success. Break ties by fewer repair
 turns, then fewer total output/reasoning tokens, then retain the earlier prompt
@@ -226,6 +236,13 @@ strict: the `json-schema-with-repair` method must compile and semantically pass
 all seven feasible cases for both direct providers. Anything less requires
 diagnosis before freezing a held-out manifest or spending the held-out pool.
 Held-out execution always requires separate authorization.
+
+The unexecuted M1b.5 calibration experiment
+`d2b740cbb3fe3e2a7263ae30d508f691007b75c9287e10f6bb7c269b6c2c2f2a` is superseded
+by M1b.5.1. Leave its external manifest untouched and never execute or resume
+it. M1b.5.1 requires a fresh transport probe and calibration identity from its
+clean commit; a successful two-call probe replaces the need for another smoke
+run.
 
 ## 5. Freeze held-out
 

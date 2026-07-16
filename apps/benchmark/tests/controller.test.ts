@@ -361,6 +361,7 @@ describe("M1b phase protocol", () => {
       referencesValid: 17,
       witnessesCompiled: 13,
       hiddenPropertiesPassed: 13,
+      infeasibilityWitnessesPassed: 4,
       invalidCases: 0,
     });
     expect(
@@ -565,6 +566,17 @@ describe("M1b phase protocol", () => {
 
   it("pre-registers a development-only calibration set across all catalogs and operator classes", async () => {
     const calibration = await materialized("calibration");
+    expect(M1B_PROMPT_CANDIDATE.amendment).toEqual({
+      classification: "non-discretionary-protocol-correction",
+      supersedesInvalidCalibration:
+        "ca742c6d0c8a4245ec06472870dcacb43fb7e1af15e53f5f00ea5814732b2e95",
+      heldOutAccessOccurred: false,
+      rationale:
+        "Corrects model/runtime authority and benchmark-validity defects discovered in development calibration; it is not a fourth discretionary prompt candidate.",
+    });
+    expect(calibration.manifest.experiment.promptDigest).toBe(
+      unwrap(await digestValue(M1B_PROMPT_CANDIDATE)),
+    );
     expect(
       calibration.manifest.experiment.cases.every(
         (item) => item.split === "development",

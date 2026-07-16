@@ -11,7 +11,7 @@ import {
 } from "@nicia-ai/lachesis";
 
 import { type CatalogResolver, scoreGeneration } from "./benchmark.js";
-import type { FrozenPlanGenerationCase } from "./case.js";
+import type { FrozenPlanGenerationCase, InfeasibilityWitness } from "./case.js";
 import { DEFAULT_INFERENCE_SETTINGS, type ModelAdapter } from "./model.js";
 import { generatePlan } from "./pipeline.js";
 
@@ -22,6 +22,7 @@ export type BlindValidityCounts = Readonly<{
   referencesValid: number;
   witnessesCompiled: number;
   hiddenPropertiesPassed: number;
+  infeasibilityWitnessesPassed: number;
   invalidCases: number;
 }>;
 
@@ -218,6 +219,7 @@ function decisionPlan(
 function workflowPlan(
   frozenCase: FrozenPlanGenerationCase,
   manifest: PlanLanguageManifest,
+  maxIterations = frozenCase.case.policy.budget.maxRecursionDepth,
 ): unknown {
   const version = manifest.catalog.version;
   return {
@@ -237,7 +239,7 @@ function workflowPlan(
         seed: "state",
         step: { id: "countdown-step", version },
         measure: { id: "remaining", version },
-        maxIterations: frozenCase.case.policy.budget.maxRecursionDepth,
+        maxIterations,
       },
     ],
   };
@@ -380,6 +382,102 @@ function referenceProposal(
       };
 }
 
+function operationMatches(
+  left: Readonly<{ id: string; version: string }>,
+  right: Readonly<{ id: string; version: string }>,
+): boolean {
+  return left.id === right.id && left.version === right.version;
+}
+
+function invokePlan(
+  frozenCase: FrozenPlanGenerationCase,
+  manifest: PlanLanguageManifest,
+  operation: InfeasibilityWitness["operation"],
+): unknown {
+  const input = frozenCase.case.taskInputs[0];
+  if (input === undefined) return null;
+  return {
+    formatVersion: "1",
+    catalog: manifest.catalog,
+    root: "required-operation",
+    nodes: [
+      {
+        id: "input",
+        op: "input",
+        inputKey: input.name,
+        schema: input.schema,
+      },
+      {
+        id: "required-operation",
+        op: "invoke",
+        source: "input",
+        function: operation,
+      },
+    ],
+  };
+}
+
+function workflowEffectPlan(
+  frozenCase: FrozenPlanGenerationCase,
+  manifest: PlanLanguageManifest,
+  operation: InfeasibilityWitness["operation"],
+): unknown {
+  const input = frozenCase.case.taskInputs[0];
+  if (input === undefined) return null;
+  return {
+    formatVersion: "1",
+    catalog: manifest.catalog,
+    root: "required-effect",
+    nodes: [
+      {
+        id: "input",
+        op: "input",
+        inputKey: input.name,
+        schema: input.schema,
+      },
+      {
+        id: "required-effect",
+        op: "effect",
+        source: "input",
+        effect: operation,
+      },
+    ],
+  };
+}
+
+function infeasibilityProposal(
+  frozenCase: FrozenPlanGenerationCase,
+  manifest: PlanLanguageManifest,
+  witness: InfeasibilityWitness,
+): Result<ModelPlanProposal, Diagnostic> {
+  const input = frozenCase.case.taskInputs[0];
+  let candidate: unknown;
+  if (witness.kind === "missingOperation")
+    candidate = invokePlan(frozenCase, manifest, witness.operation);
+  else if (
+    witness.kind === "budgetExceeded" &&
+    witness.resource === "maxRecursionDepth"
+  )
+    candidate = workflowPlan(frozenCase, manifest, witness.requiredMinimum);
+  else if (manifest.catalog.id === "benchmark.workflow" && input !== undefined)
+    candidate = workflowEffectPlan(frozenCase, manifest, witness.operation);
+  else if (input !== undefined)
+    candidate = collectionPlan(manifest, input.name, input.schema, [
+      { kind: "map-effect", operation: witness.operation.id },
+    ]);
+  else candidate = null;
+  const parsed = modelPlanProposalSchema.safeParse(candidate);
+  return parsed.success
+    ? { ok: true, value: parsed.data }
+    : {
+        ok: false,
+        error: fixtureDiagnostic(
+          frozenCase.case.id,
+          `infeasibility witness proposal is invalid: ${parsed.error.issues.map((issue) => issue.message).join("; ")}`,
+        ),
+      };
+}
+
 function witnessAdapter(plan: ModelPlanProposal): ModelAdapter {
   return {
     identity: {
@@ -406,32 +504,94 @@ function witnessAdapter(plan: ModelPlanProposal): ModelAdapter {
   };
 }
 
-async function witnessPasses(
+function runWitness(
   frozenCase: FrozenPlanGenerationCase,
   catalog: Catalog,
-  manifest: PlanLanguageManifest,
-): Promise<boolean> {
-  const proposal = referenceProposal(frozenCase, manifest);
-  if (!proposal.ok) return false;
-  const generated = await generatePlan({
+  proposal: ModelPlanProposal,
+): ReturnType<typeof generatePlan> {
+  return generatePlan({
     task: frozenCase.case.instruction,
     catalog,
     policy: frozenCase.case.policy,
     taskInputs: frozenCase.case.taskInputs,
     publicExamples: [],
-    adapter: witnessAdapter(proposal.value),
+    adapter: witnessAdapter(proposal),
     strategy: {
       id: "unconstrained-json",
       constraint: "unconstrained-json",
       repair: "none",
     },
   });
-  if (!generated.ok || generated.value.kind !== "compiled") return false;
+}
+
+type PlannableWitnessAudit = Readonly<{
+  compiled: boolean;
+  hiddenPropertiesPassed: boolean;
+}>;
+
+async function auditPlannableWitness(
+  frozenCase: FrozenPlanGenerationCase,
+  catalog: Catalog,
+  manifest: PlanLanguageManifest,
+): Promise<PlannableWitnessAudit> {
+  const proposal = referenceProposal(frozenCase, manifest);
+  if (!proposal.ok) return { compiled: false, hiddenPropertiesPassed: false };
+  const generated = await runWitness(frozenCase, catalog, proposal.value);
+  if (!generated.ok || generated.value.kind !== "compiled")
+    return { compiled: false, hiddenPropertiesPassed: false };
   const score = await scoreGeneration(frozenCase.case, generated.value);
-  return (
-    score.ok &&
-    score.value.propertiesSatisfied === true &&
-    score.value.semanticSuccess === true
+  return {
+    compiled: true,
+    hiddenPropertiesPassed:
+      score.ok &&
+      score.value.propertiesSatisfied === true &&
+      score.value.semanticSuccess === true,
+  };
+}
+
+async function infeasibilityWitnessPasses(
+  frozenCase: FrozenPlanGenerationCase,
+  catalog: Catalog,
+  manifest: PlanLanguageManifest,
+): Promise<boolean> {
+  const witness = frozenCase.case.infeasibilityWitness;
+  if (witness === null) return false;
+  const operation = manifest.operations.find((item) =>
+    operationMatches(item.reference, witness.operation),
+  );
+  if (witness.kind === "missingOperation") {
+    if (operation !== undefined) return false;
+  } else if (witness.kind === "deniedCapability") {
+    if (
+      operation?.kind !== "effect" ||
+      operation.effect?.capability !== witness.capability ||
+      frozenCase.case.policy.allowedCapabilities.includes(witness.capability) ||
+      !frozenCase.case.forbiddenCapabilities.includes(witness.capability)
+    )
+      return false;
+  } else {
+    if (
+      operation === undefined ||
+      frozenCase.case.policy.budget[witness.resource] >=
+        witness.requiredMinimum ||
+      (witness.resource === "maxEffectCalls" && operation.kind !== "effect") ||
+      (witness.resource === "maxRecursionDepth" &&
+        operation.kind !== "fixedPointStep")
+    )
+      return false;
+  }
+  const proposal = infeasibilityProposal(frozenCase, manifest, witness);
+  if (!proposal.ok) return false;
+  const generated = await runWitness(frozenCase, catalog, proposal.value);
+  if (!generated.ok || generated.value.kind !== "rejected") return false;
+  const expectedCode =
+    witness.kind === "missingOperation"
+      ? "UNKNOWN_OPERATION"
+      : witness.kind === "deniedCapability"
+        ? "DENIED_CAPABILITY"
+        : "BUDGET_EXCEEDED";
+  return generated.value.record.attempts.some((attempt) =>
+    attempt.diagnostics.some((item) => item.code === expectedCode),
   );
 }
 
@@ -453,17 +613,41 @@ export async function validatePlanGenerationCases(
     }
     const references = referenceDiagnostics(frozenCase, manifest.value);
     diagnostics.push(...references);
-    if (
-      references.length === 0 &&
-      frozenCase.case.expectedFeasibility === "plannable" &&
-      !(await witnessPasses(frozenCase, catalog.value, manifest.value))
-    )
-      diagnostics.push(
-        fixtureDiagnostic(
-          frozenCase.case.id,
-          "offline reference witness did not compile and pass hidden properties over trusted bounds",
-        ),
-      );
+    if (references.length === 0) {
+      if (frozenCase.case.expectedFeasibility === "plannable") {
+        const audit = await auditPlannableWitness(
+          frozenCase,
+          catalog.value,
+          manifest.value,
+        );
+        if (!audit.compiled)
+          diagnostics.push(
+            fixtureDiagnostic(
+              frozenCase.case.id,
+              "offline reference witness did not compile over trusted bounds",
+            ),
+          );
+        if (audit.compiled && !audit.hiddenPropertiesPassed)
+          diagnostics.push(
+            fixtureDiagnostic(
+              frozenCase.case.id,
+              "compiled offline reference witness did not pass hidden properties",
+            ),
+          );
+      } else if (
+        !(await infeasibilityWitnessPasses(
+          frozenCase,
+          catalog.value,
+          manifest.value,
+        ))
+      )
+        diagnostics.push(
+          fixtureDiagnostic(
+            frozenCase.case.id,
+            "offline infeasibility witness did not prove the declared classification",
+          ),
+        );
+    }
   }
   return diagnostics.length === 0
     ? { ok: true, value: undefined }
@@ -478,6 +662,7 @@ export async function blindPlanGenerationValidityAudit(
   let referencesValid = 0;
   let witnessesCompiled = 0;
   let hiddenPropertiesPassed = 0;
+  let infeasibilityWitnessesPassed = 0;
   let invalidCases = 0;
   for (const frozenCase of cases) {
     const catalog = resolveCatalog(frozenCase.case.catalogId);
@@ -494,11 +679,26 @@ export async function blindPlanGenerationValidityAudit(
       continue;
     }
     referencesValid += 1;
-    if (frozenCase.case.expectedFeasibility === "unplannable") continue;
-    if (await witnessPasses(frozenCase, catalog.value, manifest.value)) {
-      witnessesCompiled += 1;
-      hiddenPropertiesPassed += 1;
-    } else invalidCases += 1;
+    if (frozenCase.case.expectedFeasibility === "unplannable") {
+      if (
+        await infeasibilityWitnessPasses(
+          frozenCase,
+          catalog.value,
+          manifest.value,
+        )
+      )
+        infeasibilityWitnessesPassed += 1;
+      else invalidCases += 1;
+      continue;
+    }
+    const audit = await auditPlannableWitness(
+      frozenCase,
+      catalog.value,
+      manifest.value,
+    );
+    if (audit.compiled) witnessesCompiled += 1;
+    if (audit.hiddenPropertiesPassed) hiddenPropertiesPassed += 1;
+    if (!audit.compiled || !audit.hiddenPropertiesPassed) invalidCases += 1;
   }
   return Object.freeze({
     totalCases: cases.length,
@@ -511,6 +711,7 @@ export async function blindPlanGenerationValidityAudit(
     referencesValid,
     witnessesCompiled,
     hiddenPropertiesPassed,
+    infeasibilityWitnessesPassed,
     invalidCases,
   });
 }

@@ -78,6 +78,15 @@ held-out integrity audit exposes numeric validity counts only, so fixture
 development cannot inspect held-out identities, instructions, inputs, or
 expected results.
 
+Every unplannable fixture carries a typed infeasibility witness. Missing-
+operation witnesses prove the required reference is absent and rejected by the
+compiler. Capability and budget witnesses identify a registered required
+operation and prove that trusted policy rejects its minimal topology with the
+expected diagnostic. The blind audit counts these proofs separately from
+plannable compilation and hidden-property results. Compilation and hidden
+semantic success are also independent counters: a compiled witness with a bad
+hidden result increments only compilation.
+
 Every new run requires a deeply frozen `ExperimentManifest` (format version 3;
 version 2 remains readable for immutable resume). Its digest binds the case set
 and split digests, prompt and protocol content digests, provider/model and
