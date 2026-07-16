@@ -39,9 +39,13 @@ flowchart TB
   KG -. "never controls execution implicitly" .-> PG
 ```
 
-This milestone implements the plan graph and an in-memory run graph. It does not
-implement the knowledge graph. A future backend may link evidence handles into
-traces, but knowledge relationships never become scheduling edges.
+The kernel implements the plan graph and an in-memory run graph. The separate
+`@nicia-ai/lachesis-evidence` package now implements a substrate-neutral
+knowledge/evidence contract plus deterministic matched-text and in-memory graph
+reference sources for M3a. A future run record may link a typed evidence
+selection digest into provenance, but knowledge relationships never become
+scheduling edges and run events never become evidence claims. See
+[M3a graph-native decomposition](./m3a-graph-native-decomposition.md).
 
 ## Catalog trust boundary
 

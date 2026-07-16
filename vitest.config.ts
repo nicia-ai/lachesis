@@ -4,6 +4,13 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: "@nicia-ai/lachesis-evidence",
+        replacement: new URL(
+          "./packages/evidence/src/index.ts",
+          import.meta.url,
+        ).pathname,
+      },
+      {
         find: "@nicia-ai/lachesis-generator/node",
         replacement: new URL(
           "./packages/generator/src/node-store.ts",
@@ -36,6 +43,7 @@ export default defineConfig({
       provider: "v8",
       include: [
         "packages/kernel/src/**/*.ts",
+        "packages/evidence/src/**/*.ts",
         "packages/generator/src/**/*.ts",
         "apps/benchmark/src/controller.ts",
         "apps/benchmark/src/ledger.ts",

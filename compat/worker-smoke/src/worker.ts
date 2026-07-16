@@ -8,6 +8,12 @@ import {
   inspectExecutablePlan,
 } from "@nicia-ai/lachesis";
 import {
+  createInMemoryGraphEvidenceSource,
+  M3A_DETERMINISTIC_CORPUS,
+  M3A_REFERENCE_GRAPH,
+  selectEvidence,
+} from "@nicia-ai/lachesis-evidence";
+import {
   compileCodeMode,
   createRecordedModelAdapter,
   executeCodeMode,
@@ -193,11 +199,24 @@ async function exerciseKernel(): Promise<Response> {
         },
       }),
   });
+  const evidenceSource = createInMemoryGraphEvidenceSource(M3A_REFERENCE_GRAPH);
+  const evidenceTask = M3A_DETERMINISTIC_CORPUS[0];
+  if (!evidenceSource.ok || evidenceTask === undefined)
+    return Response.json({ ok: false }, { status: 500 });
+  const evidence = await selectEvidence(
+    evidenceSource.value,
+    evidenceTask.query,
+  );
   return Response.json({
-    ok: executed.ok && codeModeRun.ok,
+    ok:
+      executed.ok &&
+      codeModeRun.ok &&
+      evidence.ok &&
+      evidence.value.paths.length > 0,
     planHash: summary.planHash,
     canonicalLength: summary.canonicalPlan.length,
     codeModeOutput: codeModeRun.ok ? codeModeRun.value.output : null,
+    evidencePaths: evidence.ok ? evidence.value.paths.length : 0,
   });
 }
 

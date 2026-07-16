@@ -1,0 +1,37 @@
+{
+  "name": "@nicia-ai/lachesis-evidence",
+  "version": "0.1.0",
+  "description": "Substrate-neutral evidence selection contracts and deterministic reference substrates for Lachesis",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Nicia AI",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicia-ai/lachesis.git",
+    "directory": "packages/evidence"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "smoke": "node --input-type=module -e \"const api = await import('@nicia-ai/lachesis-evidence'); if (typeof api.createInMemoryGraphEvidenceSource !== 'function' || typeof api.createMatchedTextEvidenceSource !== 'function' || typeof api.auditM3aOfflineDesign !== 'function') process.exit(1);\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:*",
+    "zod": "4.4.3"
+  }
+}

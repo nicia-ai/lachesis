@@ -7,9 +7,9 @@ type-checks, bounds, content-addresses, and executes the plan through explicit
 effect interpreters.
 
 This repository contains the measured plan kernel, deterministic generation
-benchmark substrate, the frozen M1b/M1c experiment controllers, and the offline
-M2 functional-JSON-IR versus restricted-capability-TypeScript representation
-ablation.
+benchmark substrate, the frozen M1b/M1c experiment controllers, the completed M2
+functional-JSON-IR versus restricted-capability-TypeScript representation
+ablation, and the offline M3a evidence-substrate design.
 
 ## What works
 
@@ -54,6 +54,9 @@ ablation.
   IR versus restricted capability TypeScript, including frozen counterbalanced
   schedules, paired statistics, content-addressed resume, and shared
   conservative accounting.
+- A substrate-neutral evidence-selection contract with deterministic matched
+  text and in-memory graph implementations, evidence-path and citation ground
+  truth, negative controls, and a zero-network M3a audit.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -93,6 +96,8 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
   `@nicia-ai/lachesis-generator`; no live provider SDKs.
 - `packages/generator-ai-sdk` — Node-only live-provider adapter package; kept
   outside the kernel and portable generator.
+- `packages/evidence` — portable substrate-neutral evidence contracts and the
+  offline matched text/reference graph implementations; no TypeGraph dependency.
 - `apps/benchmark` — private Node-only M1b/M1c/M2 campaign controller and CLI.
 - `apps/cli` — Node-only public package `@nicia-ai/lachesis-cli` and `lachesis`
   binary.
@@ -122,9 +127,11 @@ git diff --check
 ## Not yet implemented
 
 The project still excludes conventional or bounded-general CodeMode, TypeGraph,
-SQL/Drizzle, knowledge-graph persistence, graph-native traversal, joins,
-`boundedExplore`, optimizer rewrites, durable/distributed scheduling, general
-adaptive loops, package publication, and deployment.
+SQL/Drizzle, persistent knowledge-graph storage, model-facing graph-native
+traversal, joins, `boundedExplore`, optimizer rewrites, durable/distributed
+scheduling, general adaptive loops, package publication, and deployment. M3a is
+offline reference substrate only; it does not authorize or implement M3b model
+calls.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

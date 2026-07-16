@@ -13,7 +13,8 @@
       ],
       "@nicia-ai/lachesis-generator-ai-sdk": [
         "./packages/generator-ai-sdk/src/index.ts"
-      ]
+      ],
+      "@nicia-ai/lachesis-evidence": ["./packages/evidence/src/index.ts"]
     },
     "lib": ["ES2023", "WebWorker"],
     "types": [],

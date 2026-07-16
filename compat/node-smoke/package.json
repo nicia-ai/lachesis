@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@nicia-ai/lachesis": "workspace:*",
+    "@nicia-ai/lachesis-evidence": "workspace:*",
     "zod": "4.4.3"
   }
 }
