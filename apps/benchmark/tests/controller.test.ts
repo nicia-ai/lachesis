@@ -50,6 +50,7 @@ import {
   createPrimaryMethods,
   executePhase,
   generateStoredReport,
+  immutableExecutionPolicy,
   type LiveAcknowledgement,
   type LoadedPhase,
   loadPhaseFiles,
@@ -1923,6 +1924,71 @@ describe("preflight", () => {
         maximumCostUsdMicros: 10_000_000,
       },
       methods: fakeMethods(historical.materialized, calls),
+    });
+    expect(blocked.ok).toBe(false);
+    expect(diagnosticMessage(blocked)).toContain("report-only");
+    expect(calls.value).toBe(0);
+    expect(await readdir(storageRoot)).toEqual([]);
+  });
+
+  it("keeps the failed M2.2 probe report-only and superseded phases non-executable", async () => {
+    const fresh = await materializedM2("m2-protocol-probe");
+    const historicalCampaign = {
+      ...fresh.campaign,
+      campaignDigest:
+        "918ae344d9f52bbd97d683e18c7decf678046e8f75ce21b3a6274dc9916f5b14",
+    };
+    const historicalPhase = (
+      phase: PhaseManifest["phase"],
+      experimentDigest: string,
+      phaseManifestDigest: string,
+    ): PhaseManifest => ({
+      ...fresh.manifest,
+      phase,
+      experimentDigest,
+      phaseManifestDigest,
+    });
+    const failedProbe = historicalPhase(
+      "m2-protocol-probe",
+      "0a8c35b940f269bf6006e2811dfb8716e3d6fe11c98668963f8ccedb17f4bb56",
+      "d4100414bd42712d980a62db130c21891a8504f2199f15d9d270f12d4b641747",
+    );
+    const supersededCalibration = historicalPhase(
+      "m2-calibration",
+      "79bf9900e25c3129db90476da6e6f3a989bfc6e7a0ca6794e9a91a3d15aab28c",
+      "5a43c109619a82003abb7fb7a46bf1a87caead52a0114b7c8d1b21be76f0cf91",
+    );
+    const supersededHeldOut = historicalPhase(
+      "m2-heldout",
+      "98e7da38be47b220198a5ab6d2907f3d203134f0d57f9006845b576bd2b2a2eb",
+      "cf857f08bc4fe7eb488afd162043abaf8c1f1eff1734bc0930a7d481f472cc8e",
+    );
+    for (const phase of [failedProbe, supersededCalibration, supersededHeldOut])
+      expect(immutableExecutionPolicy(historicalCampaign, phase)).toBe(
+        "report-only",
+      );
+
+    const storageRoot = await temporaryDirectory();
+    const calls = { value: 0 };
+    const blocked = await executePhase({
+      loaded: {
+        ...loaded(fresh),
+        campaign: historicalCampaign,
+        phase: failedProbe,
+        executionPolicy: "report-only",
+      },
+      storageRoot,
+      cwd: process.cwd(),
+      environment: {
+        OPENAI_API_KEY: "offline-dummy",
+        ANTHROPIC_API_KEY: "offline-dummy",
+      },
+      acknowledgement: {
+        experimentDigest: failedProbe.experimentDigest,
+        phase: "m2-protocol-probe",
+        maximumCostUsdMicros: 10_000_000,
+      },
+      methods: fakeMethods(fresh, calls),
     });
     expect(blocked.ok).toBe(false);
     expect(diagnosticMessage(blocked)).toContain("report-only");

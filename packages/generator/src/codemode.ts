@@ -19,13 +19,45 @@ import type { TaskInput } from "./model.js";
 
 export const CODEMODE_PROTOCOL = Object.freeze({
   id: "lachesis-restricted-capability-typescript",
-  version: "2",
+  version: "3",
   claimBoundary:
     "typed surface over the registered Lachesis capability algebra; not conventional CodeMode",
-  grammar:
-    "one exported async main; const SSA bindings; input fields; JSON literals; awaited capability calls; one return",
+  grammar: "model-visible-contract/1",
   isolation:
     "source is parsed and interpreted as a closed AST; it is never passed to eval, Function, an import loader, or a host JavaScript realm",
+});
+
+export const CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT = Object.freeze({
+  id: "lachesis-restricted-capability-typescript-model-visible-grammar",
+  version: "1",
+  canonicalTemplate: `export default async function main(input, ops) {
+  const result = await ops.invoke("operation-id@version", input.inputName);
+  return result;
+}`,
+  canonicalCompilerWitness: `export default async function main(input, ops) {
+  const result = await ops.invoke("approve-label@1.0.0", input.primary);
+  return result;
+}`,
+  rules: Object.freeze([
+    "The complete program contains only one default-exported `async function main(input, ops)`.",
+    "The function body contains only single-declarator `const` bindings followed by one final `return`.",
+    "Every capability call is awaited and invoked directly through `ops`.",
+    "Operation references are string literals in exact `id@version` form.",
+    "Values may only be declared `input` fields, prior bindings, or scalar JSON literals: null, boolean, number, or string.",
+    "Registered operations and their exact versions come only from the supplied language manifest.",
+  ]),
+  capabilitySignatures: Object.freeze({
+    invoke: 'await ops.invoke("id@version", value)',
+    map: 'await ops.map("id@version", value)',
+    filter: 'await ops.filter("id@version", value)',
+    fold: 'await ops.fold("id@version", value)',
+    effect: 'await ops.effect("id@version", value)',
+    select: "await ops.select(condition, primary, fallback)",
+    boundedFix:
+      'await ops.boundedFix("step-id@version", "measure-id@version", value, nonnegativeIntegerLimit)',
+  }),
+  forbidden:
+    "No imports, globals, network, filesystem, environment access, dynamic code, callbacks, helpers, multi-declarator bindings, loops, or recursion.",
 });
 
 export type CodeModeCapabilityMethod =

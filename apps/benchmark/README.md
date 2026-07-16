@@ -76,7 +76,10 @@ in both. The semantic non-inferiority gate uses the lower bound of a validated
 95% Tango paired risk-difference interval. The protocol probe is exactly eight
 calls: two representations × one feasible and one typed-unplannable task × two
 providers. Theoretical phase ceilings are disclosed separately from the
-fail-closed $10
-development and $60 held-out operational pools. Neither is
+fail-closed $10 development and $60 held-out operational pools. Neither is
 authorization to spend. Conventional CodeMode and TypeGraph remain unevaluated.
-See [the M2 design note](../../docs/m2-codemode-baseline.md).
+M2.3 binds the compiler-owned exact entry point, every awaited `ops` capability
+signature, value grammar, and canonical compiling witness into every initial and
+repair prompt. The failed M2.2 probe is immutable and report-only; its
+unexecuted calibration and held-out identities are superseded. See
+[the M2 design note](../../docs/m2-codemode-baseline.md).

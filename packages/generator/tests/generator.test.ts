@@ -31,6 +31,7 @@ import {
   calculateM2PairedRiskDifferenceInterval,
   calculateMaximumCostUsdMicros,
   type CatalogResolver,
+  CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
   CODEMODE_PROTOCOL,
   type CodeModeModelAdapter,
   type CodeModeModelRequest,
@@ -73,6 +74,7 @@ import {
   M1A_GENERATION_STRATEGIES,
   M1A_HOLDOUTS,
   M2_SUPERSEDED_M21_IDENTITIES,
+  M2_SUPERSEDED_M22_IDENTITIES,
   type M2CodeModeMethod,
   matchM2PairedRecords,
   type ModelAdapter,
@@ -3186,6 +3188,15 @@ describe("M2 disjoint paired corpus", () => {
         { phase: "m2-heldout" },
       ],
     });
+    expect(M2_SUPERSEDED_M22_IDENTITIES).toMatchObject({
+      status: "superseded-after-protocol-probe-failure",
+      sourceCommit: "933dfc62235658597cf5bbcc0d4c5247571965d1",
+      phases: [
+        { phase: "m2-protocol-probe", status: "failed-report-only" },
+        { phase: "m2-calibration", status: "superseded-unexecuted" },
+        { phase: "m2-heldout", status: "superseded-unexecuted" },
+      ],
+    });
     const corpus = unwrap(await loadM2PreregisteredCorpus());
     const method = (provider: string): M2CodeModeMethod => ({
       id: `${provider}/restricted-capability-typescript`,
@@ -4653,6 +4664,50 @@ describe("restricted TypeScript CodeMode", () => {
     });
     expect(invalidInput.ok ? null : invalidInput.error.kind).toBe(
       "runtime-exception",
+    );
+  });
+
+  it("compiles the immutable model-visible grammar witness", async () => {
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())("benchmark.decisions"),
+    );
+    const compiled = await compileCodeMode({
+      source: CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT.canonicalCompilerWitness,
+      catalog,
+      policy,
+      taskInputs: [
+        {
+          name: "primary",
+          schema: { id: "label", version: "1.0.0" },
+          declaredBounds: [],
+        },
+      ],
+      semanticObligations: [
+        { kind: "rootDependsOnInput", inputKey: "primary" },
+        {
+          kind: "requiresOperation",
+          operation: { id: "approve-label", version: "1.0.0" },
+        },
+      ],
+    });
+    expect(compiled.ok).toBe(true);
+    expect(CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT.canonicalTemplate).toContain(
+      'await ops.invoke("operation-id@version", input.inputName)',
+    );
+    expect(
+      Object.keys(
+        CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT.capabilitySignatures,
+      ).toSorted(),
+    ).toEqual(
+      [
+        "boundedFix",
+        "effect",
+        "filter",
+        "fold",
+        "invoke",
+        "map",
+        "select",
+      ].toSorted(),
     );
   });
 

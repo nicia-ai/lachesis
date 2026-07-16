@@ -8,7 +8,6 @@ import {
   type ExperimentCaps,
   type GenerationConstraint,
   type InferenceSettings,
-  M2_CODEMODE_PROMPT_PROTOCOL,
   type ModelAdapter,
   type ModelAdapterFailure,
   type ModelIdentity,
@@ -24,7 +23,7 @@ import { z } from "zod";
 
 export const AI_SDK_VERSION = "7.0.28";
 export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/4;ai-sdk/${AI_SDK_VERSION}`;
-export const M2_CODEMODE_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};restricted-capability-typescript/2`;
+export const M2_CODEMODE_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};restricted-capability-typescript/3`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -260,7 +259,7 @@ function renderCodeModeRequest(request: CodeModeModelRequest): string {
       '{ "outcome": { "kind": "program", "source": "..." } } or { "outcome": { "kind": "unplannable", "witness": ... } }',
   };
   const shared = {
-    protocol: M2_CODEMODE_PROMPT_PROTOCOL,
+    protocol: request.protocol,
     originalTask: request.originalTask,
     taskInputs: request.taskInputs,
     languageManifest: request.languageManifest,

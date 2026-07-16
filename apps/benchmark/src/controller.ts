@@ -24,6 +24,7 @@ import {
   runBenchmark,
   runM2PairedBenchmark,
   summarizeBenchmark,
+  verifyExperimentManifest,
 } from "@nicia-ai/lachesis-generator";
 import {
   createJsonFileBenchmarkStore,
@@ -161,9 +162,39 @@ const IMMUTABLE_EXPERIMENT_IDENTITIES = Object.freeze([
     phase: "calibration" as const,
     executionPolicy: "report-only" as const,
   }),
+  Object.freeze({
+    campaignDigest:
+      "918ae344d9f52bbd97d683e18c7decf678046e8f75ce21b3a6274dc9916f5b14",
+    experimentDigest:
+      "0a8c35b940f269bf6006e2811dfb8716e3d6fe11c98668963f8ccedb17f4bb56",
+    phaseManifestDigest:
+      "d4100414bd42712d980a62db130c21891a8504f2199f15d9d270f12d4b641747",
+    phase: "m2-protocol-probe" as const,
+    executionPolicy: "report-only" as const,
+  }),
+  Object.freeze({
+    campaignDigest:
+      "918ae344d9f52bbd97d683e18c7decf678046e8f75ce21b3a6274dc9916f5b14",
+    experimentDigest:
+      "79bf9900e25c3129db90476da6e6f3a989bfc6e7a0ca6794e9a91a3d15aab28c",
+    phaseManifestDigest:
+      "5a43c109619a82003abb7fb7a46bf1a87caead52a0114b7c8d1b21be76f0cf91",
+    phase: "m2-calibration" as const,
+    executionPolicy: "report-only" as const,
+  }),
+  Object.freeze({
+    campaignDigest:
+      "918ae344d9f52bbd97d683e18c7decf678046e8f75ce21b3a6274dc9916f5b14",
+    experimentDigest:
+      "98e7da38be47b220198a5ab6d2907f3d203134f0d57f9006845b576bd2b2a2eb",
+    phaseManifestDigest:
+      "cf857f08bc4fe7eb488afd162043abaf8c1f1eff1734bc0930a7d481f472cc8e",
+    phase: "m2-heldout" as const,
+    executionPolicy: "report-only" as const,
+  }),
 ]);
 
-function immutableExecutionPolicy(
+export function immutableExecutionPolicy(
   campaign: CampaignManifest,
   phase: PhaseManifest,
 ): LoadedPhase["executionPolicy"] | undefined {
@@ -174,6 +205,33 @@ function immutableExecutionPolicy(
       phase.phaseManifestDigest === identity.phaseManifestDigest &&
       phase.phase === identity.phase,
   )?.executionPolicy;
+}
+
+async function verifyImmutablePhaseManifest(
+  phase: PhaseManifest,
+  campaign: CampaignManifest,
+): Promise<Result<PhaseManifest, ReadonlyArray<Diagnostic>>> {
+  const experiment = await verifyExperimentManifest(phase.experiment);
+  if (!experiment.ok) return experiment;
+  const { phaseManifestDigest, ...body } = phase;
+  const digest = await digestValue(body);
+  if (!digest.ok) return { ok: false, error: [digest.error] };
+  if (
+    digest.value !== phaseManifestDigest ||
+    phase.campaignDigest !== campaign.campaignDigest ||
+    phase.campaignId !== campaign.campaignId ||
+    phase.repetitions !== experiment.value.repetitions
+  )
+    return {
+      ok: false,
+      error: [
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Immutable historical phase failed its own content, campaign, experiment, or repetition identity.",
+        ),
+      ],
+    };
+  return { ok: true, value: phase };
 }
 
 async function readJson(path: string): Promise<Result<unknown, Diagnostic>> {
@@ -218,9 +276,15 @@ export async function loadPhaseFiles(
   }
   const campaign = await verifyCampaignManifest(parsedCampaign.data);
   if (!campaign.ok) return campaign;
-  const phase = await verifyPhaseManifest(parsedPhase.data, campaign.value);
+  const immutablePolicy = immutableExecutionPolicy(
+    campaign.value,
+    parsedPhase.data,
+  );
+  const phase =
+    immutablePolicy === undefined
+      ? await verifyPhaseManifest(parsedPhase.data, campaign.value)
+      : await verifyImmutablePhaseManifest(parsedPhase.data, campaign.value);
   if (!phase.ok) return phase;
-  const immutablePolicy = immutableExecutionPolicy(campaign.value, phase.value);
   if (
     (phase.value.phase === "transport-probe" ||
       phase.value.phase === "m1c-protocol-probe") &&

@@ -42,6 +42,19 @@ calls are `invoke`, `map`, `filter`, `fold`, `select`, `boundedFix`, and
 property access, ordinary JavaScript calls, unknown methods, and dead bindings
 are rejected before execution.
 
+The immutable model-visible grammar is defined beside the compiler and is
+embedded verbatim in every initial and repair request. Its exact signatures are:
+
+```text
+await ops.invoke("id@version", value)
+await ops.map("id@version", value)
+await ops.filter("id@version", value)
+await ops.fold("id@version", value)
+await ops.effect("id@version", value)
+await ops.select(condition, primary, fallback)
+await ops.boundedFix("step-id@version", "measure-id@version", value, nonnegativeIntegerLimit)
+```
+
 This is an isolate by construction: rejected syntax has no runtime semantics.
 The implementation remains Worker-compatible and is exercised by the packaged
 Cloudflare Worker consumer.
@@ -191,11 +204,36 @@ experiment identities (`490f8fb3…`, `96379661…`, and `b0fa6ece…`) are
 machine-marked `superseded-unexecuted`. Verification under M2.2 rejects those
 analysis and authorization identities.
 
+## M2.3 deterministic protocol correction
+
+The M2.2 probe at source `933dfc62235658597cf5bbcc0d4c5247571965d1` made eight
+calls before calibration or held-out access. Both functional-IR plans and all
+four typed-witness branches passed. Both feasible restricted TypeScript
+responses reached structured output but violated the compiler's entry-point
+contract, so the preregistered 8/8 probe gate failed 6/8. The probe experiment
+`0a8c35b9…` is immutable and report-only.
+
+The deterministic defect was prompt/compiler drift: the compiler required
+`export default async function main(input, ops)` and direct awaited `ops.*`
+calls, while the model-visible protocol described those constraints only
+abstractly. M2.3 defines one immutable grammar contract beside the compiler,
+includes its canonical template and every capability signature in initial and
+repair requests, and tests the canonical witness through the real compiler and
+both intercepted provider serializers. This correction changes prompt, protocol,
+adapter, experiment, and phase identities but does not change the corpus,
+models, inference settings, schedule algorithm, scorer, analysis, or prospective
+gates.
+
+The unexecuted M2.2 calibration `79bf9900…` and held-out `98e7da38…` experiments
+are `superseded-unexecuted`. Neither may execute or resume. M2.3 requires a
+fresh matched eight-call probe and separate authorization before any development
+calibration.
+
 ## Claim boundary
 
-No M2 provider inference has been run or authorized. No M2 identity should be
-externally preregistered until M2.2 is committed, rematerialized, blindly
-audited, and reviewed. The intended live order is protocol probe, development
+The failed M2.2 protocol probe is transport and protocol evidence only. It is
+not calibration evidence and cannot support a representation comparison. The
+intended live order remains a fresh matched protocol probe, development
 calibration, offline held-out freeze review, then separately authorized held-out
 execution. The implementation and campaign definitions are offline substrate,
 not evidence that either representation is superior. TypeGraph and

@@ -45,6 +45,7 @@ export {
   toPublicExamples,
 } from "./case.js";
 export {
+  CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
   CODEMODE_PROTOCOL,
   type CodeModeArtifact,
   type CodeModeArtifactSummary,
@@ -121,6 +122,7 @@ export {
   createM2PairedExperimentDigestFromIdentity,
   M2_COMPARISON_PROTOCOL,
   M2_SUPERSEDED_M21_IDENTITIES,
+  M2_SUPERSEDED_M22_IDENTITIES,
   type M2CodeModeMethod,
   type M2CodeModeMethodIdentity,
   type M2CodeModeRecord,

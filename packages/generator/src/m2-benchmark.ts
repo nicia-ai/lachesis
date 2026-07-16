@@ -82,9 +82,50 @@ export const M2_SUPERSEDED_M21_IDENTITIES = Object.freeze({
   ]),
 });
 
+export const M2_SUPERSEDED_M22_IDENTITIES = Object.freeze({
+  status: "superseded-after-protocol-probe-failure" as const,
+  reason:
+    "M2.3 corrects deterministic prompt/compiler drift discovered before calibration or held-out access.",
+  sourceCommit: "933dfc62235658597cf5bbcc0d4c5247571965d1",
+  campaignDigest:
+    "918ae344d9f52bbd97d683e18c7decf678046e8f75ce21b3a6274dc9916f5b14",
+  phases: Object.freeze([
+    Object.freeze({
+      status: "failed-report-only" as const,
+      phase: "m2-protocol-probe",
+      experimentDigest:
+        "0a8c35b940f269bf6006e2811dfb8716e3d6fe11c98668963f8ccedb17f4bb56",
+      phaseManifestDigest:
+        "d4100414bd42712d980a62db130c21891a8504f2199f15d9d270f12d4b641747",
+      scheduleDigest:
+        "39145d62334d1b2639523a70202688b9839d0b0b03d3c915e0a871a6d0692eac",
+    }),
+    Object.freeze({
+      status: "superseded-unexecuted" as const,
+      phase: "m2-calibration",
+      experimentDigest:
+        "79bf9900e25c3129db90476da6e6f3a989bfc6e7a0ca6794e9a91a3d15aab28c",
+      phaseManifestDigest:
+        "5a43c109619a82003abb7fb7a46bf1a87caead52a0114b7c8d1b21be76f0cf91",
+      scheduleDigest:
+        "e9acc7e18a1d9571cedf816eaf2fb44071eee204bcb99c4ad4587ee88d4218ab",
+    }),
+    Object.freeze({
+      status: "superseded-unexecuted" as const,
+      phase: "m2-heldout",
+      experimentDigest:
+        "98e7da38be47b220198a5ab6d2907f3d203134f0d57f9006845b576bd2b2a2eb",
+      phaseManifestDigest:
+        "cf857f08bc4fe7eb488afd162043abaf8c1f1eff1734bc0930a7d481f472cc8e",
+      scheduleDigest:
+        "5d938cd744e21e3d11d0f5ab43309c18646cee2645e07812d590b2adb355756f",
+    }),
+  ]),
+});
+
 export const M2_COMPARISON_PROTOCOL = Object.freeze({
   id: "lachesis-m2-functional-ir-vs-restricted-capability-typescript",
-  version: "3",
+  version: "4",
   primaryComparison: Object.freeze([
     "functional-ir-with-typed-obligations",
     "restricted-capability-typescript-with-typed-obligations",
@@ -93,7 +134,10 @@ export const M2_COMPARISON_PROTOCOL = Object.freeze({
   schedule: "content-addressed-provider-stratified-counterbalance/2",
   repeatedMeasures:
     "repetition-1(record-index-0)-primary;repetition-2(record-index-1)-independent-confirmation;pooling-prohibited",
-  supersedes: M2_SUPERSEDED_M21_IDENTITIES,
+  supersedes: Object.freeze([
+    M2_SUPERSEDED_M21_IDENTITIES,
+    M2_SUPERSEDED_M22_IDENTITIES,
+  ]),
   matchedFactors: Object.freeze([
     "provider-model",
     "task-public-contract",

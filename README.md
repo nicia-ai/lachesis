@@ -124,9 +124,10 @@ git diff --check
 The milestone still excludes conventional or bounded-general CodeMode,
 TypeGraph, SQL/Drizzle, knowledge-graph persistence, graph-native traversal,
 joins, `boundedExplore`, optimizer rewrites, durable/distributed scheduling,
-general adaptive loops, package publication, and deployment. M2 has not been
-externally materialized or run live; its independent campaign and prospective
-gates require offline review, then explicit budget and phase authorization.
-TypeGraph remains deferred.
+general adaptive loops, package publication, and deployment. M2 has not been run
+beyond its failed, immutable M2.2 protocol probe. M2.3 corrects the
+model-visible restricted-TypeScript grammar before calibration or held-out
+access; every fresh phase still requires offline review and separate explicit
+authorization. TypeGraph remains deferred.
 
 Licensed under [Apache License 2.0](LICENSE).

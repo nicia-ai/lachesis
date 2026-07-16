@@ -1,10 +1,14 @@
 import {
   canonicalizeJson,
   createPlanLanguageManifest,
+  diagnostic,
   parseJson,
   type Result,
+  semanticObligationSchema,
 } from "@nicia-ai/lachesis";
 import {
+  CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
+  type CodeModeRepairRequest,
   compileCodeModeStructuredOutputTransport,
   compileStructuredOutputTransport,
   createM1aCatalogResolver,
@@ -13,6 +17,7 @@ import {
   type GenerationStrategy,
   loadM1aCorpus,
   M1A_GENERATION_STRATEGIES,
+  M2_CODEMODE_PROMPT_PROTOCOL,
   type ModelRequest,
   RECORDED_DOUBLE_PLAN,
 } from "@nicia-ai/lachesis-generator";
@@ -122,6 +127,13 @@ function interceptedFetch(
       ),
     );
   };
+}
+
+function stringLeaves(value: unknown): ReadonlyArray<string> {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(stringLeaves);
+  if (value === null || typeof value !== "object") return [];
+  return Object.values(value).flatMap(stringLeaves);
 }
 
 const FORBIDDEN_SCHEMA_KEYWORDS = new Set([
@@ -656,6 +668,9 @@ describe("AI SDK provider adapters", () => {
     const transport = unwrap(
       await compileCodeModeStructuredOutputTransport(manifest, obligations),
     );
+    const canonicalObligations = semanticObligationSchema
+      .array()
+      .parse(obligations);
     const openai = createOpenAiCodeModeAdapter({
       constraint: "json-schema",
       provider: {
@@ -676,7 +691,7 @@ describe("AI SDK provider adapters", () => {
       catalog,
       policy: benchmarkCase.case.policy,
       taskInputs: benchmarkCase.case.taskInputs,
-      semanticObligations: obligations,
+      semanticObligations: canonicalObligations,
       strategy: {
         constraint: "json-schema" as const,
         repair: "none" as const,
@@ -689,8 +704,47 @@ describe("AI SDK provider adapters", () => {
     expect(
       unwrap(await generateCodeMode({ ...common, adapter: anthropic })).kind,
     ).toBe("adapter-failure");
-    expect(openaiRequests).toHaveLength(1);
-    expect(anthropicRequests).toHaveLength(1);
+    const repairRequest: CodeModeRepairRequest = {
+      kind: "repair",
+      protocol: M2_CODEMODE_PROMPT_PROTOCOL,
+      originalTask: common.task,
+      taskInputs: common.taskInputs,
+      languageManifest: manifest,
+      semanticObligations: canonicalObligations,
+      previousProgram: "export async function main(items) { return items; }",
+      diagnostics: [
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Offline compiler fixture rejected the entry point.",
+        ),
+      ],
+      structuredOutputTransport: transport,
+    };
+    expect((await openai.generate(repairRequest)).ok).toBe(false);
+    expect((await anthropic.generate(repairRequest)).ok).toBe(false);
+    expect(openaiRequests).toHaveLength(2);
+    expect(anthropicRequests).toHaveLength(2);
+
+    expect(M2_CODEMODE_PROMPT_PROTOCOL.modelVisibleGrammar).toBe(
+      CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
+    );
+    for (const requests of [openaiRequests, anthropicRequests]) {
+      for (const [index, request] of requests.entries()) {
+        const prompt = required(
+          stringLeaves(request.body).find((value) =>
+            value.startsWith('{"protocol":'),
+          ),
+          "Missing serialized CodeMode prompt.",
+        );
+        const parsedPrompt = unwrap(parseJson(prompt));
+        expect(
+          unwrap(canonicalizeJson(reflectedProperty(parsedPrompt, "protocol"))),
+        ).toBe(unwrap(canonicalizeJson(M2_CODEMODE_PROMPT_PROTOCOL)));
+        expect(reflectedProperty(parsedPrompt, "turn")).toBe(
+          index === 0 ? "initial" : "repair",
+        );
+      }
+    }
 
     const openaiBody = z
       .looseObject({

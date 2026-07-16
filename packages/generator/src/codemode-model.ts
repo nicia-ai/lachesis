@@ -15,6 +15,7 @@ import {
 import { z } from "zod";
 
 import {
+  CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
   CODEMODE_PROTOCOL,
   type CodeModeArtifact,
   compileCodeMode,
@@ -47,8 +48,9 @@ import { validateUnplannableWitness } from "./witness.js";
 
 export const M2_CODEMODE_PROMPT_PROTOCOL = Object.freeze({
   id: "lachesis-m2-restricted-capability-typescript-generation",
-  version: "2",
+  version: "3",
   representation: CODEMODE_PROTOCOL,
+  modelVisibleGrammar: CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
   outputContract: Object.freeze({
     program: '{ "kind": "program", "source": "..." }',
     unplannable:
@@ -56,6 +58,7 @@ export const M2_CODEMODE_PROMPT_PROTOCOL = Object.freeze({
     rules: Object.freeze([
       "Return raw JSON only.",
       "Do not use Markdown fences or alternate field names.",
+      "Copy the exact entry-point shape and capability-call grammar from modelVisibleGrammar.",
       "Source must use only the supplied restricted TypeScript grammar and registered ops capabilities.",
       "Do not use imports, globals, network, filesystem, environment access, dynamic code, loops, recursion, or unregistered operations.",
     ]),
