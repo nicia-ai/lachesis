@@ -32,6 +32,7 @@ import {
 import {
   type MaterializedPhase,
   materializeM1bPhase,
+  materializeM1cPhase,
   matrixCounts,
   validateTransportProbeCaps,
 } from "./manifests.js";
@@ -198,13 +199,18 @@ export async function loadPhaseFiles(
   if (!phase.ok) return phase;
   const immutablePolicy = immutableExecutionPolicy(campaign.value, phase.value);
   if (
-    phase.value.phase === "transport-probe" &&
+    (phase.value.phase === "transport-probe" ||
+      phase.value.phase === "m1c-protocol-probe") &&
     immutablePolicy !== "report-only"
   ) {
     const caps = validateTransportProbeCaps(phase.value.experiment);
     if (!caps.ok) return caps;
   }
-  const materialized = await materializeM1bPhase({
+  const materialized = await (
+    phase.value.phase.startsWith("m1c-")
+      ? materializeM1cPhase
+      : materializeM1bPhase
+  )({
     phase: phase.value.phase,
     gitCommit: phase.value.experiment.versions.gitCommit,
     runtimeVersions: phase.value.runtimeVersions,
@@ -388,6 +394,7 @@ export async function preflightPhase(
   );
   const counts = matrixCounts(input.loaded.phase);
   const gitBound =
+    input.loaded.phase.phase.startsWith("m1c-") ||
     input.loaded.phase.phase === "heldout" ||
     input.loaded.phase.phase === "transport-probe";
   const cleanWorktree = !gitBound || git.value.clean;
@@ -512,7 +519,10 @@ export async function executePhase(
         "This immutable historical experiment is report-only and can never execute or resume.",
       ),
     };
-  if (input.loaded.phase.phase === "transport-probe") {
+  if (
+    input.loaded.phase.phase === "transport-probe" ||
+    input.loaded.phase.phase === "m1c-protocol-probe"
+  ) {
     const caps = validateTransportProbeCaps(input.loaded.phase.experiment);
     if (!caps.ok)
       return {
@@ -614,6 +624,9 @@ export async function executePhase(
         input.loaded.phase,
         input.onReservation,
       ),
+      ...(input.loaded.materialized.repairTrials === undefined
+        ? {}
+        : { repairTrials: input.loaded.materialized.repairTrials }),
     });
     if (!result.ok) return result;
     return {
@@ -710,6 +723,28 @@ export async function generateStoredReport(
     campaign: input.loaded.campaign,
   });
   if (!budgets.ok) return budgets;
+  const repairRecords = records.value.filter(
+    (record) => record.repairTrial !== undefined,
+  );
+  const mismatchedRepairArms = repairRecords.filter((record) => {
+    const trial = record.repairTrial;
+    return (
+      trial !== undefined &&
+      (trial.initialProposalDigest !== trial.arms.withoutRepair ||
+        trial.initialProposalDigest !== trial.arms.compilerGuidedRepair)
+    );
+  });
+  if (
+    input.loaded.phase.phase === "m1c-repair" &&
+    mismatchedRepairArms.length > 0
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "M1c repair records contain unmatched initial-proposal digests.",
+      ),
+    };
   const groups = input.loaded.phase.experiment.methods.map((method) => {
     const selected = records.value.filter(
       (record) => record.methodId === method.id,
@@ -777,6 +812,27 @@ export async function generateStoredReport(
         "Observed provider billing is reconstructed from provider-reported usage. Authorized conservative accounting is a campaign charge used only when a dispatched request has no usable provider usage; not-dispatched failures settle at zero.",
       records: records.value.length,
       methods: groups,
+      repairComparison:
+        input.loaded.phase.phase === "m1c-repair"
+          ? {
+              rule: "same-initial-proposal-digest-only",
+              matchedRecords: repairRecords.length,
+              unmatchedRecords: mismatchedRepairArms.length,
+              eligible: repairRecords.filter(
+                (record) => record.repairTrial?.outcome === "eligible",
+              ).length,
+              repaired: repairRecords.filter(
+                (record) => record.repairTrial?.outcome === "repaired",
+              ).length,
+              failed: repairRecords.filter(
+                (record) => record.repairTrial?.outcome === "failed",
+              ).length,
+              repairUnnecessary: repairRecords.filter(
+                (record) =>
+                  record.repairTrial?.outcome === "repair-unnecessary",
+              ).length,
+            }
+          : null,
       matchedComparisons: providers.flatMap((provider) => [
         {
           provider,

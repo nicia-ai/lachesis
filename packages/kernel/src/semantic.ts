@@ -1,9 +1,18 @@
 import { z } from "zod";
 
+import { digestValue } from "./canonical.js";
 import { referenceKey } from "./catalog.js";
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
+import {
+  type CatalogFingerprint,
+  type PlanHash,
+  type SemanticContractHash,
+  semanticContractHashSchema,
+} from "./identity.js";
+import type { CompilationPolicy } from "./manifest.js";
 import { nodeDependencies } from "./normalize.js";
 import type { CheckedPlan, PlanAnalysis, RootProvenance } from "./plan.js";
+import type { Result } from "./result.js";
 import type { NodeId, OperationReference, WireNode } from "./wire.js";
 import { operationReferenceSchema } from "./wire.js";
 
@@ -39,6 +48,61 @@ export const semanticObligationSchema = z.discriminatedUnion("kind", [
 
 export type SemanticObligation = z.infer<typeof semanticObligationSchema>;
 export type SemanticObligationInput = z.input<typeof semanticObligationSchema>;
+
+function obligationKey(obligation: SemanticObligation): string {
+  switch (obligation.kind) {
+    case "requiresOperation":
+    case "operationDominatesRoot":
+      return `${obligation.kind}\u0000${referenceKey(obligation.operation)}`;
+    case "rootDependsOnInput":
+      return `${obligation.kind}\u0000${obligation.inputKey}`;
+    case "requiresEffect":
+      return `${obligation.kind}\u0000${obligation.effectName}`;
+    case "requiresStateChange":
+      return obligation.kind;
+  }
+}
+
+/** Returns the unique semantic obligations in deterministic identity order. */
+export function canonicalizeSemanticObligations(
+  obligations: ReadonlyArray<SemanticObligation>,
+): ReadonlyArray<SemanticObligation> {
+  const unique = new Map<string, SemanticObligation>();
+  for (const obligation of obligations)
+    unique.set(obligationKey(obligation), obligation);
+  return Object.freeze(
+    [...unique.entries()]
+      .toSorted(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([, obligation]) => obligation),
+  );
+}
+
+/** Binds a plan to the exact catalog, trusted policy, and verified obligations. */
+export async function hashSemanticContract(
+  input: Readonly<{
+    planHash: PlanHash;
+    catalogFingerprint: CatalogFingerprint;
+    policy: CompilationPolicy;
+    semanticObligations: ReadonlyArray<SemanticObligation>;
+  }>,
+): Promise<Result<SemanticContractHash, Diagnostic>> {
+  const digest = await digestValue({
+    planHash: input.planHash,
+    catalogFingerprint: input.catalogFingerprint,
+    policy: {
+      allowedCapabilities: [
+        ...new Set(input.policy.allowedCapabilities),
+      ].toSorted(),
+      budget: input.policy.budget,
+    },
+    semanticObligations: canonicalizeSemanticObligations(
+      input.semanticObligations,
+    ),
+  });
+  return digest.ok
+    ? { ok: true, value: semanticContractHashSchema.parse(digest.value) }
+    : digest;
+}
 
 export function nodeOperationReferences(
   node: WireNode,

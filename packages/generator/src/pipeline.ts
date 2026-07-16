@@ -1,5 +1,6 @@
 import {
   canonicalizeJson,
+  canonicalizeSemanticObligations,
   type Catalog,
   type CompilationPolicy,
   compilePlanJson,
@@ -9,6 +10,7 @@ import {
   digestValue,
   type ExecutablePlan,
   inspectExecutablePlan,
+  type ModelPlanProposal,
   modelPlanProposalSchema,
   parseJson,
   type PlanLanguageManifest,
@@ -67,6 +69,7 @@ export type GeneratePlanInput = Readonly<{
   strategy: GenerationStrategy;
   structuredOutputTransport?: StructuredOutputTransport | undefined;
   modelCallLimit?: number | undefined;
+  sharedInitialProposal?: ModelPlanProposal | undefined;
 }>;
 
 export type ModelProposalCompilation = Readonly<{
@@ -476,6 +479,7 @@ async function generationRecord(
   attempts: ReadonlyArray<AttemptRecord>,
   finalKind: GenerationFinalKind,
   planHash: string | null,
+  semanticContractHash: string | null,
 ): Promise<Result<GenerationRecord, Diagnostic>> {
   const totals = attempts.reduce(
     (current, attempt) => ({
@@ -508,7 +512,12 @@ async function generationRecord(
     attempts,
     finalKind,
     planHash,
-    repairCount: Math.max(0, attempts.length - 1),
+    semanticContractHash,
+    semanticObligations: canonicalizeSemanticObligations(
+      input.semanticObligations ?? [],
+    ),
+    repairCount: attempts.filter((attempt) => attempt.phase === "repair")
+      .length,
     totalInputTokens: totals.inputTokens,
     totalCachedInputTokens: totals.cachedInputTokens,
     totalCacheWriteInputTokens: totals.cacheWriteInputTokens,
@@ -578,23 +587,89 @@ export async function generatePlan(
       };
   }
   const attempts: Array<AttemptRecord> = [];
-  let request: ModelRequest = {
-    kind: "initial",
-    originalTask: input.task,
-    taskInputs: input.taskInputs,
-    languageManifest: manifest.value,
-    semanticObligations: input.semanticObligations ?? [],
-    publicExamples: input.publicExamples,
-    constraint: input.strategy.constraint,
-    structuredOutputTransport: transport,
-  };
+  let request: ModelRequest;
+  if (input.sharedInitialProposal === undefined) {
+    request = {
+      kind: "initial",
+      originalTask: input.task,
+      taskInputs: input.taskInputs,
+      languageManifest: manifest.value,
+      semanticObligations: input.semanticObligations ?? [],
+      publicExamples: input.publicExamples,
+      constraint: input.strategy.constraint,
+      structuredOutputTransport: transport,
+    };
+  } else {
+    if (input.strategy.repair !== "compiler-guided" || transport === null)
+      return {
+        ok: false,
+        error: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "A shared repair proposal requires compiler-guided structured-output repair.",
+        ),
+      };
+    const initialCompilation = await compileModelPlanProposal(
+      input.sharedInitialProposal,
+      input.catalog,
+      input.policy,
+      input.taskInputs,
+      input.semanticObligations ?? [],
+    );
+    if (initialCompilation.executablePlan !== undefined) {
+      const summary = inspectExecutablePlan(initialCompilation.executablePlan);
+      if (summary === undefined)
+        return {
+          ok: false,
+          error: diagnostic(
+            "INVALID_EXECUTABLE_PLAN",
+            "Shared initial proposal compiled but could not be inspected.",
+          ),
+        };
+      const record = await generationRecord(
+        input,
+        manifest.value,
+        attempts,
+        "compiled",
+        summary.planHash,
+        summary.semanticContractHash,
+      );
+      return record.ok
+        ? {
+            ok: true,
+            value: {
+              kind: "compiled",
+              executablePlan: initialCompilation.executablePlan,
+              manifest: manifest.value,
+              record: record.value,
+            },
+          }
+        : record;
+    }
+    request = {
+      kind: "repair",
+      originalTask: input.task,
+      taskInputs: input.taskInputs,
+      languageManifest: manifest.value,
+      semanticObligations: input.semanticObligations ?? [],
+      previousProposal: input.sharedInitialProposal,
+      diagnostics: initialCompilation.diagnostics,
+      structuredOutputTransport: transport,
+    };
+  }
+  const lastProtocolAttemptIndex =
+    input.sharedInitialProposal === undefined
+      ? MAX_REPAIR_ATTEMPTS
+      : MAX_REPAIR_ATTEMPTS - 1;
 
   for (
     let attemptIndex = 0;
-    attemptIndex < Math.min(MAX_REPAIR_ATTEMPTS + 1, maximumCalls);
+    attemptIndex < Math.min(lastProtocolAttemptIndex + 1, maximumCalls);
     attemptIndex += 1
   ) {
-    const phase: AttemptPhase = attemptIndex === 0 ? "initial" : "repair";
+    const phase: AttemptPhase =
+      input.sharedInitialProposal === undefined && attemptIndex === 0
+        ? "initial"
+        : "repair";
     const requestHash = await requestDigest(
       request,
       attempts.at(-1)?.digest ?? null,
@@ -619,6 +694,7 @@ export async function generatePlan(
         manifest.value,
         attempts,
         finalKind,
+        null,
         null,
       );
       return record.ok
@@ -645,13 +721,14 @@ export async function generatePlan(
       attempts.push(attempt.value);
       if (
         input.strategy.repair === "none" ||
-        attemptIndex === MAX_REPAIR_ATTEMPTS
+        attemptIndex === lastProtocolAttemptIndex
       ) {
         const record = await generationRecord(
           input,
           manifest.value,
           attempts,
           "rejected",
+          null,
           null,
         );
         return record.ok
@@ -714,6 +791,7 @@ export async function generatePlan(
           attempts,
           "unplannable",
           null,
+          null,
         );
         return record.ok
           ? {
@@ -728,13 +806,14 @@ export async function generatePlan(
       }
       if (
         input.strategy.repair === "none" ||
-        attemptIndex === MAX_REPAIR_ATTEMPTS
+        attemptIndex === lastProtocolAttemptIndex
       ) {
         const record = await generationRecord(
           input,
           manifest.value,
           attempts,
           "rejected",
+          null,
           null,
         );
         return record.ok
@@ -801,6 +880,7 @@ export async function generatePlan(
         attempts,
         "compiled",
         summary.planHash,
+        summary.semanticContractHash,
       );
       return record.ok
         ? {
@@ -816,13 +896,14 @@ export async function generatePlan(
     }
     if (
       input.strategy.repair === "none" ||
-      attemptIndex === MAX_REPAIR_ATTEMPTS
+      attemptIndex === lastProtocolAttemptIndex
     ) {
       const record = await generationRecord(
         input,
         manifest.value,
         attempts,
         "rejected",
+        null,
         null,
       );
       return record.ok
@@ -858,10 +939,10 @@ export async function generatePlan(
   return {
     ok: false,
     error: diagnostic(
-      maximumCalls <= MAX_REPAIR_ATTEMPTS
+      maximumCalls <= lastProtocolAttemptIndex
         ? "BUDGET_EXCEEDED"
         : "INTERNAL_INVARIANT_VIOLATION",
-      maximumCalls <= MAX_REPAIR_ATTEMPTS
+      maximumCalls <= lastProtocolAttemptIndex
         ? "Model-call cap prevented another repair attempt."
         : "Bounded generation loop exited unexpectedly.",
     ),

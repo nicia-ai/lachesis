@@ -16,7 +16,9 @@ import { normalizePlan } from "./normalize.js";
 import type { PlanAnalysis } from "./plan.js";
 import { err, ok, type Result } from "./result.js";
 import {
+  canonicalizeSemanticObligations,
   enforceSemanticObligations,
+  hashSemanticContract,
   type SemanticObligationInput,
   semanticObligationSchema,
 } from "./semantic.js";
@@ -101,7 +103,7 @@ export async function compilePlanJson(
   text: string,
   catalog: Catalog,
   policy: CompilationPolicy,
-  semanticObligations: ReadonlyArray<SemanticObligationInput> = [],
+  semanticObligationInputs: ReadonlyArray<SemanticObligationInput> = [],
 ): Promise<Result<ExecutablePlan, Diagnostics>> {
   const parsedPolicy = compilationPolicySchema.safeParse(policy);
   if (!parsedPolicy.success) {
@@ -132,7 +134,7 @@ export async function compilePlanJson(
   const parsedObligations = z
     .array(semanticObligationSchema)
     .readonly()
-    .safeParse(semanticObligations);
+    .safeParse(semanticObligationInputs);
   if (!parsedObligations.success)
     return err(
       parsedObligations.error.issues.map((issue) =>
@@ -147,10 +149,13 @@ export async function compilePlanJson(
         ),
       ),
     );
+  const semanticObligations = canonicalizeSemanticObligations(
+    parsedObligations.data,
+  );
   const semanticDiagnostics = enforceSemanticObligations(
     checked.value,
     analysis.value,
-    parsedObligations.data,
+    semanticObligations,
   );
   if (semanticDiagnostics.length > 0) return err(semanticDiagnostics);
   const requirementDiagnostics = enforceRequirements(
@@ -167,6 +172,13 @@ export async function compilePlanJson(
     parsedPolicy.data,
   );
   if (!manifest.ok) return err([manifest.error]);
+  const semanticContractHash = await hashSemanticContract({
+    planHash: planHashSchema.parse(planHash.value),
+    catalogFingerprint: manifest.value.catalogFingerprint,
+    policy: parsedPolicy.data,
+    semanticObligations,
+  });
+  if (!semanticContractHash.ok) return err([semanticContractHash.error]);
   return ok(
     createExecutablePlan({
       checked: checked.value,
@@ -174,6 +186,8 @@ export async function compilePlanJson(
       catalog: snapshot,
       catalogFingerprint: manifest.value.catalogFingerprint,
       planHash: planHashSchema.parse(planHash.value),
+      semanticContractHash: semanticContractHash.value,
+      semanticObligations,
       policy: parsedPolicy.data,
       canonicalPlan: canonical.value,
     }),

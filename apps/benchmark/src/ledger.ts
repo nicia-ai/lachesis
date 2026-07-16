@@ -29,7 +29,12 @@ import { z } from "zod";
 import type { CampaignManifest, PhaseManifest } from "./protocol.js";
 
 const fileErrorSchema = z.object({ code: z.string() });
-const poolIdSchema = z.enum(["m1b-development", "m1b-heldout-pilot"]);
+const poolIdSchema = z.enum([
+  "m1b-development",
+  "m1b-heldout-pilot",
+  "m1c-development",
+  "m1c-heldout",
+]);
 
 const commonEventSchema = z.object({
   sequence: z.number().int().nonnegative(),
@@ -47,7 +52,16 @@ const ledgerEventBodySchema = z.discriminatedUnion("kind", [
     kind: z.literal("manifest-registered"),
     phaseManifestDigest: z.string().min(1),
     experimentDigest: z.string().min(1),
-    phase: z.enum(["transport-probe", "smoke", "calibration", "heldout"]),
+    phase: z.enum([
+      "transport-probe",
+      "smoke",
+      "calibration",
+      "heldout",
+      "m1c-protocol-probe",
+      "m1c-repair",
+      "m1c-calibration",
+      "m1c-heldout",
+    ]),
     budgetPoolId: poolIdSchema,
     storageNamespace: z.string().min(1),
   }),

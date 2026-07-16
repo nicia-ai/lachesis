@@ -16,7 +16,9 @@ import {
 } from "./controller.js";
 import {
   blindHeldOutIntegrityAudit,
+  blindM1cHeldOutIntegrityAudit,
   materializeM1bPhase,
+  materializeM1cPhase,
   type RuntimeVersions,
 } from "./manifests.js";
 import { campaignPhaseSchema } from "./protocol.js";
@@ -42,7 +44,7 @@ function flag(args: ReadonlyArray<string>, name: string): string | undefined {
 
 function usage(): void {
   process.stderr.write(
-    "Usage: lachesis-benchmark <materialize|audit-heldout|validate|dry-run|execute|resume|report> [phase] --campaign FILE --manifest FILE [--storage-root DIR] [--ack-experiment DIGEST --ack-phase PHASE --ack-max-usd-micros INTEGER]\n",
+    "Usage: lachesis-benchmark <materialize|audit-heldout|audit-m1c-heldout|validate|dry-run|execute|resume|report> [phase] --campaign FILE --manifest FILE [--storage-root DIR] [--ack-experiment DIGEST --ack-phase PHASE --ack-max-usd-micros INTEGER]\n",
   );
 }
 
@@ -73,9 +75,12 @@ async function materialize(
   }
   const destination = resolve(
     cwd,
-    flag(args, "--out") ?? `experiments/m1b/${phase.data}`,
+    flag(args, "--out") ??
+      `experiments/${phase.data.startsWith("m1c-") ? "m1c" : "m1b"}/${phase.data}`,
   );
-  const materialized = await materializeM1bPhase({
+  const materialized = await (
+    phase.data.startsWith("m1c-") ? materializeM1cPhase : materializeM1bPhase
+  )({
     phase: phase.data,
     gitCommit: await gitCommit(cwd),
     runtimeVersions: runtimeVersions(),
@@ -121,6 +126,12 @@ async function main(args: ReadonlyArray<string>): Promise<number> {
   if (command === "materialize") return materialize(phaseValue, args, cwd);
   if (command === "audit-heldout") {
     const audit = await blindHeldOutIntegrityAudit();
+    if (!audit.ok) return failure(audit.error);
+    output(audit.value);
+    return 0;
+  }
+  if (command === "audit-m1c-heldout") {
+    const audit = await blindM1cHeldOutIntegrityAudit();
     if (!audit.ok) return failure(audit.error);
     output(audit.value);
     return 0;

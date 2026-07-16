@@ -7,6 +7,7 @@ import {
   createPlanLanguageManifest,
   defineSchema,
   digestValue,
+  modelPlanProposalSchema,
   type Result,
 } from "@nicia-ai/lachesis";
 import { describe, expect, it } from "vitest";
@@ -896,6 +897,7 @@ describe("M1a frozen substrate", () => {
     expect(Object.isFrozen(first)).toBe(true);
     expect(Object.isFrozen(first.methods[0]?.inference)).toBe(true);
     expect((await verifyExperimentManifest(first)).ok).toBe(true);
+    expect((await verifyExperimentManifest({})).ok).toBe(false);
     const legacyMethods = [];
     for (const method of first.methods) {
       const modelConfigurationDigest = unwrap(
@@ -937,6 +939,33 @@ describe("M1a frozen substrate", () => {
     ).toBe(false);
     const { experimentDigest, ...manifestBody } = first;
     expect(experimentDigest).toBe(first.experimentDigest);
+    const caseDigest = first.cases[0]?.caseDigest;
+    if (caseDigest === undefined) throw new Error("Missing experiment case.");
+    const invalidRepairBody = {
+      ...manifestBody,
+      formatVersion: "5",
+      repairTrials: [
+        {
+          caseDigest,
+          mutation: { kind: "redirectRoot", root: "items" },
+          initialProposalDigest: "a".repeat(64),
+          eligibility: "eligible",
+          arms: {
+            withoutRepair: "a".repeat(64),
+            compilerGuidedRepair: "b".repeat(64),
+          },
+        },
+      ],
+    };
+    const invalidRepairDigest = unwrap(await digestValue(invalidRepairBody));
+    expect(
+      (
+        await verifyExperimentManifest({
+          ...invalidRepairBody,
+          experimentDigest: invalidRepairDigest,
+        })
+      ).ok,
+    ).toBe(false);
     const incompatibleMethodBody = {
       ...manifestBody,
       methods: manifestBody.methods.map((method, index) =>
@@ -1159,14 +1188,18 @@ describe("M1a frozen substrate", () => {
 describe("M1c preregistered corpus boundary", () => {
   it("uses only fresh case identities and passes the blind offline validity audit", async () => {
     const corpus = unwrap(await loadM1cPreregisteredCorpus());
-    expect(corpus.development).toHaveLength(4);
-    expect(corpus.heldOut).toHaveLength(9);
+    expect(corpus.development).toHaveLength(7);
+    expect(corpus.heldOut).toHaveLength(10);
     const priorIds = [
       ...M1A_HOLDOUTS.catalogs,
       ...M1A_HOLDOUTS.operatorCombinations,
       ...M1A_HOLDOUTS.phrasings,
     ];
     expect(assertNoM1bHeldOutReuse(corpus, priorIds).ok).toBe(true);
+    expect(
+      assertNoM1bHeldOutReuse(corpus, [corpus.development[0]?.case.id ?? ""])
+        .ok,
+    ).toBe(false);
     const all = [...corpus.development, ...corpus.heldOut];
     expect(
       await blindPlanGenerationValidityAudit(
@@ -1174,15 +1207,25 @@ describe("M1c preregistered corpus boundary", () => {
         unwrap(createM1aCatalogResolver()),
       ),
     ).toEqual({
-      totalCases: 13,
+      totalCases: 17,
       plannableCases: 11,
-      unplannableCases: 2,
-      referencesValid: 13,
+      unplannableCases: 6,
+      referencesValid: 17,
       witnessesCompiled: 11,
       hiddenPropertiesPassed: 11,
-      infeasibilityWitnessesPassed: 2,
+      infeasibilityWitnessesPassed: 6,
       invalidCases: 0,
     });
+    for (const split of [corpus.development, corpus.heldOut])
+      expect(
+        split
+          .flatMap((item) =>
+            item.case.infeasibilityWitness === null
+              ? []
+              : [item.case.infeasibilityWitness.kind],
+          )
+          .toSorted(),
+      ).toEqual(["deniedCapability", "insufficientBudget", "missingOperation"]);
   });
 });
 
@@ -1262,6 +1305,8 @@ describe("generate, compile, and bounded repair", () => {
     expect(session.record.attempts[0]?.compiled).toBe(true);
     expect(session.record.totalInputTokens).toBe(120);
     expect(session.record.planHash).not.toBeNull();
+    expect(session.record.semanticContractHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(session.record.semanticObligations).toEqual([]);
     expect(Object.isFrozen(session.record)).toBe(true);
     expect(Object.isFrozen(session.record.attempts[0])).toBe(true);
     expect(Object.isFrozen(session.manifest)).toBe(true);
@@ -1551,6 +1596,15 @@ describe("generate, compile, and bounded repair", () => {
       ).ok,
     ).toBe(false);
     expect(
+      (
+        await prepareSharedRepairTrial({
+          ...common,
+          validProposal: {},
+          mutation: { kind: "redirectRoot", root: "missing" },
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
       applyDeterministicPlanMutation(common.validProposal, {
         kind: "redirectRoot",
         root: "missing",
@@ -1562,6 +1616,63 @@ describe("generate, compile, and bounded repair", () => {
         nodeId: "items",
       }).ok,
     ).toBe(false);
+  });
+
+  it("dispatches only eligible shared repairs and records unnecessary trials without a call", async () => {
+    const benchmarkCase = await corpusCase("numbers/double");
+    const catalog = unwrap(
+      unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
+    );
+    const base = modelPlanProposalSchema.parse(
+      modelProposal(RECORDED_DOUBLE_PLAN),
+    );
+    const eligible = unwrap(
+      applyDeterministicPlanMutation(base, {
+        kind: "bypassUnaryNode",
+        nodeId: "doubled",
+      }),
+    );
+    const repairedAdapter = createRecordedModelAdapter(
+      await recordedFixture(0),
+    );
+    const repaired = unwrap(
+      await generatePlan({
+        task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
+        catalog,
+        policy: benchmarkCase.case.policy,
+        semanticObligations: benchmarkCase.case.semanticObligations ?? [],
+        publicExamples: [],
+        adapter: repairedAdapter,
+        strategy: strategy("json-schema-with-repair"),
+        sharedInitialProposal: eligible,
+      }),
+    );
+    expect(repaired.kind).toBe("compiled");
+    expect(repairedAdapter.requests()).toHaveLength(1);
+    expect(repairedAdapter.requests()[0]?.kind).toBe("repair");
+    expect(repaired.record.repairCount).toBe(1);
+
+    const unnecessaryAdapter = createRecordedModelAdapter(
+      await recordedFixture(0),
+    );
+    const unnecessary = unwrap(
+      await generatePlan({
+        task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
+        catalog,
+        policy: benchmarkCase.case.policy,
+        semanticObligations: benchmarkCase.case.semanticObligations ?? [],
+        publicExamples: [],
+        adapter: unnecessaryAdapter,
+        strategy: strategy("json-schema-with-repair"),
+        sharedInitialProposal: base,
+      }),
+    );
+    expect(unnecessary.kind).toBe("compiled");
+    expect(unnecessaryAdapter.requests()).toHaveLength(0);
+    expect(unnecessary.record.attempts).toHaveLength(0);
+    expect(unnecessary.record.repairCount).toBe(0);
   });
 
   it("stops after exactly two repair attempts", async () => {
@@ -1604,6 +1715,33 @@ describe("generate, compile, and bounded repair", () => {
     expect(session.record.attempts).toHaveLength(3);
     expect(session.record.repairCount).toBe(2);
     expect(adapter.requests()).toHaveLength(3);
+
+    const sharedAdapter = createRecordedModelAdapter(frozen);
+    const sharedInitialProposal = unwrap(
+      applyDeterministicPlanMutation(
+        modelPlanProposalSchema.parse(modelProposal(RECORDED_DOUBLE_PLAN)),
+        { kind: "bypassUnaryNode", nodeId: "doubled" },
+      ),
+    );
+    const shared = unwrap(
+      await generatePlan({
+        task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
+        catalog: unwrap(
+          unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
+        ),
+        policy: benchmarkCase.case.policy,
+        semanticObligations: benchmarkCase.case.semanticObligations ?? [],
+        publicExamples: [],
+        adapter: sharedAdapter,
+        strategy: strategy("json-schema-with-repair"),
+        sharedInitialProposal,
+      }),
+    );
+    expect(shared.kind).toBe("rejected");
+    expect(shared.record.attempts).toHaveLength(2);
+    expect(shared.record.repairCount).toBe(2);
+    expect(sharedAdapter.requests()).toHaveLength(2);
   });
 
   it("records correct abstention and adapter exhaustion", async () => {

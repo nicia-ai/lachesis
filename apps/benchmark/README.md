@@ -1,4 +1,4 @@
-# Lachesis M1b experiment controller
+# Lachesis controlled experiment controller
 
 `@nicia-ai/lachesis-benchmark` is the Node-only controller for controlled
 plan-generation experiments. It materializes and verifies content-addressed
@@ -10,6 +10,7 @@ Commands:
 
 ```text
 lachesis-benchmark materialize <transport-probe|smoke|calibration|heldout> --out DIR
+lachesis-benchmark materialize <m1c-protocol-probe|m1c-repair|m1c-calibration|m1c-heldout> --out DIR
 lachesis-benchmark validate --campaign FILE --manifest FILE
 lachesis-benchmark dry-run --campaign FILE --manifest FILE --storage-root DIR
 lachesis-benchmark execute --campaign FILE --manifest FILE --storage-root DIR \
@@ -17,6 +18,7 @@ lachesis-benchmark execute --campaign FILE --manifest FILE --storage-root DIR \
 lachesis-benchmark resume  # same bindings as execute
 lachesis-benchmark report --campaign FILE --manifest FILE --storage-root DIR
 lachesis-benchmark audit-heldout
+lachesis-benchmark audit-m1c-heldout
 ```
 
 Import, manifest materialization, validation, dry-run, and reporting are inert:
@@ -53,3 +55,12 @@ cost, while dispatched failures without provider usage retain the authorized
 conservative charge.
 
 See [the M1b runbook](../../docs/m1b-runbook.md) before any live use.
+
+M1c uses a distinct campaign and budget pools. Its protocol probe is an exact
+four-call matrix: one feasible plan and one typed-unplannable response through
+both providers. The repair phase stores deterministic mutations and binds both
+arms to one recomputed initial-proposal digest; only eligible failed proposals
+dispatch, while valid proposals are reported as `repair-unnecessary`. Functional
+IR is the only implemented representation, so the M1c corpus and protocol make
+no IR-versus-CodeMode claim. See
+[the M1c design note](../../docs/m1c-typed-semantic-obligations.md).

@@ -288,7 +288,7 @@ function workflowPlan(
   };
 }
 
-function referenceProposal(
+export function createReferencePlanWitness(
   frozenCase: FrozenPlanGenerationCase,
   manifest: PlanLanguageManifest,
 ): Result<ModelPlanProposal, Diagnostic> {
@@ -560,7 +560,8 @@ function infeasibilityProposal(
   if (witness.kind === "missingOperation")
     candidate = invokePlan(frozenCase, manifest, witness.operation);
   else if (
-    witness.kind === "budgetExceeded" &&
+    (witness.kind === "budgetExceeded" ||
+      witness.kind === "insufficientBudget") &&
     witness.resource === "maxRecursionDepth"
   )
     candidate = workflowPlan(frozenCase, manifest, witness.requiredMinimum);
@@ -640,7 +641,7 @@ async function auditPlannableWitness(
   catalog: Catalog,
   manifest: PlanLanguageManifest,
 ): Promise<PlannableWitnessAudit> {
-  const proposal = referenceProposal(frozenCase, manifest);
+  const proposal = createReferencePlanWitness(frozenCase, manifest);
   if (!proposal.ok) return { compiled: false, hiddenPropertiesPassed: false };
   const generated = await runWitness(frozenCase, catalog, proposal.value);
   if (!generated.ok || generated.value.kind !== "compiled")

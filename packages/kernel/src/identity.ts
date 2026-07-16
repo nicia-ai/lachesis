@@ -3,6 +3,8 @@ import { z } from "zod";
 const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 
 export const planHashSchema = sha256Schema.brand<"PlanHash">();
+export const semanticContractHashSchema =
+  sha256Schema.brand<"SemanticContractHash">();
 export const catalogFingerprintSchema =
   sha256Schema.brand<"CatalogFingerprint">();
 export const manifestDigestSchema = sha256Schema.brand<"ManifestDigest">();
@@ -11,6 +13,7 @@ export const effectRequestHashSchema =
   sha256Schema.brand<"EffectRequestHash">();
 
 export type PlanHash = z.infer<typeof planHashSchema>;
+export type SemanticContractHash = z.infer<typeof semanticContractHashSchema>;
 export type CatalogFingerprint = z.infer<typeof catalogFingerprintSchema>;
 export type ManifestDigest = z.infer<typeof manifestDigestSchema>;
 export type ValueDigest = z.infer<typeof valueDigestSchema>;

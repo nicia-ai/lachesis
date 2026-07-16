@@ -14,6 +14,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 
 import {
+  createPlanLanguageManifest,
   type Diagnostic,
   diagnostic,
   type Diagnostics,
@@ -29,6 +30,7 @@ import {
   createInMemoryBenchmarkStore,
   createM1aCatalogResolver,
   createPricingSnapshot,
+  createReferencePlanWitness,
   type ExperimentCaps,
   type ExperimentMethodInput,
   runBenchmark,
@@ -56,10 +58,12 @@ import {
 } from "../src/ledger.js";
 import {
   blindHeldOutIntegrityAudit,
+  blindM1cHeldOutIntegrityAudit,
   deriveTransportProbeCaps,
   M1B_PROMPT_CANDIDATE,
   type MaterializedPhase,
   materializeM1bPhase,
+  materializeM1cPhase,
   matrixCounts,
   validateTransportProbeCaps,
 } from "../src/manifests.js";
@@ -136,6 +140,20 @@ async function materialized(
 ): Promise<MaterializedPhase> {
   return unwrap(
     await materializeM1bPhase({
+      phase,
+      gitCommit,
+      runtimeVersions: RUNTIME_VERSIONS,
+    }),
+  );
+}
+
+async function materializedM1c(
+  phase:
+    "m1c-protocol-probe" | "m1c-repair" | "m1c-calibration" | "m1c-heldout",
+  gitCommit = "test-commit",
+): Promise<MaterializedPhase> {
+  return unwrap(
+    await materializeM1cPhase({
       phase,
       gitCommit,
       runtimeVersions: RUNTIME_VERSIONS,
@@ -350,6 +368,367 @@ async function initializeGitRepository(): Promise<
   });
   return { path, commit: commit.stdout.trim() };
 }
+
+describe("M1c phase protocol", () => {
+  it("fails closed on cross-milestone and incomplete M1c phase identities", async () => {
+    expect(
+      (
+        await materializeM1cPhase({
+          phase: "smoke",
+          gitCommit: "test-commit",
+          runtimeVersions: RUNTIME_VERSIONS,
+        })
+      ).ok,
+    ).toBe(false);
+
+    const calibration = await materializedM1c("m1c-calibration");
+    expect(
+      (
+        await createPhaseManifest({
+          campaign: calibration.campaign,
+          phase: "m1c-calibration",
+          experiment: calibration.manifest.experiment,
+          corpusDigest: calibration.manifest.corpusDigest,
+          storageNamespace: calibration.manifest.storageNamespace,
+          runtimeVersions: { ...RUNTIME_VERSIONS, node: "" },
+        })
+      ).ok,
+    ).toBe(false);
+    const { milestone, ...withoutMilestone } = withoutPhaseDigest(
+      calibration.manifest,
+    );
+    expect(milestone).toBe("m1c");
+    const withoutMilestoneDigest = unwrap(await digestValue(withoutMilestone));
+    expect(
+      (
+        await verifyPhaseManifest(
+          {
+            ...withoutMilestone,
+            phaseManifestDigest: withoutMilestoneDigest,
+          },
+          calibration.campaign,
+        )
+      ).ok,
+    ).toBe(false);
+
+    const probe = await materializedM1c("m1c-protocol-probe");
+    const oversizedProbe = await recreateExperiment({
+      materialized: probe,
+      caps: { ...probe.manifest.experiment.caps, maxCalls: 5 },
+    });
+    expect(
+      (
+        await createPhaseManifest({
+          campaign: probe.campaign,
+          phase: "m1c-protocol-probe",
+          experiment: oversizedProbe,
+          corpusDigest: probe.manifest.corpusDigest,
+          storageNamespace: experimentStorageNamespace(
+            "m1c-protocol-probe",
+            oversizedProbe.experimentDigest,
+          ),
+          runtimeVersions: RUNTIME_VERSIONS,
+        })
+      ).ok,
+    ).toBe(false);
+
+    const repair = await materializedM1c("m1c-repair");
+    const missingTrials = await recreateExperiment({ materialized: repair });
+    expect(missingTrials.repairTrials).toBeUndefined();
+    expect(
+      (
+        await createPhaseManifest({
+          campaign: repair.campaign,
+          phase: "m1c-repair",
+          experiment: missingTrials,
+          corpusDigest: repair.manifest.corpusDigest,
+          storageNamespace: experimentStorageNamespace(
+            "m1c-repair",
+            missingTrials.experimentDigest,
+          ),
+          runtimeVersions: RUNTIME_VERSIONS,
+        })
+      ).ok,
+    ).toBe(false);
+  });
+
+  it("uses a separate campaign and freezes the four-call two-branch probe", async () => {
+    const m1b = await materialized("transport-probe");
+    const probe = await materializedM1c("m1c-protocol-probe");
+    expect(probe.campaign.campaignDigest).not.toBe(m1b.campaign.campaignDigest);
+    expect(probe.campaign.milestone).toBe("m1c");
+    expect(probe.campaign.budgetPools.map((pool) => pool.id)).toEqual([
+      "m1c-development",
+      "m1c-heldout",
+    ]);
+    expect(probe.campaign.maximumAuthorizedCostUsdMicros).toBe(90_000_000);
+    expect(probe.campaign.budgetPools).toEqual([
+      {
+        id: "m1c-development",
+        maxCostUsdMicros: 30_000_000,
+        providerCostCaps: [
+          { billingProvider: "openai", maxCostUsdMicros: 15_000_000 },
+          { billingProvider: "anthropic", maxCostUsdMicros: 12_000_000 },
+        ],
+      },
+      {
+        id: "m1c-heldout",
+        maxCostUsdMicros: 60_000_000,
+        providerCostCaps: [
+          { billingProvider: "openai", maxCostUsdMicros: 35_000_000 },
+          { billingProvider: "anthropic", maxCostUsdMicros: 25_000_000 },
+        ],
+      },
+    ]);
+    expect(probe.manifest.formatVersion).toBe("4");
+    expect(probe.manifest.budgetPoolId).toBe("m1c-development");
+    expect(probe.manifest.experiment.cases).toHaveLength(2);
+    expect(probe.manifest.experiment.methods).toHaveLength(2);
+    expect(
+      probe.cases.map((item) => item.case.expectedFeasibility).toSorted(),
+    ).toEqual(["plannable", "unplannable"]);
+    expect(matrixCounts(probe.manifest)).toEqual({
+      benchmarkRecords: 4,
+      initialModelCalls: 4,
+      maximumAdditionalRepairCalls: 0,
+      maximumModelCalls: 4,
+    });
+    expect(probe.manifest.experiment.caps).toEqual({
+      maxCalls: 4,
+      maxInputTokens: 256_000,
+      maxOutputTokens: 32_768,
+      maxTotalTokens: 288_768,
+      maxOutputTokensPerCall: 8_192,
+      maxCostUsdMicros: 1_129_600,
+      providerCostCaps: [
+        { billingProvider: "anthropic", maxCostUsdMicros: 483_840 },
+        { billingProvider: "openai", maxCostUsdMicros: 645_760 },
+      ],
+    });
+    expect(probe.manifest.storageNamespace).toBe(
+      `m1c/protocol-probe/experiments/${probe.manifest.experimentDigest}`,
+    );
+  });
+
+  it("persists shared deterministic repair trials and correct matrix outcomes", async () => {
+    const repair = await materializedM1c("m1c-repair");
+    expect(repair.cases).toHaveLength(4);
+    expect(repair.repairTrials?.size).toBe(4);
+    expect(repair.manifest.experiment.formatVersion).toBe("5");
+    expect(repair.manifest.experiment.repairTrials).toHaveLength(4);
+    for (const trial of repair.manifest.experiment.repairTrials ?? []) {
+      expect(trial.initialProposalDigest).toBe(trial.arms.withoutRepair);
+      expect(trial.initialProposalDigest).toBe(trial.arms.compilerGuidedRepair);
+      expect(trial.mutation.kind).toBe("redirectRoot");
+      expect(trial.eligibility).toBe("eligible");
+    }
+    expect(matrixCounts(repair.manifest)).toEqual({
+      benchmarkRecords: 8,
+      initialModelCalls: 0,
+      maximumAdditionalRepairCalls: 16,
+      maximumModelCalls: 16,
+    });
+    expect(repair.manifest.experiment.caps).toEqual({
+      maxCalls: 16,
+      maxInputTokens: 1_024_000,
+      maxOutputTokens: 131_072,
+      maxTotalTokens: 1_155_072,
+      maxOutputTokensPerCall: 8_192,
+      maxCostUsdMicros: 4_518_400,
+      providerCostCaps: [
+        { billingProvider: "anthropic", maxCostUsdMicros: 1_935_360 },
+        { billingProvider: "openai", maxCostUsdMicros: 2_583_040 },
+      ],
+    });
+
+    const calibration = await materializedM1c("m1c-calibration");
+    expect(calibration.cases).toHaveLength(7);
+    expect(matrixCounts(calibration.manifest)).toEqual({
+      benchmarkRecords: 42,
+      initialModelCalls: 42,
+      maximumAdditionalRepairCalls: 28,
+      maximumModelCalls: 70,
+    });
+    expect(calibration.manifest.experiment.caps.maxCostUsdMicros).toBe(
+      19_768_000,
+    );
+    const heldout = await materializedM1c("m1c-heldout");
+    expect(heldout.cases).toHaveLength(10);
+    expect(matrixCounts(heldout.manifest)).toEqual({
+      benchmarkRecords: 120,
+      initialModelCalls: 120,
+      maximumAdditionalRepairCalls: 80,
+      maximumModelCalls: 200,
+    });
+    expect(heldout.manifest.experiment.caps).toEqual({
+      maxCalls: 200,
+      maxInputTokens: 12_800_000,
+      maxOutputTokens: 1_638_400,
+      maxTotalTokens: 14_438_400,
+      maxOutputTokensPerCall: 8_192,
+      maxCostUsdMicros: 56_480_000,
+      providerCostCaps: [
+        { billingProvider: "anthropic", maxCostUsdMicros: 24_192_000 },
+        { billingProvider: "openai", maxCostUsdMicros: 32_288_000 },
+      ],
+    });
+  });
+
+  it("runs shared repair records only from the persisted matching proposal", async () => {
+    const repository = await initializeGitRepository();
+    const repair = await materializedM1c("m1c-repair", repository.commit);
+    const resolver = unwrap(createM1aCatalogResolver());
+    const references = new Map<string, unknown>();
+    for (const frozenCase of repair.cases) {
+      const catalog = unwrap(resolver(frozenCase.case.catalogId));
+      const manifest = unwrap(
+        await createPlanLanguageManifest(catalog, frozenCase.case.policy),
+      );
+      references.set(
+        frozenCase.case.instruction,
+        unwrap(createReferencePlanWitness(frozenCase, manifest)),
+      );
+    }
+    const methods = createPrimaryMethods(repair.manifest, {
+      OPENAI_API_KEY: "dummy-openai",
+      ANTHROPIC_API_KEY: "dummy-anthropic",
+    });
+    let dispatches = 0;
+    const fakeMethods = methods.map((method) => ({
+      ...method,
+      adapter: {
+        ...method.adapter,
+        generate: (request: Parameters<typeof method.adapter.generate>[0]) => {
+          dispatches += 1;
+          const plan = references.get(request.originalTask);
+          if (plan === undefined) throw new Error("Missing reference repair.");
+          return Promise.resolve({
+            ok: true as const,
+            value: {
+              rawResponse: JSON.stringify({ kind: "plan", plan }),
+              structuredOutput: { kind: "plan", plan },
+              usage: {
+                inputTokens: 1,
+                outputTokens: 1,
+                costUsdMicros: 0,
+              },
+              latencyMs: 1,
+              dispatchEvidence: "dispatched-with-usage" as const,
+            },
+          });
+        },
+      },
+    }));
+    const result = unwrap(
+      await runBenchmark({
+        experiment: repair.manifest.experiment,
+        cases: repair.cases,
+        methods: fakeMethods,
+        resolveCatalog: resolver,
+        store: createInMemoryBenchmarkStore(),
+        repairTrials: required(
+          repair.repairTrials,
+          "Missing repair trial bindings.",
+        ),
+      }),
+    );
+    expect(result.generated).toBe(8);
+    expect(dispatches).toBe(8);
+    expect(
+      result.records.every(
+        (record) =>
+          record.repairTrial?.outcome === "repaired" &&
+          record.repairTrial.initialProposalDigest ===
+            record.repairTrial.arms.withoutRepair &&
+          record.repairTrial.initialProposalDigest ===
+            record.repairTrial.arms.compilerGuidedRepair,
+      ),
+    ).toBe(true);
+    expect(
+      result.records.every(
+        (record) => record.generation.attempts[0]?.phase === "repair",
+      ),
+    ).toBe(true);
+    const runtimeTrials = required(
+      repair.repairTrials,
+      "Missing repair trial bindings.",
+    );
+    const first = runtimeTrials.entries().next().value;
+    if (first === undefined) throw new Error("Missing repair trial.");
+    const [caseDigest, value] = first;
+    const mismatched = new Map(runtimeTrials);
+    mismatched.set(caseDigest, {
+      ...value,
+      trial: {
+        ...value.trial,
+        arms: {
+          ...value.trial.arms,
+          compilerGuidedRepair: "0".repeat(64),
+        },
+      },
+    });
+    const rejected = await runBenchmark({
+      experiment: repair.manifest.experiment,
+      cases: repair.cases,
+      methods: fakeMethods,
+      resolveCatalog: resolver,
+      store: createInMemoryBenchmarkStore(),
+      repairTrials: mismatched,
+    });
+    expect(rejected.ok).toBe(false);
+    expect(dispatches).toBe(8);
+
+    const storageRoot = await temporaryDirectory();
+    const executed = unwrap(
+      await executePhase({
+        loaded: loaded(repair),
+        storageRoot,
+        cwd: repository.path,
+        acknowledgement: {
+          experimentDigest: repair.manifest.experimentDigest,
+          phase: "m1c-repair",
+          maximumCostUsdMicros: 30_000_000,
+        },
+        environment: {
+          OPENAI_API_KEY: "dummy-openai",
+          ANTHROPIC_API_KEY: "dummy-anthropic",
+        },
+        methods: fakeMethods,
+      }),
+    );
+    expect(executed.generated).toBe(8);
+    expect(dispatches).toBe(16);
+    expect(
+      unwrap(
+        await generateStoredReport({ loaded: loaded(repair), storageRoot }),
+      ),
+    ).toMatchObject({
+      phase: "m1c-repair",
+      repairComparison: {
+        rule: "same-initial-proposal-digest-only",
+        matchedRecords: 8,
+        unmatchedRecords: 0,
+        eligible: 0,
+        repaired: 8,
+        failed: 0,
+        repairUnnecessary: 0,
+      },
+    });
+  });
+
+  it("keeps the held-out audit counts-only with all witness variants valid", async () => {
+    expect(unwrap(await blindM1cHeldOutIntegrityAudit())).toEqual({
+      totalCases: 10,
+      plannableCases: 7,
+      unplannableCases: 3,
+      referencesValid: 10,
+      witnessesCompiled: 7,
+      hiddenPropertiesPassed: 7,
+      infeasibilityWitnessesPassed: 3,
+      invalidCases: 0,
+    });
+  });
+});
 
 describe("M1b phase protocol", () => {
   it("reports blind held-out validity counts without fixture content", async () => {

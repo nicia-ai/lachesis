@@ -1,4 +1,7 @@
-import { diagnosticCodeSchema } from "@nicia-ai/lachesis";
+import {
+  diagnosticCodeSchema,
+  semanticObligationSchema,
+} from "@nicia-ai/lachesis";
 import { z } from "zod";
 
 const diagnosticLocationSchema = z
@@ -176,6 +179,11 @@ export const generationRecordSchema = z
       "adapterFailure",
     ]),
     planHash: z.string().nullable(),
+    semanticContractHash: z.string().nullable().optional(),
+    semanticObligations: z
+      .array(semanticObligationSchema)
+      .readonly()
+      .optional(),
     repairCount: z.number().int().nonnegative(),
     totalInputTokens: z.number().int().nonnegative(),
     totalCachedInputTokens: z.number().int().nonnegative(),

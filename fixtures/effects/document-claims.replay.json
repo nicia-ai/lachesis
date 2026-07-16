@@ -1,8 +1,9 @@
 [
   {
-    "requestHash": "f786d20cc6d0a4ec8ece76f297382c069cd28357edfed0257d9b7117f3e952ee",
+    "requestHash": "e2a452ade59b1d9eb4ef3f9a96eeea416aa4f04623964c61153840e3e82a7afc",
     "planHash": "812d030ba794b15d91129470a306f1af77b617573eb3e8a8f08518f1e28c2df4",
-    "catalogFingerprint": "eb3742091d958df637505779fd7f899509bea33c357c2803dfc8bbc1ceeb3a6b",
+    "semanticContractHash": "1d2c28cb887f39f05e4f711052bce384b653bf2886059aea3886cfa5bf1db908",
+    "catalogFingerprint": "e2018ea0faf69c564a748550312770d6680bc29fe45ff11a5a2cb8cb7d43ecc7",
     "operation": { "id": "example/extract-claim", "version": "1" },
     "nodeId": "extracted",
     "invocationIndex": 0,
@@ -14,9 +15,10 @@
     "usage": { "tokens": 80, "wallClockMs": 100 }
   },
   {
-    "requestHash": "7f28e39549df5598ffbf19fbe5e8574b39cd113918b984cf58b89b157b91b4c8",
+    "requestHash": "6a3b8dee531412927fc127f78f9053c029c7d0acd1befae6928bfcf52a92588f",
     "planHash": "812d030ba794b15d91129470a306f1af77b617573eb3e8a8f08518f1e28c2df4",
-    "catalogFingerprint": "eb3742091d958df637505779fd7f899509bea33c357c2803dfc8bbc1ceeb3a6b",
+    "semanticContractHash": "1d2c28cb887f39f05e4f711052bce384b653bf2886059aea3886cfa5bf1db908",
+    "catalogFingerprint": "e2018ea0faf69c564a748550312770d6680bc29fe45ff11a5a2cb8cb7d43ecc7",
     "operation": { "id": "example/extract-claim", "version": "1" },
     "nodeId": "extracted",
     "invocationIndex": 1,
@@ -28,9 +30,10 @@
     "usage": { "tokens": 90, "wallClockMs": 110 }
   },
   {
-    "requestHash": "40c661d29a89b2f19090a29656eb14a6da0a14d1d43ae5cd062f51e70f986392",
+    "requestHash": "1b27c454a233121e5bef3b7bb803f0e73bf173f7ed79b2a4c3d9ee2176c00867",
     "planHash": "812d030ba794b15d91129470a306f1af77b617573eb3e8a8f08518f1e28c2df4",
-    "catalogFingerprint": "eb3742091d958df637505779fd7f899509bea33c357c2803dfc8bbc1ceeb3a6b",
+    "semanticContractHash": "1d2c28cb887f39f05e4f711052bce384b653bf2886059aea3886cfa5bf1db908",
+    "catalogFingerprint": "e2018ea0faf69c564a748550312770d6680bc29fe45ff11a5a2cb8cb7d43ecc7",
     "operation": { "id": "example/synthesize", "version": "1" },
     "nodeId": "synthesis",
     "invocationIndex": 0,

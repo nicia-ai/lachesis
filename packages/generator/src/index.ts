@@ -6,6 +6,7 @@ export {
   benchmarkCaseRecordSchema,
   type BenchmarkMethod,
   benchmarkMethodIdentity,
+  type BenchmarkRepairTrialInput,
   type BenchmarkRunInput,
   type BenchmarkRunResult,
   type BenchmarkScore,
@@ -61,6 +62,8 @@ export {
   experimentManifestSchema,
   type ExperimentMethod,
   type ExperimentMethodInput,
+  type ExperimentRepairTrial,
+  experimentRepairTrialSchema,
   type ExperimentTransportSchemaBinding,
   type ExperimentVersions,
   verifyExperimentManifest,
@@ -159,6 +162,7 @@ export {
 } from "./transport.js";
 export {
   blindPlanGenerationValidityAudit,
+  createReferencePlanWitness,
   validatePlanGenerationCases,
 } from "./validity.js";
 export { validateUnplannableWitness } from "./witness.js";

@@ -63,6 +63,13 @@ operation dependencies, effects, state-changing operations, and dominators.
 Obligation failures use `SEMANTIC_OBLIGATION_FAILED` diagnostics with repair
 locations, so the existing two-turn bounded repair loop can consume them.
 
+Verified obligations are canonicalized, deduplicated, and stored in the
+executable artifact. `planHash` remains the syntax-only plan identity. A
+separate branded `semanticContractHash` covers the plan hash, catalog
+fingerprint, canonical trusted policy, and canonical obligations. The contract
+hash and obligations flow through executable inspection, run traces, effect
+request/replay identity, generation records, and benchmark records.
+
 `stateChanging` is trusted catalog metadata. It defaults to `false`; an
 operation is never inferred to change state merely because its implementation
 could return a different value.
@@ -99,19 +106,53 @@ independently sampled proposals.
    failure.
 
 `prepareSharedRepairTrial` enforces the shared digest and exposes eligibility
-before any model call. Research-gate evaluation likewise excludes ineligible
-proposals and refuses to compare repair arms whose initial proposal differs.
+before any model call. The versioned M1c repair manifest persists the mutation,
+proposal digest, eligibility, and both arm bindings. Runtime validation
+recomputes the proposal digest before adapter dispatch. Records distinguish
+`eligible`, `repaired`, `failed`, and `repair-unnecessary`; reports reject
+mismatched arm identities.
 
-## Fresh IR-versus-CodeMode corpus
+## Fresh typed-obligations corpus
 
-`loadM1cPreregisteredCorpus` defines a new 13-case corpus: four development and
-nine held-out cases, with 11 plannable and two unplannable classifications. Its
-case IDs are disjoint from every inspected M1b held-out ID. The corpus includes
-new multi-operation, branch-dominance, state-transition, effect, and missing-
-operation tasks.
+`loadM1cPreregisteredCorpus` defines a new 17-case corpus: seven development and
+ten held-out cases, with 11 plannable and six unplannable classifications. Each
+split independently covers `missingOperation`, `deniedCapability`, and
+`insufficientBudget`. Its case IDs are disjoint from every inspected M1b
+held-out ID. The corpus includes new multi-operation, branch-dominance,
+state-transition, effect, and infeasibility-recognition tasks.
 
 The held-out content is subject to a counts-only validity audit while prompts
 and scorers are under development. Offline witnesses prove all 11 plannable
 cases compile and pass hidden properties; typed infeasibility witnesses prove
-both unplannable cases. No M1c live inference or CodeMode claim is authorized by
-this implementation.
+all six unplannable cases.
+
+## Controlled M1c phases
+
+M1c has a separate content-addressed campaign and independent `m1c-development`
+and `m1c-heldout` pools. No M1b ledger or acknowledgement can authorize it. The
+preregistered campaign ceilings are $30 development and $60 held-out, with
+cumulative provider subcaps of $15 OpenAI/$12 Anthropic for development and
+$35
+OpenAI/$25 Anthropic for held-out. These are ceilings, not authority to
+spend. Its versioned phases are:
+
+- `m1c-protocol-probe`: one feasible and one typed-unplannable case over both
+  direct providers, exactly four initial calls.
+- `m1c-repair`: four deterministic shared-proposal trials over both providers;
+  zero independently sampled initial calls and at most 16 bounded repair calls.
+- `m1c-calibration`: seven development cases and the existing three functional-
+  IR strategies over both providers.
+- `m1c-heldout`: ten held-out cases, two repetitions, and the same six-method
+  matrix.
+
+The protocol identifies its representation as functional IR. CodeMode is not
+implemented, included, or claimed. Materialization does not itself authorize
+live execution; the new campaign digest and pool cap require a separate direct
+acknowledgement after offline review. No TypeGraph integration is included.
+
+Every phase cap is derived from the immutable method matrix, frozen pricing,
+per-method token limits, repetitions, and maximum bounded calls. The resulting
+conservative ceilings are 1,129,600 µUSD for the protocol probe, 4,518,400 µUSD
+for repair, 19,768,000 µUSD for calibration, and 56,480,000 µUSD for held-out.
+The three development phases cumulatively fit their new campaign pool and
+provider subcaps.

@@ -323,6 +323,46 @@ describe("unskippable compilation", () => {
     expect(summary?.analysis.rootProvenance.dominators).toEqual(
       new Set(["state", "fixed"]),
     );
+    expect(summary?.semanticContractHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(summary?.semanticObligations).toHaveLength(4);
+    const reordered = await compilePlanJson(
+      text,
+      createExampleCatalog(),
+      examplePolicy,
+      [
+        { kind: "requiresStateChange" },
+        { kind: "rootDependsOnInput", inputKey: "state" },
+        { kind: "rootDependsOnInput", inputKey: "state" },
+        {
+          kind: "operationDominatesRoot",
+          operation: { id: "example/countdown-step", version: "1" },
+        },
+        {
+          kind: "requiresOperation",
+          operation: { id: "example/countdown-step", version: "1" },
+        },
+      ],
+    );
+    expect(reordered.ok).toBe(true);
+    if (!reordered.ok) throw new Error(reordered.error[0]?.message);
+    const reorderedSummary = inspectExecutablePlan(reordered.value);
+    expect(reorderedSummary?.planHash).toBe(summary?.planHash);
+    expect(reorderedSummary?.semanticContractHash).toBe(
+      summary?.semanticContractHash,
+    );
+    const weaker = await compilePlanJson(
+      text,
+      createExampleCatalog(),
+      examplePolicy,
+      [{ kind: "rootDependsOnInput", inputKey: "state" }],
+    );
+    expect(weaker.ok).toBe(true);
+    if (!weaker.ok) throw new Error(weaker.error[0]?.message);
+    const weakerSummary = inspectExecutablePlan(weaker.value);
+    expect(weakerSummary?.planHash).toBe(summary?.planHash);
+    expect(weakerSummary?.semanticContractHash).not.toBe(
+      summary?.semanticContractHash,
+    );
   });
 
   it("rejects an operation that occurs on only one path to the root", async () => {

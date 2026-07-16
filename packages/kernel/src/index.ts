@@ -61,6 +61,7 @@ export type {
   EffectRequestHash,
   ManifestDigest,
   PlanHash,
+  SemanticContractHash,
   ValueDigest,
 } from "./identity.js";
 export {
@@ -68,6 +69,7 @@ export {
   effectRequestHashSchema,
   manifestDigestSchema,
   planHashSchema,
+  semanticContractHashSchema,
   valueDigestSchema,
 } from "./identity.js";
 export { parseJson } from "./json.js";
@@ -86,6 +88,10 @@ export type {
   SemanticObligationInput,
 } from "./semantic.js";
 export { semanticObligationSchema } from "./semantic.js";
+export {
+  canonicalizeSemanticObligations,
+  hashSemanticContract,
+} from "./semantic.js";
 export type {
   CatalogReference,
   ModelPlanProposal,

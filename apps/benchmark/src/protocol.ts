@@ -27,6 +27,10 @@ export const campaignPhaseSchema = z.enum([
   "smoke",
   "calibration",
   "heldout",
+  "m1c-protocol-probe",
+  "m1c-repair",
+  "m1c-calibration",
+  "m1c-heldout",
 ]);
 export type CampaignPhase = z.infer<typeof campaignPhaseSchema>;
 
@@ -39,7 +43,12 @@ const providerCapSchema = z
 
 const budgetPoolSchema = z
   .strictObject({
-    id: z.enum(["m1b-development", "m1b-heldout-pilot"]),
+    id: z.enum([
+      "m1b-development",
+      "m1b-heldout-pilot",
+      "m1c-development",
+      "m1c-heldout",
+    ]),
     maxCostUsdMicros: z.number().int().positive(),
     providerCostCaps: z.array(providerCapSchema).readonly(),
   })
@@ -50,6 +59,7 @@ export const campaignManifestSchema = z
     formatVersion: z.literal("1"),
     campaignId: z.string().min(1),
     title: z.string().min(1),
+    milestone: z.enum(["m1b", "m1c"]).optional(),
     maximumAuthorizedCostUsdMicros: z.number().int().positive(),
     budgetPools: z.array(budgetPoolSchema).length(2).readonly(),
     primaryComparison: z
@@ -97,11 +107,17 @@ const failurePolicySchema = z
 
 export const phaseManifestSchema = z
   .strictObject({
-    formatVersion: z.enum(["1", "2", "3"]),
+    formatVersion: z.enum(["1", "2", "3", "4"]),
     campaignId: z.string().min(1),
     campaignDigest: z.string().min(1),
     phase: campaignPhaseSchema,
-    budgetPoolId: z.enum(["m1b-development", "m1b-heldout-pilot"]),
+    budgetPoolId: z.enum([
+      "m1b-development",
+      "m1b-heldout-pilot",
+      "m1c-development",
+      "m1c-heldout",
+    ]),
+    milestone: z.enum(["m1b", "m1c"]).optional(),
     experimentDigest: z.string().min(1),
     experiment: experimentManifestSchema,
     corpusDigest: z.string().min(1),
@@ -136,7 +152,9 @@ export function experimentStorageNamespace(
   phase: CampaignPhase,
   experimentDigest: string,
 ): string {
-  return `m1b/${phase}/experiments/${experimentDigest}`;
+  const milestone = phase.startsWith("m1c-") ? "m1c" : "m1b";
+  const phaseName = phase.startsWith("m1c-") ? phase.slice(4) : phase;
+  return `${milestone}/${phaseName}/experiments/${experimentDigest}`;
 }
 
 export const M1B_FAILURE_POLICY: FailurePolicy = Object.freeze({
@@ -172,22 +190,34 @@ function sameValue(left: unknown, right: unknown): boolean {
 export async function createCampaignManifest(
   campaignId = "lachesis-m1b-controlled-pilot",
 ): Promise<Result<CampaignManifest, Diagnostics>> {
+  const m1c = campaignId === "lachesis-m1c-typed-semantic-obligations";
   const body = {
     formatVersion: "1",
     campaignId,
-    title: "Lachesis M1b controlled constraint and repair pilot",
-    maximumAuthorizedCostUsdMicros: 60_000_000,
+    ...(m1c ? { milestone: "m1c" as const } : {}),
+    title: m1c
+      ? "Lachesis M1c typed semantic obligations"
+      : "Lachesis M1b controlled constraint and repair pilot",
+    maximumAuthorizedCostUsdMicros: m1c ? 90_000_000 : 60_000_000,
     budgetPools: [
       {
-        id: "m1b-development",
-        maxCostUsdMicros: 10_000_000,
-        providerCostCaps: [],
+        id: m1c ? ("m1c-development" as const) : ("m1b-development" as const),
+        maxCostUsdMicros: m1c ? 30_000_000 : 10_000_000,
+        providerCostCaps: m1c
+          ? [
+              { billingProvider: "openai", maxCostUsdMicros: 15_000_000 },
+              { billingProvider: "anthropic", maxCostUsdMicros: 12_000_000 },
+            ]
+          : [],
       },
       {
-        id: "m1b-heldout-pilot",
-        maxCostUsdMicros: 50_000_000,
+        id: m1c ? ("m1c-heldout" as const) : ("m1b-heldout-pilot" as const),
+        maxCostUsdMicros: m1c ? 60_000_000 : 50_000_000,
         providerCostCaps: [
-          { billingProvider: "openai", maxCostUsdMicros: 25_000_000 },
+          {
+            billingProvider: "openai",
+            maxCostUsdMicros: m1c ? 35_000_000 : 25_000_000,
+          },
           { billingProvider: "anthropic", maxCostUsdMicros: 25_000_000 },
         ],
       },
@@ -251,7 +281,7 @@ export async function verifyCampaignManifest(
       error: [
         diagnostic(
           "INVALID_WIRE_SCHEMA",
-          "Campaign manifest is not the frozen M1b campaign or failed its digest.",
+          "Campaign manifest is not a frozen Lachesis campaign or failed its digest.",
         ),
       ],
     };
@@ -270,7 +300,7 @@ function phaseSplitsAreValid(
   experiment: ExperimentManifest,
 ): boolean {
   const splits = new Set(experiment.cases.map((item) => item.split));
-  return phase === "heldout"
+  return phase === "heldout" || phase === "m1c-heldout"
     ? !splits.has("development")
     : splits.size === 1 && splits.has("development");
 }
@@ -281,16 +311,23 @@ function primaryMethodsAreValid(
   phase: CampaignPhase,
 ): boolean {
   const probe = phase === "transport-probe";
-  if (experiment.methods.length !== (probe ? 2 : 6)) return false;
+  const m1cProbe = phase === "m1c-protocol-probe";
+  const repair = phase === "m1c-repair";
+  if (experiment.methods.length !== (probe || m1cProbe || repair ? 2 : 6))
+    return false;
   const expectedStrategies = probe
     ? ["json-schema"]
-    : ["unconstrained-json", "json-schema", "json-schema-with-repair"];
+    : m1cProbe
+      ? ["json-schema"]
+      : repair
+        ? ["json-schema-with-repair"]
+        : ["unconstrained-json", "json-schema", "json-schema-with-repair"];
   for (const provider of ["openai", "anthropic"]) {
     const methods = experiment.methods.filter(
       (method) => method.model.provider === provider,
     );
     if (
-      methods.length !== (probe ? 1 : 3) ||
+      methods.length !== (probe || m1cProbe || repair ? 1 : 3) ||
       !expectedStrategies.every((strategy) =>
         methods.some((method) => method.strategy.id === strategy),
       )
@@ -301,10 +338,10 @@ function primaryMethodsAreValid(
         method.strategy.constraint === "unconstrained-json"
           ? "prompt-json"
           : provider === "openai"
-            ? phaseFormatVersion === "3"
+            ? phaseFormatVersion === "3" || phaseFormatVersion === "4"
               ? "openai-responses-portable-json-schema"
               : "openai-responses-json-schema"
-            : phaseFormatVersion === "3"
+            : phaseFormatVersion === "3" || phaseFormatVersion === "4"
               ? "anthropic-json-tool-portable-json-schema"
               : "anthropic-json-tool";
       const expectedAdapterVersions =
@@ -366,13 +403,21 @@ export async function createPhaseManifest(
     version: "1",
   });
   if (!scorerDigest.ok) return { ok: false, error: [scorerDigest.error] };
+  const m1c = input.phase.startsWith("m1c-");
+  const heldout = input.phase === "heldout" || input.phase === "m1c-heldout";
   const body = {
-    formatVersion: "3",
+    formatVersion: m1c ? ("4" as const) : ("3" as const),
+    ...(m1c ? { milestone: "m1c" as const } : {}),
     campaignId: input.campaign.campaignId,
     campaignDigest: input.campaign.campaignDigest,
     phase: input.phase,
-    budgetPoolId:
-      input.phase === "heldout" ? "m1b-heldout-pilot" : "m1b-development",
+    budgetPoolId: m1c
+      ? heldout
+        ? "m1c-heldout"
+        : "m1c-development"
+      : heldout
+        ? "m1b-heldout-pilot"
+        : "m1b-development",
     experimentDigest: input.experiment.experimentDigest,
     experiment: input.experiment,
     corpusDigest: input.corpusDigest,
@@ -439,7 +484,13 @@ export async function verifyPhaseManifest(
     );
   if (
     parsed.data.budgetPoolId !==
-    (parsed.data.phase === "heldout" ? "m1b-heldout-pilot" : "m1b-development")
+    (parsed.data.phase.startsWith("m1c-")
+      ? parsed.data.phase === "m1c-heldout"
+        ? "m1c-heldout"
+        : "m1c-development"
+      : parsed.data.phase === "heldout"
+        ? "m1b-heldout-pilot"
+        : "m1b-development")
   )
     return phaseDiagnostic(
       "Phase manifest uses the wrong campaign budget pool.",
@@ -466,7 +517,7 @@ export async function verifyPhaseManifest(
       "Phase manifest is missing the M1b.3 dispatch-accounting identity.",
     );
   if (
-    parsed.data.formatVersion === "3" &&
+    (parsed.data.formatVersion === "3" || parsed.data.formatVersion === "4") &&
     (parsed.data.failurePolicy.transportSchemaCompiler === undefined ||
       !SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS.includes(
         parsed.data.failurePolicy.transportSchemaCompiler,
@@ -498,6 +549,32 @@ export async function verifyPhaseManifest(
   )
     return phaseDiagnostic(
       "Held-out phase must contain 17 cases and two repetitions.",
+    );
+  if (
+    parsed.data.phase.startsWith("m1c-") &&
+    (parsed.data.formatVersion !== "4" ||
+      parsed.data.milestone !== "m1c" ||
+      campaign.milestone !== "m1c")
+  )
+    return phaseDiagnostic(
+      "M1c phase must be bound to the separately versioned M1c campaign.",
+    );
+  if (
+    parsed.data.phase === "m1c-protocol-probe" &&
+    (verifiedExperiment.value.cases.length !== 2 ||
+      verifiedExperiment.value.methods.length !== 2 ||
+      verifiedExperiment.value.caps.maxCalls !== 4)
+  )
+    return phaseDiagnostic(
+      "M1c protocol probe must contain two cases, two providers, and exactly four calls.",
+    );
+  if (
+    parsed.data.phase === "m1c-repair" &&
+    (verifiedExperiment.value.formatVersion !== "5" ||
+      verifiedExperiment.value.repairTrials === undefined)
+  )
+    return phaseDiagnostic(
+      "M1c repair phase must persist its shared deterministic repair trials.",
     );
   return { ok: true, value: parsed.data };
 }

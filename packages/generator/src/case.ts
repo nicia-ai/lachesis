@@ -117,6 +117,14 @@ export const infeasibilityWitnessSchema = z.discriminatedUnion("kind", [
       requiredMinimum: z.number().int().positive(),
     })
     .readonly(),
+  z
+    .strictObject({
+      kind: z.literal("insufficientBudget"),
+      operation: operationReferenceSchema,
+      resource: z.enum(["maxEffectCalls", "maxRecursionDepth"]),
+      requiredMinimum: z.number().int().positive(),
+    })
+    .readonly(),
 ]);
 
 export const planGenerationCaseSchema = z

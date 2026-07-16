@@ -1,26 +1,33 @@
 import {
+  createPlanLanguageManifest,
   diagnostic,
   type Diagnostics,
   digestValue,
   type Result,
 } from "@nicia-ai/lachesis";
 import {
+  type BenchmarkRepairTrialInput,
   blindPlanGenerationValidityAudit,
   calculateMaximumCostUsdMicros,
   compileCaseStructuredOutputTransports,
   createExperimentManifest,
   createM1aCatalogResolver,
+  createReferencePlanWitness,
   type ExperimentCaps,
   type ExperimentManifest,
   type ExperimentMethodInput,
+  type ExperimentRepairTrial,
   type ExperimentTransportSchemaBinding,
   freezePlanGenerationCase,
   type FrozenPlanGenerationCase,
   loadM1aCorpus,
+  loadM1cPreregisteredCorpus,
   M1A_GENERATION_STRATEGIES,
   M1A_WORKFLOW_MAX_ITERATIONS,
   M1A_WORKFLOW_VERSION,
+  M1C_CORPUS_PROTOCOL,
   partitionM1aCorpus,
+  prepareSharedRepairTrial,
   type PricingSnapshot,
   validatePlanGenerationCases,
 } from "@nicia-ai/lachesis-generator";
@@ -79,10 +86,31 @@ export const M1B_PROMPT_CANDIDATE = Object.freeze({
     'Propose only registered Lachesis operator topology and arguments. Do not author budget, allowedCapabilities, or input maxItems fields; the trusted runtime supplies public input bounds, capabilities, policy limits, and typed semantic obligations, the analyzer derives requirements and root provenance, and the compiler checks both. Return raw JSON as exactly { "kind": "plan", "plan": ... } or { "kind": "unplannable", "witness": { "kind": "missingOperation" | "deniedCapability" | "insufficientBudget", ... } }; never use Markdown fences or alternate field names. A constrained provider may carry that exact logical outcome inside the internal structured-output transport envelope { "outcome": ... }; this JSON tool is output transport only and does not authorize external tools. Use unplannable only when its typed witness is proven by the supplied public obligations, exact manifest, and trusted policy.',
 });
 
+export const M1C_PROMPT_CANDIDATE = Object.freeze({
+  id: "lachesis-m1c-typed-semantic-obligations",
+  version: "development-candidate-1",
+  codeModeStatus: "not-implemented-not-claimed",
+  instruction: M1B_PROMPT_CANDIDATE.instruction,
+});
+
+export const M1C_EXPERIMENT_PROTOCOL = Object.freeze({
+  id: "lachesis-m1c-controlled-experiment",
+  version: "1",
+  corpus: M1C_CORPUS_PROTOCOL,
+  repair: Object.freeze({
+    initialProposal: "offline-reference-plan-with-deterministic-mutation",
+    comparisonRule: "same-initial-proposal-digest-only",
+    eligibility: "compilation-or-semantic-obligation-failure",
+    noFailureOutcome: "repair-unnecessary",
+  }),
+  codeModeStatus: "not-implemented-not-claimed",
+});
+
 export type MaterializedPhase = Readonly<{
   campaign: CampaignManifest;
   manifest: PhaseManifest;
   cases: ReadonlyArray<FrozenPlanGenerationCase>;
+  repairTrials?: ReadonlyMap<string, BenchmarkRepairTrialInput> | undefined;
 }>;
 
 export type RuntimeVersions = PhaseManifest["runtimeVersions"];
@@ -202,6 +230,89 @@ async function phaseCases(
   return { ok: true, value: Object.freeze(selected) };
 }
 
+async function m1cPhaseCases(
+  phase: CampaignPhase,
+): Promise<Result<ReadonlyArray<FrozenPlanGenerationCase>, Diagnostics>> {
+  const loaded = await loadM1cPreregisteredCorpus();
+  if (!loaded.ok) return loaded;
+  if (phase === "m1c-heldout") return { ok: true, value: loaded.value.heldOut };
+  if (phase === "m1c-protocol-probe") {
+    const feasible = requiredCase(
+      loaded.value.development,
+      "m1c/numbers/even-then-double",
+    );
+    if (!feasible.ok) return feasible;
+    const unplannable = requiredCase(
+      loaded.value.development,
+      "m1c/numbers/missing-product",
+    );
+    return unplannable.ok
+      ? {
+          ok: true,
+          value: Object.freeze([feasible.value, unplannable.value]),
+        }
+      : unplannable;
+  }
+  return {
+    ok: true,
+    value:
+      phase === "m1c-repair"
+        ? Object.freeze(
+            loaded.value.development.filter(
+              (item) => item.case.expectedFeasibility === "plannable",
+            ),
+          )
+        : loaded.value.development,
+  };
+}
+
+async function m1cRepairTrials(
+  cases: ReadonlyArray<FrozenPlanGenerationCase>,
+): Promise<
+  Result<ReadonlyMap<string, BenchmarkRepairTrialInput>, Diagnostics>
+> {
+  const resolver = createM1aCatalogResolver();
+  if (!resolver.ok) return resolver;
+  const trials = new Map<string, BenchmarkRepairTrialInput>();
+  for (const frozenCase of cases) {
+    const catalog = resolver.value(frozenCase.case.catalogId);
+    if (!catalog.ok) return { ok: false, error: [catalog.error] };
+    const manifest = await createPlanLanguageManifest(
+      catalog.value,
+      frozenCase.case.policy,
+    );
+    if (!manifest.ok) return { ok: false, error: [manifest.error] };
+    const reference = createReferencePlanWitness(frozenCase, manifest.value);
+    if (!reference.ok) return { ok: false, error: [reference.error] };
+    const inputNode = reference.value.nodes.find((node) => node.op === "input");
+    if (inputNode === undefined)
+      return {
+        ok: false,
+        error: capDiagnostic(
+          `M1c reference plan ${frozenCase.case.id} has no input mutation target.`,
+        ),
+      };
+    const mutation = {
+      kind: "redirectRoot" as const,
+      root: inputNode.id,
+    };
+    const prepared = await prepareSharedRepairTrial({
+      validProposal: reference.value,
+      mutation,
+      catalog: catalog.value,
+      policy: frozenCase.case.policy,
+      taskInputs: frozenCase.case.taskInputs,
+      semanticObligations: frozenCase.case.semanticObligations ?? [],
+    });
+    if (!prepared.ok) return { ok: false, error: [prepared.error] };
+    trials.set(
+      frozenCase.digest,
+      Object.freeze({ mutation, trial: prepared.value }),
+    );
+  }
+  return { ok: true, value: trials };
+}
+
 /** Audits held-out fixture validity without returning identities or contents. */
 export async function blindHeldOutIntegrityAudit(): Promise<
   Result<
@@ -229,11 +340,15 @@ function experimentMethods(
   phase: CampaignPhase,
 ): ReadonlyArray<ExperimentMethodInput> {
   const strategies =
-    phase === "transport-probe"
+    phase === "transport-probe" || phase === "m1c-protocol-probe"
       ? M1A_GENERATION_STRATEGIES.filter(
           (strategy) => strategy.id === "json-schema",
         )
-      : M1A_GENERATION_STRATEGIES;
+      : phase === "m1c-repair"
+        ? M1A_GENERATION_STRATEGIES.filter(
+            (strategy) => strategy.id === "json-schema-with-repair",
+          )
+        : M1A_GENERATION_STRATEGIES;
   return strategies.flatMap((strategy) => {
     const adapters = createM1bPrimaryAdapters({
       constraint: strategy.constraint,
@@ -287,9 +402,9 @@ function checkedSum(
       };
 }
 
-/** Derives every exact transport-probe cap from its frozen request matrix. */
-export function deriveTransportProbeCaps(
+function deriveExactCaps(
   input: TransportProbeCapInput,
+  callsPerCase: (method: ExperimentMethodInput) => number,
 ): Result<ExperimentCaps, Diagnostics> {
   if (
     input.methods.length === 0 ||
@@ -304,24 +419,28 @@ export function deriveTransportProbeCaps(
         "Transport-probe methods, cases, and repetitions must be positive.",
       ),
     };
-  const requestsPerMethod = checkedProduct(
+  const casesAndRepetitions = checkedProduct(
     input.caseCount,
     input.repetitions,
-    "requests per method",
+    "cases and repetitions",
   );
-  if (!requestsPerMethod.ok) return requestsPerMethod;
-  const maxCalls = checkedProduct(
-    input.methods.length,
-    requestsPerMethod.value,
-    "call cap",
-  );
-  if (!maxCalls.ok) return maxCalls;
+  if (!casesAndRepetitions.ok) return casesAndRepetitions;
 
+  let maxCalls = 0;
   let maxInputTokens = 0;
   let maxOutputTokens = 0;
   let maxOutputTokensPerCall = 0;
   const costsByProvider = new Map<string, number>();
   for (const method of input.methods) {
+    const requestsPerMethod = checkedProduct(
+      casesAndRepetitions.value,
+      callsPerCase(method),
+      `${method.id} request count`,
+    );
+    if (!requestsPerMethod.ok) return requestsPerMethod;
+    const nextCalls = checkedSum(maxCalls, requestsPerMethod.value, "call cap");
+    if (!nextCalls.ok) return nextCalls;
+    maxCalls = nextCalls.value;
     const pricing = input.pricingSnapshot.entries.find(
       (entry) => entry.id === method.pricingEntryId,
     );
@@ -411,7 +530,7 @@ export function deriveTransportProbeCaps(
   return {
     ok: true,
     value: Object.freeze({
-      maxCalls: maxCalls.value,
+      maxCalls,
       maxInputTokens,
       maxOutputTokens,
       maxTotalTokens: maxTotalTokens.value,
@@ -420,6 +539,25 @@ export function deriveTransportProbeCaps(
       providerCostCaps,
     }),
   };
+}
+
+/** Derives every exact transport-probe cap from its frozen request matrix. */
+export function deriveTransportProbeCaps(
+  input: TransportProbeCapInput,
+): Result<ExperimentCaps, Diagnostics> {
+  return deriveExactCaps(input, () => 1);
+}
+
+function deriveM1cPhaseCaps(
+  input: TransportProbeCapInput & Readonly<{ phase: CampaignPhase }>,
+): Result<ExperimentCaps, Diagnostics> {
+  return deriveExactCaps(input, (method) =>
+    input.phase === "m1c-repair"
+      ? 2
+      : method.strategy.id === "json-schema-with-repair"
+        ? 3
+        : 1,
+  );
 }
 
 function capsEqual(left: ExperimentCaps, right: ExperimentCaps): boolean {
@@ -638,6 +776,144 @@ export async function materializeM1bPhase(
     : manifest;
 }
 
+/** Builds a separately budgeted M1c phase without touching external storage. */
+export async function materializeM1cPhase(
+  input: Readonly<{
+    phase: CampaignPhase;
+    gitCommit: string;
+    runtimeVersions: RuntimeVersions;
+  }>,
+): Promise<Result<MaterializedPhase, Diagnostics>> {
+  if (!input.phase.startsWith("m1c-"))
+    return {
+      ok: false,
+      error: capDiagnostic("M1c materialization requires an M1c phase."),
+    };
+  const campaign = await createCampaignManifest(
+    "lachesis-m1c-typed-semantic-obligations",
+  );
+  if (!campaign.ok) return campaign;
+  const cases = await m1cPhaseCases(input.phase);
+  if (!cases.ok) return cases;
+  const resolver = createM1aCatalogResolver();
+  if (!resolver.ok) return resolver;
+  const validCases = await validatePlanGenerationCases(
+    cases.value,
+    resolver.value,
+  );
+  if (!validCases.ok) return validCases;
+  const pricing = await createM1bPricingSnapshot();
+  if (!pricing.ok) return pricing;
+  const methods = experimentMethods(input.phase);
+  const repetitions = input.phase === "m1c-heldout" ? 2 : 1;
+  const caps = deriveM1cPhaseCaps({
+    phase: input.phase,
+    methods,
+    pricingSnapshot: pricing.value,
+    caseCount: cases.value.length,
+    repetitions,
+  });
+  if (!caps.ok) return caps;
+  const transportSchemas = await transportSchemaBindings(cases.value, methods);
+  if (!transportSchemas.ok) return transportSchemas;
+  const repairTrials =
+    input.phase === "m1c-repair"
+      ? await m1cRepairTrials(cases.value)
+      : { ok: true as const, value: undefined };
+  if (!repairTrials.ok) return repairTrials;
+  const repairTrialBindings: ReadonlyArray<ExperimentRepairTrial> | undefined =
+    repairTrials.value === undefined
+      ? undefined
+      : Object.freeze(
+          [...repairTrials.value.entries()].map(([caseDigest, item]) => ({
+            caseDigest,
+            mutation: item.mutation,
+            initialProposalDigest: item.trial.initialProposalDigest,
+            eligibility: item.trial.eligibility,
+            arms: item.trial.arms,
+          })),
+        );
+  const corpusDigest = await digestValue(
+    cases.value.map((item) => ({ id: item.case.id, digest: item.digest })),
+  );
+  if (!corpusDigest.ok) return { ok: false, error: [corpusDigest.error] };
+  const experiment = await createExperimentManifest({
+    prompt: M1C_PROMPT_CANDIDATE,
+    protocol: {
+      provider: M1C_PROMPT_PROTOCOL,
+      experiment: M1C_EXPERIMENT_PROTOCOL,
+      phase: input.phase,
+    },
+    cases: cases.value.map((frozenCase) => ({
+      frozenCase,
+      split: input.phase === "m1c-heldout" ? "heldout-phrasing" : "development",
+    })),
+    methods,
+    transportSchemas: transportSchemas.value,
+    ...(repairTrialBindings === undefined
+      ? {}
+      : { repairTrials: repairTrialBindings }),
+    pricingSnapshot: pricing.value,
+    repetitions,
+    caps: caps.value,
+    versions: {
+      gitCommit: input.gitCommit,
+      workspaceVersion: "0.1.0",
+      kernelVersion: "0.1.0",
+      generatorVersion: "0.1.0",
+    },
+  });
+  if (!experiment.ok) return experiment;
+  if (input.phase === "m1c-protocol-probe") {
+    const validatedCaps = validateTransportProbeCaps(experiment.value);
+    if (!validatedCaps.ok) return validatedCaps;
+  }
+  const manifest = await createPhaseManifest({
+    campaign: campaign.value,
+    phase: input.phase,
+    experiment: experiment.value,
+    corpusDigest: corpusDigest.value,
+    storageNamespace: experimentStorageNamespace(
+      input.phase,
+      experiment.value.experimentDigest,
+    ),
+    runtimeVersions: input.runtimeVersions,
+  });
+  return manifest.ok
+    ? {
+        ok: true,
+        value: {
+          campaign: campaign.value,
+          manifest: manifest.value,
+          cases: cases.value,
+          ...(repairTrials.value === undefined
+            ? {}
+            : { repairTrials: repairTrials.value }),
+        },
+      }
+    : manifest;
+}
+
+/** Counts-only M1c held-out audit for prompt-development integrity. */
+export async function blindM1cHeldOutIntegrityAudit(): Promise<
+  Result<
+    Awaited<ReturnType<typeof blindPlanGenerationValidityAudit>>,
+    Diagnostics
+  >
+> {
+  const loaded = await loadM1cPreregisteredCorpus();
+  if (!loaded.ok) return loaded;
+  const resolver = createM1aCatalogResolver();
+  if (!resolver.ok) return resolver;
+  return {
+    ok: true,
+    value: await blindPlanGenerationValidityAudit(
+      loaded.value.heldOut,
+      resolver.value,
+    ),
+  };
+}
+
 export function matrixCounts(manifest: PhaseManifest): Readonly<{
   benchmarkRecords: number;
   initialModelCalls: number;
@@ -651,6 +927,19 @@ export function matrixCounts(manifest: PhaseManifest): Readonly<{
   const repairMethods = manifest.experiment.methods.filter(
     (method) => method.strategy.id === "json-schema-with-repair",
   ).length;
+  if (manifest.phase === "m1c-repair") {
+    const maximumAdditionalRepairCalls =
+      manifest.experiment.cases.length *
+      repairMethods *
+      manifest.repetitions *
+      2;
+    return {
+      benchmarkRecords,
+      initialModelCalls: 0,
+      maximumAdditionalRepairCalls,
+      maximumModelCalls: maximumAdditionalRepairCalls,
+    };
+  }
   const maximumAdditionalRepairCalls =
     manifest.experiment.cases.length * repairMethods * manifest.repetitions * 2;
   return {

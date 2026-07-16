@@ -11,6 +11,7 @@ import {
   parseJson,
   type PlanLanguageManifest,
   type Result,
+  semanticObligationSchema,
   type WireNode,
   wirePlanSchema,
 } from "@nicia-ai/lachesis";
@@ -49,6 +50,11 @@ import {
   generationStrategySchema,
   modelIdentitySchema,
 } from "./records.js";
+import {
+  type DeterministicPlanMutation,
+  deterministicPlanMutationSchema,
+  type SharedRepairTrial,
+} from "./repair-benchmark.js";
 import {
   compileStructuredOutputTransport,
   type StructuredOutputTransport,
@@ -97,6 +103,31 @@ export const benchmarkCaseRecordSchema = z
     strategy: generationStrategySchema,
     repetition: z.number().int().nonnegative(),
     generation: generationRecordSchema,
+    semanticContractHash: z.string().nullable().optional(),
+    semanticObligations: z
+      .array(semanticObligationSchema)
+      .readonly()
+      .optional(),
+    repairTrial: z
+      .strictObject({
+        mutation: deterministicPlanMutationSchema,
+        initialProposalDigest: z.string().min(1),
+        arms: z
+          .strictObject({
+            withoutRepair: z.string().min(1),
+            compilerGuidedRepair: z.string().min(1),
+          })
+          .readonly(),
+        eligibility: z.enum(["eligible", "repair-unnecessary"]),
+        outcome: z.enum([
+          "eligible",
+          "repaired",
+          "failed",
+          "repair-unnecessary",
+        ]),
+      })
+      .readonly()
+      .optional(),
     score: benchmarkScoreSchema,
     digest: z.string(),
   })
@@ -110,6 +141,11 @@ export type BenchmarkMethod = Readonly<{
   id: string;
   adapter: ModelAdapter;
   strategy: GenerationStrategy;
+}>;
+
+export type BenchmarkRepairTrialInput = Readonly<{
+  mutation: DeterministicPlanMutation;
+  trial: SharedRepairTrial;
 }>;
 
 export type CatalogResolver = (
@@ -156,6 +192,7 @@ export type BenchmarkRunInput = Readonly<{
   resolveCatalog: CatalogResolver;
   store: BenchmarkStore;
   budgetController?: BenchmarkBudgetController | undefined;
+  repairTrials?: ReadonlyMap<string, BenchmarkRepairTrialInput> | undefined;
 }>;
 
 export type BenchmarkRunResult = Readonly<{
@@ -473,8 +510,26 @@ async function caseRecord(
     repetition: number;
     session: GenerationSession;
     score: BenchmarkScore;
+    repairTrial?: BenchmarkRepairTrialInput | undefined;
   }>,
 ): Promise<Result<BenchmarkCaseRecord, Diagnostic>> {
+  const repairTrial =
+    input.repairTrial === undefined
+      ? undefined
+      : {
+          mutation: input.repairTrial.mutation,
+          initialProposalDigest: input.repairTrial.trial.initialProposalDigest,
+          arms: input.repairTrial.trial.arms,
+          eligibility: input.repairTrial.trial.eligibility,
+          outcome:
+            input.repairTrial.trial.eligibility === "repair-unnecessary"
+              ? ("repair-unnecessary" as const)
+              : input.session.kind === "compiled"
+                ? ("repaired" as const)
+                : input.session.record.attempts.length === 0
+                  ? ("eligible" as const)
+                  : ("failed" as const),
+        };
   const body = {
     key,
     experimentDigest: input.experiment.experimentDigest,
@@ -490,7 +545,10 @@ async function caseRecord(
     strategy: input.method.strategy,
     repetition: input.repetition,
     generation: input.session.record,
+    semanticContractHash: input.session.record.semanticContractHash ?? null,
+    semanticObligations: input.session.record.semanticObligations ?? [],
     score: input.score,
+    ...(repairTrial === undefined ? {} : { repairTrial }),
   };
   const digest = await digestValue(body);
   if (!digest.ok) return digest;
@@ -759,6 +817,62 @@ export async function runBenchmark(
   const context = await validateRunInput(input);
   if (!context.ok) return context;
   const runContext = context.value;
+  const manifestTrials = runContext.experiment.repairTrials ?? [];
+  if (
+    manifestTrials.length !== (input.repairTrials?.size ?? 0) ||
+    input.methods.some(
+      (method) =>
+        manifestTrials.length > 0 &&
+        method.strategy.id !== "json-schema-with-repair",
+    )
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "Repair execution requires the exact manifest trial set and compiler-guided methods only.",
+      ),
+    };
+  for (const binding of manifestTrials) {
+    const runtime = input.repairTrials?.get(binding.caseDigest);
+    if (runtime === undefined)
+      return {
+        ok: false,
+        error: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Runtime repair trial does not match its persisted manifest identity.",
+        ),
+      };
+    if (
+      runtime.trial.initialProposalDigest !== binding.initialProposalDigest ||
+      runtime.trial.arms.withoutRepair !== binding.arms.withoutRepair ||
+      runtime.trial.arms.compilerGuidedRepair !==
+        binding.arms.compilerGuidedRepair ||
+      runtime.trial.eligibility !== binding.eligibility ||
+      !sameCanonical(runtime.mutation, binding.mutation)
+    )
+      return {
+        ok: false,
+        error: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Runtime repair trial does not match its persisted manifest identity.",
+        ),
+      };
+    const proposalDigest = await digestValue(runtime.trial.initialProposal);
+    if (
+      !proposalDigest.ok ||
+      proposalDigest.value !== binding.initialProposalDigest ||
+      binding.initialProposalDigest !== binding.arms.withoutRepair ||
+      binding.initialProposalDigest !== binding.arms.compilerGuidedRepair
+    )
+      return {
+        ok: false,
+        error: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Repair arms do not share the persisted initial-proposal digest.",
+        ),
+      };
+  }
   const records: Array<BenchmarkCaseRecord> = [];
   let resumed = 0;
   let generated = 0;
@@ -1051,6 +1165,7 @@ export async function runBenchmark(
           "Benchmark case was not prepared before execution.",
         ),
       };
+    const repairTrial = input.repairTrials?.get(frozenCase.digest);
     for (const method of input.methods) {
       const experimentMethod = context.value.methodBindings.get(method.id);
       if (experimentMethod === undefined) {
@@ -1153,6 +1268,9 @@ export async function runBenchmark(
               ? prepared.transport
               : undefined,
           modelCallLimit: Math.min(MAX_REPAIR_ATTEMPTS + 1, remainingCalls),
+          ...(repairTrial === undefined
+            ? {}
+            : { sharedInitialProposal: repairTrial.trial.initialProposal }),
         });
         if (!session.ok) return session;
         if (
@@ -1181,6 +1299,7 @@ export async function runBenchmark(
           repetition,
           session: session.value,
           score: score.value,
+          ...(repairTrial === undefined ? {} : { repairTrial }),
         });
         if (!record.ok) return record;
         const violation =

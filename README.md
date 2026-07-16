@@ -85,7 +85,7 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
   `@nicia-ai/lachesis-generator`; no live provider SDKs.
 - `packages/generator-ai-sdk` — Node-only live-provider adapter package; kept
   outside the kernel and portable generator.
-- `apps/benchmark` — private Node-only M1b campaign controller and CLI.
+- `apps/benchmark` — private Node-only M1b/M1c campaign controller and CLI.
 - `apps/cli` — Node-only public package `@nicia-ai/lachesis-cli` and `lachesis`
   binary.
 - `fixtures` — valid/invalid plans, inputs, and effect recordings.
@@ -111,11 +111,11 @@ git diff --check
 
 ## Not yet implemented
 
-The milestone still excludes a live M1b run, CodeMode, TypeGraph, SQL/Drizzle,
-knowledge-graph persistence, graph-native traversal, joins, `boundedExplore`,
-optimizer rewrites, durable/distributed scheduling, general adaptive loops,
-package publication, and deployment. The next research step is development-only
-prompt calibration and then a frozen held-out M1b provider pilot, not a
-TypeGraph integration.
+The milestone still excludes CodeMode, TypeGraph, SQL/Drizzle, knowledge-graph
+persistence, graph-native traversal, joins, `boundedExplore`, optimizer
+rewrites, durable/distributed scheduling, general adaptive loops, package
+publication, and deployment. M1c live work requires its separately materialized
+campaign and an explicit new budget authorization; it cannot reuse M1b
+authority. TypeGraph remains deferred.
 
 Licensed under [Apache License 2.0](LICENSE).

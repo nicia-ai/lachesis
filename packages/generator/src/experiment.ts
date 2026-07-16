@@ -20,6 +20,7 @@ import {
   verifyPricingSnapshot,
 } from "./pricing.js";
 import { generationStrategySchema, modelIdentitySchema } from "./records.js";
+import { deterministicPlanMutationSchema } from "./repair-benchmark.js";
 import {
   PORTABLE_TRANSPORT_COMPILER_VERSION,
   SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS,
@@ -71,6 +72,21 @@ const experimentTransportSchemaBindingSchema = z
   })
   .readonly();
 
+export const experimentRepairTrialSchema = z
+  .strictObject({
+    caseDigest: z.string().min(1),
+    mutation: deterministicPlanMutationSchema,
+    initialProposalDigest: z.string().min(1),
+    eligibility: z.enum(["eligible", "repair-unnecessary"]),
+    arms: z
+      .strictObject({
+        withoutRepair: z.string().min(1),
+        compilerGuidedRepair: z.string().min(1),
+      })
+      .readonly(),
+  })
+  .readonly();
+
 const experimentCapsSchema = z
   .strictObject({
     maxCalls: z.number().int().positive(),
@@ -104,7 +120,7 @@ const experimentVersionsSchema = z
 
 export const experimentManifestSchema = z
   .strictObject({
-    formatVersion: z.enum(["2", "3", "4"]),
+    formatVersion: z.enum(["2", "3", "4", "5"]),
     promptDigest: z.string().min(1),
     protocolDigest: z.string().min(1),
     cases: z.array(experimentCaseSchema).min(1).readonly(),
@@ -115,6 +131,7 @@ export const experimentManifestSchema = z
       .array(experimentTransportSchemaBindingSchema)
       .readonly()
       .optional(),
+    repairTrials: z.array(experimentRepairTrialSchema).readonly().optional(),
     pricingSnapshot: pricingSnapshotSchema,
     repetitions: z.number().int().positive(),
     caps: experimentCapsSchema,
@@ -129,6 +146,7 @@ export type ExperimentMethod = z.infer<typeof experimentMethodSchema>;
 export type ExperimentTransportSchemaBinding = z.infer<
   typeof experimentTransportSchemaBindingSchema
 >;
+export type ExperimentRepairTrial = z.infer<typeof experimentRepairTrialSchema>;
 export type ExperimentManifest = z.infer<typeof experimentManifestSchema>;
 
 export type ExperimentMethodInput = Readonly<{
@@ -150,6 +168,7 @@ export type ExperimentManifestInput = Readonly<{
   >;
   methods: ReadonlyArray<ExperimentMethodInput>;
   transportSchemas: ReadonlyArray<ExperimentTransportSchemaBinding>;
+  repairTrials?: ReadonlyArray<ExperimentRepairTrial> | undefined;
   pricingSnapshot: PricingSnapshot;
   repetitions: number;
   caps: ExperimentCaps;
@@ -186,7 +205,7 @@ function schemaDiagnostics(error: z.ZodError): Diagnostics {
 
 async function modelConfigurationDigest(
   method: ExperimentMethodInput,
-  formatVersion: "2" | "3" | "4",
+  formatVersion: "2" | "3" | "4" | "5",
 ): Promise<Result<string, Diagnostic>> {
   const legacy = {
     model: method.model,
@@ -397,7 +416,33 @@ export async function createExperimentManifest(
         ),
       ],
     };
-  const formatVersion = "4";
+  const repairTrials = input.repairTrials?.toSorted((left, right) =>
+    left.caseDigest < right.caseDigest
+      ? -1
+      : left.caseDigest > right.caseDigest
+        ? 1
+        : 0,
+  );
+  if (
+    repairTrials !== undefined &&
+    (duplicate(repairTrials.map((trial) => trial.caseDigest)) !== undefined ||
+      repairTrials.some(
+        (trial) =>
+          !cases.some((item) => item.caseDigest === trial.caseDigest) ||
+          trial.initialProposalDigest !== trial.arms.withoutRepair ||
+          trial.initialProposalDigest !== trial.arms.compilerGuidedRepair,
+      ))
+  )
+    return {
+      ok: false,
+      error: [
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Repair trials must bind one shared initial-proposal digest to an experiment case and both comparison arms.",
+        ),
+      ],
+    };
+  const formatVersion = repairTrials === undefined ? "4" : "5";
   const body = {
     formatVersion,
     promptDigest: promptDigest.value,
@@ -407,6 +452,7 @@ export async function createExperimentManifest(
     splits,
     methods,
     transportSchemas,
+    ...(repairTrials === undefined ? {} : { repairTrials }),
     pricingSnapshot: pricing.value,
     repetitions: input.repetitions,
     caps: input.caps,
@@ -521,7 +567,7 @@ export async function verifyExperimentManifest(
     if (
       !methodModeIsValid(
         method,
-        parsed.data.formatVersion === "3" || parsed.data.formatVersion === "4",
+        ["3", "4", "5"].includes(parsed.data.formatVersion),
       )
     ) {
       return {
@@ -552,7 +598,7 @@ export async function verifyExperimentManifest(
     }
   }
   if (
-    parsed.data.formatVersion === "4" &&
+    (parsed.data.formatVersion === "4" || parsed.data.formatVersion === "5") &&
     (parsed.data.transportSchemas === undefined ||
       !transportBindingsAreValid(
         parsed.data.cases,
@@ -567,6 +613,29 @@ export async function verifyExperimentManifest(
         diagnostic(
           "INVALID_WIRE_SCHEMA",
           "Experiment transport-schema bindings failed verification.",
+        ),
+      ],
+    };
+  if (
+    parsed.data.formatVersion === "5" &&
+    (parsed.data.repairTrials === undefined ||
+      duplicate(parsed.data.repairTrials.map((trial) => trial.caseDigest)) !==
+        undefined ||
+      parsed.data.repairTrials.some(
+        (trial) =>
+          !parsed.data.cases.some(
+            (item) => item.caseDigest === trial.caseDigest,
+          ) ||
+          trial.initialProposalDigest !== trial.arms.withoutRepair ||
+          trial.initialProposalDigest !== trial.arms.compilerGuidedRepair,
+      ))
+  )
+    return {
+      ok: false,
+      error: [
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Experiment repair-trial bindings failed verification.",
         ),
       ],
     };

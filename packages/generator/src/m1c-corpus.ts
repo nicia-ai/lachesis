@@ -19,10 +19,11 @@ const DEFAULT_POLICY = Object.freeze({
 });
 
 export const M1C_CORPUS_PROTOCOL = Object.freeze({
-  id: "lachesis-m1c-ir-codemode-preregistered-corpus",
-  version: "1",
+  id: "lachesis-m1c-typed-semantic-obligations-corpus",
+  version: "2",
   priorHeldOutReuse: false,
-  comparisonArms: Object.freeze(["functional-ir", "codemode"]),
+  representation: "functional-ir",
+  codeModeStatus: "not-implemented-not-claimed",
   heldOutAccessPolicy:
     "Counts-only validity audit until the prompt, scorer, and execution protocol are frozen.",
 });
@@ -225,6 +226,7 @@ function workflowCase(): CaseDefinition {
 
 function missingOperationCase(
   input: Readonly<{
+    split: CaseDefinition["split"];
     id: string;
     instruction: string;
     catalogId: "benchmark.numbers" | "benchmark.text";
@@ -232,7 +234,7 @@ function missingOperationCase(
   }>,
 ): CaseDefinition {
   return {
-    split: "heldout",
+    split: input.split,
     value: {
       id: input.id,
       instruction: input.instruction,
@@ -257,6 +259,60 @@ function missingOperationCase(
         },
       ],
       forbiddenCapabilities: [],
+    },
+  };
+}
+
+function unavailableEffectCase(
+  input: Readonly<{
+    split: CaseDefinition["split"];
+    id: string;
+    kind: "deniedCapability" | "insufficientBudget";
+  }>,
+): CaseDefinition {
+  const denied = input.kind === "deniedCapability";
+  return {
+    split: input.split,
+    value: {
+      id: input.id,
+      instruction: denied
+        ? "Request a tax quote for every number, although finance access is denied."
+        : "Request a tax quote, although the trusted policy permits no effect calls.",
+      catalogId: "benchmark.numbers",
+      policy: {
+        ...DEFAULT_POLICY,
+        allowedCapabilities: denied ? [] : ["finance.read"],
+        budget: {
+          ...DEFAULT_POLICY.budget,
+          maxEffectCalls: denied ? DEFAULT_POLICY.budget.maxEffectCalls : 0,
+        },
+      },
+      taskInputs: collectionInput("numbers"),
+      publicExamples: [],
+      hiddenEvaluations: [],
+      expectedFeasibility: "unplannable",
+      infeasibilityWitness: denied
+        ? {
+            kind: "deniedCapability",
+            operation: { id: "quote-tax", version: NUMBER_VERSION },
+            capability: "finance.read",
+          }
+        : {
+            kind: "insufficientBudget",
+            operation: { id: "quote-tax", version: NUMBER_VERSION },
+            resource: "maxEffectCalls",
+            requiredMinimum: 1,
+          },
+      requiredProperties: [],
+      semanticObligations: [
+        { kind: "rootDependsOnInput", inputKey: "items" },
+        {
+          kind: "requiresOperation",
+          operation: { id: "quote-tax", version: NUMBER_VERSION },
+        },
+        { kind: "requiresEffect", effectName: "tax.quote" },
+      ],
+      forbiddenCapabilities: denied ? ["finance.read"] : [],
     },
   };
 }
@@ -416,6 +472,7 @@ const DEFINITIONS: ReadonlyArray<CaseDefinition> = Object.freeze([
   }),
   workflowCase(),
   missingOperationCase({
+    split: "development",
     id: "m1c/numbers/missing-product",
     instruction:
       "Multiply every supplied number together, though no product reducer exists.",
@@ -423,11 +480,32 @@ const DEFINITIONS: ReadonlyArray<CaseDefinition> = Object.freeze([
     operation: "product",
   }),
   missingOperationCase({
+    split: "heldout",
     id: "m1c/text/missing-reverse",
     instruction:
       "Reverse every supplied string, though no reverse operation exists.",
     catalogId: "benchmark.text",
     operation: "reverse",
+  }),
+  unavailableEffectCase({
+    split: "development",
+    id: "m1c/numbers/denied-tax-quote-development",
+    kind: "deniedCapability",
+  }),
+  unavailableEffectCase({
+    split: "development",
+    id: "m1c/numbers/zero-effect-budget-development",
+    kind: "insufficientBudget",
+  }),
+  unavailableEffectCase({
+    split: "heldout",
+    id: "m1c/numbers/denied-tax-quote-heldout",
+    kind: "deniedCapability",
+  }),
+  unavailableEffectCase({
+    split: "heldout",
+    id: "m1c/numbers/zero-effect-budget-heldout",
+    kind: "insufficientBudget",
   }),
 ]);
 

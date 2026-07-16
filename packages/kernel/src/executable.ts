@@ -1,7 +1,12 @@
 import type { Catalog } from "./catalog.js";
-import type { CatalogFingerprint, PlanHash } from "./identity.js";
+import type {
+  CatalogFingerprint,
+  PlanHash,
+  SemanticContractHash,
+} from "./identity.js";
 import type { CompilationPolicy } from "./manifest.js";
 import type { CheckedPlan, PlanAnalysis } from "./plan.js";
+import type { SemanticObligation } from "./semantic.js";
 import type { SchemaReference } from "./wire.js";
 
 const executablePlanBrand: unique symbol = Symbol("ExecutablePlan");
@@ -16,12 +21,16 @@ export type ExecutableArtifacts = Readonly<{
   catalog: Catalog;
   catalogFingerprint: CatalogFingerprint;
   planHash: PlanHash;
+  semanticContractHash: SemanticContractHash;
+  semanticObligations: ReadonlyArray<SemanticObligation>;
   policy: CompilationPolicy;
   canonicalPlan: string;
 }>;
 
 export type ExecutablePlanSummary = Readonly<{
   planHash: PlanHash;
+  semanticContractHash: SemanticContractHash;
+  semanticObligations: ReadonlyArray<SemanticObligation>;
   catalogFingerprint: CatalogFingerprint;
   rootSchema: SchemaReference;
   analysis: PlanAnalysis;
@@ -80,6 +89,10 @@ export function inspectExecutablePlan(
     ? undefined
     : {
         planHash: artifacts.planHash,
+        semanticContractHash: artifacts.semanticContractHash,
+        semanticObligations: artifacts.semanticObligations.map((obligation) =>
+          structuredClone(obligation),
+        ),
         catalogFingerprint: artifacts.catalogFingerprint,
         rootSchema: {
           id: artifacts.checked.root.outputSchema.id,

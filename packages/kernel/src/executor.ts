@@ -21,11 +21,14 @@ import {
   effectRequestHashSchema,
   type PlanHash,
   planHashSchema,
+  type SemanticContractHash,
+  semanticContractHashSchema,
   type ValueDigest,
   valueDigestSchema,
 } from "./identity.js";
 import type { CheckedNode, CheckedPlan } from "./plan.js";
 import { err, ok, type Result } from "./result.js";
+import type { SemanticObligation } from "./semantic.js";
 import {
   type NodeId,
   nodeIdSchema,
@@ -47,6 +50,7 @@ export type EffectRequest = Readonly<{
   invocationIndex: number;
   requestHash: EffectRequestHash;
   planHash: PlanHash;
+  semanticContractHash: SemanticContractHash;
   catalogFingerprint: CatalogFingerprint;
   nodeId: NodeId;
   operation: OperationReference;
@@ -101,6 +105,8 @@ export type TraceEvent =
 export type RunTrace = Readonly<{
   runId: string;
   planHash: string;
+  semanticContractHash: SemanticContractHash;
+  semanticObligations: ReadonlyArray<SemanticObligation>;
   catalog: Readonly<{ id: string; version: string }>;
   catalogFingerprint: CatalogFingerprint;
   events: ReadonlyArray<TraceEvent>;
@@ -303,6 +309,7 @@ export async function executePlan(
     if (!inputDigest.ok) return inputDigest;
     const requestIdentity = {
       planHash,
+      semanticContractHash: compiledArtifacts.semanticContractHash,
       catalogFingerprint: compiledArtifacts.catalogFingerprint,
       operation: { id: effect.id, version: effect.version },
       nodeId,
@@ -321,6 +328,7 @@ export async function executePlan(
       invocationIndex: index,
       requestHash,
       planHash,
+      semanticContractHash: compiledArtifacts.semanticContractHash,
       catalogFingerprint: compiledArtifacts.catalogFingerprint,
       nodeId,
       operation: operationReferenceSchema.parse({
@@ -818,6 +826,8 @@ export async function executePlan(
       trace: {
         runId,
         planHash,
+        semanticContractHash: compiledArtifacts.semanticContractHash,
+        semanticObligations: compiledArtifacts.semanticObligations,
         catalog: catalog.identity,
         catalogFingerprint: compiledArtifacts.catalogFingerprint,
         events,
@@ -833,6 +843,8 @@ export async function executePlan(
       trace: {
         runId,
         planHash,
+        semanticContractHash: compiledArtifacts.semanticContractHash,
+        semanticObligations: compiledArtifacts.semanticObligations,
         catalog: catalog.identity,
         catalogFingerprint: compiledArtifacts.catalogFingerprint,
         events,
@@ -846,6 +858,8 @@ export async function executePlan(
     trace: {
       runId,
       planHash,
+      semanticContractHash: compiledArtifacts.semanticContractHash,
+      semanticObligations: compiledArtifacts.semanticObligations,
       catalog: catalog.identity,
       catalogFingerprint: compiledArtifacts.catalogFingerprint,
       events,
@@ -858,6 +872,7 @@ export const replayEntrySchema = z
   .strictObject({
     requestHash: effectRequestHashSchema,
     planHash: planHashSchema,
+    semanticContractHash: semanticContractHashSchema,
     catalogFingerprint: catalogFingerprintSchema,
     operation: operationReferenceSchema,
     nodeId: nodeIdSchema,
@@ -885,6 +900,7 @@ function replayIdentityMatches(
   return (
     entry.requestHash === request.requestHash &&
     entry.planHash === request.planHash &&
+    entry.semanticContractHash === request.semanticContractHash &&
     entry.catalogFingerprint === request.catalogFingerprint &&
     entry.operation.id === request.operation.id &&
     entry.operation.version === request.operation.version &&
@@ -904,6 +920,7 @@ export async function recordEffectResult(
   const parsed = replayEntrySchema.safeParse({
     requestHash: request.requestHash,
     planHash: request.planHash,
+    semanticContractHash: request.semanticContractHash,
     catalogFingerprint: request.catalogFingerprint,
     operation: request.operation,
     nodeId: request.nodeId,
