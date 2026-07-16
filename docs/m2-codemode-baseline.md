@@ -108,19 +108,32 @@ all 24 feasible fixtures compile and pass their hidden properties in both
 representations; all six infeasibility witnesses validate deterministically. The
 counts-only audit exposes only aggregate validity and category counts.
 
-## Preregistered paired analysis
+## Prospective paired analysis
 
 The analysis plan is content-addressed into every M2 phase. Binary paired
 outcomes use two-sided exact McNemar tests for task correctness, repair-free
-final success, and runtime-failure-free success. Feasible semantic success uses
-a functional-IR non-inferiority margin of -10 percentage points. Cost and
-latency report paired means, medians, and exact sign tests separately for each
-provider.
+final success, and runtime-failure-free success. The statistical unit is one
+case-provider pair within one repetition. Preregistered repetition 1 (record
+index 0) is the primary analysis; repetition 2 (record index 1) is an
+independent confirmation. Outcomes are never pooled across repetitions, and the
+main conclusion must pass prospectively declared gates in both. Each repetition
+also reports provider-stratified binary, cost, and latency results.
 
-A directional inferential claim requires at least ten discordant pairs. With
-fewer discordances, the report is explicitly sensitivity-only and gives the
-number of adverse pairs needed to cross the non-inferiority margin. Exact
-p-values are reported without post-hoc threshold changes.
+Feasible semantic success uses a functional-IR non-inferiority margin of -10
+percentage points. The gate uses the 95% Tango asymptotic score interval for a
+paired risk difference: its lower confidence bound must be at least -0.10. An
+observed difference or sensitivity count cannot substitute for that interval.
+The implementation is frozen against Robert Newcombe's published
+`N=50, b=12, c=2` Tango vector and the Cavo and zero-cell boundary vectors in
+CRAN `contingencytables` 3.1.0. The method follows
+[Tango (1998)](<https://doi.org/10.1002/(SICI)1097-0258(19980430)17:8%3C891::AID-SIM780%3E3.0.CO;2-B>).
+Cost and latency report paired means, medians, and exact sign tests separately
+for each provider and repetition.
+
+A directional superiority claim requires at least ten discordant pairs in each
+repetition. Exact p-values are reported without post-hoc threshold changes. This
+minimum does not affect non-inferiority, which is decided only by the frozen
+paired confidence interval.
 
 Prospective gates are:
 
@@ -128,8 +141,10 @@ Prospective gates are:
 - functional-IR semantic non-inferiority at the frozen margin;
 - no paired repair-free-final-success disadvantage for functional IR;
 - no paired runtime-failure disadvantage for functional IR;
+- all gates pass independently in primary and confirmation repetitions;
 - zero unauthorized or contract-mismatched execution;
-- a superiority claim only when the frozen discordant-pair minimum is met.
+- a superiority claim only when the frozen discordant-pair minimum is met in
+  both repetitions.
 
 ## Independent campaign and phases
 
@@ -138,8 +153,8 @@ The M2 controller materializes a new campaign named
 digest, phase digests, schedules, transports, pricing, source commit, and paired
 analysis identity are independent of M1c.
 
-Worst-case conservative ceilings are derived from the frozen methods, token
-limits, repetitions, pricing, and two-repair bound:
+Worst-case conservative theoretical ceilings are derived from the frozen
+methods, token limits, repetitions, pricing, and two-repair bound:
 
 | Phase          | Initial records | Maximum repairs | Maximum calls |        Exact cap |
 | -------------- | --------------: | --------------: | ------------: | ---------------: |
@@ -147,19 +162,41 @@ limits, repetitions, pricing, and two-repair bound:
 | Calibration    |              36 |              72 |           108 |  30,499,200 µUSD |
 | Held-out       |             240 |             480 |           720 | 203,328,000 µUSD |
 
-The development pool is the exact sum of probe and calibration: 32,758,400 µUSD,
-with OpenAI 18,727,040 and Anthropic 14,031,360. The held-out pool is
-203,328,000 µUSD, with OpenAI 116,236,800 and Anthropic 87,091,200. These
-ceilings are fail-closed accounting limits, not permission to spend.
+These phase ceilings disclose the maximum possible reservation demand; they are
+not campaign authorization. M2.2 instead freezes smaller operational pools:
+
+| Pool        | Total µUSD | OpenAI µUSD | Anthropic µUSD |
+| ----------- | ---------: | ----------: | -------------: |
+| Development | 10,000,000 |   6,000,000 |      4,000,000 |
+| Held-out    | 60,000,000 |  35,000,000 |     25,000,000 |
+
+Every provider request must still reserve its complete worst-case call cost
+before dispatch. Post-dispatch failures without usage consume that full
+reservation conservatively. Once either the total or provider operational pool
+cannot fund the next complete request, execution stops before dispatch. The
+campaign ceiling is therefore 70,000,000 µUSD, not the 236,086,400 µUSD sum of
+the theoretical phase ceilings.
 
 The paired protocol probe is exactly eight initial calls: two representations ×
 one feasible and one typed-unplannable outcome × two providers. It has no repair
 calls. Each phase requires a separate exact acknowledgement after offline
 materialization and review.
 
+## Superseded M2.1 identities
+
+The source commit `e26e76b8cbae7bfa827dfd2deb97773afe41ff70` and campaign
+`09e8ee6cb1fd090f80f7be4fd14e8b1fd746e815b2a409fce1bdcdd72f38ca68` were never
+executed or externally preregistered. Their probe, calibration, and held-out
+experiment identities (`490f8fb3…`, `96379661…`, and `b0fa6ece…`) are
+machine-marked `superseded-unexecuted`. Verification under M2.2 rejects those
+analysis and authorization identities.
+
 ## Claim boundary
 
-No M2 provider inference has been run or authorized. The implementation and
-campaign definitions are offline substrate, not evidence that either
-representation is superior. TypeGraph and bounded-general CodeMode remain
-deferred.
+No M2 provider inference has been run or authorized. No M2 identity should be
+externally preregistered until M2.2 is committed, rematerialized, blindly
+audited, and reviewed. The intended live order is protocol probe, development
+calibration, offline held-out freeze review, then separately authorized held-out
+execution. The implementation and campaign definitions are offline substrate,
+not evidence that either representation is superior. TypeGraph and
+bounded-general CodeMode remain deferred.

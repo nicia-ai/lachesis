@@ -96,6 +96,8 @@ export type PreflightReport = Readonly<{
   pricingSnapshotDigest: string;
   corpusDigest: string;
   scorer: PhaseManifest["scorer"];
+  theoreticalExperimentCaps: PhaseManifest["experiment"]["caps"];
+  authorizationPolicy: CampaignManifest["authorizationPolicy"];
   budgetPool: BudgetPoolStatus;
   expectedCapabilities: ReadonlyArray<string>;
   checks: Readonly<{
@@ -479,6 +481,8 @@ export async function preflightPhase(
         input.loaded.phase.experiment.pricingSnapshot.digest,
       corpusDigest: input.loaded.phase.corpusDigest,
       scorer: input.loaded.phase.scorer,
+      theoreticalExperimentCaps: input.loaded.phase.experiment.caps,
+      authorizationPolicy: input.loaded.campaign.authorizationPolicy,
       budgetPool: pool,
       expectedCapabilities: [
         ...new Set(

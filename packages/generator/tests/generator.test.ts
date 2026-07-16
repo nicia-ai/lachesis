@@ -28,6 +28,7 @@ import {
   blindM2HeldOutIntegrityAudit,
   blindPlanGenerationValidityAudit,
   calculateCostUsdMicros,
+  calculateM2PairedRiskDifferenceInterval,
   calculateMaximumCostUsdMicros,
   type CatalogResolver,
   CODEMODE_PROTOCOL,
@@ -71,6 +72,7 @@ import {
   loadM2PreregisteredCorpus,
   M1A_GENERATION_STRATEGIES,
   M1A_HOLDOUTS,
+  M2_SUPERSEDED_M21_IDENTITIES,
   type M2CodeModeMethod,
   matchM2PairedRecords,
   type ModelAdapter,
@@ -3175,6 +3177,15 @@ describe("M2 disjoint paired corpus", () => {
   });
 
   it("derives a deterministic provider-stratified half counterbalance", async () => {
+    expect(M2_SUPERSEDED_M21_IDENTITIES).toMatchObject({
+      status: "superseded-unexecuted",
+      sourceCommit: "e26e76b8cbae7bfa827dfd2deb97773afe41ff70",
+      phases: [
+        { phase: "m2-protocol-probe" },
+        { phase: "m2-calibration" },
+        { phase: "m2-heldout" },
+      ],
+    });
     const corpus = unwrap(await loadM2PreregisteredCorpus());
     const method = (provider: string): M2CodeModeMethod => ({
       id: `${provider}/restricted-capability-typescript`,
@@ -3665,7 +3676,60 @@ describe("M2 disjoint paired corpus", () => {
     });
   });
 
-  it("runs the preregistered IR and CodeMode arms as exact matched pairs", async () => {
+  it("matches the frozen paired-risk-difference interval reference vectors", () => {
+    // Newcombe's published Tango spreadsheet: N=50, b=12, c=2.
+    const newcombe = unwrap(
+      calculateM2PairedRiskDifferenceInterval({
+        sampleCount: 50,
+        functionalIrOnly: 12,
+        restrictedTypeScriptOnly: 2,
+      }),
+    );
+    expect(newcombe.estimate).toBeCloseTo(0.2, 12);
+    expect(newcombe.lowerBound).toBeCloseTo(0.0611, 4);
+    expect(newcombe.upperBound).toBeCloseTo(0.3447, 4);
+
+    // CRAN contingencytables 3.1.0: cavo_2012 = [[59, 6], [16, 80]].
+    const cavo = unwrap(
+      calculateM2PairedRiskDifferenceInterval({
+        sampleCount: 161,
+        functionalIrOnly: 6,
+        restrictedTypeScriptOnly: 16,
+      }),
+    );
+    expect(cavo.estimate).toBeCloseTo(-0.0621, 4);
+    expect(cavo.lowerBound).toBeCloseTo(-0.124, 4);
+    expect(cavo.upperBound).toBeCloseTo(-0.0054, 4);
+
+    // CRAN also freezes both off-diagonal zero-cell boundary vectors.
+    const allFunctional = unwrap(
+      calculateM2PairedRiskDifferenceInterval({
+        sampleCount: 3,
+        functionalIrOnly: 3,
+        restrictedTypeScriptOnly: 0,
+      }),
+    );
+    const allRestricted = unwrap(
+      calculateM2PairedRiskDifferenceInterval({
+        sampleCount: 3,
+        functionalIrOnly: 0,
+        restrictedTypeScriptOnly: 3,
+      }),
+    );
+    expect(allFunctional.lowerBound).toBeCloseTo(-0.123, 4);
+    expect(allFunctional.upperBound).toBe(1);
+    expect(allRestricted.lowerBound).toBe(-1);
+    expect(allRestricted.upperBound).toBeCloseTo(0.123, 4);
+    expect(
+      calculateM2PairedRiskDifferenceInterval({
+        sampleCount: 2,
+        functionalIrOnly: 2,
+        restrictedTypeScriptOnly: 1,
+      }).ok,
+    ).toBe(false);
+  });
+
+  it("runs the preregistered IR and restricted-TypeScript arms as exact matched pairs", async () => {
     const corpus = unwrap(await loadM2PreregisteredCorpus());
     const benchmarkCase = required(
       corpus.development.find(
@@ -3843,12 +3907,17 @@ describe("M2 disjoint paired corpus", () => {
       },
     });
     expect(paired.statistics).toMatchObject({
-      taskCorrectness: {
-        bothSucceeded: 1,
-        discordantPairs: 0,
-        inferentiallyEligible: false,
+      statisticalUnit: "case-provider-pair-within-one-repetition",
+      primary: {
+        taskCorrectness: {
+          bothSucceeded: 1,
+          discordantPairs: 0,
+          inferentiallyEligible: false,
+        },
+        semanticNonInferiority: { conclusion: "fail", passed: false },
       },
-      semanticNonInferiority: { conclusion: "sensitivity-only" },
+      confirmation: null,
+      conclusion: "primary-only-fail",
     });
     const matched = required(paired.matched[0], "Missing paired record.");
     const discordant = await evaluateM2PairedStatistics(
@@ -3863,14 +3932,39 @@ describe("M2 disjoint paired corpus", () => {
       })),
     );
     expect(unwrap(discordant)).toMatchObject({
-      feasibleSemanticSuccess: {
-        functionalIrOnly: 10,
-        restrictedTypeScriptOnly: 0,
-        discordantPairs: 10,
-        inferentiallyEligible: true,
-        exactMcNemarPValue: 0.001953125,
+      primary: {
+        feasibleSemanticSuccess: {
+          functionalIrOnly: 10,
+          restrictedTypeScriptOnly: 0,
+          discordantPairs: 10,
+          inferentiallyEligible: true,
+          exactMcNemarPValue: 0.001953125,
+        },
+        semanticNonInferiority: { conclusion: "pass", passed: true },
       },
-      semanticNonInferiority: { conclusion: "inferential-pass" },
+    });
+    const replicatedPrimary = Array.from({ length: 48 }, (_, index) => ({
+      ...matched,
+      caseId: `offline-replicated-${index}`,
+    }));
+    const replicated = unwrap(
+      await evaluateM2PairedStatistics([
+        ...replicatedPrimary,
+        ...replicatedPrimary.map((record) => ({ ...record, repetition: 1 })),
+      ]),
+    );
+    expect(replicated).toMatchObject({
+      primary: {
+        feasibleSemanticSuccess: { bothSucceeded: 48 },
+        semanticNonInferiority: { conclusion: "pass", passed: true },
+      },
+      confirmation: {
+        role: "confirmation",
+        repetition: 1,
+        feasibleSemanticSuccess: { bothSucceeded: 48 },
+        semanticNonInferiority: { conclusion: "pass", passed: true },
+      },
+      conclusion: "replicated-pass",
     });
     const adverse = await evaluateM2PairedStatistics(
       Array.from({ length: 10 }, (_, index) => ({
@@ -3887,16 +3981,20 @@ describe("M2 disjoint paired corpus", () => {
     );
     const adverseReport = unwrap(adverse);
     expect(adverseReport).toMatchObject({
-      feasibleSemanticSuccess: {
-        functionalIrOnly: 0,
-        restrictedTypeScriptOnly: 10,
-        discordantPairs: 10,
-        inferentiallyEligible: true,
+      primary: {
+        feasibleSemanticSuccess: {
+          functionalIrOnly: 0,
+          restrictedTypeScriptOnly: 10,
+          discordantPairs: 10,
+          inferentiallyEligible: true,
+        },
+        semanticNonInferiority: { conclusion: "fail", passed: false },
       },
-      semanticNonInferiority: { conclusion: "inferential-fail" },
     });
     expect(
-      adverseReport.gates.filter((gate) => gate.id.includes("disadvantage")),
+      adverseReport.primary.gates.filter((gate) =>
+        gate.id.includes("disadvantage"),
+      ),
     ).toEqual([
       {
         id: "no-functional-ir-repair-free-success-disadvantage",
@@ -3909,6 +4007,17 @@ describe("M2 disjoint paired corpus", () => {
         detail: "0:10",
       },
     ]);
+    expect(
+      (
+        await evaluateM2PairedStatistics([
+          matched,
+          { ...matched, caseId: "mismatch", repetition: 1 },
+        ])
+      ).ok,
+    ).toBe(false);
+    expect(
+      (await evaluateM2PairedStatistics([{ ...matched, repetition: 2 }])).ok,
+    ).toBe(false);
     expect(executionTrace).toEqual(schedule.entries[0]?.order);
     expect(
       (

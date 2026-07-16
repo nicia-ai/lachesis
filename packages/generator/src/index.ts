@@ -120,6 +120,7 @@ export {
   createM2PairedExperimentDigest,
   createM2PairedExperimentDigestFromIdentity,
   M2_COMPARISON_PROTOCOL,
+  M2_SUPERSEDED_M21_IDENTITIES,
   type M2CodeModeMethod,
   type M2CodeModeMethodIdentity,
   type M2CodeModeRecord,
@@ -150,14 +151,17 @@ export {
   type M2PreregisteredCorpus,
 } from "./m2-corpus.js";
 export {
+  calculateM2PairedRiskDifferenceInterval,
   evaluateM2PairedStatistics,
   M2_PAIRED_ANALYSIS_PLAN,
   type M2BinaryPairReport,
   type M2NonInferiorityReport,
   type M2PairedContinuousReport,
+  type M2PairedRiskDifferenceInterval,
   type M2PairedStatisticalReport,
   type M2ProspectiveGateResult,
   type M2ProviderStratumReport,
+  type M2RepetitionStatisticalReport,
 } from "./m2-statistics.js";
 export {
   type AdapterDispatchEvidence,

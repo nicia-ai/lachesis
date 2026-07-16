@@ -73,6 +73,17 @@ export const campaignManifestSchema = z
     milestone: z.enum(["m1b", "m1c", "m2"]).optional(),
     maximumAuthorizedCostUsdMicros: z.number().int().positive(),
     budgetPools: z.array(budgetPoolSchema).length(2).readonly(),
+    authorizationPolicy: z
+      .strictObject({
+        version: z.literal("m2-operational-pools/1"),
+        theoreticalPhaseCeilings: z.literal(
+          "disclosed-not-authorized-by-campaign",
+        ),
+        requestReservation: z.literal("complete-worst-case-before-dispatch"),
+        exhaustion: z.literal("fail-closed-without-dispatch"),
+      })
+      .readonly()
+      .optional(),
     primaryComparison: z
       .strictObject({
         interpretation: z.enum([
@@ -275,12 +286,12 @@ export async function createCampaignManifest(
         ? { milestone: "m1c" as const }
         : {}),
     title: m2
-      ? "Lachesis M2 functional IR versus restricted capability TypeScript"
+      ? "Lachesis M2.2 functional IR versus restricted capability TypeScript"
       : m1c
         ? "Lachesis M1c typed semantic obligations"
         : "Lachesis M1b controlled constraint and repair pilot",
     maximumAuthorizedCostUsdMicros: m2
-      ? 236_086_400
+      ? 70_000_000
       : m1c
         ? 90_000_000
         : 60_000_000,
@@ -291,13 +302,13 @@ export async function createCampaignManifest(
           : m1c
             ? ("m1c-development" as const)
             : ("m1b-development" as const),
-        maxCostUsdMicros: m2 ? 32_758_400 : m1c ? 30_000_000 : 10_000_000,
+        maxCostUsdMicros: m2 ? 10_000_000 : m1c ? 30_000_000 : 10_000_000,
         providerCostCaps: m2
           ? [
-              { billingProvider: "openai", maxCostUsdMicros: 18_727_040 },
+              { billingProvider: "openai", maxCostUsdMicros: 6_000_000 },
               {
                 billingProvider: "anthropic",
-                maxCostUsdMicros: 14_031_360,
+                maxCostUsdMicros: 4_000_000,
               },
             ]
           : m1c
@@ -313,13 +324,13 @@ export async function createCampaignManifest(
           : m1c
             ? ("m1c-heldout" as const)
             : ("m1b-heldout-pilot" as const),
-        maxCostUsdMicros: m2 ? 203_328_000 : m1c ? 60_000_000 : 50_000_000,
+        maxCostUsdMicros: m2 ? 60_000_000 : m1c ? 60_000_000 : 50_000_000,
         providerCostCaps: m2
           ? [
-              { billingProvider: "openai", maxCostUsdMicros: 116_236_800 },
+              { billingProvider: "openai", maxCostUsdMicros: 35_000_000 },
               {
                 billingProvider: "anthropic",
-                maxCostUsdMicros: 87_091_200,
+                maxCostUsdMicros: 25_000_000,
               },
             ]
           : [
@@ -331,6 +342,17 @@ export async function createCampaignManifest(
             ],
       },
     ],
+    ...(m2
+      ? {
+          authorizationPolicy: {
+            version: "m2-operational-pools/1" as const,
+            theoreticalPhaseCeilings:
+              "disclosed-not-authorized-by-campaign" as const,
+            requestReservation: "complete-worst-case-before-dispatch" as const,
+            exhaustion: "fail-closed-without-dispatch" as const,
+          },
+        }
+      : {}),
     primaryComparison: {
       interpretation: m2
         ? ("paired-representation-ablation" as const)

@@ -423,7 +423,13 @@ describe("M2 paired representation protocol", () => {
       milestone: "m2",
       campaignId:
         "lachesis-m2-functional-ir-vs-restricted-capability-typescript",
-      maximumAuthorizedCostUsdMicros: 236_086_400,
+      maximumAuthorizedCostUsdMicros: 70_000_000,
+      authorizationPolicy: {
+        version: "m2-operational-pools/1",
+        theoreticalPhaseCeilings: "disclosed-not-authorized-by-campaign",
+        requestReservation: "complete-worst-case-before-dispatch",
+        exhaustion: "fail-closed-without-dispatch",
+      },
       primaryComparison: {
         interpretation: "paired-representation-ablation",
       },
@@ -431,18 +437,18 @@ describe("M2 paired representation protocol", () => {
     expect(probe.campaign.budgetPools).toEqual([
       {
         id: "m2-development",
-        maxCostUsdMicros: 32_758_400,
+        maxCostUsdMicros: 10_000_000,
         providerCostCaps: [
-          { billingProvider: "openai", maxCostUsdMicros: 18_727_040 },
-          { billingProvider: "anthropic", maxCostUsdMicros: 14_031_360 },
+          { billingProvider: "openai", maxCostUsdMicros: 6_000_000 },
+          { billingProvider: "anthropic", maxCostUsdMicros: 4_000_000 },
         ],
       },
       {
         id: "m2-heldout",
-        maxCostUsdMicros: 203_328_000,
+        maxCostUsdMicros: 60_000_000,
         providerCostCaps: [
-          { billingProvider: "openai", maxCostUsdMicros: 116_236_800 },
-          { billingProvider: "anthropic", maxCostUsdMicros: 87_091_200 },
+          { billingProvider: "openai", maxCostUsdMicros: 35_000_000 },
+          { billingProvider: "anthropic", maxCostUsdMicros: 25_000_000 },
         ],
       },
     ]);
@@ -558,23 +564,17 @@ describe("M2 paired representation protocol", () => {
       ),
       "Missing M2 development pool.",
     );
-    expect(developmentPool.maxCostUsdMicros).toBe(
-      calibration.manifest.experiment.caps.maxCostUsdMicros + 2_259_200,
-    );
-    for (const provider of ["openai", "anthropic"]) {
-      const calibrationCap = required(
-        calibration.manifest.experiment.caps.providerCostCaps.find(
-          (cap) => cap.billingProvider === provider,
-        ),
-        "Missing M2 calibration provider cap.",
-      ).maxCostUsdMicros;
-      const probeCap = provider === "openai" ? 1_291_520 : 967_680;
-      expect(
-        developmentPool.providerCostCaps.find(
-          (cap) => cap.billingProvider === provider,
-        )?.maxCostUsdMicros,
-      ).toBe(calibrationCap + probeCap);
-    }
+    expect(developmentPool).toEqual({
+      id: "m2-development",
+      maxCostUsdMicros: 10_000_000,
+      providerCostCaps: [
+        { billingProvider: "openai", maxCostUsdMicros: 6_000_000 },
+        { billingProvider: "anthropic", maxCostUsdMicros: 4_000_000 },
+      ],
+    });
+    expect(
+      calibration.manifest.experiment.caps.maxCostUsdMicros,
+    ).toBeGreaterThan(developmentPool.maxCostUsdMicros);
     const heldout = await materializedM2("m2-heldout");
     expect(matrixCounts(heldout.manifest)).toEqual({
       benchmarkRecords: 240,
@@ -587,10 +587,10 @@ describe("M2 paired representation protocol", () => {
       heldout.campaign.budgetPools.find((pool) => pool.id === "m2-heldout"),
     ).toEqual({
       id: "m2-heldout",
-      maxCostUsdMicros: heldout.manifest.experiment.caps.maxCostUsdMicros,
+      maxCostUsdMicros: 60_000_000,
       providerCostCaps: [
-        { billingProvider: "openai", maxCostUsdMicros: 116_236_800 },
-        { billingProvider: "anthropic", maxCostUsdMicros: 87_091_200 },
+        { billingProvider: "openai", maxCostUsdMicros: 35_000_000 },
+        { billingProvider: "anthropic", maxCostUsdMicros: 25_000_000 },
       ],
     });
     for (const provider of ["openai", "anthropic"]) {
@@ -633,6 +633,15 @@ describe("M2 paired representation protocol", () => {
       benchmarkRecords: 8,
       initialModelCalls: 8,
       maximumModelCalls: 8,
+      theoreticalExperimentCaps: { maxCostUsdMicros: 2_259_200 },
+      authorizationPolicy: {
+        theoreticalPhaseCeilings: "disclosed-not-authorized-by-campaign",
+        exhaustion: "fail-closed-without-dispatch",
+      },
+      budgetPool: {
+        id: "m2-development",
+        remainingUsdMicros: 10_000_000,
+      },
       checks: {
         manifest: true,
         corpus: true,
@@ -644,6 +653,66 @@ describe("M2 paired representation protocol", () => {
       },
     });
     expect(await readdir(storage)).toEqual([]);
+  });
+
+  it("exhausts an M2 provider pool through per-call conservative settlements", async () => {
+    const heldout = await materializedM2("m2-heldout");
+    const ledger = unwrap(
+      await openCampaignLedger({
+        path: join(await temporaryDirectory(), "ledger.ndjson"),
+        campaign: heldout.campaign,
+      }),
+    );
+    const budget = ledger.budgetController(heldout.manifest);
+    const callsPerProvider = heldout.manifest.experiment.caps.maxCalls / 2;
+    const provider = "openai";
+    const theoreticalProviderCap = required(
+      heldout.manifest.experiment.caps.providerCostCaps.find(
+        (cap) => cap.billingProvider === provider,
+      ),
+      "Missing theoretical provider cap.",
+    ).maxCostUsdMicros;
+    const operationalProviderCap = required(
+      heldout.campaign.budgetPools
+        .find((pool) => pool.id === "m2-heldout")
+        ?.providerCostCaps.find((cap) => cap.billingProvider === provider),
+      "Missing operational provider cap.",
+    ).maxCostUsdMicros;
+    const maximumPerCall = theoreticalProviderCap / callsPerProvider;
+    expect(Number.isSafeInteger(maximumPerCall)).toBe(true);
+    const acceptedCalls = Math.floor(operationalProviderCap / maximumPerCall);
+    const expectedConservative = acceptedCalls * maximumPerCall;
+    for (let index = 0; index < acceptedCalls; index += 1) {
+      const value = reservation(
+        `m2-${provider}-${index}`,
+        provider,
+        maximumPerCall,
+      );
+      expect((await budget.reserve(value)).ok).toBe(true);
+      expect(
+        (
+          await budget.settle({
+            ...value,
+            actualCostUsdMicros: maximumPerCall,
+            conservative: true,
+            accountingBasis: "authorized-conservative",
+          })
+        ).ok,
+      ).toBe(true);
+    }
+    expect(
+      (
+        await budget.reserve(
+          reservation(`m2-${provider}-exhausted`, provider, maximumPerCall),
+        )
+      ).ok,
+    ).toBe(false);
+    expect(ledger.status("m2-heldout")).toMatchObject({
+      consumedUsdMicros: expectedConservative,
+      authorizedConservativeUsdMicros: expectedConservative,
+      observedProviderBillingUsdMicros: 0,
+      unsettledReservationUsdMicros: 0,
+    });
   });
 
   it("executes the paired probe offline with fake adapters, reports it, and resumes without redispatch", async () => {
@@ -751,7 +820,7 @@ describe("M2 paired representation protocol", () => {
     const acknowledgement: LiveAcknowledgement = {
       experimentDigest: probe.manifest.experimentDigest,
       phase: "m2-protocol-probe",
-      maximumCostUsdMicros: 32_758_400,
+      maximumCostUsdMicros: 10_000_000,
     };
     const input = {
       loaded: loaded(probe),
@@ -781,7 +850,8 @@ describe("M2 paired representation protocol", () => {
         matched: 4,
       },
       pairedAnalysis: {
-        taskCorrectness: { bothSucceeded: 4 },
+        primary: { taskCorrectness: { bothSucceeded: 4 } },
+        confirmation: null,
       },
     });
     const codeRecordPath = join(
@@ -849,7 +919,7 @@ describe("M2 paired representation protocol", () => {
       acknowledgement: {
         experimentDigest: lowered.manifest.experimentDigest,
         phase: "m2-protocol-probe",
-        maximumCostUsdMicros: 32_758_400,
+        maximumCostUsdMicros: 10_000_000,
       },
       environment: {
         OPENAI_API_KEY: "offline-test-value",
@@ -890,7 +960,7 @@ describe("M2 paired representation protocol", () => {
       acknowledgement: {
         experimentDigest: mutated.manifest.experimentDigest,
         phase: "m2-protocol-probe",
-        maximumCostUsdMicros: 32_758_400,
+        maximumCostUsdMicros: 10_000_000,
       },
       environment: {
         OPENAI_API_KEY: "offline-test-value",
@@ -922,7 +992,7 @@ describe("M2 paired representation protocol", () => {
       acknowledgement: {
         experimentDigest: mutated.manifest.experimentDigest,
         phase: "m2-protocol-probe",
-        maximumCostUsdMicros: 32_758_400,
+        maximumCostUsdMicros: 10_000_000,
       },
       environment: {
         OPENAI_API_KEY: "offline-test-value",

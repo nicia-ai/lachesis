@@ -44,15 +44,56 @@ import {
 import type { ModelAdapterFailure, ModelResponse } from "./model.js";
 import { calculateMaximumCostUsdMicros, type PricingEntry } from "./pricing.js";
 
+export const M2_SUPERSEDED_M21_IDENTITIES = Object.freeze({
+  status: "superseded-unexecuted" as const,
+  reason:
+    "M2.2 corrects the repeated-measures analysis and separates theoretical ceilings from operational authorization.",
+  sourceCommit: "e26e76b8cbae7bfa827dfd2deb97773afe41ff70",
+  campaignDigest:
+    "09e8ee6cb1fd090f80f7be4fd14e8b1fd746e815b2a409fce1bdcdd72f38ca68",
+  phases: Object.freeze([
+    Object.freeze({
+      phase: "m2-protocol-probe",
+      experimentDigest:
+        "490f8fb3b8434be554d4fbd1a5d046f21e1db8f07309b2536bc16d576182f7de",
+      phaseManifestDigest:
+        "d4cd75b520f59b04b3b0909755cdcc44bc755cafe1003c832d0af51fb8792e7a",
+      scheduleDigest:
+        "39145d62334d1b2639523a70202688b9839d0b0b03d3c915e0a871a6d0692eac",
+    }),
+    Object.freeze({
+      phase: "m2-calibration",
+      experimentDigest:
+        "963796612f6069fe9deeecb93be48ad0d5e048e2aae6468d6faac9f1b80daa18",
+      phaseManifestDigest:
+        "75e343c037908e3eaf49cf1dce8f71f615a2458117c7cdca257628ccf6c4dba7",
+      scheduleDigest:
+        "e9acc7e18a1d9571cedf816eaf2fb44071eee204bcb99c4ad4587ee88d4218ab",
+    }),
+    Object.freeze({
+      phase: "m2-heldout",
+      experimentDigest:
+        "b0fa6ece4b82f4148a221851f5e763b19912c64e6039eeed0e40c6feaed450b0",
+      phaseManifestDigest:
+        "2438859664cc75b85ba274479e5954ace5555876f558a54725c893120e349df7",
+      scheduleDigest:
+        "5d938cd744e21e3d11d0f5ab43309c18646cee2645e07812d590b2adb355756f",
+    }),
+  ]),
+});
+
 export const M2_COMPARISON_PROTOCOL = Object.freeze({
   id: "lachesis-m2-functional-ir-vs-restricted-capability-typescript",
-  version: "2",
+  version: "3",
   primaryComparison: Object.freeze([
     "functional-ir-with-typed-obligations",
     "restricted-capability-typescript-with-typed-obligations",
   ]),
   claimBoundary: "representation-ablation-only; no conventional-CodeMode claim",
-  schedule: "content-addressed-provider-stratified-counterbalance/1",
+  schedule: "content-addressed-provider-stratified-counterbalance/2",
+  repeatedMeasures:
+    "repetition-1(record-index-0)-primary;repetition-2(record-index-1)-independent-confirmation;pooling-prohibited",
+  supersedes: M2_SUPERSEDED_M21_IDENTITIES,
   matchedFactors: Object.freeze([
     "provider-model",
     "task-public-contract",

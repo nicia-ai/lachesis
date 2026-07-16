@@ -70,10 +70,13 @@ no IR-versus-CodeMode claim. See
 M2 is a separate, paired representation-ablation campaign: functional JSON IR
 versus restricted capability-oriented TypeScript. A content-addressed,
 provider-stratified schedule counterbalances which representation runs first and
-is preserved across resume. The frozen paired analysis reports exact McNemar
-tests, a semantic non-inferiority margin, repair/runtime comparisons, and
-provider-stratified cost and latency. The protocol probe is exactly eight calls:
-two representations × one feasible and one typed-unplannable task × two
-providers. Campaign ceilings are not authorization to spend. Conventional
-CodeMode and TypeGraph remain unevaluated. See
-[the M2 design note](../../docs/m2-codemode-baseline.md).
+is preserved across resume. Preregistered repetition 1 is the primary paired
+analysis and repetition 2 is an unpooled confirmation; the conclusion must hold
+in both. The semantic non-inferiority gate uses the lower bound of a validated
+95% Tango paired risk-difference interval. The protocol probe is exactly eight
+calls: two representations × one feasible and one typed-unplannable task × two
+providers. Theoretical phase ceilings are disclosed separately from the
+fail-closed $10
+development and $60 held-out operational pools. Neither is
+authorization to spend. Conventional CodeMode and TypeGraph remain unevaluated.
+See [the M2 design note](../../docs/m2-codemode-baseline.md).
