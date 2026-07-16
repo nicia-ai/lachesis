@@ -7,8 +7,8 @@ import {
 } from "@nicia-ai/lachesis";
 import {
   createInMemoryGraphEvidenceSource,
-  M3A_DETERMINISTIC_CORPUS,
-  M3A_REFERENCE_GRAPH,
+  M3A1_PREREGISTERED_CORPUS,
+  M3A1_REFERENCE_GRAPH,
   selectEvidence,
 } from "@nicia-ai/lachesis-evidence";
 import { z } from "zod";
@@ -70,11 +70,11 @@ if (
   !summary.canonicalPlan.includes('"formatVersion":"1"')
 )
   throw new Error("Node smoke canonicalization failed");
-const evidenceSource = createInMemoryGraphEvidenceSource(M3A_REFERENCE_GRAPH);
+const evidenceSource = createInMemoryGraphEvidenceSource(M3A1_REFERENCE_GRAPH);
 if (!evidenceSource.ok) throw new Error("Node evidence source failed");
-const evidenceTask = M3A_DETERMINISTIC_CORPUS[0];
+const evidenceTask = M3A1_PREREGISTERED_CORPUS[0];
 if (evidenceTask === undefined) throw new Error("Node evidence task missing");
 const evidence = await selectEvidence(evidenceSource.value, evidenceTask.query);
-if (!evidence.ok || evidence.value.paths.length === 0)
+if (!evidence.ok || evidence.value.context.paths.length === 0)
   throw new Error("Node evidence selection failed");
 process.stdout.write("Node public-package smoke passed.\n");

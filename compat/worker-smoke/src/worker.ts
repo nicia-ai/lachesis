@@ -9,8 +9,8 @@ import {
 } from "@nicia-ai/lachesis";
 import {
   createInMemoryGraphEvidenceSource,
-  M3A_DETERMINISTIC_CORPUS,
-  M3A_REFERENCE_GRAPH,
+  M3A1_PREREGISTERED_CORPUS,
+  M3A1_REFERENCE_GRAPH,
   selectEvidence,
 } from "@nicia-ai/lachesis-evidence";
 import {
@@ -199,8 +199,9 @@ async function exerciseKernel(): Promise<Response> {
         },
       }),
   });
-  const evidenceSource = createInMemoryGraphEvidenceSource(M3A_REFERENCE_GRAPH);
-  const evidenceTask = M3A_DETERMINISTIC_CORPUS[0];
+  const evidenceSource =
+    createInMemoryGraphEvidenceSource(M3A1_REFERENCE_GRAPH);
+  const evidenceTask = M3A1_PREREGISTERED_CORPUS[0];
   if (!evidenceSource.ok || evidenceTask === undefined)
     return Response.json({ ok: false }, { status: 500 });
   const evidence = await selectEvidence(
@@ -212,11 +213,11 @@ async function exerciseKernel(): Promise<Response> {
       executed.ok &&
       codeModeRun.ok &&
       evidence.ok &&
-      evidence.value.paths.length > 0,
+      evidence.value.context.paths.length > 0,
     planHash: summary.planHash,
     canonicalLength: summary.canonicalPlan.length,
     codeModeOutput: codeModeRun.ok ? codeModeRun.value.output : null,
-    evidencePaths: evidence.ok ? evidence.value.paths.length : 0,
+    evidencePaths: evidence.ok ? evidence.value.context.paths.length : 0,
   });
 }
 

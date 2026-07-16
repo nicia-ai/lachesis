@@ -9,7 +9,7 @@ effect interpreters.
 This repository contains the measured plan kernel, deterministic generation
 benchmark substrate, the frozen M1b/M1c experiment controllers, the completed M2
 functional-JSON-IR versus restricted-capability-TypeScript representation
-ablation, and the offline M3a evidence-substrate design.
+ablation, and the offline M3a.1 factorial evidence-substrate design.
 
 ## What works
 
@@ -54,9 +54,9 @@ ablation, and the offline M3a evidence-substrate design.
   IR versus restricted capability TypeScript, including frozen counterbalanced
   schedules, paired statistics, content-addressed resume, and shared
   conservative accounting.
-- A substrate-neutral evidence-selection contract with deterministic matched
-  text and in-memory graph implementations, evidence-path and citation ground
-  truth, negative controls, and a zero-network M3a audit.
+- A bounded substrate-neutral evidence-selection contract with four factorial
+  text/graph arms, bitemporal facts and cited relationships, evidence-path and
+  citation ground truth, negative controls, and a counts-only M3a.1 audit.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -97,7 +97,8 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
 - `packages/generator-ai-sdk` — Node-only live-provider adapter package; kept
   outside the kernel and portable generator.
 - `packages/evidence` — portable substrate-neutral evidence contracts and the
-  offline matched text/reference graph implementations; no TypeGraph dependency.
+  offline M3a.1 factorial text/reference-graph implementations; no TypeGraph
+  dependency.
 - `apps/benchmark` — private Node-only M1b/M1c/M2 campaign controller and CLI.
 - `apps/cli` — Node-only public package `@nicia-ai/lachesis-cli` and `lachesis`
   binary.
@@ -108,8 +109,10 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
 See [the architecture](docs/architecture.md) for the kernel guarantees, the
 [benchmark protocol](docs/generator-benchmark.md) for generation and scoring
 boundaries, the [M1b runbook](docs/m1b-runbook.md) for the frozen M1 study, and
-the [M2 representation ablation](docs/m2-codemode-baseline.md) for the new
-isolation and comparison boundary.
+the [M2 representation ablation](docs/m2-codemode-baseline.md) for its completed
+comparison boundary, and the
+[M3a.1 evidence design](docs/m3a-graph-native-decomposition.md) for the offline
+four-arm substrate benchmark and M3b kill gates.
 
 ## Validation
 
@@ -129,9 +132,9 @@ git diff --check
 The project still excludes conventional or bounded-general CodeMode, TypeGraph,
 SQL/Drizzle, persistent knowledge-graph storage, model-facing graph-native
 traversal, joins, `boundedExplore`, optimizer rewrites, durable/distributed
-scheduling, general adaptive loops, package publication, and deployment. M3a is
-offline reference substrate only; it does not authorize or implement M3b model
-calls.
+scheduling, general adaptive loops, package publication, and deployment. M3a.1
+is an offline four-arm evidence benchmark only; it does not authorize or
+implement M3b model calls.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

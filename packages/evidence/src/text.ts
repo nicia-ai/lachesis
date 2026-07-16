@@ -3,16 +3,14 @@ import { z } from "zod";
 
 import {
   type EvidenceFact,
-  type EvidenceNeighborhood,
-  type EvidenceQuery,
   type EvidenceSource,
   type EvidenceSourceFailure,
   evidenceSourceIdentitySchema,
 } from "./contract.js";
 import {
-  createInMemoryGraphEvidenceSource,
+  createBoundedNeighborhood,
   type EvidenceGraph,
-  evidenceGraphSchema,
+  validateEvidenceGraph,
 } from "./graph.js";
 
 export const textEvidenceChunkSchema = z
@@ -30,20 +28,17 @@ function sourceFailure(message: string): EvidenceSourceFailure {
 }
 
 function renderFact(fact: EvidenceFact): string {
-  const validity = [fact.validFrom, fact.validUntil]
-    .filter((value) => value !== null)
-    .join(" through ");
   return [
     fact.statement,
     `Subject: ${fact.subject}.`,
     `Predicate: ${fact.predicate}.`,
     `Object: ${fact.object}.`,
-    `Status: ${fact.status}.`,
-    validity.length === 0 ? "" : `Validity: ${validity}.`,
+    `Valid from: ${fact.validFrom ?? "unbounded"}.`,
+    `Valid until: ${fact.validUntil ?? "unbounded"}.`,
+    `Recorded from: ${fact.recordedFrom}.`,
+    `Recorded until: ${fact.recordedUntil ?? "current"}.`,
     `Citations: ${fact.citationIds.join(", ")}.`,
-  ]
-    .filter((value) => value.length > 0)
-    .join(" ");
+  ].join(" ");
 }
 
 export function createMatchedTextChunks(
@@ -58,7 +53,7 @@ export function createMatchedTextChunks(
     .toSorted((left, right) => left.id.localeCompare(right.id));
 }
 
-function tokens(value: string): ReadonlySet<string> {
+function lexicalTokens(value: string): ReadonlySet<string> {
   return new Set(value.toLocaleLowerCase("en").match(/[a-z0-9]+/g) ?? []);
 }
 
@@ -66,20 +61,19 @@ function chunkScore(
   queryTokens: ReadonlySet<string>,
   chunk: TextEvidenceChunk,
 ): number {
-  const chunkTokens = tokens(chunk.text);
+  const chunkTokens = lexicalTokens(chunk.text);
   let score = 0;
   for (const token of queryTokens) if (chunkTokens.has(token)) score += 1;
   return score;
 }
 
-function textNeighborhood(
-  source: EvidenceSource["identity"],
-  query: EvidenceQuery,
-  graph: EvidenceGraph,
+function rankRenderedFacts(
+  queryText: string,
   chunks: ReadonlyArray<TextEvidenceChunk>,
-): EvidenceNeighborhood {
-  const queryTokens = tokens(query.text);
-  const selectedChunks = chunks
+  facts: ReadonlyMap<string, EvidenceFact>,
+): ReadonlyArray<EvidenceFact> {
+  const queryTokens = lexicalTokens(queryText);
+  return chunks
     .toSorted((left, right) => {
       const scoreDifference =
         chunkScore(queryTokens, right) - chunkScore(queryTokens, left);
@@ -87,47 +81,38 @@ function textNeighborhood(
         ? scoreDifference
         : left.id.localeCompare(right.id);
     })
-    .slice(0, query.maxFacts);
-  const selectedFactIds = new Set(selectedChunks.map((chunk) => chunk.factId));
-  const facts = graph.facts
-    .filter((fact) => selectedFactIds.has(fact.id))
-    .toSorted((left, right) => left.id.localeCompare(right.id));
-  const selectedCitationIds = new Set(
-    facts.flatMap((fact) => fact.citationIds),
-  );
-  const citations = graph.citations
-    .filter((citation) => selectedCitationIds.has(citation.id))
-    .toSorted((left, right) => left.id.localeCompare(right.id));
-  return {
-    queryId: query.id,
-    source,
-    facts,
-    citations,
-    edges: [],
-    paths: [],
-  };
+    .map((chunk) => facts.get(chunk.factId))
+    .filter((fact) => fact !== undefined);
 }
 
 export function createMatchedTextEvidenceSource(
   graphInput: unknown,
 ): Result<EvidenceSource, EvidenceSourceFailure> {
-  const graph = evidenceGraphSchema.safeParse(graphInput);
-  if (!graph.success)
-    return err(sourceFailure("Matched text graph validation failed."));
-  const graphValidation = createInMemoryGraphEvidenceSource(graph.data);
-  if (!graphValidation.ok) return graphValidation;
-  const chunks = createMatchedTextChunks(graph.data);
+  const validated = validateEvidenceGraph(graphInput);
+  if (!validated.ok) return err(sourceFailure(validated.error.message));
+  const chunks = createMatchedTextChunks(validated.value.graph);
   const identity = evidenceSourceIdentitySchema.parse({
-    id: graph.data.id,
-    version: graph.data.version,
-    substrate: "text",
-    implementation: "matched-rendered-chunks/1",
+    id: validated.value.graph.id,
+    version: validated.value.graph.version,
+    selection: "lexical",
+    encoding: "facts",
+    implementation: "matched-rendered-chunks/2",
   });
   return ok({
     identity,
     select: (query) =>
       Promise.resolve(
-        ok(textNeighborhood(identity, query, graph.data, chunks)),
+        createBoundedNeighborhood({
+          identity,
+          query,
+          index: validated.value.index,
+          rankedFacts: rankRenderedFacts(
+            query.text,
+            chunks,
+            validated.value.index.facts,
+          ),
+          selectionTruncated: false,
+        }),
       ),
   });
 }

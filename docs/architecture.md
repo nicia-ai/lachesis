@@ -42,10 +42,14 @@ flowchart TB
 The kernel implements the plan graph and an in-memory run graph. The separate
 `@nicia-ai/lachesis-evidence` package now implements a substrate-neutral
 knowledge/evidence contract plus deterministic matched-text and in-memory graph
-reference sources for M3a. A future run record may link a typed evidence
-selection digest into provenance, but knowledge relationships never become
-scheduling edges and run events never become evidence claims. See
-[M3a graph-native decomposition](./m3a-graph-native-decomposition.md).
+reference sources for the M3a.1 four-arm factorial benchmark. Evidence queries
+bound facts, citations, edges, paths, hops, and serialized context; facts and
+relationships carry separate valid-time and recorded-time intervals, and
+relationships require independent provenance citations. A future run record may
+link a typed evidence-selection digest into provenance, but knowledge
+relationships never become scheduling edges and run events never become evidence
+claims. See
+[M3a.1 graph-native decomposition](./m3a-graph-native-decomposition.md).
 
 ## Catalog trust boundary
 
