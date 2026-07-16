@@ -18,8 +18,10 @@ import {
 import type { TaskInput } from "./model.js";
 
 export const CODEMODE_PROTOCOL = Object.freeze({
-  id: "lachesis-restricted-typescript-codemode",
-  version: "1",
+  id: "lachesis-restricted-capability-typescript",
+  version: "2",
+  claimBoundary:
+    "typed surface over the registered Lachesis capability algebra; not conventional CodeMode",
   grammar:
     "one exported async main; const SSA bindings; input fields; JSON literals; awaited capability calls; one return",
   isolation:

@@ -30,7 +30,13 @@ import type {
   TaskInput,
   UnplannableWitness,
 } from "./model.js";
-import { unplannableWitnessSchema } from "./model.js";
+import { MAX_REPAIR_ATTEMPTS, unplannableWitnessSchema } from "./model.js";
+import {
+  adapterFailureSchema,
+  diagnosticRecordSchema,
+  modelIdentitySchema,
+  modelUsageSchema,
+} from "./records.js";
 import {
   PORTABLE_TRANSPORT_COMPILER_VERSION,
   type StructuredOutputTransport,
@@ -40,8 +46,8 @@ import {
 import { validateUnplannableWitness } from "./witness.js";
 
 export const M2_CODEMODE_PROMPT_PROTOCOL = Object.freeze({
-  id: "lachesis-m2-restricted-typescript-generation",
-  version: "1",
+  id: "lachesis-m2-restricted-capability-typescript-generation",
+  version: "2",
   representation: CODEMODE_PROTOCOL,
   outputContract: Object.freeze({
     program: '{ "kind": "program", "source": "..." }',
@@ -161,6 +167,68 @@ export type CodeModeGenerationRecord = Readonly<{
   totalLatencyMs: number;
   digest: string;
 }>;
+
+const codeModeGenerationStrategySchema = z
+  .strictObject({
+    constraint: z.enum(["unconstrained-json", "json-schema"]),
+    repair: z.enum(["none", "compiler-guided"]),
+  })
+  .readonly();
+
+const codeModeAttemptRecordSchema = z
+  .strictObject({
+    attemptIndex: z.number().int().nonnegative(),
+    phase: z.enum(["initial", "repair"]),
+    requestDigest: z.string(),
+    responseKind: z.enum([
+      "program",
+      "unplannable",
+      "invalid-output",
+      "adapter-failure",
+    ]),
+    programSource: z.string().nullable(),
+    sourceHash: z.string().nullable(),
+    parseTranspileSuccess: z.boolean().nullable(),
+    staticAnalysisSuccess: z.boolean().nullable(),
+    diagnostics: z.array(diagnosticRecordSchema).readonly(),
+    usage: modelUsageSchema,
+    latencyMs: z.number().int().nonnegative(),
+    dispatchEvidence: z.enum([
+      "not-dispatched",
+      "dispatched-with-usage",
+      "dispatched-usage-unknown",
+    ]),
+    adapterFailure: adapterFailureSchema
+      .unwrap()
+      .required({ dispatchEvidence: true })
+      .readonly()
+      .nullable(),
+    digest: z.string(),
+  })
+  .readonly();
+
+export const codeModeGenerationRecordSchema = z
+  .strictObject({
+    task: z.string(),
+    model: modelIdentitySchema,
+    strategy: codeModeGenerationStrategySchema,
+    manifestDigest: z.string(),
+    semanticObligations: z.array(semanticObligationSchema).readonly(),
+    attempts: z.array(codeModeAttemptRecordSchema).readonly(),
+    finalKind: z.enum([
+      "compiled",
+      "unplannable",
+      "rejected",
+      "adapter-failure",
+    ]),
+    sourceHash: z.string().nullable(),
+    semanticContractHash: z.string().nullable(),
+    repairCount: z.number().int().nonnegative(),
+    totalUsage: modelUsageSchema,
+    totalLatencyMs: z.number().int().nonnegative(),
+    digest: z.string(),
+  })
+  .readonly() satisfies z.ZodType<CodeModeGenerationRecord>;
 
 export type CodeModeGenerationSession =
   | Readonly<{
@@ -452,7 +520,8 @@ export async function generateCodeMode(
   let totalLatencyMs = 0;
   let previousProgram: string | undefined;
   let previousDiagnostics: ReadonlyArray<Diagnostic> = [];
-  const maximumAttempts = input.strategy.repair === "compiler-guided" ? 2 : 1;
+  const maximumAttempts =
+    input.strategy.repair === "compiler-guided" ? 1 + MAX_REPAIR_ATTEMPTS : 1;
   for (
     let attemptIndex = 0;
     attemptIndex < maximumAttempts;

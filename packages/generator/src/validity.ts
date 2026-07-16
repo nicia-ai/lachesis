@@ -288,6 +288,161 @@ function workflowPlan(
   };
 }
 
+function scalarEffectPlan(
+  frozenCase: FrozenPlanGenerationCase,
+  manifest: PlanLanguageManifest,
+  operation: string,
+): unknown {
+  const input = frozenCase.case.taskInputs[0];
+  if (input === undefined) return null;
+  return {
+    formatVersion: "1",
+    catalog: manifest.catalog,
+    root: "effect",
+    nodes: [
+      {
+        id: "input",
+        op: "input",
+        inputKey: input.name,
+        schema: input.schema,
+      },
+      {
+        id: "effect",
+        op: "effect",
+        source: "input",
+        effect: { id: operation, version: manifest.catalog.version },
+      },
+    ],
+  };
+}
+
+function m2DecisionPlan(
+  frozenCase: FrozenPlanGenerationCase,
+  manifest: PlanLanguageManifest,
+  operation: string,
+): unknown {
+  const inputs = new Map(
+    frozenCase.case.taskInputs.map((input) => [input.name, input]),
+  );
+  const condition = inputs.get("condition");
+  const primary = inputs.get("primary");
+  const fallback = inputs.get("fallback");
+  if (
+    condition === undefined ||
+    primary === undefined ||
+    fallback === undefined
+  )
+    return null;
+  return {
+    formatVersion: "1",
+    catalog: manifest.catalog,
+    root: "result",
+    nodes: [
+      {
+        id: "condition",
+        op: "input",
+        inputKey: "condition",
+        schema: condition.schema,
+      },
+      {
+        id: "primary",
+        op: "input",
+        inputKey: "primary",
+        schema: primary.schema,
+      },
+      {
+        id: "fallback",
+        op: "input",
+        inputKey: "fallback",
+        schema: fallback.schema,
+      },
+      {
+        id: "selected",
+        op: "select",
+        condition: "condition",
+        whenTrue: "primary",
+        whenFalse: "fallback",
+      },
+      {
+        id: "result",
+        op: "invoke",
+        source: "selected",
+        function: { id: operation, version: manifest.catalog.version },
+      },
+    ],
+  };
+}
+
+function m2WorkflowPlan(
+  frozenCase: FrozenPlanGenerationCase,
+  manifest: PlanLanguageManifest,
+  step: string,
+): unknown {
+  const input = frozenCase.case.taskInputs[0];
+  if (input === undefined) return null;
+  return {
+    formatVersion: "1",
+    catalog: manifest.catalog,
+    root: "fixed",
+    nodes: [
+      {
+        id: "state",
+        op: "input",
+        inputKey: input.name,
+        schema: input.schema,
+      },
+      {
+        id: "fixed",
+        op: "boundedFix",
+        seed: "state",
+        step: { id: step, version: manifest.catalog.version },
+        measure: { id: "remaining", version: manifest.catalog.version },
+        maxIterations: frozenCase.case.policy.budget.maxRecursionDepth,
+      },
+    ],
+  };
+}
+
+function m2ReferencePlan(
+  frozenCase: FrozenPlanGenerationCase,
+  manifest: PlanLanguageManifest,
+): unknown {
+  const operations = frozenCase.case.requiredProperties.flatMap((property) =>
+    property.kind === "usesOperation" ? [property.id] : [],
+  );
+  const effectOperation = operations.find((id) =>
+    manifest.operations.some(
+      (operation) =>
+        operation.reference.id === id && operation.kind === "effect",
+    ),
+  );
+  if (effectOperation !== undefined)
+    return scalarEffectPlan(frozenCase, manifest, effectOperation);
+  if (manifest.catalog.id === "m2.decisions")
+    return m2DecisionPlan(frozenCase, manifest, operations[0] ?? "");
+  if (manifest.catalog.id === "m2.workflow")
+    return m2WorkflowPlan(
+      frozenCase,
+      manifest,
+      operations.find((operation) => operation !== "remaining") ?? "",
+    );
+  const input = frozenCase.case.taskInputs[0];
+  if (input === undefined) return null;
+  const steps: Array<CollectionStep> = [];
+  for (const id of operations) {
+    const operation = manifest.operations.find(
+      (candidate) => candidate.reference.id === id,
+    );
+    if (operation?.kind === "function")
+      steps.push({ kind: "map-function", operation: id });
+    else if (operation?.kind === "predicate")
+      steps.push({ kind: "filter", operation: id });
+    else if (operation?.kind === "reducer")
+      steps.push({ kind: "fold", operation: id });
+  }
+  return collectionPlan(manifest, input.name, input.schema, steps);
+}
+
 export function createReferencePlanWitness(
   frozenCase: FrozenPlanGenerationCase,
   manifest: PlanLanguageManifest,
@@ -297,7 +452,9 @@ export function createReferencePlanWitness(
   const slug = parts[0] === "m1c" ? parts[2] : parts[1];
   const input = frozenCase.case.taskInputs[0];
   let candidate: unknown;
-  if (family === "numbers" && input !== undefined) {
+  if (frozenCase.case.id.startsWith("m2/")) {
+    candidate = m2ReferencePlan(frozenCase, manifest);
+  } else if (family === "numbers" && input !== undefined) {
     const plans: ReadonlyMap<string, ReadonlyArray<CollectionStep>> = new Map([
       ["double", [{ kind: "map-function", operation: "double" }]],
       ["increment", [{ kind: "map-function", operation: "increment" }]],
@@ -567,7 +724,25 @@ function infeasibilityProposal(
     candidate = workflowPlan(frozenCase, manifest, witness.requiredMinimum);
   else if (manifest.catalog.id === "benchmark.workflow" && input !== undefined)
     candidate = workflowEffectPlan(frozenCase, manifest, witness.operation);
-  else if (input !== undefined)
+  else if (
+    manifest.catalog.id.startsWith("m2.") &&
+    manifest.operations.some(
+      (operation) =>
+        operationMatches(operation.reference, witness.operation) &&
+        operation.kind === "effect",
+    )
+  ) {
+    const schema = manifest.schemas.find(
+      (item) =>
+        input !== undefined && operationMatches(item.reference, input.schema),
+    );
+    candidate =
+      input !== undefined && schema?.kind.kind === "collection"
+        ? collectionPlan(manifest, input.name, input.schema, [
+            { kind: "map-effect", operation: witness.operation.id },
+          ])
+        : scalarEffectPlan(frozenCase, manifest, witness.operation.id);
+  } else if (input !== undefined)
     candidate = collectionPlan(manifest, input.name, input.schema, [
       { kind: "map-effect", operation: witness.operation.id },
     ]);

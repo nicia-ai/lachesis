@@ -11,6 +11,7 @@ Commands:
 ```text
 lachesis-benchmark materialize <transport-probe|smoke|calibration|heldout> --out DIR
 lachesis-benchmark materialize <m1c-protocol-probe|m1c-repair|m1c-calibration|m1c-heldout> --out DIR
+lachesis-benchmark materialize <m2-protocol-probe|m2-calibration|m2-heldout> --out DIR
 lachesis-benchmark validate --campaign FILE --manifest FILE
 lachesis-benchmark dry-run --campaign FILE --manifest FILE --storage-root DIR
 lachesis-benchmark execute --campaign FILE --manifest FILE --storage-root DIR \
@@ -19,6 +20,7 @@ lachesis-benchmark resume  # same bindings as execute
 lachesis-benchmark report --campaign FILE --manifest FILE --storage-root DIR
 lachesis-benchmark audit-heldout
 lachesis-benchmark audit-m1c-heldout
+lachesis-benchmark audit-m2-heldout
 ```
 
 Import, manifest materialization, validation, dry-run, and reporting are inert:
@@ -64,3 +66,14 @@ dispatch, while valid proposals are reported as `repair-unnecessary`. Functional
 IR is the only implemented representation, so the M1c corpus and protocol make
 no IR-versus-CodeMode claim. See
 [the M1c design note](../../docs/m1c-typed-semantic-obligations.md).
+
+M2 is a separate, paired representation-ablation campaign: functional JSON IR
+versus restricted capability-oriented TypeScript. A content-addressed,
+provider-stratified schedule counterbalances which representation runs first and
+is preserved across resume. The frozen paired analysis reports exact McNemar
+tests, a semantic non-inferiority margin, repair/runtime comparisons, and
+provider-stratified cost and latency. The protocol probe is exactly eight calls:
+two representations × one feasible and one typed-unplannable task × two
+providers. Campaign ceilings are not authorization to spend. Conventional
+CodeMode and TypeGraph remain unevaluated. See
+[the M2 design note](../../docs/m2-codemode-baseline.md).

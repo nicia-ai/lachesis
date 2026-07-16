@@ -213,6 +213,24 @@ export type BenchmarkBudgetController = Readonly<{
   ) => Promise<Result<void, Diagnostic>>;
 }>;
 
+export type BenchmarkRecordCoordinate = Readonly<{
+  caseId: string;
+  caseDigest: string;
+  provider: string;
+  model: string;
+  repetition: number;
+}>;
+
+/** Trusted orchestration hook; it is never part of a plan or model request. */
+export type BenchmarkRecordCoordinator = Readonly<{
+  beforeRecord: (
+    coordinate: BenchmarkRecordCoordinate,
+  ) => Promise<Result<void, Diagnostic>>;
+  afterRecord: (
+    coordinate: BenchmarkRecordCoordinate,
+  ) => Promise<Result<void, Diagnostic>>;
+}>;
+
 export type BenchmarkRunInput = Readonly<{
   experiment: ExperimentManifest;
   cases: ReadonlyArray<FrozenPlanGenerationCase>;
@@ -221,6 +239,7 @@ export type BenchmarkRunInput = Readonly<{
   store: BenchmarkStore;
   budgetController?: BenchmarkBudgetController | undefined;
   repairTrials?: ReadonlyMap<string, BenchmarkRepairTrialInput> | undefined;
+  recordCoordinator?: BenchmarkRecordCoordinator | undefined;
 }>;
 
 export type BenchmarkRunResult = Readonly<{
@@ -1294,6 +1313,16 @@ export async function runBenchmark(
         repetition < context.value.experiment.repetitions;
         repetition += 1
       ) {
+        const coordinate = {
+          caseId: frozenCase.case.id,
+          caseDigest: frozenCase.digest,
+          provider: method.adapter.identity.provider,
+          model: method.adapter.identity.model,
+          repetition,
+        };
+        const admitted =
+          await input.recordCoordinator?.beforeRecord(coordinate);
+        if (admitted !== undefined && !admitted.ok) return admitted;
         const keyDigest = await digestValue({
           experimentDigest: context.value.experiment.experimentDigest,
           caseDigest: frozenCase.digest,
@@ -1338,6 +1367,9 @@ export async function runBenchmark(
           if (violation !== undefined) return { ok: false, error: violation };
           records.push(stored.value);
           resumed += 1;
+          const completed =
+            await input.recordCoordinator?.afterRecord(coordinate);
+          if (completed !== undefined && !completed.ok) return completed;
           continue;
         }
         const remainingCalls =
@@ -1413,6 +1445,9 @@ export async function runBenchmark(
         if (!saved.ok) return saved;
         records.push(record.value);
         generated += 1;
+        const completed =
+          await input.recordCoordinator?.afterRecord(coordinate);
+        if (completed !== undefined && !completed.ok) return completed;
       }
     }
   }

@@ -8,6 +8,7 @@ import {
   defineFixedPointStep,
   defineMeasure,
   defineSchema,
+  diagnostic,
   digestValue,
   executePlan,
   modelPlanProposalSchema,
@@ -24,6 +25,7 @@ import {
   benchmarkCaseRecordSchema,
   type BenchmarkMethod,
   type BenchmarkSplit,
+  blindM2HeldOutIntegrityAudit,
   blindPlanGenerationValidityAudit,
   calculateCostUsdMicros,
   calculateMaximumCostUsdMicros,
@@ -41,10 +43,13 @@ import {
   createInMemoryM2CodeModeStore,
   createM1aCatalogResolver,
   createM2CatalogResolver,
+  createM2CounterbalancedSchedule,
   createM2PairedExperimentDigest,
   createPricingSnapshot,
   createRecordedModelAdapter,
+  createReferencePlanWitness,
   DEFAULT_INFERENCE_SETTINGS,
+  evaluateM2PairedStatistics,
   evaluateResearchGates,
   executeCodeMode,
   type ExperimentCaps,
@@ -67,6 +72,7 @@ import {
   M1A_GENERATION_STRATEGIES,
   M1A_HOLDOUTS,
   type M2CodeModeMethod,
+  matchM2PairedRecords,
   type ModelAdapter,
   normalizeStructuredOutputEnvelope,
   partitionM1aCorpus,
@@ -84,7 +90,10 @@ import {
   verifyExperimentManifest,
   verifyPricingSnapshot,
 } from "../src/index.js";
-import { createJsonFileBenchmarkStore } from "../src/node-store.js";
+import {
+  createJsonFileBenchmarkStore,
+  createJsonFileM2CodeModeStore,
+} from "../src/node-store.js";
 
 function unwrap<T, E>(result: Result<T, E>): T {
   if (!result.ok) throw new Error(JSON.stringify(result.error));
@@ -3053,10 +3062,67 @@ describe("M2 disjoint paired corpus", () => {
     };
   }
 
+  async function completePairedWitness(
+    benchmarkCase: FrozenPlanGenerationCase,
+  ): Promise<Readonly<{ plan: unknown; source: string }>> {
+    const catalog = unwrap(
+      unwrap(createM2CatalogResolver())(benchmarkCase.case.catalogId),
+    );
+    const manifest = unwrap(
+      await createPlanLanguageManifest(catalog, benchmarkCase.case.policy),
+    );
+    const plan = unwrap(createReferencePlanWitness(benchmarkCase, manifest));
+    const operations = benchmarkCase.case.requiredProperties.flatMap(
+      (property) => (property.kind === "usesOperation" ? [property.id] : []),
+    );
+    const firstInput = required(
+      benchmarkCase.case.taskInputs[0],
+      "M2 witness requires a public input.",
+    );
+    const effectOperation = operations.find((operation) =>
+      ["risk-quote", "redact", "verify-label", "enrich-state"].includes(
+        operation,
+      ),
+    );
+    if (effectOperation !== undefined)
+      return {
+        plan,
+        source: `export default async function main(input, ops) {
+          const result = await ops.effect("${effectOperation}@1.0.0", input.${firstInput.name});
+          return result;
+        }`,
+      };
+    if (benchmarkCase.case.catalogId === "m2.decisions") {
+      const operation = required(operations[0], "Missing decision operation.");
+      return {
+        plan,
+        source: `export default async function main(input, ops) {
+          const selected = await ops.select(input.condition, input.primary, input.fallback);
+          const result = await ops.invoke("${operation}@1.0.0", selected);
+          return result;
+        }`,
+      };
+    }
+    if (benchmarkCase.case.catalogId === "m2.workflow") {
+      const step = required(
+        operations.find((operation) => operation !== "remaining"),
+        "Missing workflow step.",
+      );
+      return {
+        plan,
+        source: `export default async function main(input, ops) {
+          const result = await ops.boundedFix("${step}@1.0.0", "remaining@1.0.0", input.state, 16);
+          return result;
+        }`,
+      };
+    }
+    return { plan, source: pairedWitness(benchmarkCase, operations).source };
+  }
+
   it("uses a fresh namespace and covers every typed witness kind in both splits", async () => {
     const corpus = unwrap(await loadM2PreregisteredCorpus());
-    expect(corpus.development).toHaveLength(6);
-    expect(corpus.heldOut).toHaveLength(7);
+    expect(corpus.development).toHaveLength(9);
+    expect(corpus.heldOut).toHaveLength(30);
     expect(
       assertM2CorpusNamespaceDisjoint([
         ...corpus.development,
@@ -3069,19 +3135,175 @@ describe("M2 disjoint paired corpus", () => {
         { ...first, case: { ...first.case, id: "legacy/reused-case" } },
       ]).ok,
     ).toBe(false);
-    for (const split of [corpus.development, corpus.heldOut])
+    for (const [split, repetitions] of [
+      [corpus.development, 1],
+      [corpus.heldOut, 2],
+    ] as const)
       expect(
         split
           .filter((item) => item.case.expectedFeasibility === "unplannable")
           .map((item) => item.case.infeasibilityWitness?.kind)
           .toSorted(),
       ).toEqual(
-        [
-          "deniedCapability",
-          "insufficientBudget",
-          "missingOperation",
-        ].toSorted(),
+        ["deniedCapability", "insufficientBudget", "missingOperation"]
+          .flatMap((kind) => Array.from({ length: repetitions }, () => kind))
+          .toSorted(),
       );
+    expect(await blindM2HeldOutIntegrityAudit()).toEqual({
+      totalCases: 30,
+      plannableCases: 24,
+      unplannableCases: 6,
+      referencesValid: 30,
+      witnessesCompiled: 24,
+      hiddenPropertiesPassed: 24,
+      infeasibilityWitnessesPassed: 6,
+      invalidCases: 0,
+      loadValid: true,
+      categories: {
+        multiStep: 6,
+        branch: 6,
+        effect: 6,
+        recursion: 6,
+        infeasible: 6,
+      },
+      witnessKinds: {
+        missingOperation: 2,
+        deniedCapability: 2,
+        insufficientBudget: 2,
+      },
+    });
+  });
+
+  it("derives a deterministic provider-stratified half counterbalance", async () => {
+    const corpus = unwrap(await loadM2PreregisteredCorpus());
+    const method = (provider: string): M2CodeModeMethod => ({
+      id: `${provider}/restricted-capability-typescript`,
+      adapter: {
+        identity: {
+          provider,
+          model: "m2-counterbalance-model",
+          adapterVersion: "offline/1",
+        },
+        inference: DEFAULT_INFERENCE_SETTINGS,
+        pricingEntryId: `${provider}/offline`,
+        preflightStructuredOutput: () =>
+          Promise.resolve({ ok: true, value: undefined }),
+        generate: () =>
+          Promise.resolve({
+            ok: false,
+            error: {
+              code: "PROVIDER_FAILURE",
+              message: "schedule-only adapter",
+              dispatchEvidence: "not-dispatched",
+            },
+          }),
+      },
+      strategy: { constraint: "json-schema", repair: "compiler-guided" },
+      pricing: {
+        id: `${provider}/offline`,
+        billingProvider: provider,
+        route: "offline",
+        model: "m2-counterbalance-model",
+        inputUsdMicrosPerMillionTokens: 0,
+        cachedInputUsdMicrosPerMillionTokens: 0,
+        cacheWriteInputUsdMicrosPerMillionTokens: 0,
+        outputUsdMicrosPerMillionTokens: 0,
+        effectiveFrom: "2026-07-16",
+        effectiveUntil: null,
+        sourceUrl: "https://example.invalid/m2-counterbalance",
+      },
+    });
+    const methods = [method("openai"), method("anthropic")];
+    expect(
+      (
+        await createM2CounterbalancedSchedule({
+          cases: [],
+          methods,
+          repetitions: 2,
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await createM2CounterbalancedSchedule({
+          cases: corpus.heldOut,
+          methods: [],
+          repetitions: 2,
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await createM2CounterbalancedSchedule({
+          cases: corpus.heldOut,
+          methods,
+          repetitions: 0,
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await createM2CounterbalancedSchedule({
+          cases: corpus.heldOut,
+          methods: [method("openai"), method("openai")],
+          repetitions: 2,
+        })
+      ).ok,
+    ).toBe(false);
+    const schedule = unwrap(
+      await createM2CounterbalancedSchedule({
+        cases: corpus.heldOut,
+        methods,
+        repetitions: 2,
+      }),
+    );
+    expect(schedule.entries).toHaveLength(120);
+    expect(
+      schedule.entries.filter((entry) => entry.order[0] === "functional-ir"),
+    ).toHaveLength(60);
+    for (const provider of ["openai", "anthropic"]) {
+      const entries = schedule.entries.filter(
+        (entry) => entry.provider === provider,
+      );
+      expect(entries).toHaveLength(60);
+      expect(
+        entries.filter((entry) => entry.order[0] === "functional-ir"),
+      ).toHaveLength(30);
+      expect(
+        entries.filter(
+          (entry) => entry.order[0] === "restricted-capability-typescript",
+        ),
+      ).toHaveLength(30);
+    }
+    const reordered = unwrap(
+      await createM2CounterbalancedSchedule({
+        cases: corpus.heldOut.toReversed(),
+        methods: methods.toReversed(),
+        repetitions: 2,
+      }),
+    );
+    expect(reordered).toEqual(schedule);
+
+    const oddProviderStrata = unwrap(
+      await createM2CounterbalancedSchedule({
+        cases: corpus.development,
+        methods,
+        repetitions: 1,
+      }),
+    );
+    expect(oddProviderStrata.entries).toHaveLength(18);
+    expect(
+      oddProviderStrata.entries.filter(
+        (entry) => entry.order[0] === "functional-ir",
+      ),
+    ).toHaveLength(9);
+    for (const provider of ["openai", "anthropic"]) {
+      const irFirst = oddProviderStrata.entries.filter(
+        (entry) =>
+          entry.provider === provider && entry.order[0] === "functional-ir",
+      ).length;
+      expect([4, 5]).toContain(irFirst);
+    }
   });
 
   it("has paired offline witnesses that compile and produce identical hidden outputs", async () => {
@@ -3090,14 +3312,10 @@ describe("M2 disjoint paired corpus", () => {
     const feasible = [...corpus.development, ...corpus.heldOut].filter(
       (item) => item.case.expectedFeasibility === "plannable",
     );
-    expect(feasible).toHaveLength(7);
+    expect(feasible).toHaveLength(30);
     for (const benchmarkCase of feasible) {
-      const operations = required(
-        operationOrder.get(benchmarkCase.case.id),
-        `Missing paired witness for ${benchmarkCase.case.id}.`,
-      );
       const catalog = unwrap(resolver(benchmarkCase.case.catalogId));
-      const witness = pairedWitness(benchmarkCase, operations);
+      const witness = await completePairedWitness(benchmarkCase);
       const compiledPlan = await compileModelPlanProposal(
         witness.plan,
         catalog,
@@ -3120,33 +3338,55 @@ describe("M2 disjoint paired corpus", () => {
       if (!compiledCode.ok) continue;
       for (const evaluation of benchmarkCase.case.hiddenEvaluations) {
         const inputs = new Map(Object.entries(evaluation.inputs));
+        const fixture = evaluation.effects[0];
         const ir = await executePlan(compiledPlan.executablePlan, {
           inputs,
           effectHandler: () =>
-            Promise.resolve({
-              ok: false,
-              error: {
-                code: "UNDECLARED_EFFECT",
-                message: "M2 witness has no effects.",
-                location: {},
-                details: [],
-              },
-            }),
+            Promise.resolve(
+              fixture === undefined
+                ? {
+                    ok: false,
+                    error: {
+                      code: "UNDECLARED_EFFECT" as const,
+                      message: "M2 witness has no effects.",
+                      location: {},
+                      details: [],
+                    },
+                  }
+                : {
+                    ok: true,
+                    value: {
+                      value: fixture.output,
+                      replayResultId: fixture.replayResultId,
+                      usage: fixture.usage,
+                    },
+                  },
+            ),
           clock: { now: () => "2026-07-15T00:00:00.000Z" },
           runIdProvider: { next: () => `m2-ir/${evaluation.id}` },
         });
         const code = await executeCodeMode(compiledCode.value, {
           inputs,
           effectHandler: () =>
-            Promise.resolve({
-              ok: false,
-              error: {
-                code: "UNDECLARED_EFFECT",
-                message: "M2 witness has no effects.",
-                location: {},
-                details: [],
-              },
-            }),
+            Promise.resolve(
+              fixture === undefined
+                ? {
+                    ok: false,
+                    error: {
+                      code: "UNDECLARED_EFFECT" as const,
+                      message: "M2 witness has no effects.",
+                      location: {},
+                      details: [],
+                    },
+                  }
+                : {
+                    ok: true,
+                    value: {
+                      value: fixture.output,
+                      usage: fixture.usage,
+                    },
+                  },
+            ),
         });
         expect(ir.ok ? ir.value.output : ir.error).toEqual(
           evaluation.expectedOutput,
@@ -3463,9 +3703,16 @@ describe("M2 disjoint paired corpus", () => {
       }),
     );
     const irAdapter = createRecordedModelAdapter(fixture);
+    const executionTrace: Array<string> = [];
     const irMethod: BenchmarkMethod = {
       id: "recorded/functional-ir/schema-with-repair",
-      adapter: irAdapter,
+      adapter: {
+        ...irAdapter,
+        generate: (request) => {
+          executionTrace.push("functional-ir");
+          return irAdapter.generate(request);
+        },
+      },
       strategy: strategy("json-schema-with-repair"),
     };
     const codeAdapter: CodeModeModelAdapter = {
@@ -3478,8 +3725,9 @@ describe("M2 disjoint paired corpus", () => {
       pricingEntryId: "recorded/free",
       preflightStructuredOutput: () =>
         Promise.resolve({ ok: true, value: undefined }),
-      generate: () =>
-        Promise.resolve({
+      generate: () => {
+        executionTrace.push("restricted-capability-typescript");
+        return Promise.resolve({
           ok: true,
           value: {
             rawResponse: JSON.stringify({
@@ -3493,7 +3741,8 @@ describe("M2 disjoint paired corpus", () => {
             latencyMs: 2,
             dispatchEvidence: "dispatched-with-usage",
           },
-        }),
+        });
+      },
     };
     const pricing = {
       id: "recorded/free",
@@ -3535,12 +3784,20 @@ describe("M2 disjoint paired corpus", () => {
       caps,
       resolver,
     );
+    const schedule = unwrap(
+      await createM2CounterbalancedSchedule({
+        cases: [benchmarkCase],
+        methods: [codeMethod],
+        repetitions: 1,
+      }),
+    );
     const experimentDigest = unwrap(
       await createM2PairedExperimentDigest({
         irExperiment,
         cases: [benchmarkCase],
         repetitions: 1,
         codeModeMethods: [codeMethod],
+        schedule,
       }),
     );
     const pairedBudget: BenchmarkBudgetController = {
@@ -3557,6 +3814,7 @@ describe("M2 disjoint paired corpus", () => {
       ).digest,
       cases: [benchmarkCase],
       repetitions: 1,
+      schedule,
       irMethods: [irMethod],
       codeModeMethods: [codeMethod],
       resolveCatalog: resolver,
@@ -3584,11 +3842,192 @@ describe("M2 disjoint paired corpus", () => {
         resources: { actualWithinPrediction: true },
       },
     });
+    expect(paired.statistics).toMatchObject({
+      taskCorrectness: {
+        bothSucceeded: 1,
+        discordantPairs: 0,
+        inferentiallyEligible: false,
+      },
+      semanticNonInferiority: { conclusion: "sensitivity-only" },
+    });
+    const matched = required(paired.matched[0], "Missing paired record.");
+    const discordant = await evaluateM2PairedStatistics(
+      Array.from({ length: 10 }, (_, index) => ({
+        ...matched,
+        caseId: `offline-discordant-${index}`,
+        codeMode: {
+          ...matched.codeMode,
+          finalExecutionSuccess: false,
+          semanticSuccess: false,
+        },
+      })),
+    );
+    expect(unwrap(discordant)).toMatchObject({
+      feasibleSemanticSuccess: {
+        functionalIrOnly: 10,
+        restrictedTypeScriptOnly: 0,
+        discordantPairs: 10,
+        inferentiallyEligible: true,
+        exactMcNemarPValue: 0.001953125,
+      },
+      semanticNonInferiority: { conclusion: "inferential-pass" },
+    });
+    const adverse = await evaluateM2PairedStatistics(
+      Array.from({ length: 10 }, (_, index) => ({
+        ...matched,
+        caseId: `offline-adverse-${index}`,
+        functionalIr: {
+          ...matched.functionalIr,
+          finalExecutionSuccess: false,
+          semanticSuccess: false,
+          runtimeExceptions: 1,
+          repairCalls: 1,
+        },
+      })),
+    );
+    const adverseReport = unwrap(adverse);
+    expect(adverseReport).toMatchObject({
+      feasibleSemanticSuccess: {
+        functionalIrOnly: 0,
+        restrictedTypeScriptOnly: 10,
+        discordantPairs: 10,
+        inferentiallyEligible: true,
+      },
+      semanticNonInferiority: { conclusion: "inferential-fail" },
+    });
+    expect(
+      adverseReport.gates.filter((gate) => gate.id.includes("disadvantage")),
+    ).toEqual([
+      {
+        id: "no-functional-ir-repair-free-success-disadvantage",
+        passed: false,
+        detail: "0:10",
+      },
+      {
+        id: "no-functional-ir-runtime-failure-disadvantage",
+        passed: false,
+        detail: "0:10",
+      },
+    ]);
+    expect(executionTrace).toEqual(schedule.entries[0]?.order);
+    expect(
+      (
+        await matchM2PairedRecords({
+          functionalIr: paired.functionalIr.records,
+          codeMode: [],
+          schedule,
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await matchM2PairedRecords({
+          functionalIr: paired.functionalIr.records,
+          codeMode: paired.codeMode.records,
+          schedule: { ...schedule, entries: [] },
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await matchM2PairedRecords({
+          functionalIr: [],
+          codeMode: paired.codeMode.records,
+          schedule,
+        })
+      ).ok,
+    ).toBe(false);
+    const directory = await mkdtemp(join(tmpdir(), "lachesis-m2-store-"));
+    try {
+      const path = join(directory, "records.json");
+      const durable = unwrap(await createJsonFileM2CodeModeStore(path));
+      const codeRecord = required(
+        paired.codeMode.records[0],
+        "Missing paired TypeScript record.",
+      );
+      unwrap(await durable.save(codeRecord));
+      expect(
+        (
+          await durable.save({
+            ...codeRecord,
+            digest: "different-content-digest",
+          })
+        ).ok,
+      ).toBe(false);
+      const reopened = unwrap(await createJsonFileM2CodeModeStore(path));
+      expect(unwrap(await reopened.load(codeRecord.key))).toEqual(codeRecord);
+      const persisted = await readFile(path, "utf8");
+      const duplicatePath = join(directory, "duplicate.json");
+      await writeFile(
+        duplicatePath,
+        JSON.stringify([codeRecord, codeRecord]),
+        "utf8",
+      );
+      expect((await createJsonFileM2CodeModeStore(duplicatePath)).ok).toBe(
+        false,
+      );
+      await writeFile(
+        path,
+        persisted.replace(codeRecord.digest, "tampered"),
+        "utf8",
+      );
+      expect((await createJsonFileM2CodeModeStore(path)).ok).toBe(false);
+      const invalidPath = join(directory, "invalid.json");
+      await writeFile(invalidPath, "{", "utf8");
+      expect((await createJsonFileM2CodeModeStore(invalidPath)).ok).toBe(false);
+      const invalidSchemaPath = join(directory, "invalid-schema.json");
+      await writeFile(invalidSchemaPath, "[{}]", "utf8");
+      expect((await createJsonFileM2CodeModeStore(invalidSchemaPath)).ok).toBe(
+        false,
+      );
+      expect((await createJsonFileM2CodeModeStore(directory)).ok).toBe(false);
+      const writeFailurePath = join(directory, "write-failure.json");
+      const writeFailureStore = unwrap(
+        await createJsonFileM2CodeModeStore(writeFailurePath),
+      );
+      await mkdir(writeFailurePath);
+      expect((await writeFailureStore.save(codeRecord)).ok).toBe(false);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+    expect(unwrap(await runM2PairedBenchmark(pairedInput))).toMatchObject({
+      functionalIr: { generated: 0, resumed: 1 },
+      codeMode: { generated: 0, resumed: 1 },
+    });
+    expect(executionTrace).toEqual(schedule.entries[0]?.order);
     expect(
       (
         await runM2PairedBenchmark({
           ...pairedInput,
           experimentDigest: "wrong-m2-digest",
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await runM2PairedBenchmark({
+          ...pairedInput,
+          schedule: { ...schedule, scheduleDigest: "tampered" },
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await runM2PairedBenchmark({
+          ...pairedInput,
+          irMethods: [
+            {
+              ...irMethod,
+              adapter: {
+                ...irMethod.adapter,
+                inference: {
+                  ...irMethod.adapter.inference,
+                  maxOutputTokens:
+                    irMethod.adapter.inference.maxOutputTokens + 1,
+                },
+              },
+            },
+          ],
         })
       ).ok,
     ).toBe(false);
@@ -3598,6 +4037,7 @@ describe("M2 disjoint paired corpus", () => {
         cases: [benchmarkCase],
         repetitions: 1,
         codeModeMethods: [],
+        schedule,
       }),
     );
     expect(
@@ -3606,6 +4046,65 @@ describe("M2 disjoint paired corpus", () => {
           ...pairedInput,
           experimentDigest: emptyDigest,
           codeModeMethods: [],
+        })
+      ).ok,
+    ).toBe(false);
+    const codeInput = {
+      experimentDigest,
+      split: "development" as const,
+      splitDigest: pairedInput.splitDigest,
+      cases: [benchmarkCase],
+      methods: [codeMethod],
+      repetitions: 1,
+      resolveCatalog: resolver,
+    };
+    const forced = diagnostic(
+      "INTERNAL_INVARIANT_VIOLATION",
+      "Forced offline M2 store failure.",
+    );
+    expect(
+      (
+        await runM2CodeModeBenchmark({
+          ...codeInput,
+          store: {
+            load: () => Promise.resolve({ ok: false, error: forced }),
+            save: () => Promise.resolve({ ok: true, value: undefined }),
+          },
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await runM2CodeModeBenchmark({
+          ...codeInput,
+          store: createInMemoryM2CodeModeStore(),
+          recordCoordinator: {
+            beforeRecord: () => Promise.resolve({ ok: false, error: forced }),
+            afterRecord: () => Promise.resolve({ ok: true, value: undefined }),
+          },
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await runM2CodeModeBenchmark({
+          ...codeInput,
+          store: {
+            load: () => Promise.resolve({ ok: true, value: undefined }),
+            save: () => Promise.resolve({ ok: false, error: forced }),
+          },
+        })
+      ).ok,
+    ).toBe(false);
+    expect(
+      (
+        await runM2CodeModeBenchmark({
+          ...codeInput,
+          store: createInMemoryM2CodeModeStore(),
+          recordCoordinator: {
+            beforeRecord: () => Promise.resolve({ ok: true, value: undefined }),
+            afterRecord: () => Promise.resolve({ ok: false, error: forced }),
+          },
         })
       ).ok,
     ).toBe(false);

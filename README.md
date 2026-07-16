@@ -8,7 +8,8 @@ effect interpreters.
 
 This repository contains the measured plan kernel, deterministic generation
 benchmark substrate, the frozen M1b/M1c experiment controllers, and the offline
-M2 functional-IR versus restricted-TypeScript comparison substrate.
+M2 functional-JSON-IR versus restricted-capability-TypeScript representation
+ablation.
 
 ## What works
 
@@ -46,11 +47,13 @@ M2 functional-IR versus restricted-TypeScript comparison substrate.
 - A phase-aware Node experiment controller with shared campaign budgets,
   zero-network dry-run, append-only ledger accounting, safe resume, and offline
   reporting.
-- A Worker-compatible restricted TypeScript CodeMode compiler/interpreter that
+- A Worker-compatible restricted capability-TypeScript compiler/interpreter that
   never evaluates model source, exposes only registered capability calls, and
   records matched static and runtime resource measurements.
-- A disjoint paired M2 corpus and controller for functional IR versus CodeMode,
-  including content-addressed resume and shared conservative accounting.
+- A disjoint paired M2 corpus and independent campaign controller for functional
+  IR versus restricted capability TypeScript, including frozen counterbalanced
+  schedules, paired statistics, content-addressed resume, and shared
+  conservative accounting.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -90,7 +93,7 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
   `@nicia-ai/lachesis-generator`; no live provider SDKs.
 - `packages/generator-ai-sdk` — Node-only live-provider adapter package; kept
   outside the kernel and portable generator.
-- `apps/benchmark` — private Node-only M1b/M1c campaign controller and CLI.
+- `apps/benchmark` — private Node-only M1b/M1c/M2 campaign controller and CLI.
 - `apps/cli` — Node-only public package `@nicia-ai/lachesis-cli` and `lachesis`
   binary.
 - `fixtures` — valid/invalid plans, inputs, and effect recordings.
@@ -100,8 +103,8 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
 See [the architecture](docs/architecture.md) for the kernel guarantees, the
 [benchmark protocol](docs/generator-benchmark.md) for generation and scoring
 boundaries, the [M1b runbook](docs/m1b-runbook.md) for the frozen M1 study, and
-the [M2 CodeMode baseline](docs/m2-codemode-baseline.md) for the new isolation
-and comparison boundary.
+the [M2 representation ablation](docs/m2-codemode-baseline.md) for the new
+isolation and comparison boundary.
 
 ## Validation
 
@@ -118,11 +121,12 @@ git diff --check
 
 ## Not yet implemented
 
-The milestone still excludes unrestricted CodeMode, TypeGraph, SQL/Drizzle,
-knowledge-graph persistence, graph-native traversal, joins, `boundedExplore`,
-optimizer rewrites, durable/distributed scheduling, general adaptive loops,
-package publication, and deployment. M2 has not been materialized or run live;
-it requires a new campaign, frozen prospective gates, and explicit budget and
-phase authorization. TypeGraph remains deferred.
+The milestone still excludes conventional or bounded-general CodeMode,
+TypeGraph, SQL/Drizzle, knowledge-graph persistence, graph-native traversal,
+joins, `boundedExplore`, optimizer rewrites, durable/distributed scheduling,
+general adaptive loops, package publication, and deployment. M2 has not been
+externally materialized or run live; its independent campaign and prospective
+gates require offline review, then explicit budget and phase authorization.
+TypeGraph remains deferred.
 
 Licensed under [Apache License 2.0](LICENSE).

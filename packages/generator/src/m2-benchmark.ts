@@ -5,12 +5,15 @@ import {
   digestValue,
   type Result,
 } from "@nicia-ai/lachesis";
+import { z } from "zod";
 
 import type {
   BenchmarkBudgetController,
   BenchmarkBudgetSettlement,
   BenchmarkCaseRecord,
   BenchmarkMethod,
+  BenchmarkRecordCoordinate,
+  BenchmarkRecordCoordinator,
   BenchmarkRunResult,
   BenchmarkStore,
   CatalogResolver,
@@ -26,22 +29,30 @@ import {
 } from "./codemode.js";
 import {
   type CodeModeGenerationRecord,
+  codeModeGenerationRecordSchema,
   type CodeModeGenerationStrategy,
   type CodeModeModelAdapter,
   type CodeModeModelRequest,
   generateCodeMode,
 } from "./codemode-model.js";
 import type { ExperimentManifest } from "./experiment.js";
+import {
+  evaluateM2PairedStatistics,
+  M2_PAIRED_ANALYSIS_PLAN,
+  type M2PairedStatisticalReport,
+} from "./m2-statistics.js";
 import type { ModelAdapterFailure, ModelResponse } from "./model.js";
 import { calculateMaximumCostUsdMicros, type PricingEntry } from "./pricing.js";
 
 export const M2_COMPARISON_PROTOCOL = Object.freeze({
-  id: "lachesis-m2-functional-ir-vs-restricted-typescript",
-  version: "1",
+  id: "lachesis-m2-functional-ir-vs-restricted-capability-typescript",
+  version: "2",
   primaryComparison: Object.freeze([
     "functional-ir-with-typed-obligations",
-    "restricted-typescript-codemode",
+    "restricted-capability-typescript-with-typed-obligations",
   ]),
+  claimBoundary: "representation-ablation-only; no conventional-CodeMode claim",
+  schedule: "content-addressed-provider-stratified-counterbalance/1",
   matchedFactors: Object.freeze([
     "provider-model",
     "task-public-contract",
@@ -64,11 +75,247 @@ export const M2_COMPARISON_PROTOCOL = Object.freeze({
   typeGraphStatus: "deferred",
 });
 
+export type M2Representation =
+  "functional-ir" | "restricted-capability-typescript";
+
+const m2ScheduleEntrySchema = z
+  .strictObject({
+    pairDigest: z.string().min(1),
+    counterbalanceHash: z.string().min(1),
+    caseId: z.string().min(1),
+    caseDigest: z.string().min(1),
+    provider: z.string().min(1),
+    model: z.string().min(1),
+    repetition: z.number().int().nonnegative(),
+    order: z
+      .tuple([
+        z.enum(["functional-ir", "restricted-capability-typescript"]),
+        z.enum(["functional-ir", "restricted-capability-typescript"]),
+      ])
+      .readonly(),
+  })
+  .readonly();
+
+export const m2CounterbalancedScheduleSchema = z
+  .strictObject({
+    formatVersion: z.literal("2"),
+    algorithm: z.literal(
+      "sha256-case-provider-repetition/provider-stratified-global-balance-v2",
+    ),
+    entries: z.array(m2ScheduleEntrySchema).min(1).readonly(),
+    scheduleDigest: z.string().min(1),
+  })
+  .readonly();
+
+export type M2ScheduleEntry = z.infer<typeof m2ScheduleEntrySchema>;
+export type M2CounterbalancedSchedule = z.infer<
+  typeof m2CounterbalancedScheduleSchema
+>;
+
+type ScheduleCoordinate = Readonly<{
+  caseId: string;
+  caseDigest: string;
+  provider: string;
+  model: string;
+  repetition: number;
+}>;
+
+function coordinateKey(coordinate: ScheduleCoordinate): string {
+  return [
+    coordinate.caseId,
+    coordinate.caseDigest,
+    coordinate.provider,
+    coordinate.model,
+    String(coordinate.repetition),
+  ].join("\u0000");
+}
+
+function compareCoordinates(
+  left: ScheduleCoordinate,
+  right: ScheduleCoordinate,
+): number {
+  const leftKey = [
+    left.caseId,
+    left.caseDigest,
+    left.provider,
+    left.model,
+  ].join("\u0000");
+  const rightKey = [
+    right.caseId,
+    right.caseDigest,
+    right.provider,
+    right.model,
+  ].join("\u0000");
+  return leftKey < rightKey
+    ? -1
+    : leftKey > rightKey
+      ? 1
+      : left.repetition - right.repetition;
+}
+
+export async function createM2CounterbalancedSchedule(
+  input: Readonly<{
+    cases: ReadonlyArray<FrozenPlanGenerationCase>;
+    methods: ReadonlyArray<M2CodeModeMethod>;
+    repetitions: number;
+  }>,
+): Promise<Result<M2CounterbalancedSchedule, Diagnostic>> {
+  return createM2CounterbalancedScheduleFromIdentity({
+    cases: input.cases.map((item) => ({
+      id: item.case.id,
+      digest: item.digest,
+    })),
+    methods: input.methods.map((method) => ({
+      provider: method.adapter.identity.provider,
+      model: method.adapter.identity.model,
+    })),
+    repetitions: input.repetitions,
+  });
+}
+
+export async function createM2CounterbalancedScheduleFromIdentity(
+  input: Readonly<{
+    cases: ReadonlyArray<Readonly<{ id: string; digest: string }>>;
+    methods: ReadonlyArray<Readonly<{ provider: string; model: string }>>;
+    repetitions: number;
+  }>,
+): Promise<Result<M2CounterbalancedSchedule, Diagnostic>> {
+  if (
+    !Number.isSafeInteger(input.repetitions) ||
+    input.repetitions <= 0 ||
+    input.cases.length === 0 ||
+    input.methods.length === 0
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "M2 schedule requires cases, methods, and a positive repetition count.",
+      ),
+    };
+  const providers = input.methods
+    .map((method) => ({ ...method }))
+    .toSorted((left, right) => {
+      const leftKey = `${left.provider}\u0000${left.model}`;
+      const rightKey = `${right.provider}\u0000${right.model}`;
+      return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+    });
+  if (
+    new Set(providers.map((item) => `${item.provider}\u0000${item.model}`))
+      .size !== providers.length
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "M2 schedule requires exactly one method per provider/model pair.",
+      ),
+    };
+  const seeded: Array<
+    ScheduleCoordinate &
+      Readonly<{ pairDigest: string; counterbalanceHash: string }>
+  > = [];
+  for (const benchmarkCase of input.cases.toSorted((left, right) =>
+    left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
+  ))
+    for (const provider of providers)
+      for (
+        let repetition = 0;
+        repetition < input.repetitions;
+        repetition += 1
+      ) {
+        const coordinate = {
+          caseId: benchmarkCase.id,
+          caseDigest: benchmarkCase.digest,
+          provider: provider.provider,
+          model: provider.model,
+          repetition,
+        };
+        const hash = await digestValue(coordinate);
+        if (!hash.ok) return hash;
+        seeded.push({
+          ...coordinate,
+          pairDigest: hash.value,
+          counterbalanceHash: hash.value,
+        });
+      }
+  const assigned = new Map<string, M2ScheduleEntry["order"]>();
+  let globalIrFirst = 0;
+  let globalTypescriptFirst = 0;
+  for (const provider of providers) {
+    const group = seeded
+      .filter(
+        (entry) =>
+          entry.provider === provider.provider &&
+          entry.model === provider.model,
+      )
+      .toSorted((left, right) =>
+        left.counterbalanceHash < right.counterbalanceHash
+          ? -1
+          : left.counterbalanceHash > right.counterbalanceHash
+            ? 1
+            : 0,
+      );
+    const hashStartsWithIr =
+      Number.parseInt(group[0]?.counterbalanceHash.slice(0, 2) ?? "0", 16) %
+        2 ===
+      0;
+    const startsWithIr =
+      group.length % 2 === 0
+        ? hashStartsWithIr
+        : globalIrFirst < globalTypescriptFirst
+          ? true
+          : globalTypescriptFirst < globalIrFirst
+            ? false
+            : hashStartsWithIr;
+    for (const [index, entry] of group.entries()) {
+      const irFirst = index % 2 === 0 ? startsWithIr : !startsWithIr;
+      if (irFirst) globalIrFirst += 1;
+      else globalTypescriptFirst += 1;
+      assigned.set(
+        coordinateKey(entry),
+        irFirst
+          ? ["functional-ir", "restricted-capability-typescript"]
+          : ["restricted-capability-typescript", "functional-ir"],
+      );
+    }
+  }
+  const entries = seeded.toSorted(compareCoordinates).map((entry) => ({
+    ...entry,
+    order:
+      assigned.get(coordinateKey(entry)) ??
+      (["functional-ir", "restricted-capability-typescript"] as const),
+  }));
+  const body = {
+    formatVersion: "2" as const,
+    algorithm:
+      "sha256-case-provider-repetition/provider-stratified-global-balance-v2" as const,
+    entries,
+  };
+  const digest = await digestValue(body);
+  if (!digest.ok) return digest;
+  return {
+    ok: true,
+    value: m2CounterbalancedScheduleSchema.parse({
+      ...body,
+      scheduleDigest: digest.value,
+    }),
+  };
+}
+
 export type M2CodeModeMethod = Readonly<{
   id: string;
   adapter: CodeModeModelAdapter;
   strategy: CodeModeGenerationStrategy;
   pricing: PricingEntry;
+}>;
+
+export type M2CodeModeMethodIdentity = Readonly<{
+  id: string;
+  model: CodeModeModelAdapter["identity"];
+  inference: CodeModeModelAdapter["inference"];
+  strategy: CodeModeGenerationStrategy;
+  pricingEntryId: string;
 }>;
 
 export type M2ResourceComparison = Readonly<{
@@ -110,12 +357,66 @@ export type M2CodeModeRecord = Readonly<{
   caseId: string;
   caseDigest: string;
   methodId: string;
-  representation: "restricted-typescript-codemode";
+  representation: "restricted-capability-typescript";
   repetition: number;
   generation: CodeModeGenerationRecord;
   score: M2CodeModeScore;
   digest: string;
 }>;
+
+const runtimeUsageSchema = z
+  .strictObject({
+    operationCalls: z.number().int().nonnegative(),
+    effectCalls: z.number().int().nonnegative(),
+    tokens: z.number().int().nonnegative(),
+    wallClockMs: z.number().int().nonnegative(),
+  })
+  .readonly();
+
+const m2CodeModeScoreSchema = z
+  .strictObject({
+    expectedFeasibility: z.enum(["plannable", "unplannable"]),
+    parseTranspileSuccess: z.boolean(),
+    firstCompilationSuccess: z.boolean(),
+    finalCompilationSuccess: z.boolean(),
+    firstExecutionSuccess: z.boolean().nullable(),
+    finalExecutionSuccess: z.boolean().nullable(),
+    semanticSuccess: z.boolean().nullable(),
+    correctTypedAbstention: z.boolean(),
+    runtimeExceptions: z.number().int().nonnegative(),
+    timeouts: z.number().int().nonnegative(),
+    capabilityViolations: z.number().int().nonnegative(),
+    budgetViolations: z.number().int().nonnegative(),
+    repairCalls: z.number().int().nonnegative(),
+    costUsdMicros: z.number().int().nonnegative(),
+    latencyMs: z.number().int().nonnegative(),
+    staticallyAnalyzable: z.boolean(),
+    resources: z
+      .strictObject({
+        predicted: runtimeUsageSchema.nullable(),
+        actual: runtimeUsageSchema,
+        actualWithinPrediction: z.boolean().nullable(),
+      })
+      .readonly(),
+  })
+  .readonly() satisfies z.ZodType<M2CodeModeScore>;
+
+export const m2CodeModeRecordSchema = z
+  .strictObject({
+    key: z.string(),
+    experimentDigest: z.string(),
+    split: z.enum(["development", "heldout"]),
+    splitDigest: z.string(),
+    caseId: z.string(),
+    caseDigest: z.string(),
+    methodId: z.string(),
+    representation: z.literal("restricted-capability-typescript"),
+    repetition: z.number().int().nonnegative(),
+    generation: codeModeGenerationRecordSchema,
+    score: m2CodeModeScoreSchema,
+    digest: z.string(),
+  })
+  .readonly() satisfies z.ZodType<M2CodeModeRecord>;
 
 export type M2CodeModeStore = Readonly<{
   load: (
@@ -134,6 +435,7 @@ export type M2CodeModeRunInput = Readonly<{
   resolveCatalog: CatalogResolver;
   store: M2CodeModeStore;
   budgetController?: BenchmarkBudgetController | undefined;
+  recordCoordinator?: BenchmarkRecordCoordinator | undefined;
 }>;
 
 export type M2CodeModeRunResult = Readonly<{
@@ -147,6 +449,8 @@ export type M2MatchedRecord = Readonly<{
   provider: string;
   model: string;
   repetition: number;
+  scheduleDigest: string;
+  executionOrder: M2ScheduleEntry["order"];
   functionalIr: Readonly<{
     parseSuccess: boolean;
     firstCompilationSuccess: boolean;
@@ -157,6 +461,8 @@ export type M2MatchedRecord = Readonly<{
     repairCalls: number;
     costUsdMicros: number;
     latencyMs: number;
+    runtimeExceptions: number;
+    timeouts: number;
     staticallyAnalyzable: boolean;
     predictedActualReconciled: boolean | null;
   }>;
@@ -171,6 +477,7 @@ export type M2PairedRunInput = Readonly<{
   splitDigest: string;
   cases: ReadonlyArray<FrozenPlanGenerationCase>;
   repetitions: number;
+  schedule: M2CounterbalancedSchedule;
   irMethods: ReadonlyArray<BenchmarkMethod>;
   codeModeMethods: ReadonlyArray<M2CodeModeMethod>;
   resolveCatalog: CatalogResolver;
@@ -183,6 +490,7 @@ export type M2PairedRunResult = Readonly<{
   functionalIr: BenchmarkRunResult;
   codeMode: M2CodeModeRunResult;
   matched: ReadonlyArray<M2MatchedRecord>;
+  statistics: M2PairedStatisticalReport;
 }>;
 
 export async function createM2PairedExperimentDigest(
@@ -191,16 +499,17 @@ export async function createM2PairedExperimentDigest(
     cases: ReadonlyArray<FrozenPlanGenerationCase>;
     repetitions: number;
     codeModeMethods: ReadonlyArray<M2CodeModeMethod>;
+    schedule: M2CounterbalancedSchedule;
   }>,
 ): Promise<Result<string, Diagnostic>> {
-  return digestValue({
-    protocol: M2_COMPARISON_PROTOCOL,
-    functionalIrExperimentDigest: input.irExperiment.experimentDigest,
+  return createM2PairedExperimentDigestFromIdentity({
+    irExperiment: input.irExperiment,
     cases: input.cases.map((item) => ({
       id: item.case.id,
       digest: item.digest,
     })),
     repetitions: input.repetitions,
+    schedule: input.schedule,
     codeModeMethods: input.codeModeMethods.map((method) => ({
       id: method.id,
       model: method.adapter.identity,
@@ -208,6 +517,30 @@ export async function createM2PairedExperimentDigest(
       strategy: method.strategy,
       pricingEntryId: method.pricing.id,
     })),
+  });
+}
+
+export async function createM2PairedExperimentDigestFromIdentity(
+  input: Readonly<{
+    irExperiment: ExperimentManifest;
+    cases: ReadonlyArray<Readonly<{ id: string; digest: string }>>;
+    repetitions: number;
+    codeModeMethods: ReadonlyArray<M2CodeModeMethodIdentity>;
+    schedule: M2CounterbalancedSchedule;
+  }>,
+): Promise<Result<string, Diagnostic>> {
+  return digestValue({
+    protocol: M2_COMPARISON_PROTOCOL,
+    analysisPlan: M2_PAIRED_ANALYSIS_PLAN,
+    functionalIrExperimentDigest: input.irExperiment.experimentDigest,
+    cases: input.cases.toSorted((left, right) =>
+      left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
+    ),
+    repetitions: input.repetitions,
+    scheduleDigest: input.schedule.scheduleDigest,
+    codeModeMethods: input.codeModeMethods.toSorted((left, right) =>
+      left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
+    ),
   });
 }
 
@@ -552,6 +885,16 @@ export async function runM2CodeModeBenchmark(
         repetition < input.repetitions;
         repetition += 1
       ) {
+        const coordinate = {
+          caseId: benchmarkCase.case.id,
+          caseDigest: benchmarkCase.digest,
+          provider: method.adapter.identity.provider,
+          model: method.adapter.identity.model,
+          repetition,
+        };
+        const admitted =
+          await input.recordCoordinator?.beforeRecord(coordinate);
+        if (admitted !== undefined && !admitted.ok) return admitted;
         const key = await recordKey({
           experimentDigest: input.experimentDigest,
           splitDigest: input.splitDigest,
@@ -565,6 +908,9 @@ export async function runM2CodeModeBenchmark(
         if (stored.value !== undefined) {
           records.push(stored.value);
           resumed += 1;
+          const completed =
+            await input.recordCoordinator?.afterRecord(coordinate);
+          if (completed !== undefined && !completed.ok) return completed;
           continue;
         }
         const session = await generateCodeMode({
@@ -591,7 +937,7 @@ export async function runM2CodeModeBenchmark(
           caseId: benchmarkCase.case.id,
           caseDigest: benchmarkCase.digest,
           methodId: method.id,
-          representation: "restricted-typescript-codemode" as const,
+          representation: "restricted-capability-typescript" as const,
           repetition,
           generation: session.value.record,
           score,
@@ -606,6 +952,9 @@ export async function runM2CodeModeBenchmark(
         if (!saved.ok) return saved;
         records.push(record);
         generatedCount += 1;
+        const completed =
+          await input.recordCoordinator?.afterRecord(coordinate);
+        if (completed !== undefined && !completed.ok) return completed;
       }
     }
   }
@@ -680,6 +1029,146 @@ function sameInferenceSettings(
   );
 }
 
+async function verifyM2CounterbalancedSchedule(
+  schedule: M2CounterbalancedSchedule,
+  input: Readonly<{
+    cases: ReadonlyArray<FrozenPlanGenerationCase>;
+    methods: ReadonlyArray<M2CodeModeMethod>;
+    repetitions: number;
+  }>,
+): Promise<Result<void, Diagnostic>> {
+  const parsed = m2CounterbalancedScheduleSchema.safeParse(schedule);
+  if (!parsed.success)
+    return {
+      ok: false,
+      error: diagnostic("INVALID_WIRE_SCHEMA", "Invalid M2 schedule shape."),
+    };
+  const { scheduleDigest, ...body } = parsed.data;
+  const digest = await digestValue(body);
+  if (!digest.ok) return digest;
+  const expected = await createM2CounterbalancedSchedule(input);
+  if (!expected.ok) return expected;
+  const actualJson = canonicalizeJson(parsed.data);
+  const expectedJson = canonicalizeJson(expected.value);
+  if (
+    digest.value !== scheduleDigest ||
+    !actualJson.ok ||
+    !expectedJson.ok ||
+    actualJson.value !== expectedJson.value
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "M2 schedule is not the exact deterministic counterbalance for this matrix.",
+      ),
+    };
+  return { ok: true, value: undefined };
+}
+
+type ScheduleWaiter = Readonly<{
+  representation: M2Representation;
+  coordinate: BenchmarkRecordCoordinate;
+  resolve: (result: Result<void, Diagnostic>) => void;
+}>;
+
+function createScheduleCoordinator(
+  schedule: M2CounterbalancedSchedule,
+): Readonly<{
+  forRepresentation: (
+    representation: M2Representation,
+  ) => BenchmarkRecordCoordinator;
+  abort: (error: Diagnostic) => void;
+}> {
+  let index = 0;
+  let stage = 0;
+  let inFlight: ScheduleWaiter | undefined;
+  let aborted: Diagnostic | undefined;
+  const waiters: Array<ScheduleWaiter> = [];
+  const entryIndexes = new Map(
+    schedule.entries.map((entry, entryIndex) => [
+      coordinateKey(entry),
+      entryIndex,
+    ]),
+  );
+  const pump = (): void => {
+    for (
+      let waiterIndex = waiters.length - 1;
+      waiterIndex >= 0;
+      waiterIndex -= 1
+    ) {
+      const waiter = waiters[waiterIndex];
+      if (waiter === undefined) continue;
+      if (aborted !== undefined) {
+        waiters.splice(waiterIndex, 1);
+        waiter.resolve({ ok: false, error: aborted });
+        continue;
+      }
+      if (inFlight !== undefined) continue;
+      const current = schedule.entries[index];
+      if (
+        current !== undefined &&
+        coordinateKey(current) === coordinateKey(waiter.coordinate) &&
+        current.order[stage] === waiter.representation
+      ) {
+        waiters.splice(waiterIndex, 1);
+        inFlight = waiter;
+        waiter.resolve({ ok: true, value: undefined });
+      }
+    }
+  };
+  const fail = (message: string): Result<void, Diagnostic> => {
+    const error = diagnostic("INVALID_WIRE_SCHEMA", message);
+    aborted = error;
+    pump();
+    return { ok: false, error };
+  };
+  const forRepresentation = (
+    representation: M2Representation,
+  ): BenchmarkRecordCoordinator => ({
+    beforeRecord: (coordinate) => {
+      const scheduledIndex = entryIndexes.get(coordinateKey(coordinate));
+      if (scheduledIndex === undefined)
+        return Promise.resolve(
+          fail("M2 runner reached a record absent from its frozen schedule."),
+        );
+      if (scheduledIndex < index)
+        return Promise.resolve(
+          fail("M2 runner attempted to redispatch an already completed pair."),
+        );
+      return new Promise((resolve) => {
+        waiters.push({ representation, coordinate, resolve });
+        pump();
+      });
+    },
+    afterRecord: (coordinate) => {
+      const active = inFlight;
+      if (
+        active?.representation !== representation ||
+        coordinateKey(active.coordinate) !== coordinateKey(coordinate)
+      )
+        return Promise.resolve(
+          fail("M2 runner completed a record outside its frozen schedule."),
+        );
+      inFlight = undefined;
+      stage += 1;
+      if (stage === 2) {
+        stage = 0;
+        index += 1;
+      }
+      pump();
+      return Promise.resolve({ ok: true, value: undefined });
+    },
+  });
+  return {
+    forRepresentation,
+    abort: (error) => {
+      aborted = error;
+      pump();
+    },
+  };
+}
+
 function irComparison(
   record: BenchmarkCaseRecord,
 ): M2MatchedRecord["functionalIr"] {
@@ -696,6 +1185,8 @@ function irComparison(
     repairCalls: record.generation.repairCount,
     costUsdMicros: record.generation.totalCostUsdMicros,
     latencyMs: record.generation.totalLatencyMs,
+    runtimeExceptions: record.score.runtimeMetrics?.runtimeExceptions ?? 0,
+    timeouts: record.score.runtimeMetrics?.timeouts ?? 0,
     staticallyAnalyzable:
       record.score.runtimeMetrics?.staticallyAnalyzable ?? false,
     predictedActualReconciled:
@@ -706,11 +1197,21 @@ function irComparison(
 export async function runM2PairedBenchmark(
   input: M2PairedRunInput,
 ): Promise<Result<M2PairedRunResult, Diagnostic>> {
+  const scheduleVerified = await verifyM2CounterbalancedSchedule(
+    input.schedule,
+    {
+      cases: input.cases,
+      methods: input.codeModeMethods,
+      repetitions: input.repetitions,
+    },
+  );
+  if (!scheduleVerified.ok) return scheduleVerified;
   const expectedDigest = await createM2PairedExperimentDigest({
     irExperiment: input.irExperiment,
     cases: input.cases,
     repetitions: input.repetitions,
     codeModeMethods: input.codeModeMethods,
+    schedule: input.schedule,
   });
   if (!expectedDigest.ok) return expectedDigest;
   if (expectedDigest.value !== input.experimentDigest)
@@ -736,9 +1237,13 @@ export async function runM2PairedBenchmark(
         matches.length !== 1 ||
         match === undefined ||
         !sameInferenceSettings(method, match) ||
-        method.strategy.id !== "json-schema-with-repair" ||
         match.strategy.constraint !== "json-schema" ||
-        match.strategy.repair !== "compiler-guided"
+        method.strategy.constraint !== match.strategy.constraint ||
+        method.strategy.repair !== match.strategy.repair ||
+        method.strategy.id !==
+          (match.strategy.repair === "compiler-guided"
+            ? "json-schema-with-repair"
+            : "json-schema")
       );
     })
   )
@@ -746,37 +1251,99 @@ export async function runM2PairedBenchmark(
       ok: false,
       error: diagnostic(
         "INVALID_WIRE_SCHEMA",
-        "M2 requires one schema-with-repair IR and CodeMode method with identical provider, model, inference limits, reasoning settings, and pricing identity.",
+        "M2 requires one paired IR and restricted-TypeScript method with identical constraint, repair policy, provider, model, inference limits, reasoning settings, and pricing identity.",
       ),
     };
   const controller = pairedBudgetController(
     input.budgetController,
     input.experimentDigest,
   );
-  const functionalIr = await runBenchmark({
+  const orderedCases = input.cases.toSorted((left, right) =>
+    left.case.id < right.case.id ? -1 : left.case.id > right.case.id ? 1 : 0,
+  );
+  const methodOrder = (
+    left: Readonly<{
+      adapter: Readonly<{
+        identity: Readonly<{ provider: string; model: string }>;
+      }>;
+    }>,
+    right: Readonly<{
+      adapter: Readonly<{
+        identity: Readonly<{ provider: string; model: string }>;
+      }>;
+    }>,
+  ): number => {
+    const leftKey = `${left.adapter.identity.provider}\u0000${left.adapter.identity.model}`;
+    const rightKey = `${right.adapter.identity.provider}\u0000${right.adapter.identity.model}`;
+    return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+  };
+  const orderedIrMethods = input.irMethods.toSorted(methodOrder);
+  const orderedCodeModeMethods = input.codeModeMethods.toSorted(methodOrder);
+  const scheduleCoordinator = createScheduleCoordinator(input.schedule);
+  const functionalIrPromise = runBenchmark({
     experiment: input.irExperiment,
-    cases: input.cases,
-    methods: input.irMethods,
+    cases: orderedCases,
+    methods: orderedIrMethods,
     resolveCatalog: input.resolveCatalog,
     store: input.irStore,
     budgetController: controller,
+    recordCoordinator: scheduleCoordinator.forRepresentation("functional-ir"),
+  }).then((result) => {
+    if (!result.ok) scheduleCoordinator.abort(result.error);
+    return result;
   });
-  if (!functionalIr.ok) return functionalIr;
-  const codeMode = await runM2CodeModeBenchmark({
+  const codeModePromise = runM2CodeModeBenchmark({
     experimentDigest: input.experimentDigest,
     split: input.split,
     splitDigest: input.splitDigest,
-    cases: input.cases,
-    methods: input.codeModeMethods,
+    cases: orderedCases,
+    methods: orderedCodeModeMethods,
     repetitions: input.repetitions,
     resolveCatalog: input.resolveCatalog,
     store: input.codeModeStore,
     budgetController: controller,
+    recordCoordinator: scheduleCoordinator.forRepresentation(
+      "restricted-capability-typescript",
+    ),
+  }).then((result) => {
+    if (!result.ok) scheduleCoordinator.abort(result.error);
+    return result;
   });
+  const [functionalIr, codeMode] = await Promise.all([
+    functionalIrPromise,
+    codeModePromise,
+  ]);
+  if (!functionalIr.ok) return functionalIr;
   if (!codeMode.ok) return codeMode;
+  const matched = await matchM2PairedRecords({
+    functionalIr: functionalIr.value.records,
+    codeMode: codeMode.value.records,
+    schedule: input.schedule,
+  });
+  if (!matched.ok) return matched;
+  const statistics = await evaluateM2PairedStatistics(matched.value);
+  if (!statistics.ok) return statistics;
+  return {
+    ok: true,
+    value: {
+      functionalIr: functionalIr.value,
+      codeMode: codeMode.value,
+      matched: matched.value,
+      statistics: statistics.value,
+    },
+  };
+}
+
+export async function matchM2PairedRecords(
+  input: Readonly<{
+    functionalIr: ReadonlyArray<BenchmarkCaseRecord>;
+    codeMode: ReadonlyArray<M2CodeModeRecord>;
+    schedule: M2CounterbalancedSchedule;
+  }>,
+): Promise<Result<ReadonlyArray<M2MatchedRecord>, Diagnostic>> {
   const matched: Array<M2MatchedRecord> = [];
-  for (const ir of functionalIr.value.records) {
-    const candidates = codeMode.value.records.filter((record) =>
+  for (const ir of input.functionalIr) {
+    const candidates = input.codeMode.filter((record) =>
       sameModelPair(ir, record),
     );
     const codeRecord = candidates[0];
@@ -788,11 +1355,29 @@ export async function runM2PairedBenchmark(
           `M2 record ${ir.key} does not have exactly one matched CodeMode record.`,
         ),
       };
+    const scheduleEntry = input.schedule.entries.find(
+      (entry) =>
+        entry.caseId === ir.caseId &&
+        entry.caseDigest === ir.caseDigest &&
+        entry.provider === ir.model.provider &&
+        entry.model === ir.model.model &&
+        entry.repetition === ir.repetition,
+    );
+    if (scheduleEntry === undefined)
+      return {
+        ok: false,
+        error: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          `M2 record ${ir.key} has no persisted schedule entry.`,
+        ),
+      };
     const body = {
       caseId: ir.caseId,
       provider: ir.model.provider,
       model: ir.model.model,
       repetition: ir.repetition,
+      scheduleDigest: input.schedule.scheduleDigest,
+      executionOrder: scheduleEntry.order,
       functionalIr: irComparison(ir),
       codeMode: codeRecord.score,
     };
@@ -800,7 +1385,7 @@ export async function runM2PairedBenchmark(
     if (!digest.ok) return digest;
     matched.push(Object.freeze({ ...body, digest: digest.value }));
   }
-  if (matched.length !== codeMode.value.records.length)
+  if (matched.length !== input.codeMode.length)
     return {
       ok: false,
       error: diagnostic(
@@ -808,12 +1393,5 @@ export async function runM2PairedBenchmark(
         "M2 paired record cardinality differs across representations.",
       ),
     };
-  return {
-    ok: true,
-    value: {
-      functionalIr: functionalIr.value,
-      codeMode: codeMode.value,
-      matched: Object.freeze(matched),
-    },
-  };
+  return { ok: true, value: Object.freeze(matched) };
 }

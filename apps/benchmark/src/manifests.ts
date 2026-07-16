@@ -7,11 +7,16 @@ import {
 } from "@nicia-ai/lachesis";
 import {
   type BenchmarkRepairTrialInput,
+  blindM2HeldOutIntegrityAudit,
   blindPlanGenerationValidityAudit,
   calculateMaximumCostUsdMicros,
   compileCaseStructuredOutputTransports,
+  compileCodeModeStructuredOutputTransport,
   createExperimentManifest,
   createM1aCatalogResolver,
+  createM2CatalogResolver,
+  createM2CounterbalancedSchedule,
+  createM2PairedExperimentDigest,
   createReferencePlanWitness,
   type ExperimentCaps,
   type ExperimentManifest,
@@ -22,10 +27,15 @@ import {
   type FrozenPlanGenerationCase,
   loadM1aCorpus,
   loadM1cPreregisteredCorpus,
+  loadM2PreregisteredCorpus,
   M1A_GENERATION_STRATEGIES,
   M1A_WORKFLOW_MAX_ITERATIONS,
   M1A_WORKFLOW_VERSION,
   M1C_CORPUS_PROTOCOL,
+  M2_CODEMODE_PROMPT_PROTOCOL,
+  M2_COMPARISON_PROTOCOL,
+  M2_PAIRED_ANALYSIS_PLAN,
+  type M2CodeModeMethod,
   partitionM1aCorpus,
   prepareSharedRepairTrial,
   type PricingSnapshot,
@@ -34,6 +44,7 @@ import {
 import {
   createM1bPricingSnapshot,
   createM1bPrimaryAdapters,
+  createM2CodeModePrimaryAdapters,
   M1B_PILOT_CAPS,
   M1C_PROMPT_PROTOCOL,
 } from "@nicia-ai/lachesis-generator-ai-sdk";
@@ -44,6 +55,7 @@ import {
   createCampaignManifest,
   createPhaseManifest,
   experimentStorageNamespace,
+  type M2PhaseIdentity,
   type PhaseManifest,
 } from "./protocol.js";
 
@@ -104,6 +116,21 @@ export const M1C_EXPERIMENT_PROTOCOL = Object.freeze({
     noFailureOutcome: "repair-unnecessary",
   }),
   codeModeStatus: "not-implemented-not-claimed",
+});
+
+export const M2_FUNCTIONAL_IR_PROMPT_CANDIDATE = Object.freeze({
+  id: "lachesis-m2-functional-ir-typed-obligations",
+  version: "representation-ablation-candidate-1",
+  instruction: M1B_PROMPT_CANDIDATE.instruction,
+});
+
+export const M2_EXPERIMENT_PROTOCOL = Object.freeze({
+  comparison: M2_COMPARISON_PROTOCOL,
+  analysis: M2_PAIRED_ANALYSIS_PLAN,
+  claimBoundary:
+    "functional JSON IR versus restricted capability-oriented TypeScript only",
+  conventionalCodeModeStatus: "not-evaluated-not-claimed",
+  typeGraphStatus: "deferred",
 });
 
 export type MaterializedPhase = Readonly<{
@@ -264,6 +291,31 @@ async function m1cPhaseCases(
           )
         : loaded.value.development,
   };
+}
+
+async function m2PhaseCases(
+  phase: CampaignPhase,
+): Promise<Result<ReadonlyArray<FrozenPlanGenerationCase>, Diagnostics>> {
+  const loaded = await loadM2PreregisteredCorpus();
+  if (!loaded.ok) return loaded;
+  if (phase === "m2-heldout") return { ok: true, value: loaded.value.heldOut };
+  if (phase === "m2-protocol-probe") {
+    const feasible = loaded.value.development.find(
+      (item) => item.case.expectedFeasibility === "plannable",
+    );
+    const unplannable = loaded.value.development.find(
+      (item) => item.case.expectedFeasibility === "unplannable",
+    );
+    if (feasible === undefined || unplannable === undefined)
+      return {
+        ok: false,
+        error: capDiagnostic(
+          "M2 protocol probe requires one feasible and one typed-unplannable case.",
+        ),
+      };
+    return { ok: true, value: Object.freeze([feasible, unplannable]) };
+  }
+  return { ok: true, value: loaded.value.development };
 }
 
 async function m1cRepairTrials(
@@ -560,6 +612,171 @@ function deriveM1cPhaseCaps(
   );
 }
 
+function m2Strategies(phase: CampaignPhase): Readonly<{
+  ir: (typeof M1A_GENERATION_STRATEGIES)[number];
+  code: Readonly<{
+    constraint: "json-schema";
+    repair: "none" | "compiler-guided";
+  }>;
+}> {
+  const probe = phase === "m2-protocol-probe";
+  const strategyId = probe ? "json-schema" : "json-schema-with-repair";
+  const ir = M1A_GENERATION_STRATEGIES.find(
+    (strategy) => strategy.id === strategyId,
+  );
+  if (ir === undefined)
+    throw new Error(`Missing frozen M2 strategy ${strategyId}.`);
+  return {
+    ir,
+    code: {
+      constraint: "json-schema",
+      repair: probe ? "none" : "compiler-guided",
+    },
+  };
+}
+
+function m2Methods(
+  phase: CampaignPhase,
+  pricingSnapshot: PricingSnapshot,
+): Result<
+  Readonly<{
+    ir: ReadonlyArray<ExperimentMethodInput>;
+    code: ReadonlyArray<M2CodeModeMethod>;
+  }>,
+  Diagnostics
+> {
+  const strategies = m2Strategies(phase);
+  const irAdapters = createM1bPrimaryAdapters({
+    constraint: strategies.ir.constraint,
+  });
+  const codeAdapters = createM2CodeModePrimaryAdapters({
+    constraint: strategies.code.constraint,
+  });
+  const providers = ["openai", "anthropic"] as const;
+  const ir: Array<ExperimentMethodInput> = [];
+  const code: Array<M2CodeModeMethod> = [];
+  for (const provider of providers) {
+    const irAdapter = irAdapters[provider];
+    ir.push({
+      id: `${provider}/functional-ir/${strategies.ir.id}`,
+      model: irAdapter.identity,
+      strategy: strategies.ir,
+      inference: irAdapter.inference,
+      pricingEntryId: irAdapter.pricingEntryId,
+    });
+    const codeAdapter = codeAdapters[provider];
+    const pricing = pricingSnapshot.entries.find(
+      (entry) => entry.id === codeAdapter.pricingEntryId,
+    );
+    if (pricing === undefined)
+      return {
+        ok: false,
+        error: capDiagnostic(
+          `M2 ${provider} restricted-TypeScript method has no frozen pricing entry.`,
+        ),
+      };
+    code.push({
+      id: `${provider}/restricted-capability-typescript`,
+      adapter: codeAdapter,
+      strategy: strategies.code,
+      pricing,
+    });
+  }
+  return {
+    ok: true,
+    value: Object.freeze({ ir: Object.freeze(ir), code: Object.freeze(code) }),
+  };
+}
+
+function deriveM2PhaseCaps(
+  input: Readonly<{
+    phase: CampaignPhase;
+    irMethods: ReadonlyArray<ExperimentMethodInput>;
+    codeMethods: ReadonlyArray<M2CodeModeMethod>;
+    pricingSnapshot: PricingSnapshot;
+    caseCount: number;
+    repetitions: number;
+  }>,
+): Result<ExperimentCaps, Diagnostics> {
+  const allMethods: ReadonlyArray<ExperimentMethodInput> = Object.freeze([
+    ...input.irMethods,
+    ...input.codeMethods.map((method) => ({
+      id: method.id,
+      model: method.adapter.identity,
+      strategy: {
+        id: "codemode" as const,
+        constraint: method.strategy.constraint,
+        repair: method.strategy.repair,
+      },
+      inference: method.adapter.inference,
+      pricingEntryId: method.pricing.id,
+    })),
+  ]);
+  return deriveExactCaps(
+    {
+      methods: allMethods,
+      pricingSnapshot: input.pricingSnapshot,
+      caseCount: input.caseCount,
+      repetitions: input.repetitions,
+    },
+    (method) =>
+      input.phase === "m2-protocol-probe" || method.strategy.repair === "none"
+        ? 1
+        : 3,
+  );
+}
+
+async function m2CodeModeTransportBindings(
+  cases: ReadonlyArray<FrozenPlanGenerationCase>,
+  methods: ReadonlyArray<M2CodeModeMethod>,
+): Promise<Result<M2PhaseIdentity["codeModeTransportSchemas"], Diagnostics>> {
+  const resolver = createM2CatalogResolver();
+  if (!resolver.ok) return resolver;
+  const bindings: Array<M2PhaseIdentity["codeModeTransportSchemas"][number]> =
+    [];
+  for (const frozenCase of cases) {
+    const catalog = resolver.value(frozenCase.case.catalogId);
+    if (!catalog.ok) return { ok: false, error: [catalog.error] };
+    const manifest = await createPlanLanguageManifest(
+      catalog.value,
+      frozenCase.case.policy,
+    );
+    if (!manifest.ok) return { ok: false, error: [manifest.error] };
+    const transport = await compileCodeModeStructuredOutputTransport(
+      manifest.value,
+      frozenCase.case.semanticObligations ?? [],
+    );
+    if (!transport.ok) return { ok: false, error: [transport.error] };
+    for (const method of methods) {
+      if (method.adapter.preflightStructuredOutput === undefined)
+        return {
+          ok: false,
+          error: capDiagnostic(
+            `M2 adapter ${method.id} has no structured-output preflight.`,
+          ),
+        };
+      const preflight = await method.adapter.preflightStructuredOutput(
+        transport.value,
+      );
+      if (!preflight.ok)
+        return {
+          ok: false,
+          error: capDiagnostic(
+            `M2 structured-output preflight failed for ${method.id}: ${preflight.error.message}`,
+          ),
+        };
+      bindings.push({
+        caseDigest: frozenCase.digest,
+        methodId: method.id,
+        manifestDigest: transport.value.manifestDigest,
+        compilerVersion: transport.value.compilerVersion,
+        schemaDigest: transport.value.schemaDigest,
+      });
+    }
+  }
+  return { ok: true, value: Object.freeze(bindings) };
+}
+
 function capsEqual(left: ExperimentCaps, right: ExperimentCaps): boolean {
   return (
     left.maxCalls === right.maxCalls &&
@@ -576,6 +793,47 @@ function capsEqual(left: ExperimentCaps, right: ExperimentCaps): boolean {
         cap.maxCostUsdMicros === right.providerCostCaps[index].maxCostUsdMicros,
     )
   );
+}
+
+/** Re-derives all paired M2 limits before credentials, ledger, or dispatch. */
+export function validateM2PhaseCaps(
+  manifest: PhaseManifest,
+): Result<undefined, Diagnostics> {
+  if (manifest.m2 === undefined || !manifest.phase.startsWith("m2-"))
+    return {
+      ok: false,
+      error: capDiagnostic("M2 cap validation requires an M2 phase identity."),
+    };
+  const codeMethods: ReadonlyArray<ExperimentMethodInput> =
+    manifest.m2.codeModeMethods.map((method) => ({
+      id: method.id,
+      model: method.model,
+      strategy: {
+        id: "codemode" as const,
+        constraint: method.strategy.constraint,
+        repair: method.strategy.repair,
+      },
+      inference: method.inference,
+      pricingEntryId: method.pricingEntryId,
+    }));
+  const derived = deriveExactCaps(
+    {
+      methods: Object.freeze([...manifest.experiment.methods, ...codeMethods]),
+      pricingSnapshot: manifest.experiment.pricingSnapshot,
+      caseCount: manifest.experiment.cases.length,
+      repetitions: manifest.repetitions,
+    },
+    (method) => (method.strategy.repair === "compiler-guided" ? 3 : 1),
+  );
+  if (!derived.ok) return derived;
+  if (!capsEqual(manifest.experiment.caps, derived.value))
+    return {
+      ok: false,
+      error: capDiagnostic(
+        "M2 caps do not exactly reserve every frozen request in both representations.",
+      ),
+    };
+  return { ok: true, value: undefined };
 }
 
 /** Rejects a probe whose manifest cannot reserve every preregistered request. */
@@ -605,10 +863,11 @@ export function validateTransportProbeCaps(
 async function transportSchemaBindings(
   cases: ReadonlyArray<FrozenPlanGenerationCase>,
   methods: ReadonlyArray<ExperimentMethodInput>,
+  resolveCatalog = createM1aCatalogResolver,
 ): Promise<
   Result<ReadonlyArray<ExperimentTransportSchemaBinding>, Diagnostics>
 > {
-  const resolver = createM1aCatalogResolver();
+  const resolver = resolveCatalog();
   if (!resolver.ok) return resolver;
   const compiled = await compileCaseStructuredOutputTransports(
     cases,
@@ -764,16 +1023,17 @@ export async function materializeM1bPhase(
     ),
     runtimeVersions: input.runtimeVersions,
   });
-  return manifest.ok
-    ? {
-        ok: true,
-        value: {
-          campaign: campaign.value,
-          manifest: manifest.value,
-          cases: cases.value,
-        },
-      }
-    : manifest;
+  /* v8 ignore start -- every phase component was constructed and verified above */
+  if (!manifest.ok) return manifest;
+  /* v8 ignore stop */
+  return {
+    ok: true,
+    value: {
+      campaign: campaign.value,
+      manifest: manifest.value,
+      cases: cases.value,
+    },
+  };
 }
 
 /** Builds a separately budgeted M1c phase without touching external storage. */
@@ -894,6 +1154,169 @@ export async function materializeM1cPhase(
     : manifest;
 }
 
+/** Builds an independently budgeted, counterbalanced M2 paired phase offline. */
+export async function materializeM2Phase(
+  input: Readonly<{
+    phase: CampaignPhase;
+    gitCommit: string;
+    runtimeVersions: RuntimeVersions;
+  }>,
+): Promise<Result<MaterializedPhase, Diagnostics>> {
+  if (!input.phase.startsWith("m2-"))
+    return {
+      ok: false,
+      error: capDiagnostic("M2 materialization requires an M2 phase."),
+    };
+  const campaign = await createCampaignManifest(
+    "lachesis-m2-functional-ir-vs-restricted-capability-typescript",
+  );
+  /* v8 ignore next -- the fixed M2 campaign body is schema-valid canonical JSON */
+  if (!campaign.ok) return campaign;
+  const cases = await m2PhaseCases(input.phase);
+  /* v8 ignore next -- every supported M2 phase is selected from the audited frozen corpus */
+  if (!cases.ok) return cases;
+  const resolver = createM2CatalogResolver();
+  /* v8 ignore next -- the frozen M2 catalogs are validated during module construction */
+  if (!resolver.ok) return resolver;
+  const validCases = await validatePlanGenerationCases(
+    cases.value,
+    resolver.value,
+  );
+  /* v8 ignore next -- the counts-only audit independently proves every frozen fixture */
+  if (!validCases.ok) return validCases;
+  const pricing = await createM1bPricingSnapshot();
+  /* v8 ignore next -- frozen pricing entries are validated independently */
+  if (!pricing.ok) return pricing;
+  const methods = m2Methods(input.phase, pricing.value);
+  /* v8 ignore next -- supported M2 phases bind only the two frozen primary routes */
+  if (!methods.ok) return methods;
+  const repetitions = input.phase === "m2-heldout" ? 2 : 1;
+  const caps = deriveM2PhaseCaps({
+    phase: input.phase,
+    irMethods: methods.value.ir,
+    codeMethods: methods.value.code,
+    pricingSnapshot: pricing.value,
+    caseCount: cases.value.length,
+    repetitions,
+  });
+  /* v8 ignore next -- exact caps over the fixed positive matrix cannot overflow */
+  if (!caps.ok) return caps;
+  const irTransportSchemas = await transportSchemaBindings(
+    cases.value,
+    methods.value.ir,
+    createM2CatalogResolver,
+  );
+  if (!irTransportSchemas.ok) return irTransportSchemas;
+  const codeModeTransportSchemas = await m2CodeModeTransportBindings(
+    cases.value,
+    methods.value.code,
+  );
+  if (!codeModeTransportSchemas.ok) return codeModeTransportSchemas;
+  const corpusDigest = await digestValue(
+    cases.value.map((item) => ({ id: item.case.id, digest: item.digest })),
+  );
+  /* v8 ignore next -- frozen case identities are validated JSON scalars */
+  if (!corpusDigest.ok) return { ok: false, error: [corpusDigest.error] };
+  const irExperiment = await createExperimentManifest({
+    prompt: M2_FUNCTIONAL_IR_PROMPT_CANDIDATE,
+    protocol: {
+      provider: M1C_PROMPT_PROTOCOL,
+      experiment: M2_EXPERIMENT_PROTOCOL,
+      phase: input.phase,
+      representation: "functional-ir",
+    },
+    cases: cases.value.map((frozenCase) => ({
+      frozenCase,
+      split: input.phase === "m2-heldout" ? "heldout-phrasing" : "development",
+    })),
+    methods: methods.value.ir,
+    transportSchemas: irTransportSchemas.value,
+    pricingSnapshot: pricing.value,
+    repetitions,
+    caps: caps.value,
+    versions: {
+      gitCommit: input.gitCommit,
+      workspaceVersion: "0.1.0",
+      kernelVersion: "0.1.0",
+      generatorVersion: "0.1.0",
+    },
+  });
+  /* v8 ignore next -- all component manifests and exact caps were validated above */
+  if (!irExperiment.ok) return irExperiment;
+  const schedule = await createM2CounterbalancedSchedule({
+    cases: cases.value,
+    methods: methods.value.code,
+    repetitions,
+  });
+  /* v8 ignore next -- validated cases, methods, and positive repetitions define a schedule */
+  if (!schedule.ok) return { ok: false, error: [schedule.error] };
+  const pairedExperimentDigest = await createM2PairedExperimentDigest({
+    irExperiment: irExperiment.value,
+    cases: cases.value,
+    repetitions,
+    codeModeMethods: methods.value.code,
+    schedule: schedule.value,
+  });
+  /* v8 ignore next -- paired identity contains only validated manifest values */
+  if (!pairedExperimentDigest.ok)
+    return { ok: false, error: [pairedExperimentDigest.error] };
+  const protocolDigest = await digestValue(M2_COMPARISON_PROTOCOL);
+  /* v8 ignore next -- the frozen protocol is canonical JSON */
+  if (!protocolDigest.ok) return { ok: false, error: [protocolDigest.error] };
+  const analysisPlanDigest = await digestValue(M2_PAIRED_ANALYSIS_PLAN);
+  /* v8 ignore next -- the frozen analysis plan is canonical JSON */
+  if (!analysisPlanDigest.ok)
+    return { ok: false, error: [analysisPlanDigest.error] };
+  const codeModePromptDigest = await digestValue(M2_CODEMODE_PROMPT_PROTOCOL);
+  /* v8 ignore next -- the frozen prompt protocol is canonical JSON */
+  if (!codeModePromptDigest.ok)
+    return { ok: false, error: [codeModePromptDigest.error] };
+  const m2: M2PhaseIdentity = {
+    protocolDigest: protocolDigest.value,
+    analysisPlanDigest: analysisPlanDigest.value,
+    codeModePromptDigest: codeModePromptDigest.value,
+    codeModeMethods: methods.value.code.map((method) => ({
+      id: method.id,
+      model: method.adapter.identity,
+      inference: method.adapter.inference,
+      strategy: method.strategy,
+      pricingEntryId: method.pricing.id,
+    })),
+    codeModeTransportSchemas: codeModeTransportSchemas.value,
+    schedule: schedule.value,
+    pairedExperimentDigest: pairedExperimentDigest.value,
+  };
+  const manifest = await createPhaseManifest({
+    campaign: campaign.value,
+    phase: input.phase,
+    experiment: irExperiment.value,
+    m2,
+    corpusDigest: corpusDigest.value,
+    storageNamespace: experimentStorageNamespace(
+      input.phase,
+      pairedExperimentDigest.value,
+    ),
+    runtimeVersions: input.runtimeVersions,
+  });
+  return manifest.ok
+    ? {
+        ok: true,
+        value: {
+          campaign: campaign.value,
+          manifest: manifest.value,
+          cases: cases.value,
+        },
+      }
+    : manifest;
+}
+
+/** Counts-only M2 held-out audit; never returns case identities or contents. */
+export async function blindM2HeldOutAudit(): Promise<
+  Awaited<ReturnType<typeof blindM2HeldOutIntegrityAudit>>
+> {
+  return blindM2HeldOutIntegrityAudit();
+}
+
 /** Counts-only M1c held-out audit for prompt-development integrity. */
 export async function blindM1cHeldOutIntegrityAudit(): Promise<
   Result<
@@ -920,6 +1343,27 @@ export function matrixCounts(manifest: PhaseManifest): Readonly<{
   maximumAdditionalRepairCalls: number;
   maximumModelCalls: number;
 }> {
+  if (manifest.m2 !== undefined) {
+    const recordsPerRepetition =
+      manifest.experiment.cases.length *
+      (manifest.experiment.methods.length + manifest.m2.codeModeMethods.length);
+    const benchmarkRecords = recordsPerRepetition * manifest.repetitions;
+    const repairMethods = [
+      ...manifest.experiment.methods.map((method) => method.strategy),
+      ...manifest.m2.codeModeMethods.map((method) => method.strategy),
+    ].filter((strategy) => strategy.repair === "compiler-guided").length;
+    const maximumAdditionalRepairCalls =
+      manifest.experiment.cases.length *
+      repairMethods *
+      manifest.repetitions *
+      2;
+    return {
+      benchmarkRecords,
+      initialModelCalls: benchmarkRecords,
+      maximumAdditionalRepairCalls,
+      maximumModelCalls: benchmarkRecords + maximumAdditionalRepairCalls,
+    };
+  }
   const benchmarkRecords =
     manifest.experiment.cases.length *
     manifest.experiment.methods.length *

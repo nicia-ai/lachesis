@@ -83,7 +83,7 @@ export const generationStrategySchema = z
   })
   .readonly();
 
-const modelUsageSchema = z
+export const modelUsageSchema = z
   .strictObject({
     inputTokens: z.number().int().nonnegative(),
     cachedInputTokens: z.number().int().nonnegative(),
@@ -104,7 +104,7 @@ const modelResponseMetadataSchema = z
   })
   .readonly();
 
-const adapterFailureSchema = z
+export const adapterFailureSchema = z
   .strictObject({
     code: z.enum([
       "RECORDED_RESPONSE_MISSING",

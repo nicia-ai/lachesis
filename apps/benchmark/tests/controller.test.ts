@@ -26,13 +26,17 @@ import {
   type BenchmarkBudgetReservation,
   type BenchmarkBudgetSettlement,
   type BenchmarkMethod,
+  type CodeModeModelAdapter,
   createExperimentManifest,
   createInMemoryBenchmarkStore,
   createM1aCatalogResolver,
+  createM2CatalogResolver,
   createPricingSnapshot,
   createReferencePlanWitness,
   type ExperimentCaps,
   type ExperimentMethodInput,
+  type M2CodeModeMethod,
+  type ModelAdapter,
   runBenchmark,
 } from "@nicia-ai/lachesis-generator";
 import { createJsonFileBenchmarkStore } from "@nicia-ai/lachesis-generator/node";
@@ -59,12 +63,15 @@ import {
 import {
   blindHeldOutIntegrityAudit,
   blindM1cHeldOutIntegrityAudit,
+  blindM2HeldOutAudit,
   deriveTransportProbeCaps,
   M1B_PROMPT_CANDIDATE,
   type MaterializedPhase,
   materializeM1bPhase,
   materializeM1cPhase,
+  materializeM2Phase,
   matrixCounts,
+  validateM2PhaseCaps,
   validateTransportProbeCaps,
 } from "../src/manifests.js";
 import {
@@ -154,6 +161,19 @@ async function materializedM1c(
 ): Promise<MaterializedPhase> {
   return unwrap(
     await materializeM1cPhase({
+      phase,
+      gitCommit,
+      runtimeVersions: RUNTIME_VERSIONS,
+    }),
+  );
+}
+
+async function materializedM2(
+  phase: "m2-protocol-probe" | "m2-calibration" | "m2-heldout",
+  gitCommit = "test-commit",
+): Promise<MaterializedPhase> {
+  return unwrap(
+    await materializeM2Phase({
       phase,
       gitCommit,
       runtimeVersions: RUNTIME_VERSIONS,
@@ -368,6 +388,552 @@ async function initializeGitRepository(): Promise<
   });
   return { path, commit: commit.stdout.trim() };
 }
+
+describe("M2 paired representation protocol", () => {
+  it("uses an independent campaign and freezes the exact eight-call paired probe", async () => {
+    expect(
+      (
+        await materializeM2Phase({
+          phase: "smoke",
+          gitCommit: "test-commit",
+          runtimeVersions: RUNTIME_VERSIONS,
+        })
+      ).ok,
+    ).toBe(false);
+    const m1c = await materializedM1c("m1c-protocol-probe");
+    const probe = await materializedM2("m2-protocol-probe");
+    expect(validateM2PhaseCaps(m1c.manifest).ok).toBe(false);
+    const missingPricing = required(
+      probe.manifest.m2,
+      "Missing M2 paired identity.",
+    ).codeModeMethods.map((method, index) =>
+      index === 0 ? { ...method, pricingEntryId: "missing/pricing" } : method,
+    );
+    expect(
+      validateM2PhaseCaps({
+        ...probe.manifest,
+        m2: {
+          ...required(probe.manifest.m2, "Missing M2 identity."),
+          codeModeMethods: missingPricing,
+        },
+      }).ok,
+    ).toBe(false);
+    expect(probe.campaign.campaignDigest).not.toBe(m1c.campaign.campaignDigest);
+    expect(probe.campaign).toMatchObject({
+      milestone: "m2",
+      campaignId:
+        "lachesis-m2-functional-ir-vs-restricted-capability-typescript",
+      maximumAuthorizedCostUsdMicros: 236_086_400,
+      primaryComparison: {
+        interpretation: "paired-representation-ablation",
+      },
+    });
+    expect(probe.campaign.budgetPools).toEqual([
+      {
+        id: "m2-development",
+        maxCostUsdMicros: 32_758_400,
+        providerCostCaps: [
+          { billingProvider: "openai", maxCostUsdMicros: 18_727_040 },
+          { billingProvider: "anthropic", maxCostUsdMicros: 14_031_360 },
+        ],
+      },
+      {
+        id: "m2-heldout",
+        maxCostUsdMicros: 203_328_000,
+        providerCostCaps: [
+          { billingProvider: "openai", maxCostUsdMicros: 116_236_800 },
+          { billingProvider: "anthropic", maxCostUsdMicros: 87_091_200 },
+        ],
+      },
+    ]);
+    expect(probe.manifest).toMatchObject({
+      formatVersion: "5",
+      milestone: "m2",
+      budgetPoolId: "m2-development",
+      phase: "m2-protocol-probe",
+    });
+    expect(probe.manifest.m2).toBeDefined();
+    expect(probe.manifest.experimentDigest).toBe(
+      probe.manifest.m2?.pairedExperimentDigest,
+    );
+    expect(probe.manifest.experimentDigest).not.toBe(
+      probe.manifest.experiment.experimentDigest,
+    );
+    expect(
+      probe.cases.map((item) => item.case.expectedFeasibility).toSorted(),
+    ).toEqual(["plannable", "unplannable"]);
+    expect(probe.manifest.experiment.methods).toHaveLength(2);
+    expect(probe.manifest.m2?.codeModeMethods).toHaveLength(2);
+    expect(probe.manifest.m2?.codeModeTransportSchemas).toHaveLength(4);
+    expect(probe.manifest.m2?.schedule.entries).toHaveLength(4);
+    expect(matrixCounts(probe.manifest)).toEqual({
+      benchmarkRecords: 8,
+      initialModelCalls: 8,
+      maximumAdditionalRepairCalls: 0,
+      maximumModelCalls: 8,
+    });
+    expect(probe.manifest.experiment.caps).toEqual({
+      maxCalls: 8,
+      maxInputTokens: 512_000,
+      maxOutputTokens: 65_536,
+      maxTotalTokens: 577_536,
+      maxOutputTokensPerCall: 8_192,
+      maxCostUsdMicros: 2_259_200,
+      providerCostCaps: [
+        { billingProvider: "anthropic", maxCostUsdMicros: 967_680 },
+        { billingProvider: "openai", maxCostUsdMicros: 1_291_520 },
+      ],
+    });
+    expect(
+      (
+        await createPhaseManifest({
+          campaign: probe.campaign,
+          phase: "m2-protocol-probe",
+          experiment: probe.manifest.experiment,
+          corpusDigest: probe.manifest.corpusDigest,
+          storageNamespace: probe.manifest.storageNamespace,
+          runtimeVersions: RUNTIME_VERSIONS,
+        })
+      ).ok,
+    ).toBe(false);
+    const identity = required(probe.manifest.m2, "Missing M2 identity.");
+    expect(
+      (
+        await createPhaseManifest({
+          campaign: probe.campaign,
+          phase: "m2-protocol-probe",
+          experiment: probe.manifest.experiment,
+          m2: {
+            ...identity,
+            schedule: {
+              ...identity.schedule,
+              entries: identity.schedule.entries.toReversed(),
+            },
+          },
+          corpusDigest: probe.manifest.corpusDigest,
+          storageNamespace: probe.manifest.storageNamespace,
+          runtimeVersions: RUNTIME_VERSIONS,
+        })
+      ).ok,
+    ).toBe(false);
+  });
+
+  it("freezes the expanded matrix, blind counts, and credential-free nonmutating dry run", async () => {
+    expect(await blindM2HeldOutAudit()).toEqual({
+      totalCases: 30,
+      plannableCases: 24,
+      unplannableCases: 6,
+      referencesValid: 30,
+      witnessesCompiled: 24,
+      hiddenPropertiesPassed: 24,
+      infeasibilityWitnessesPassed: 6,
+      invalidCases: 0,
+      loadValid: true,
+      categories: {
+        multiStep: 6,
+        branch: 6,
+        effect: 6,
+        recursion: 6,
+        infeasible: 6,
+      },
+      witnessKinds: {
+        missingOperation: 2,
+        deniedCapability: 2,
+        insufficientBudget: 2,
+      },
+    });
+    const calibration = await materializedM2("m2-calibration");
+    expect(matrixCounts(calibration.manifest)).toEqual({
+      benchmarkRecords: 36,
+      initialModelCalls: 36,
+      maximumAdditionalRepairCalls: 72,
+      maximumModelCalls: 108,
+    });
+    expect(calibration.manifest.experiment.caps.maxCostUsdMicros).toBe(
+      30_499_200,
+    );
+    const developmentPool = required(
+      calibration.campaign.budgetPools.find(
+        (pool) => pool.id === "m2-development",
+      ),
+      "Missing M2 development pool.",
+    );
+    expect(developmentPool.maxCostUsdMicros).toBe(
+      calibration.manifest.experiment.caps.maxCostUsdMicros + 2_259_200,
+    );
+    for (const provider of ["openai", "anthropic"]) {
+      const calibrationCap = required(
+        calibration.manifest.experiment.caps.providerCostCaps.find(
+          (cap) => cap.billingProvider === provider,
+        ),
+        "Missing M2 calibration provider cap.",
+      ).maxCostUsdMicros;
+      const probeCap = provider === "openai" ? 1_291_520 : 967_680;
+      expect(
+        developmentPool.providerCostCaps.find(
+          (cap) => cap.billingProvider === provider,
+        )?.maxCostUsdMicros,
+      ).toBe(calibrationCap + probeCap);
+    }
+    const heldout = await materializedM2("m2-heldout");
+    expect(matrixCounts(heldout.manifest)).toEqual({
+      benchmarkRecords: 240,
+      initialModelCalls: 240,
+      maximumAdditionalRepairCalls: 480,
+      maximumModelCalls: 720,
+    });
+    expect(heldout.manifest.experiment.caps.maxCostUsdMicros).toBe(203_328_000);
+    expect(
+      heldout.campaign.budgetPools.find((pool) => pool.id === "m2-heldout"),
+    ).toEqual({
+      id: "m2-heldout",
+      maxCostUsdMicros: heldout.manifest.experiment.caps.maxCostUsdMicros,
+      providerCostCaps: [
+        { billingProvider: "openai", maxCostUsdMicros: 116_236_800 },
+        { billingProvider: "anthropic", maxCostUsdMicros: 87_091_200 },
+      ],
+    });
+    for (const provider of ["openai", "anthropic"]) {
+      const entries = heldout.manifest.m2?.schedule.entries.filter(
+        (entry) => entry.provider === provider,
+      );
+      expect(entries).toHaveLength(60);
+      expect(
+        entries?.filter((entry) => entry.order[0] === "functional-ir"),
+      ).toHaveLength(30);
+    }
+    expect(
+      heldout.manifest.m2?.schedule.entries.filter(
+        (entry) => entry.order[0] === "functional-ir",
+      ),
+    ).toHaveLength(60);
+
+    expect(
+      calibration.manifest.m2?.schedule.entries.filter(
+        (entry) => entry.order[0] === "functional-ir",
+      ),
+    ).toHaveLength(9);
+
+    const repository = await initializeGitRepository();
+    const probe = await materializedM2("m2-protocol-probe", repository.commit);
+    const storage = await temporaryDirectory();
+    const ledgerPath = join(storage, "ledger.ndjson");
+    const preflight = unwrap(
+      await preflightPhase({
+        loaded: loaded(probe),
+        ledgerPath,
+        cwd: repository.path,
+        environment: {},
+        acknowledgement: undefined,
+      }),
+    );
+    expect(preflight).toMatchObject({
+      valid: true,
+      liveExecutionPermitted: false,
+      benchmarkRecords: 8,
+      initialModelCalls: 8,
+      maximumModelCalls: 8,
+      checks: {
+        manifest: true,
+        corpus: true,
+        cleanWorktree: true,
+        commitMatches: true,
+        credentialsPresent: false,
+        acknowledgementMatches: false,
+        executionPolicyAllowsExecution: true,
+      },
+    });
+    expect(await readdir(storage)).toEqual([]);
+  });
+
+  it("executes the paired probe offline with fake adapters, reports it, and resumes without redispatch", async () => {
+    const repository = await initializeGitRepository();
+    const probe = await materializedM2("m2-protocol-probe", repository.commit);
+    const resolver = unwrap(createM2CatalogResolver());
+    const feasible = required(
+      probe.cases.find((item) => item.case.expectedFeasibility === "plannable"),
+      "Missing M2 probe feasible case.",
+    );
+    const unplannable = required(
+      probe.cases.find(
+        (item) => item.case.expectedFeasibility === "unplannable",
+      ),
+      "Missing M2 probe unplannable case.",
+    );
+    const catalog = unwrap(resolver(feasible.case.catalogId));
+    const language = unwrap(
+      await createPlanLanguageManifest(catalog, feasible.case.policy),
+    );
+    const plan = unwrap(createReferencePlanWitness(feasible, language));
+    const witness = required(
+      unplannable.case.infeasibilityWitness,
+      "Missing M2 probe witness.",
+    );
+    const dispatches: Array<string> = [];
+    const irMethods: ReadonlyArray<BenchmarkMethod> =
+      probe.manifest.experiment.methods.map((method) => {
+        const adapter: ModelAdapter = {
+          identity: method.model,
+          inference: method.inference,
+          pricingEntryId: method.pricingEntryId,
+          preflightStructuredOutput: () =>
+            Promise.resolve({ ok: true, value: undefined }),
+          generate: (request) => {
+            dispatches.push("functional-ir");
+            const outcome =
+              request.originalTask === feasible.case.instruction
+                ? { kind: "plan" as const, plan }
+                : { kind: "unplannable" as const, witness };
+            return Promise.resolve({
+              ok: true,
+              value: {
+                rawResponse: JSON.stringify(outcome),
+                structuredOutput: outcome,
+                usage: {
+                  inputTokens: 10,
+                  outputTokens: 10,
+                  costUsdMicros: 0,
+                },
+                latencyMs: 1,
+                dispatchEvidence: "dispatched-with-usage",
+              },
+            });
+          },
+        };
+        return { id: method.id, adapter, strategy: method.strategy };
+      });
+    const codeSource = `export default async function main(input, ops) {
+  const selected = await ops.filter("nonnegative@1.0.0", input.items);
+  const mapped = await ops.map("square@1.0.0", selected);
+  return mapped;
+}`;
+    const codeMethods: ReadonlyArray<M2CodeModeMethod> = required(
+      probe.manifest.m2,
+      "Missing M2 paired identity.",
+    ).codeModeMethods.map((method) => {
+      const adapter: CodeModeModelAdapter = {
+        identity: method.model,
+        inference: method.inference,
+        pricingEntryId: method.pricingEntryId,
+        preflightStructuredOutput: () =>
+          Promise.resolve({ ok: true, value: undefined }),
+        generate: (request) => {
+          dispatches.push("restricted-capability-typescript");
+          const outcome =
+            request.originalTask === feasible.case.instruction
+              ? { kind: "program" as const, source: codeSource }
+              : { kind: "unplannable" as const, witness };
+          return Promise.resolve({
+            ok: true,
+            value: {
+              rawResponse: JSON.stringify(outcome),
+              structuredOutput: { outcome },
+              usage: {
+                inputTokens: 10,
+                outputTokens: 10,
+                costUsdMicros: 0,
+              },
+              latencyMs: 1,
+              dispatchEvidence: "dispatched-with-usage",
+            },
+          });
+        },
+      };
+      const pricing = required(
+        probe.manifest.experiment.pricingSnapshot.entries.find(
+          (entry) => entry.id === method.pricingEntryId,
+        ),
+        "Missing M2 fake pricing.",
+      );
+      return { id: method.id, adapter, strategy: method.strategy, pricing };
+    });
+    const storageRoot = await temporaryDirectory();
+    const acknowledgement: LiveAcknowledgement = {
+      experimentDigest: probe.manifest.experimentDigest,
+      phase: "m2-protocol-probe",
+      maximumCostUsdMicros: 32_758_400,
+    };
+    const input = {
+      loaded: loaded(probe),
+      storageRoot,
+      cwd: repository.path,
+      acknowledgement,
+      environment: {
+        OPENAI_API_KEY: "offline-test-value",
+        ANTHROPIC_API_KEY: "offline-test-value",
+      },
+      methods: irMethods,
+      m2CodeModeMethods: codeMethods,
+    };
+    const first = unwrap(await executePhase(input));
+    expect(first).toMatchObject({ generated: 8, resumed: 0, records: 8 });
+    expect(dispatches).toEqual(
+      probe.manifest.m2?.schedule.entries.flatMap((entry) => entry.order),
+    );
+    const report = unwrap(
+      await generateStoredReport({ loaded: loaded(probe), storageRoot }),
+    );
+    expect(report).toMatchObject({
+      experimentDigest: probe.manifest.experimentDigest,
+      records: {
+        functionalIr: 4,
+        restrictedCapabilityTypeScript: 4,
+        matched: 4,
+      },
+      pairedAnalysis: {
+        taskCorrectness: { bothSucceeded: 4 },
+      },
+    });
+    const codeRecordPath = join(
+      storageRoot,
+      probe.campaign.campaignDigest,
+      probe.manifest.storageNamespace,
+      "restricted-capability-typescript-records.json",
+    );
+    const persistedCodeRecords = await readFile(codeRecordPath, "utf8");
+    await writeFile(codeRecordPath, "[{}]\n", "utf8");
+    expect(
+      (await generateStoredReport({ loaded: loaded(probe), storageRoot })).ok,
+    ).toBe(false);
+    await writeFile(
+      codeRecordPath,
+      persistedCodeRecords.replace(/"digest":"[^"]+"/, '"digest":"tampered"'),
+      "utf8",
+    );
+    expect(
+      (await generateStoredReport({ loaded: loaded(probe), storageRoot })).ok,
+    ).toBe(false);
+    await rm(codeRecordPath);
+    expect(
+      (await generateStoredReport({ loaded: loaded(probe), storageRoot })).ok,
+    ).toBe(false);
+    await writeFile(codeRecordPath, persistedCodeRecords, "utf8");
+    const second = unwrap(await executePhase(input));
+    expect(second).toMatchObject({ generated: 0, resumed: 8, records: 8 });
+    expect(dispatches).toHaveLength(8);
+    const reconstructedResume = unwrap(
+      await executePhase({
+        loaded: input.loaded,
+        storageRoot: input.storageRoot,
+        cwd: input.cwd,
+        acknowledgement: input.acknowledgement,
+        environment: input.environment,
+      }),
+    );
+    expect(reconstructedResume).toMatchObject({
+      generated: 0,
+      resumed: 8,
+      records: 8,
+    });
+    expect(dispatches).toHaveLength(8);
+  });
+
+  it("rejects a lowered paired cap before ledger creation or dispatch", async () => {
+    const repository = await initializeGitRepository();
+    const probe = await materializedM2("m2-protocol-probe", repository.commit);
+    const storageRoot = await temporaryDirectory();
+    const lowered: MaterializedPhase = {
+      ...probe,
+      manifest: {
+        ...probe.manifest,
+        experiment: {
+          ...probe.manifest.experiment,
+          caps: { ...probe.manifest.experiment.caps, maxCalls: 7 },
+        },
+      },
+    };
+    const result = await executePhase({
+      loaded: loaded(lowered),
+      storageRoot,
+      cwd: repository.path,
+      acknowledgement: {
+        experimentDigest: lowered.manifest.experimentDigest,
+        phase: "m2-protocol-probe",
+        maximumCostUsdMicros: 32_758_400,
+      },
+      environment: {
+        OPENAI_API_KEY: "offline-test-value",
+        ANTHROPIC_API_KEY: "offline-test-value",
+      },
+      methods: [],
+      m2CodeModeMethods: [],
+    });
+    expect(result.ok).toBe(false);
+    expect(await readdir(storageRoot)).toEqual([]);
+  });
+
+  it("fails closed on an unreconstructable paired adapter identity", async () => {
+    const repository = await initializeGitRepository();
+    const probe = await materializedM2("m2-protocol-probe", repository.commit);
+    const identity = required(probe.manifest.m2, "Missing M2 identity.");
+    const first = required(identity.codeModeMethods[0], "Missing M2 method.");
+    const mutated: MaterializedPhase = {
+      ...probe,
+      manifest: {
+        ...probe.manifest,
+        m2: {
+          ...identity,
+          codeModeMethods: [
+            {
+              ...first,
+              model: { ...first.model, adapterVersion: "invalid-adapter/1" },
+            },
+            ...identity.codeModeMethods.slice(1),
+          ],
+        },
+      },
+    };
+    const result = await executePhase({
+      loaded: loaded(mutated),
+      storageRoot: await temporaryDirectory(),
+      cwd: repository.path,
+      acknowledgement: {
+        experimentDigest: mutated.manifest.experimentDigest,
+        phase: "m2-protocol-probe",
+        maximumCostUsdMicros: 32_758_400,
+      },
+      environment: {
+        OPENAI_API_KEY: "offline-test-value",
+        ANTHROPIC_API_KEY: "offline-test-value",
+      },
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("fails closed when the paired split digest is absent", async () => {
+    const repository = await initializeGitRepository();
+    const probe = await materializedM2("m2-protocol-probe", repository.commit);
+    const mutated: MaterializedPhase = {
+      ...probe,
+      manifest: {
+        ...probe.manifest,
+        experiment: {
+          ...probe.manifest.experiment,
+          splits: probe.manifest.experiment.splits.filter(
+            (split) => split.id !== "development",
+          ),
+        },
+      },
+    };
+    const result = await executePhase({
+      loaded: loaded(mutated),
+      storageRoot: await temporaryDirectory(),
+      cwd: repository.path,
+      acknowledgement: {
+        experimentDigest: mutated.manifest.experimentDigest,
+        phase: "m2-protocol-probe",
+        maximumCostUsdMicros: 32_758_400,
+      },
+      environment: {
+        OPENAI_API_KEY: "offline-test-value",
+        ANTHROPIC_API_KEY: "offline-test-value",
+      },
+      methods: [],
+      m2CodeModeMethods: [],
+    });
+    expect(result.ok).toBe(false);
+  });
+});
 
 describe("M1c phase protocol", () => {
   it("fails closed on cross-milestone and incomplete M1c phase identities", async () => {

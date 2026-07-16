@@ -15,12 +15,24 @@ import {
   benchmarkCaseRecordSchema,
   type BenchmarkMethod,
   createM1aCatalogResolver,
+  createM2CatalogResolver,
+  evaluateM2PairedStatistics,
   evaluateResearchGates,
+  type M2CodeModeMethod,
+  m2CodeModeRecordSchema,
+  matchM2PairedRecords,
   runBenchmark,
+  runM2PairedBenchmark,
   summarizeBenchmark,
 } from "@nicia-ai/lachesis-generator";
-import { createJsonFileBenchmarkStore } from "@nicia-ai/lachesis-generator/node";
-import { createM1bPrimaryAdapters } from "@nicia-ai/lachesis-generator-ai-sdk";
+import {
+  createJsonFileBenchmarkStore,
+  createJsonFileM2CodeModeStore,
+} from "@nicia-ai/lachesis-generator/node";
+import {
+  createM1bPrimaryAdapters,
+  createM2CodeModePrimaryAdapters,
+} from "@nicia-ai/lachesis-generator-ai-sdk";
 import { z } from "zod";
 
 import {
@@ -33,7 +45,9 @@ import {
   type MaterializedPhase,
   materializeM1bPhase,
   materializeM1cPhase,
+  materializeM2Phase,
   matrixCounts,
+  validateM2PhaseCaps,
   validateTransportProbeCaps,
 } from "./manifests.js";
 import {
@@ -48,6 +62,9 @@ import {
 
 const execFileAsync = promisify(execFile);
 const persistedRecordsSchema = z.array(benchmarkCaseRecordSchema).readonly();
+const persistedM2CodeModeRecordsSchema = z
+  .array(m2CodeModeRecordSchema)
+  .readonly();
 
 export type LiveAcknowledgement = Readonly<{
   experimentDigest: string;
@@ -64,6 +81,10 @@ export type PreflightReport = Readonly<{
   phase: CampaignPhase;
   caseCountsBySplit: ReadonlyArray<Readonly<{ split: string; count: number }>>;
   methods: PhaseManifest["experiment"]["methods"];
+  codeModeMethods:
+    NonNullable<PhaseManifest["m2"]>["codeModeMethods"] | undefined;
+  scheduleDigest: string | null;
+  analysisPlanDigest: string | null;
   providers: ReadonlyArray<string>;
   repetitions: number;
   benchmarkRecords: number;
@@ -206,11 +227,16 @@ export async function loadPhaseFiles(
     const caps = validateTransportProbeCaps(phase.value.experiment);
     if (!caps.ok) return caps;
   }
-  const materialized = await (
-    phase.value.phase.startsWith("m1c-")
+  if (phase.value.phase.startsWith("m2-")) {
+    const caps = validateM2PhaseCaps(phase.value);
+    if (!caps.ok) return caps;
+  }
+  const materializer = phase.value.phase.startsWith("m2-")
+    ? materializeM2Phase
+    : phase.value.phase.startsWith("m1c-")
       ? materializeM1cPhase
-      : materializeM1bPhase
-  )({
+      : materializeM1bPhase;
+  const materialized = await materializer({
     phase: phase.value.phase,
     gitCommit: phase.value.experiment.versions.gitCommit,
     runtimeVersions: phase.value.runtimeVersions,
@@ -395,6 +421,7 @@ export async function preflightPhase(
   const counts = matrixCounts(input.loaded.phase);
   const gitBound =
     input.loaded.phase.phase.startsWith("m1c-") ||
+    input.loaded.phase.phase.startsWith("m2-") ||
     input.loaded.phase.phase === "heldout" ||
     input.loaded.phase.phase === "transport-probe";
   const cleanWorktree = !gitBound || git.value.clean;
@@ -434,6 +461,9 @@ export async function preflightPhase(
         count,
       })),
       methods: input.loaded.phase.experiment.methods,
+      codeModeMethods: input.loaded.phase.m2?.codeModeMethods,
+      scheduleDigest: input.loaded.phase.m2?.schedule.scheduleDigest ?? null,
+      analysisPlanDigest: input.loaded.phase.m2?.analysisPlanDigest ?? null,
       providers: [
         ...new Set(
           input.loaded.phase.experiment.methods.map(
@@ -489,6 +519,62 @@ export function createPrimaryMethods(
   });
 }
 
+function createM2CodeModeMethods(
+  phase: PhaseManifest,
+  environment: NodeJS.ProcessEnv,
+): Result<ReadonlyArray<M2CodeModeMethod>, Diagnostic> {
+  if (phase.m2 === undefined)
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "M2 execution requires its paired method identity.",
+      ),
+    };
+  const openaiKey = environment["OPENAI_API_KEY"];
+  const anthropicKey = environment["ANTHROPIC_API_KEY"];
+  const methods: Array<M2CodeModeMethod> = [];
+  for (const method of phase.m2.codeModeMethods) {
+    const adapters = createM2CodeModePrimaryAdapters({
+      constraint: method.strategy.constraint,
+      ...(openaiKey === undefined ? {} : { openai: { apiKey: openaiKey } }),
+      ...(anthropicKey === undefined
+        ? {}
+        : { anthropic: { apiKey: anthropicKey } }),
+    });
+    const adapter =
+      method.model.provider === "openai"
+        ? adapters.openai
+        : method.model.provider === "anthropic"
+          ? adapters.anthropic
+          : undefined;
+    const pricing = phase.experiment.pricingSnapshot.entries.find(
+      (entry) => entry.id === method.pricingEntryId,
+    );
+    if (
+      adapter === undefined ||
+      pricing === undefined ||
+      adapter.identity.provider !== method.model.provider ||
+      adapter.identity.model !== method.model.model ||
+      adapter.identity.adapterVersion !== method.model.adapterVersion
+    )
+      return {
+        ok: false,
+        error: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          `M2 method ${method.id} cannot be reconstructed from its frozen provider and pricing identity.`,
+        ),
+      };
+    methods.push({
+      id: method.id,
+      adapter,
+      strategy: method.strategy,
+      pricing,
+    });
+  }
+  return { ok: true, value: Object.freeze(methods) };
+}
+
 export async function executePhase(
   input: Readonly<{
     loaded: LoadedPhase;
@@ -497,6 +583,7 @@ export async function executePhase(
     acknowledgement: LiveAcknowledgement | undefined;
     environment?: NodeJS.ProcessEnv | undefined;
     methods?: ReadonlyArray<BenchmarkMethod> | undefined;
+    m2CodeModeMethods?: ReadonlyArray<M2CodeModeMethod> | undefined;
     onReservation?:
       ((status: BudgetPoolStatus, provider: string) => void) | undefined;
   }>,
@@ -533,6 +620,16 @@ export async function executePhase(
             "INVALID_WIRE_SCHEMA",
             "Transport-probe cap validation failed.",
           ),
+      };
+  }
+  if (input.loaded.phase.phase.startsWith("m2-")) {
+    const caps = validateM2PhaseCaps(input.loaded.phase);
+    if (!caps.ok)
+      return {
+        ok: false,
+        error:
+          caps.error[0] ??
+          diagnostic("INVALID_WIRE_SCHEMA", "M2 cap validation failed."),
       };
   }
   const ledgerPath = join(
@@ -601,6 +698,83 @@ export async function executePhase(
       };
     }
     const environment = input.environment ?? process.env;
+    if (input.loaded.phase.m2 !== undefined) {
+      const resolver = createM2CatalogResolver();
+      if (!resolver.ok)
+        return {
+          ok: false,
+          error:
+            resolver.error[0] ??
+            diagnostic(
+              "INTERNAL_INVARIANT_VIOLATION",
+              "M2 catalog resolver could not be created.",
+            ),
+        };
+      const codeModeMethods =
+        input.m2CodeModeMethods === undefined
+          ? createM2CodeModeMethods(input.loaded.phase, environment)
+          : { ok: true as const, value: input.m2CodeModeMethods };
+      if (!codeModeMethods.ok) return codeModeMethods;
+      const codeModeStore = await createJsonFileM2CodeModeStore(
+        join(
+          input.storageRoot,
+          input.loaded.campaign.campaignDigest,
+          input.loaded.phase.storageNamespace,
+          "restricted-capability-typescript-records.json",
+        ),
+      );
+      if (!codeModeStore.ok) return codeModeStore;
+      const split =
+        input.loaded.phase.phase === "m2-heldout"
+          ? ("heldout" as const)
+          : ("development" as const);
+      const experimentSplit = input.loaded.phase.experiment.splits.find(
+        (item) =>
+          item.id ===
+          (split === "heldout" ? "heldout-phrasing" : "development"),
+      );
+      if (experimentSplit === undefined)
+        return {
+          ok: false,
+          error: diagnostic(
+            "INVALID_WIRE_SCHEMA",
+            "M2 experiment is missing its selected split digest.",
+          ),
+        };
+      const result = await runM2PairedBenchmark({
+        experimentDigest: input.loaded.phase.experimentDigest,
+        irExperiment: input.loaded.phase.experiment,
+        split,
+        splitDigest: experimentSplit.digest,
+        cases: input.loaded.materialized.cases,
+        repetitions: input.loaded.phase.repetitions,
+        schedule: input.loaded.phase.m2.schedule,
+        irMethods:
+          input.methods ??
+          createPrimaryMethods(input.loaded.phase, environment),
+        codeModeMethods: codeModeMethods.value,
+        resolveCatalog: resolver.value,
+        irStore: store.value,
+        codeModeStore: codeModeStore.value,
+        budgetController: ledger.value.budgetController(
+          input.loaded.phase,
+          input.onReservation,
+        ),
+      });
+      if (!result.ok) return result;
+      return {
+        ok: true,
+        value: {
+          resumed:
+            result.value.functionalIr.resumed + result.value.codeMode.resumed,
+          generated:
+            result.value.functionalIr.generated +
+            result.value.codeMode.generated,
+          records: result.value.matched.length * 2,
+          budget: ledger.value.status(input.loaded.phase.budgetPoolId),
+        },
+      };
+    }
     const catalogResolver = createM1aCatalogResolver();
     if (!catalogResolver.ok) {
       return {
@@ -679,6 +853,42 @@ async function loadRecords(
   return { ok: true, value: parsed.data };
 }
 
+async function loadM2CodeModeRecords(
+  path: string,
+  experimentDigest: string,
+): Promise<
+  Result<ReadonlyArray<z.infer<typeof m2CodeModeRecordSchema>>, Diagnostic>
+> {
+  const json = await readJson(path);
+  if (!json.ok) return json;
+  const parsed = persistedM2CodeModeRecordsSchema.safeParse(json.value);
+  if (!parsed.success)
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "Stored restricted-TypeScript records have an invalid schema.",
+      ),
+    };
+  for (const record of parsed.data) {
+    const { digest, ...body } = record;
+    const computed = await digestValue(body);
+    if (!computed.ok) return computed;
+    if (
+      computed.value !== digest ||
+      record.experimentDigest !== experimentDigest
+    )
+      return {
+        ok: false,
+        error: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Stored restricted-TypeScript record failed its digest or paired experiment binding.",
+        ),
+      };
+  }
+  return { ok: true, value: parsed.data };
+}
+
 function pairCoverage(
   records: ReadonlyArray<BenchmarkCaseRecord>,
   provider: string,
@@ -713,6 +923,94 @@ export async function generateStoredReport(
     input.loaded.phase.storageNamespace,
     "records.json",
   );
+  if (input.loaded.phase.m2 !== undefined) {
+    const functionalIr = await loadRecords(
+      recordPath,
+      input.loaded.phase.experiment.experimentDigest,
+    );
+    if (!functionalIr.ok) return functionalIr;
+    const codeMode = await loadM2CodeModeRecords(
+      join(
+        base,
+        input.loaded.phase.storageNamespace,
+        "restricted-capability-typescript-records.json",
+      ),
+      input.loaded.phase.experimentDigest,
+    );
+    if (!codeMode.ok) return codeMode;
+    const matched = await matchM2PairedRecords({
+      functionalIr: functionalIr.value,
+      codeMode: codeMode.value,
+      schedule: input.loaded.phase.m2.schedule,
+    });
+    if (!matched.ok) return matched;
+    const statistics = await evaluateM2PairedStatistics(matched.value);
+    if (!statistics.ok) return statistics;
+    const budgets = await inspectCampaignLedger({
+      path: join(base, "ledger.ndjson"),
+      campaign: input.loaded.campaign,
+    });
+    if (!budgets.ok) return budgets;
+    return {
+      ok: true,
+      value: {
+        campaignDigest: input.loaded.campaign.campaignDigest,
+        phaseManifestDigest: input.loaded.phase.phaseManifestDigest,
+        experimentDigest: input.loaded.phase.experimentDigest,
+        functionalIrExperimentDigest:
+          input.loaded.phase.experiment.experimentDigest,
+        phase: input.loaded.phase.phase,
+        interpretation:
+          "Paired functional JSON IR versus restricted capability-oriented TypeScript representation ablation; conventional CodeMode is not evaluated.",
+        scheduleDigest: input.loaded.phase.m2.schedule.scheduleDigest,
+        records: {
+          functionalIr: functionalIr.value.length,
+          restrictedCapabilityTypeScript: codeMode.value.length,
+          matched: matched.value.length,
+        },
+        functionalIr: summarizeBenchmark(functionalIr.value),
+        restrictedCapabilityTypeScript: {
+          parseTranspileSuccess: codeMode.value.filter(
+            (record) => record.score.parseTranspileSuccess,
+          ).length,
+          firstCompilationSuccess: codeMode.value.filter(
+            (record) => record.score.firstCompilationSuccess,
+          ).length,
+          finalCompilationSuccess: codeMode.value.filter(
+            (record) => record.score.finalCompilationSuccess,
+          ).length,
+          semanticSuccess: codeMode.value.filter(
+            (record) => record.score.semanticSuccess === true,
+          ).length,
+          correctTypedAbstention: codeMode.value.filter(
+            (record) => record.score.correctTypedAbstention,
+          ).length,
+          runtimeExceptions: codeMode.value.reduce(
+            (total, record) => total + record.score.runtimeExceptions,
+            0,
+          ),
+          timeouts: codeMode.value.reduce(
+            (total, record) => total + record.score.timeouts,
+            0,
+          ),
+          capabilityViolations: codeMode.value.reduce(
+            (total, record) => total + record.score.capabilityViolations,
+            0,
+          ),
+          repairCalls: codeMode.value.reduce(
+            (total, record) => total + record.score.repairCalls,
+            0,
+          ),
+        },
+        pairedAnalysis: statistics.value,
+        budgets: budgets.value,
+        claimBoundary: {
+          conventionalCodeMode: "not-evaluated-not-claimed",
+          typeGraph: "deferred",
+        },
+      },
+    };
+  }
   const records = await loadRecords(
     recordPath,
     input.loaded.phase.experimentDigest,

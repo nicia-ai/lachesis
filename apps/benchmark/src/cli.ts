@@ -17,8 +17,10 @@ import {
 import {
   blindHeldOutIntegrityAudit,
   blindM1cHeldOutIntegrityAudit,
+  blindM2HeldOutAudit,
   materializeM1bPhase,
   materializeM1cPhase,
+  materializeM2Phase,
   type RuntimeVersions,
 } from "./manifests.js";
 import { campaignPhaseSchema } from "./protocol.js";
@@ -44,7 +46,7 @@ function flag(args: ReadonlyArray<string>, name: string): string | undefined {
 
 function usage(): void {
   process.stderr.write(
-    "Usage: lachesis-benchmark <materialize|audit-heldout|audit-m1c-heldout|validate|dry-run|execute|resume|report> [phase] --campaign FILE --manifest FILE [--storage-root DIR] [--ack-experiment DIGEST --ack-phase PHASE --ack-max-usd-micros INTEGER]\n",
+    "Usage: lachesis-benchmark <materialize|audit-heldout|audit-m1c-heldout|audit-m2-heldout|validate|dry-run|execute|resume|report> [phase] --campaign FILE --manifest FILE [--storage-root DIR] [--ack-experiment DIGEST --ack-phase PHASE --ack-max-usd-micros INTEGER]\n",
   );
 }
 
@@ -76,11 +78,14 @@ async function materialize(
   const destination = resolve(
     cwd,
     flag(args, "--out") ??
-      `experiments/${phase.data.startsWith("m1c-") ? "m1c" : "m1b"}/${phase.data}`,
+      `experiments/${phase.data.startsWith("m2-") ? "m2" : phase.data.startsWith("m1c-") ? "m1c" : "m1b"}/${phase.data}`,
   );
-  const materialized = await (
-    phase.data.startsWith("m1c-") ? materializeM1cPhase : materializeM1bPhase
-  )({
+  const materializer = phase.data.startsWith("m2-")
+    ? materializeM2Phase
+    : phase.data.startsWith("m1c-")
+      ? materializeM1cPhase
+      : materializeM1bPhase;
+  const materialized = await materializer({
     phase: phase.data,
     gitCommit: await gitCommit(cwd),
     runtimeVersions: runtimeVersions(),
@@ -134,6 +139,11 @@ async function main(args: ReadonlyArray<string>): Promise<number> {
     const audit = await blindM1cHeldOutIntegrityAudit();
     if (!audit.ok) return failure(audit.error);
     output(audit.value);
+    return 0;
+  }
+  if (command === "audit-m2-heldout") {
+    const audit = await blindM2HeldOutAudit();
+    output(audit);
     return 0;
   }
   if (

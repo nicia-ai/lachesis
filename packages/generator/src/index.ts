@@ -6,6 +6,8 @@ export {
   benchmarkCaseRecordSchema,
   type BenchmarkMethod,
   benchmarkMethodIdentity,
+  type BenchmarkRecordCoordinate,
+  type BenchmarkRecordCoordinator,
   type BenchmarkRepairTrialInput,
   type BenchmarkRunInput,
   type BenchmarkRunResult,
@@ -64,6 +66,7 @@ export {
 export {
   type CodeModeAttemptRecord,
   type CodeModeGenerationRecord,
+  codeModeGenerationRecordSchema,
   type CodeModeGenerationSession,
   type CodeModeGenerationStrategy,
   type CodeModeInitialRequest,
@@ -112,28 +115,50 @@ export {
 } from "./m1c-corpus.js";
 export {
   createInMemoryM2CodeModeStore,
+  createM2CounterbalancedSchedule,
+  createM2CounterbalancedScheduleFromIdentity,
   createM2PairedExperimentDigest,
+  createM2PairedExperimentDigestFromIdentity,
   M2_COMPARISON_PROTOCOL,
   type M2CodeModeMethod,
+  type M2CodeModeMethodIdentity,
   type M2CodeModeRecord,
+  m2CodeModeRecordSchema,
   type M2CodeModeRunInput,
   type M2CodeModeRunResult,
   type M2CodeModeScore,
   type M2CodeModeStore,
+  type M2CounterbalancedSchedule,
+  m2CounterbalancedScheduleSchema,
   type M2MatchedRecord,
   type M2PairedRunInput,
   type M2PairedRunResult,
+  type M2Representation,
   type M2ResourceComparison,
+  type M2ScheduleEntry,
+  matchM2PairedRecords,
   runM2CodeModeBenchmark,
   runM2PairedBenchmark,
 } from "./m2-benchmark.js";
 export {
   assertM2CorpusNamespaceDisjoint,
+  blindM2HeldOutIntegrityAudit,
   createM2CatalogResolver,
   loadM2PreregisteredCorpus,
   M2_CORPUS_PROTOCOL,
+  type M2BlindAuditCounts,
   type M2PreregisteredCorpus,
 } from "./m2-corpus.js";
+export {
+  evaluateM2PairedStatistics,
+  M2_PAIRED_ANALYSIS_PLAN,
+  type M2BinaryPairReport,
+  type M2NonInferiorityReport,
+  type M2PairedContinuousReport,
+  type M2PairedStatisticalReport,
+  type M2ProspectiveGateResult,
+  type M2ProviderStratumReport,
+} from "./m2-statistics.js";
 export {
   type AdapterDispatchEvidence,
   DEFAULT_INFERENCE_SETTINGS,
@@ -198,6 +223,7 @@ export {
   generationRecordSchema,
   generationStrategySchema,
   modelIdentitySchema,
+  modelUsageSchema,
 } from "./records.js";
 export {
   applyDeterministicPlanMutation,

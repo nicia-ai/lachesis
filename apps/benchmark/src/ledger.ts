@@ -34,6 +34,8 @@ const poolIdSchema = z.enum([
   "m1b-heldout-pilot",
   "m1c-development",
   "m1c-heldout",
+  "m2-development",
+  "m2-heldout",
 ]);
 
 const commonEventSchema = z.object({
@@ -61,6 +63,9 @@ const ledgerEventBodySchema = z.discriminatedUnion("kind", [
       "m1c-repair",
       "m1c-calibration",
       "m1c-heldout",
+      "m2-protocol-probe",
+      "m2-calibration",
+      "m2-heldout",
     ]),
     budgetPoolId: poolIdSchema,
     storageNamespace: z.string().min(1),
