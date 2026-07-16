@@ -9,7 +9,8 @@ effect interpreters.
 This repository contains the measured plan kernel, deterministic generation
 benchmark substrate, the frozen M1b/M1c experiment controllers, the completed M2
 functional-JSON-IR versus restricted-capability-TypeScript representation
-ablation, and the offline M3a.1 factorial evidence-substrate design.
+ablation, the offline M3a.1 factorial evidence-substrate design, and M3b's
+offline shared-plan execution infrastructure.
 
 ## What works
 
@@ -57,6 +58,9 @@ ablation, and the offline M3a.1 factorial evidence-substrate design.
 - A bounded substrate-neutral evidence-selection contract with four factorial
   text/graph arms, bitemporal facts and cited relationships, evidence-path and
   citation ground truth, negative controls, and a counts-only M3a.1 audit.
+- Offline M3b matched execution infrastructure with one shared compiled plan,
+  arm-blinded oracle requests, digest-bound Williams scheduling, symmetric
+  transport retries, safe resume, and contrast-specific paired statistics.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -112,7 +116,9 @@ boundaries, the [M1b runbook](docs/m1b-runbook.md) for the frozen M1 study, and
 the [M2 representation ablation](docs/m2-codemode-baseline.md) for its completed
 comparison boundary, and the
 [M3a.1 evidence design](docs/m3a-graph-native-decomposition.md) for the offline
-four-arm substrate benchmark and M3b kill gates.
+four-arm substrate benchmark and M3b kill gates, and the
+[M3b offline protocol](docs/m3b-offline-execution.md) for the unexecuted matched
+study infrastructure.
 
 ## Validation
 
@@ -133,8 +139,7 @@ The project still excludes conventional or bounded-general CodeMode, TypeGraph,
 SQL/Drizzle, persistent knowledge-graph storage, model-facing graph-native
 traversal, joins, `boundedExplore`, optimizer rewrites, durable/distributed
 scheduling, general adaptive loops, package publication, and deployment. M3a.1
-is an offline four-arm evidence benchmark only; it does not authorize or
-implement M3b model calls.
+and M3b remain offline-only; neither milestone authorizes provider calls.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

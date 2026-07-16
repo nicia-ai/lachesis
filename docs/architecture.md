@@ -51,6 +51,12 @@ relationships never become scheduling edges and run events never become evidence
 claims. See
 [M3a.1 graph-native decomposition](./m3a-graph-native-decomposition.md).
 
+M3b adds a portable matched execution layer above that contract. One compiled
+functional plan invokes an arm-blinded oracle effect across four frozen contexts
+in a digest-bound Williams schedule. Source identity remains run provenance and
+never enters the model-visible request. Transport retry is controller policy,
+not semantic repair. See [M3b offline execution](./m3b-offline-execution.md).
+
 ## Catalog trust boundary
 
 Plans see only stable IDs and versions. Generic registration builders retain
