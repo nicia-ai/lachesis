@@ -16,6 +16,7 @@ lachesis-benchmark execute --campaign FILE --manifest FILE --storage-root DIR \
   --ack-experiment DIGEST --ack-phase PHASE --ack-max-usd-micros INTEGER
 lachesis-benchmark resume  # same bindings as execute
 lachesis-benchmark report --campaign FILE --manifest FILE --storage-root DIR
+lachesis-benchmark audit-heldout
 ```
 
 Import, manifest materialization, validation, dry-run, and reporting are inert:
@@ -30,6 +31,12 @@ transport with the identical schema. The tool is only an output-serialization
 mechanism for `GenerationOutcome`; Lachesis does not enable model-controlled
 external tools. Unsupported catalog schemas fail during zero-network preflight,
 before any budget reservation.
+
+M1b.5 also resolves every required case reference and compiles a hidden offline
+reference witness for every plannable fixture before materialization. The model
+proposes computation only; trusted public bounds and policy are bound locally.
+`audit-heldout` reports only aggregate validity counts and never returns
+held-out case content.
 
 M1b.4 stores each phase under a namespace derived from the complete experiment
 digest. A repaired smoke can therefore register beside the immutable original

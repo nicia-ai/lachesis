@@ -1,0 +1,101 @@
+[
+  {
+    "caseDigest": "6e129a99c7d56f6d3392e64fa44063ed0eb58133a107356ef3e40d805e7ed2cb",
+    "caseId": "numbers/double",
+    "digest": "b9e2a64fab95101f416cb1d095569a9675c12a66d67784c3804dbce6233e2d4a",
+    "experimentDigest": "9b3abca99a1f90926631d8216827eba47348045e0cb343b77a0e37f51781e431",
+    "generation": {
+      "attempts": [
+        {
+          "abstentionReasons": [],
+          "adapterFailure": null,
+          "attemptIndex": 0,
+          "compiled": true,
+          "diagnostics": [],
+          "digest": "4eadccd662f01cf88e2307463a7970afac553fcbafb85f92f7b4269cfd2158c3",
+          "dispatchEvidence": "dispatched-with-usage",
+          "latencyMs": 5003,
+          "parseSuccess": true,
+          "phase": "initial",
+          "proposalCanonical": "{\"allowedCapabilities\":[],\"budget\":{\"maxCollectionItems\":128,\"maxEffectCalls\":0,\"maxParallelism\":1,\"maxRecursionDepth\":0,\"maxTokens\":1000,\"maxWallClockMs\":5000},\"catalog\":{\"id\":\"benchmark.numbers\",\"version\":\"1.0.0\"},\"formatVersion\":\"1\",\"metadata\":{\"name\":\"double-numbers\",\"revision\":\"1\"},\"nodes\":[{\"id\":\"items\",\"inputKey\":\"items\",\"maxItems\":128,\"op\":\"input\",\"schema\":{\"id\":\"numbers\",\"version\":\"1.0.0\"}},{\"id\":\"doubled\",\"op\":\"map\",\"operation\":{\"id\":\"double\",\"kind\":\"function\",\"version\":\"1.0.0\"},\"outputCollectionSchema\":{\"id\":\"numbers\",\"version\":\"1.0.0\"},\"parallelism\":1,\"source\":\"items\"}],\"root\":\"doubled\"}",
+          "rawResponse": "{\"outcome\":{\"kind\":\"plan\",\"plan\":{\"formatVersion\":\"1\",\"catalog\":{\"id\":\"benchmark.numbers\",\"version\":\"1.0.0\"},\"root\":\"doubled\",\"nodes\":[{\"id\":\"items\",\"op\":\"input\",\"inputKey\":\"items\",\"schema\":{\"id\":\"numbers\",\"version\":\"1.0.0\"},\"maxItems\":128},{\"id\":\"doubled\",\"op\":\"map\",\"source\":\"items\",\"operation\":{\"kind\":\"function\",\"id\":\"double\",\"version\":\"1.0.0\"},\"outputCollectionSchema\":{\"id\":\"numbers\",\"version\":\"1.0.0\"},\"parallelism\":1}],\"budget\":{\"maxEffectCalls\":0,\"maxCollectionItems\":128,\"maxRecursionDepth\":0,\"maxTokens\":1000,\"maxWallClockMs\":5000,\"maxParallelism\":1},\"allowedCapabilities\":[],\"metadata\":{\"name\":\"double-numbers\",\"revision\":\"1\"}}}}",
+          "requestDigest": "9dff9a2edef1f8f43da045dd7a1ec653cd5e1148a8e451166cb97fe140fba45b",
+          "responseKind": "plan",
+          "responseMetadata": {
+            "finishReason": "stop",
+            "providerRequestId": "req_011Cd4icr6SSMRbLubctEtyg",
+            "providerResponseId": "msg_011Cd4icry2Z1phts3j3NEEn",
+            "rawFinishReason": "tool_use",
+            "returnedModelId": "claude-sonnet-5"
+          },
+          "structuredOutputCanonical": "{\"kind\":\"plan\",\"plan\":{\"allowedCapabilities\":[],\"budget\":{\"maxCollectionItems\":128,\"maxEffectCalls\":0,\"maxParallelism\":1,\"maxRecursionDepth\":0,\"maxTokens\":1000,\"maxWallClockMs\":5000},\"catalog\":{\"id\":\"benchmark.numbers\",\"version\":\"1.0.0\"},\"formatVersion\":\"1\",\"metadata\":{\"name\":\"double-numbers\",\"revision\":\"1\"},\"nodes\":[{\"id\":\"items\",\"inputKey\":\"items\",\"maxItems\":128,\"op\":\"input\",\"schema\":{\"id\":\"numbers\",\"version\":\"1.0.0\"}},{\"id\":\"doubled\",\"op\":\"map\",\"operation\":{\"id\":\"double\",\"kind\":\"function\",\"version\":\"1.0.0\"},\"outputCollectionSchema\":{\"id\":\"numbers\",\"version\":\"1.0.0\"},\"parallelism\":1,\"source\":\"items\"}],\"root\":\"doubled\"}}",
+          "usage": {
+            "cacheWriteInputTokens": 0,
+            "cachedInputTokens": 0,
+            "costUsdMicros": 23504,
+            "inputTokens": 10032,
+            "outputTokens": 344,
+            "reasoningTokens": 0
+          },
+          "wireValidation": true
+        }
+      ],
+      "catalogFingerprint": "4a58de6f89e5f3f6f7430234d6afe0647813718c273b336d96062a64bdd2e7f9",
+      "digest": "169518a8dddd4968047e13aa41fa41ce00eaeabfaf5cb7e0a5b5a29f44c76400",
+      "finalKind": "compiled",
+      "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+      "model": {
+        "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+        "model": "claude-sonnet-5",
+        "provider": "anthropic"
+      },
+      "planHash": "84feec5f6a8a0b1e36fbf5d242a5f5faf290c4ac9cbf0071e6afc789b1f83a9a",
+      "repairCount": 0,
+      "strategy": {
+        "constraint": "json-schema",
+        "id": "json-schema",
+        "repair": "none"
+      },
+      "task": "Double each number.",
+      "totalCacheWriteInputTokens": 0,
+      "totalCachedInputTokens": 0,
+      "totalCostUsdMicros": 23504,
+      "totalInputTokens": 10032,
+      "totalLatencyMs": 5003,
+      "totalOutputTokens": 344,
+      "totalReasoningTokens": 0
+    },
+    "key": "0eeeeeb43e225eb7c4944005e3c620013e98a52952884f734f51fde001f7487a",
+    "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+    "methodId": "anthropic/json-schema",
+    "model": {
+      "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+      "model": "claude-sonnet-5",
+      "provider": "anthropic"
+    },
+    "modelConfigurationDigest": "a96f656b414f057663f8f772bfa5ba74d2046825cca4adbc99b7ab10585f8a76",
+    "pricingEntryId": "anthropic/claude-sonnet-5/direct/intro-2026-07-15",
+    "repetition": 0,
+    "score": {
+      "budgetViolation": false,
+      "capabilityViolation": false,
+      "correctAbstention": false,
+      "executionAttempted": true,
+      "expectedFeasibility": "plannable",
+      "hiddenEvaluations": [
+        { "diagnostics": [], "id": "numbers/double/hidden-1", "success": true },
+        { "diagnostics": [], "id": "numbers/double/hidden-2", "success": true }
+      ],
+      "propertiesSatisfied": true,
+      "semanticSuccess": true,
+      "topologyDigest": "7d43c83ed166974810daa18e25317421ddd01712787cd35113e17c853b96d30c"
+    },
+    "split": "development",
+    "splitDigest": "12b6f6f7c97913918ab72389ab033abef22e836dbdb6455761c22626a95783aa",
+    "strategy": {
+      "constraint": "json-schema",
+      "id": "json-schema",
+      "repair": "none"
+    }
+  }
+]

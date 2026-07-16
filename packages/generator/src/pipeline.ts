@@ -9,10 +9,12 @@ import {
   digestValue,
   type ExecutablePlan,
   inspectExecutablePlan,
+  modelPlanProposalSchema,
   parseJson,
   type PlanLanguageManifest,
   type Result,
 } from "@nicia-ai/lachesis";
+import { z } from "zod";
 
 import {
   type GenerationOutcome,
@@ -141,8 +143,50 @@ async function compileProposal(
   plan: unknown,
   catalog: Catalog,
   policy: CompilationPolicy,
+  taskInputs: ReadonlyArray<TaskInput>,
 ): Promise<CompiledProposal> {
-  const canonical = canonicalizeJson(plan);
+  const proposal = modelPlanProposalSchema.safeParse(plan);
+  if (!proposal.success) {
+    return {
+      canonical: null,
+      diagnostics: invalidOutcomeDiagnostics(proposal.error.issues),
+      wireValidation: false,
+    };
+  }
+  const inputs = new Map(taskInputs.map((input) => [input.name, input]));
+  const diagnostics: Array<Diagnostic> = [];
+  const nodes = proposal.data.nodes.map((node) => {
+    if (node.op !== "input") return node;
+    const taskInput = inputs.get(node.inputKey);
+    if (taskInput === undefined) {
+      diagnostics.push(
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          `Input ${node.inputKey} is not declared by the public task contract.`,
+          { nodeId: node.id, path: ["nodes", node.id, "inputKey"] },
+        ),
+      );
+      return node;
+    }
+    if (
+      taskInput.schema.id !== node.schema.id ||
+      taskInput.schema.version !== node.schema.version
+    ) {
+      diagnostics.push(
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          `Input ${node.inputKey} does not use its declared public schema.`,
+          { nodeId: node.id, path: ["nodes", node.id, "schema"] },
+        ),
+      );
+      return node;
+    }
+    const maximum = taskInput.declaredBounds.at(0);
+    return maximum === undefined ? node : { ...node, maxItems: maximum.value };
+  });
+  if (diagnostics.length > 0)
+    return { canonical: null, diagnostics, wireValidation: false };
+  const canonical = canonicalizeJson(proposal.data);
   if (!canonical.ok) {
     return {
       canonical: null,
@@ -150,7 +194,20 @@ async function compileProposal(
       wireValidation: false,
     };
   }
-  const compiled = await compilePlanJson(canonical.value, catalog, policy);
+  const trustedPlan = canonicalizeJson({
+    ...proposal.data,
+    nodes,
+    budget: policy.budget,
+    allowedCapabilities: policy.allowedCapabilities,
+  });
+  if (!trustedPlan.ok) {
+    return {
+      canonical: canonical.value,
+      diagnostics: [trustedPlan.error],
+      wireValidation: false,
+    };
+  }
+  const compiled = await compilePlanJson(trustedPlan.value, catalog, policy);
   return compiled.ok
     ? {
         canonical: canonical.value,
@@ -186,10 +243,13 @@ function invalidOutcomeDiagnostics(
 
 function parseModelOutput(
   response: ModelResponse,
-  constraint: GenerationStrategy["constraint"],
+  request: ModelRequest,
 ): ParsedModelOutput {
   let candidate: unknown;
-  if (constraint === "unconstrained-json") {
+  if (
+    request.kind === "initial" &&
+    request.constraint === "unconstrained-json"
+  ) {
     const parsed = parseJson(response.rawResponse);
     if (!parsed.ok) {
       return {
@@ -201,6 +261,68 @@ function parseModelOutput(
     candidate = parsed.value;
   } else {
     candidate = response.structuredOutput;
+  }
+  const authored = z
+    .looseObject({
+      kind: z.literal("plan"),
+      plan: z.looseObject({
+        budget: z.unknown().optional(),
+        allowedCapabilities: z.unknown().optional(),
+        nodes: z
+          .array(
+            z.looseObject({
+              op: z.string().optional(),
+              inputKey: z.string().optional(),
+              maxItems: z.unknown().optional(),
+            }),
+          )
+          .optional(),
+      }),
+    })
+    .safeParse(candidate);
+  if (authored.success) {
+    const diagnostics: Array<Diagnostic> = [];
+    if (Object.hasOwn(authored.data.plan, "budget"))
+      diagnostics.push(
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Model proposals cannot author trusted policy budgets.",
+          { path: ["plan", "budget"] },
+        ),
+      );
+    if (Object.hasOwn(authored.data.plan, "allowedCapabilities"))
+      diagnostics.push(
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "Model proposals cannot authorize capabilities.",
+          { path: ["plan", "allowedCapabilities"] },
+        ),
+      );
+    for (const [index, node] of (authored.data.plan.nodes ?? []).entries()) {
+      if (node.op !== "input" || !Object.hasOwn(node, "maxItems")) continue;
+      const taskInput = request.taskInputs.find(
+        (input) => input.name === node.inputKey,
+      );
+      const publicMaximum = taskInput?.declaredBounds.at(0)?.value;
+      const proposedMaximum = z
+        .number()
+        .int()
+        .nonnegative()
+        .safeParse(node.maxItems);
+      diagnostics.push(
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          proposedMaximum.success &&
+            publicMaximum !== undefined &&
+            proposedMaximum.data < publicMaximum
+            ? `Model input bound ${proposedMaximum.data} cannot narrow public task bound ${publicMaximum}.`
+            : "Model proposals cannot author trusted public input bounds.",
+          { path: ["plan", "nodes", index, "maxItems"] },
+        ),
+      );
+    }
+    if (diagnostics.length > 0)
+      return { ok: false, previousProposal: candidate, diagnostics };
   }
   const outcome = generationOutcomeSchema.safeParse(candidate);
   return outcome.success
@@ -498,10 +620,7 @@ export async function generatePlan(
           }
         : record;
     }
-    const parsedOutput = parseModelOutput(
-      response.value,
-      input.strategy.constraint,
-    );
+    const parsedOutput = parseModelOutput(response.value, request);
     if (!parsedOutput.ok) {
       const attempt = await invalidOutputAttempt(
         attemptIndex,
@@ -585,6 +704,7 @@ export async function generatePlan(
       parsedOutput.outcome.plan,
       input.catalog,
       input.policy,
+      input.taskInputs,
     );
     const attempt = await outcomeAttempt(
       attemptIndex,

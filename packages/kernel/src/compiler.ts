@@ -13,6 +13,7 @@ import {
   createPlanLanguageManifest,
 } from "./manifest.js";
 import { normalizePlan } from "./normalize.js";
+import type { PlanAnalysis } from "./plan.js";
 import { err, ok, type Result } from "./result.js";
 import { planBudgetSchema } from "./wire.js";
 
@@ -26,58 +27,66 @@ const compilationPolicySchema = z
   })
   .readonly();
 
-function enforcePolicy(
+const BUDGET_LIMITS: ReadonlyArray<
+  readonly [keyof CompilationPolicy["budget"], string]
+> = [
+  ["maxEffectCalls", "effect calls"],
+  ["maxCollectionItems", "collection items"],
+  ["maxRecursionDepth", "recursion depth"],
+  ["maxTokens", "tokens"],
+  ["maxWallClockMs", "wall-clock milliseconds"],
+  ["maxParallelism", "parallelism"],
+];
+
+function enforceRequirements(
+  analysis: PlanAnalysis,
   policy: CompilationPolicy,
-  allowedCapabilities: ReadonlyArray<string>,
-  budget: CompilationPolicy["budget"],
 ): ReadonlyArray<Diagnostic> {
   const diagnostics: Array<Diagnostic> = [];
-  for (const capability of allowedCapabilities) {
-    if (!policy.allowedCapabilities.includes(capability)) {
+  for (const capability of analysis.capabilitiesRequired) {
+    if (!policy.allowedCapabilities.includes(capability))
       diagnostics.push(
         diagnostic(
           "DENIED_CAPABILITY",
-          `Plan capability ${capability} is not available under compilation policy.`,
-          { path: ["allowedCapabilities"] },
+          `Required capability ${capability} is not allowed by trusted policy.`,
+          {},
           [{ key: "capability", value: capability }],
-          {
-            expected: { value: "capability allowed by policy" },
-            actual: { value: capability },
-            repair: { path: ["allowedCapabilities"] },
-          },
         ),
       );
-    }
   }
-  const limits: ReadonlyArray<
-    readonly [keyof CompilationPolicy["budget"], string]
-  > = [
-    ["maxEffectCalls", "effect calls"],
-    ["maxCollectionItems", "collection items"],
-    ["maxRecursionDepth", "recursion depth"],
-    ["maxTokens", "tokens"],
-    ["maxWallClockMs", "wall-clock milliseconds"],
-    ["maxParallelism", "parallelism"],
-  ];
-  for (const [key, label] of limits) {
-    if (budget[key] > policy.budget[key]) {
+  const requirements = new Map<
+    keyof CompilationPolicy["budget"],
+    PlanAnalysis["maximumEffectCalls"]
+  >([
+    ["maxEffectCalls", analysis.maximumEffectCalls],
+    ["maxCollectionItems", analysis.maximumCollectionFanOut],
+    ["maxRecursionDepth", analysis.maximumRecursionDepth],
+    ["maxTokens", analysis.maximumDeclaredTokens],
+    ["maxWallClockMs", analysis.maximumDeclaredWallClockMs],
+    ["maxParallelism", analysis.maximumParallelism],
+  ]);
+  for (const [key, label] of BUDGET_LIMITS) {
+    const requirement = requirements.get(key);
+    if (requirement?.kind === "known" && requirement.value > policy.budget[key])
       diagnostics.push(
         diagnostic(
           "BUDGET_EXCEEDED",
-          `Plan ${label} budget ${budget[key]} exceeds policy limit ${policy.budget[key]}.`,
-          { path: ["budget", key] },
-          [],
+          `Maximum ${label} ${requirement.value} exceeds trusted limit ${policy.budget[key]}.`,
+          {},
+          [
+            { key: "resource", value: label },
+            { key: "maximum", value: requirement.value },
+            { key: "limit", value: policy.budget[key] },
+          ],
           {
             limit: {
               resource: label,
-              actual: budget[key],
+              actual: requirement.value,
               limit: policy.budget[key],
             },
-            repair: { path: ["budget", key] },
           },
         ),
       );
-    }
   }
   return diagnostics;
 }
@@ -107,12 +116,6 @@ export async function compilePlanJson(
   }
   const parsed = parsePlanJson(text);
   if (!parsed.ok) return parsed;
-  const policyDiagnostics = enforcePolicy(
-    parsedPolicy.data,
-    parsed.value.allowedCapabilities,
-    parsed.value.budget,
-  );
-  if (policyDiagnostics.length > 0) return err(policyDiagnostics);
   const normalized = normalizePlan(parsed.value);
   if (!normalized.ok) return normalized;
   const snapshot = snapshotCatalog(catalog);
@@ -120,6 +123,11 @@ export async function compilePlanJson(
   if (!checked.ok) return checked;
   const analysis = analyzePlan(checked.value);
   if (!analysis.ok) return analysis;
+  const requirementDiagnostics = enforceRequirements(
+    analysis.value,
+    parsedPolicy.data,
+  );
+  if (requirementDiagnostics.length > 0) return err(requirementDiagnostics);
   const planHash = await hashPlan(parsed.value);
   if (!planHash.ok) return err([planHash.error]);
   const canonical = canonicalizePlan(parsed.value);

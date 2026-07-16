@@ -18,6 +18,7 @@ import {
   diagnostic,
   type Diagnostics,
   digestValue,
+  parseJson,
   type Result,
 } from "@nicia-ai/lachesis";
 import {
@@ -54,6 +55,7 @@ import {
   openCampaignLedger,
 } from "../src/ledger.js";
 import {
+  blindHeldOutIntegrityAudit,
   deriveTransportProbeCaps,
   M1B_PROMPT_CANDIDATE,
   type MaterializedPhase,
@@ -62,6 +64,7 @@ import {
   validateTransportProbeCaps,
 } from "../src/manifests.js";
 import {
+  campaignManifestSchema,
   createCampaignManifest,
   createPhaseManifest,
   experimentStorageNamespace,
@@ -107,6 +110,11 @@ async function temporaryDirectory(): Promise<string> {
 function unwrap<T, E>(result: Result<T, E>): T {
   if (!result.ok) throw new Error(JSON.stringify(result.error));
   return result.value;
+}
+
+function required<T>(value: T | undefined, message: string): T {
+  if (value === undefined) throw new Error(message);
+  return value;
 }
 
 function diagnosticMessage<T>(result: Result<T, Diagnostic>): string {
@@ -237,33 +245,42 @@ async function immutablePartialProbe(): Promise<MaterializedPhase> {
       runtimeVersions: { ...RUNTIME_VERSIONS, node: "24.18.0" },
     }),
   );
-  const historicalCaps: ExperimentCaps = {
-    maxCalls: 2,
-    maxInputTokens: 2_000_000,
-    maxOutputTokens: 500_000,
-    maxTotalTokens: 2_500_000,
-    maxOutputTokensPerCall: 8_192,
-    maxCostUsdMicros: 564_800,
-    providerCostCaps: [
-      { billingProvider: "openai", maxCostUsdMicros: 282_880 },
-      { billingProvider: "anthropic", maxCostUsdMicros: 281_920 },
-    ],
-  };
-  const experiment = await recreateExperiment({
-    materialized: current,
-    caps: historicalCaps,
-  });
-  const manifest = unwrap(await phaseWithExperiment(current, experiment));
-  expect(current.campaign.campaignDigest).toBe(
-    IMMUTABLE_PARTIAL_PROBE.campaignDigest,
+  const campaignJson = unwrap(
+    parseJson(
+      await readFile(
+        join(import.meta.dirname, "fixtures", "immutable-campaign.json"),
+        "utf8",
+      ),
+    ),
   );
-  expect(experiment.experimentDigest).toBe(
+  const manifestJson = unwrap(
+    parseJson(
+      await readFile(
+        join(import.meta.dirname, "fixtures", "immutable-partial-probe.json"),
+        "utf8",
+      ),
+    ),
+  );
+  const campaign = campaignManifestSchema.parse(campaignJson);
+  const manifest = phaseManifestSchema.parse(manifestJson);
+  expect(campaign.campaignDigest).toBe(IMMUTABLE_PARTIAL_PROBE.campaignDigest);
+  expect(manifest.experimentDigest).toBe(
     IMMUTABLE_PARTIAL_PROBE.experimentDigest,
   );
   expect(manifest.phaseManifestDigest).toBe(
     IMMUTABLE_PARTIAL_PROBE.phaseManifestDigest,
   );
-  return { campaign: current.campaign, manifest, cases: current.cases };
+  const digests = new Map(
+    manifest.experiment.cases.map((item) => [item.id, item.caseDigest]),
+  );
+  return {
+    campaign,
+    manifest,
+    cases: current.cases.map((item) => ({
+      case: item.case,
+      digest: required(digests.get(item.case.id), "Missing historical digest."),
+    })),
+  };
 }
 
 function fakeMethods(
@@ -335,6 +352,22 @@ async function initializeGitRepository(): Promise<
 }
 
 describe("M1b phase protocol", () => {
+  it("reports blind held-out validity counts without fixture content", async () => {
+    const audit = unwrap(await blindHeldOutIntegrityAudit());
+    expect(audit).toEqual({
+      totalCases: 17,
+      plannableCases: 13,
+      unplannableCases: 4,
+      referencesValid: 17,
+      witnessesCompiled: 13,
+      hiddenPropertiesPassed: 13,
+      invalidCases: 0,
+    });
+    expect(
+      Object.values(audit).every((value) => typeof value === "number"),
+    ).toBe(true);
+  });
+
   it("freezes the exact probe, smoke, and held-out matrix counts", async () => {
     const probe = await materialized("transport-probe");
     const smoke = await materialized("smoke");
@@ -762,24 +795,27 @@ describe("preflight", () => {
       historical.manifest.storageNamespace,
       "records.json",
     );
-    const ledger = unwrap(
+    unwrap(
       await openCampaignLedger({
         path: ledgerPath,
         campaign: historical.campaign,
       }),
     );
-    const store = unwrap(await createJsonFileBenchmarkStore(recordPath));
-    const setupCalls = { value: 0 };
-    const partial = await runBenchmark({
-      experiment: historical.manifest.experiment,
-      cases: historical.cases,
-      methods: fakeMethods(historical, setupCalls),
-      resolveCatalog: unwrap(createM1aCatalogResolver()),
-      store,
-      budgetController: ledger.budgetController(historical.manifest),
+    await mkdir(join(base, historical.manifest.storageNamespace), {
+      recursive: true,
     });
-    expect(partial.ok).toBe(false);
-    expect(setupCalls.value).toBe(1);
+    await writeFile(
+      recordPath,
+      await readFile(
+        join(
+          import.meta.dirname,
+          "fixtures",
+          "immutable-partial-probe-records.json",
+        ),
+        "utf8",
+      ),
+      "utf8",
+    );
     const report = unwrap(
       await generateStoredReport({ loaded: historicalLoaded, storageRoot }),
     );
@@ -817,6 +853,54 @@ describe("preflight", () => {
     expect(blockedCalls.value).toBe(0);
     expect(await readFile(ledgerPath, "utf8")).toBe(ledgerBefore);
     expect(await readFile(recordPath, "utf8")).toBe(recordsBefore);
+  });
+
+  it("preserves the completed M1b.4.1 calibration as report-only", async () => {
+    const storageRoot = await temporaryDirectory();
+    const manifestDirectory = await temporaryDirectory();
+    const campaignPath = join(manifestDirectory, "campaign.json");
+    const phasePath = join(manifestDirectory, "calibration.json");
+    await writeFile(
+      campaignPath,
+      await readFile(
+        join(import.meta.dirname, "fixtures", "immutable-campaign.json"),
+        "utf8",
+      ),
+      "utf8",
+    );
+    await writeFile(
+      phasePath,
+      await readFile(
+        join(import.meta.dirname, "fixtures", "immutable-calibration.json"),
+        "utf8",
+      ),
+      "utf8",
+    );
+    const historical = unwrap(
+      await loadPhaseFiles({ campaignPath, phasePath }),
+    );
+    expect(historical.executionPolicy).toBe("report-only");
+    const calls = { value: 0 };
+    const blocked = await executePhase({
+      loaded: historical,
+      storageRoot,
+      cwd: process.cwd(),
+      environment: {
+        OPENAI_API_KEY: "offline-dummy",
+        ANTHROPIC_API_KEY: "offline-dummy",
+      },
+      acknowledgement: {
+        experimentDigest:
+          "ca742c6d0c8a4245ec06472870dcacb43fb7e1af15e53f5f00ea5814732b2e95",
+        phase: "calibration",
+        maximumCostUsdMicros: 10_000_000,
+      },
+      methods: fakeMethods(historical.materialized, calls),
+    });
+    expect(blocked.ok).toBe(false);
+    expect(diagnosticMessage(blocked)).toContain("report-only");
+    expect(calls.value).toBe(0);
+    expect(await readdir(storageRoot)).toEqual([]);
   });
 
   it("requires exact acknowledgement and reports credentials without exposing values", async () => {

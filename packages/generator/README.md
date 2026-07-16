@@ -7,6 +7,12 @@ The core export owns model-output parsing and is portable to Workers. Adapters
 return raw provider text plus optional provider-decoded structure; malformed
 model output is measured separately from provider transport failure.
 
+Model proposals contain only registered operator topology and arguments. Trusted
+public input bounds and execution policy are bound locally; analysis derives
+resource requirements and compilation checks those requirements against the
+trusted policy. Manifest materialization can validate all references and offline
+reference witnesses without exposing them to a provider.
+
 Benchmark runs require a content-addressed `ExperimentManifest` and resume by
 its digest. Research gates use held-out records, matched comparison tuples,
 explicit denominators, and 95% confidence intervals. Node filesystem storage is

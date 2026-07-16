@@ -1,0 +1,207 @@
+{
+  "budgetPoolId": "m1b-development",
+  "campaignDigest": "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+  "campaignId": "lachesis-m1b-controlled-pilot",
+  "corpusDigest": "b391ec4b02686b9cf4b41ef4fafb4f27c14b64130150444623c4d94ff6dd090c",
+  "experiment": {
+    "caps": {
+      "maxCalls": 2,
+      "maxCostUsdMicros": 564800,
+      "maxInputTokens": 2000000,
+      "maxOutputTokens": 500000,
+      "maxOutputTokensPerCall": 8192,
+      "maxTotalTokens": 2500000,
+      "providerCostCaps": [
+        { "billingProvider": "openai", "maxCostUsdMicros": 282880 },
+        { "billingProvider": "anthropic", "maxCostUsdMicros": 281920 }
+      ]
+    },
+    "caseSetDigest": "809328fbcec4f1b9165ed710cd648972eac826afa2f71e771e9eb3010e00a49c",
+    "cases": [
+      {
+        "caseDigest": "6e129a99c7d56f6d3392e64fa44063ed0eb58133a107356ef3e40d805e7ed2cb",
+        "id": "numbers/double",
+        "split": "development"
+      }
+    ],
+    "experimentDigest": "9b3abca99a1f90926631d8216827eba47348045e0cb343b77a0e37f51781e431",
+    "formatVersion": "4",
+    "methods": [
+      {
+        "id": "anthropic/json-schema",
+        "inference": {
+          "maxInputTokens": 64000,
+          "maxOutputTokens": 8192,
+          "reasoningSettings": { "effort": "low", "mode": "adaptive" },
+          "seed": null,
+          "structuredOutputMode": "json-schema",
+          "structuredOutputTransport": "anthropic-json-tool-portable-json-schema",
+          "temperature": null
+        },
+        "model": {
+          "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+          "model": "claude-sonnet-5",
+          "provider": "anthropic"
+        },
+        "modelConfigurationDigest": "a96f656b414f057663f8f772bfa5ba74d2046825cca4adbc99b7ab10585f8a76",
+        "pricingEntryId": "anthropic/claude-sonnet-5/direct/intro-2026-07-15",
+        "strategy": {
+          "constraint": "json-schema",
+          "id": "json-schema",
+          "repair": "none"
+        }
+      },
+      {
+        "id": "openai/json-schema",
+        "inference": {
+          "maxInputTokens": 64000,
+          "maxOutputTokens": 8192,
+          "reasoningSettings": { "effort": "low", "mode": "reasoning" },
+          "seed": null,
+          "structuredOutputMode": "json-schema",
+          "structuredOutputTransport": "openai-responses-portable-json-schema",
+          "temperature": null
+        },
+        "model": {
+          "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+          "model": "gpt-5.6-terra",
+          "provider": "openai"
+        },
+        "modelConfigurationDigest": "13a3cb7ea836acff71a7c031b0c1af9a1013c2915b43f542476ec67b73863503",
+        "pricingEntryId": "openai/gpt-5.6-terra/standard/2026-07-15",
+        "strategy": {
+          "constraint": "json-schema",
+          "id": "json-schema",
+          "repair": "none"
+        }
+      }
+    ],
+    "pricingSnapshot": {
+      "capturedAt": "2026-07-15T00:00:00-07:00",
+      "currency": "USD",
+      "digest": "7ffb2fa3538bd0194cc4bfbaa73738531b77a3ec819092ee1dbb3440be6aa2a9",
+      "entries": [
+        {
+          "billingProvider": "anthropic",
+          "cacheWriteInputUsdMicrosPerMillionTokens": 2500000,
+          "cachedInputUsdMicrosPerMillionTokens": 200000,
+          "effectiveFrom": "2026-06-30",
+          "effectiveUntil": "2026-08-31",
+          "id": "anthropic/claude-sonnet-5/bedrock/intro-2026-07-15",
+          "inputUsdMicrosPerMillionTokens": 2000000,
+          "model": "us.anthropic.claude-sonnet-5",
+          "outputUsdMicrosPerMillionTokens": 10000000,
+          "route": "aws-bedrock",
+          "sourceUrl": "https://aws.amazon.com/bedrock/pricing/"
+        },
+        {
+          "billingProvider": "anthropic",
+          "cacheWriteInputUsdMicrosPerMillionTokens": 2500000,
+          "cachedInputUsdMicrosPerMillionTokens": 200000,
+          "effectiveFrom": "2026-06-30",
+          "effectiveUntil": "2026-08-31",
+          "id": "anthropic/claude-sonnet-5/direct/intro-2026-07-15",
+          "inputUsdMicrosPerMillionTokens": 2000000,
+          "model": "claude-sonnet-5",
+          "outputUsdMicrosPerMillionTokens": 10000000,
+          "route": "anthropic-messages",
+          "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing"
+        },
+        {
+          "billingProvider": "openai",
+          "cacheWriteInputUsdMicrosPerMillionTokens": 3125000,
+          "cachedInputUsdMicrosPerMillionTokens": 250000,
+          "effectiveFrom": "2026-07-15",
+          "effectiveUntil": null,
+          "id": "openai/gpt-5.6-terra/standard/2026-07-15",
+          "inputUsdMicrosPerMillionTokens": 2500000,
+          "model": "gpt-5.6-terra",
+          "outputUsdMicrosPerMillionTokens": 15000000,
+          "route": "openai-responses",
+          "sourceUrl": "https://developers.openai.com/api/docs/pricing"
+        }
+      ],
+      "formatVersion": "1"
+    },
+    "promptDigest": "7e2c792528886e3bba6deb82891b02a6181f23102ac170dd2957e04f1b10182d",
+    "protocolDigest": "d5852644e3207fa2dc16acf52a0af248144d0aef0e2c78861e9e9464671735f2",
+    "repetitions": 1,
+    "splits": [
+      {
+        "caseDigests": [
+          "6e129a99c7d56f6d3392e64fa44063ed0eb58133a107356ef3e40d805e7ed2cb"
+        ],
+        "digest": "12b6f6f7c97913918ab72389ab033abef22e836dbdb6455761c22626a95783aa",
+        "id": "development"
+      },
+      {
+        "caseDigests": [],
+        "digest": "7f7d594af43d3a23da734567a132cbaa58ab229d0bb10916e6a53686b2e64114",
+        "id": "heldout-catalog"
+      },
+      {
+        "caseDigests": [],
+        "digest": "08cd699b7580d31a9ad8d5c841cc10a61bfcb87aefcc781b315ea67ed33fc5ad",
+        "id": "heldout-operator-combination"
+      },
+      {
+        "caseDigests": [],
+        "digest": "901d77bbc5ad7aec6bf750a070fd236ac57c247ce5f4e662da14f865c2c454aa",
+        "id": "heldout-phrasing"
+      }
+    ],
+    "transportSchemas": [
+      {
+        "caseDigest": "6e129a99c7d56f6d3392e64fa44063ed0eb58133a107356ef3e40d805e7ed2cb",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "anthropic/json-schema",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "6e129a99c7d56f6d3392e64fa44063ed0eb58133a107356ef3e40d805e7ed2cb",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "openai/json-schema",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      }
+    ],
+    "versions": {
+      "generatorVersion": "0.1.0",
+      "gitCommit": "bd72ae69f2f3efaeab97bd2890bbe9a4c450de8e",
+      "kernelVersion": "0.1.0",
+      "workspaceVersion": "0.1.0"
+    }
+  },
+  "experimentDigest": "9b3abca99a1f90926631d8216827eba47348045e0cb343b77a0e37f51781e431",
+  "failurePolicy": {
+    "adapterDispatchEvidence": "v1",
+    "compilerGuidedRepairLimit": 2,
+    "postDispatchUnknownUsage": "authorized-conservative",
+    "preDispatchSettlement": "zero",
+    "providerAutomaticRetries": 0,
+    "schemaPreflight": "before-budget-reservation",
+    "selectiveSemanticReruns": "prohibited",
+    "storedProviderFailureOnResume": "do-not-retry",
+    "timeoutMs": 120000,
+    "transport": "record-and-continue",
+    "transportSchemaCompiler": "lachesis-portable-transport-schema/1"
+  },
+  "formatVersion": "3",
+  "phase": "transport-probe",
+  "phaseManifestDigest": "37feb76ee3959218d715695d47c7ee5a4de8b9d5d2de7542dc285c9aca6f59e5",
+  "repetitions": 1,
+  "runtimeVersions": {
+    "aiSdk": "7.0.28",
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "typescript": "6.0.3",
+    "zod": "4.4.3"
+  },
+  "scorer": {
+    "digest": "b4b95f06ccf9978900a90cac74fad36a78158c00f14b84d35f2c7ab4bf54df1d",
+    "id": "lachesis-hidden-semantic-scorer",
+    "version": "1"
+  },
+  "storageNamespace": "m1b/transport-probe/experiments/9b3abca99a1f90926631d8216827eba47348045e0cb343b77a0e37f51781e431"
+}

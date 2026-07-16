@@ -4,9 +4,9 @@ import {
   type Diagnostic,
   diagnostic,
   digestValue,
+  modelPlanProposalSchema,
   type PlanLanguageManifest,
   type Result,
-  wirePlanSchema,
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
@@ -16,7 +16,11 @@ import { type GenerationOutcome, generationOutcomeSchema } from "./model.js";
 type JsonValue = z.infer<ReturnType<typeof z.json>>;
 
 export const PORTABLE_TRANSPORT_COMPILER_VERSION =
-  "lachesis-portable-transport-schema/1";
+  "lachesis-portable-transport-schema/2";
+export const SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS = Object.freeze([
+  "lachesis-portable-transport-schema/1",
+  PORTABLE_TRANSPORT_COMPILER_VERSION,
+] as const);
 
 export const structuredOutputTransportSchema = z
   .strictObject({
@@ -457,14 +461,6 @@ function planSchema(
       ...nodeBase("input"),
       ["inputKey", { type: "string", minLength: 1, maxLength: 128 }],
       ["schema", referenceSchema(schemas)],
-      [
-        "maxItems",
-        nullable({
-          type: "integer",
-          minimum: 0,
-          maximum: manifest.policy.budget.maxCollectionItems,
-        }),
-      ],
     ]),
   );
   for (const schema of manifest.schemas) {
@@ -581,13 +577,6 @@ function planSchema(
         ],
       ]),
     );
-  const capabilityItems: JsonValue =
-    manifest.policy.allowedCapabilities.length === 0
-      ? { type: "string" }
-      : {
-          type: "string",
-          enum: [...manifest.policy.allowedCapabilities].toSorted(),
-        };
   return strictObject([
     ["formatVersion", { type: "string", const: "1" }],
     ["catalog", referenceSchema([manifest.catalog])],
@@ -595,68 +584,6 @@ function planSchema(
     [
       "nodes",
       { type: "array", items: { anyOf: nodes }, minItems: 1, maxItems: 10_000 },
-    ],
-    [
-      "budget",
-      strictObject([
-        [
-          "maxEffectCalls",
-          {
-            type: "integer",
-            minimum: 0,
-            maximum: manifest.policy.budget.maxEffectCalls,
-          },
-        ],
-        [
-          "maxCollectionItems",
-          {
-            type: "integer",
-            minimum: 0,
-            maximum: manifest.policy.budget.maxCollectionItems,
-          },
-        ],
-        [
-          "maxRecursionDepth",
-          {
-            type: "integer",
-            minimum: 0,
-            maximum: manifest.policy.budget.maxRecursionDepth,
-          },
-        ],
-        [
-          "maxTokens",
-          {
-            type: "integer",
-            minimum: 0,
-            maximum: manifest.policy.budget.maxTokens,
-          },
-        ],
-        [
-          "maxWallClockMs",
-          {
-            type: "integer",
-            minimum: 0,
-            maximum: manifest.policy.budget.maxWallClockMs,
-          },
-        ],
-        [
-          "maxParallelism",
-          {
-            type: "integer",
-            minimum: 1,
-            maximum: manifest.policy.budget.maxParallelism,
-          },
-        ],
-      ]),
-    ],
-    [
-      "allowedCapabilities",
-      {
-        type: "array",
-        items: capabilityItems,
-        minItems: 0,
-        maxItems: manifest.policy.allowedCapabilities.length,
-      },
     ],
     [
       "metadata",
@@ -762,30 +689,18 @@ function normalizePlan(value: unknown): Result<unknown, Diagnostic> {
       ok: false,
       error: transportDiagnostic("Transport plan must be an object."),
     };
-  const nodes = z.array(schemaObjectSchema).safeParse(plan.data["nodes"]);
-  if (!nodes.success)
-    return {
-      ok: false,
-      error: transportDiagnostic("Transport plan nodes must be objects."),
-    };
-  const normalizedNodes = nodes.data.map((node) => {
-    if (node["op"] !== "input" || node["maxItems"] !== null) return node;
-    return Object.fromEntries(
-      Object.entries(node).filter(([name]) => name !== "maxItems"),
-    );
-  });
   const normalizedPlan = Object.fromEntries(
-    Object.entries(plan.data)
-      .filter(([name, item]) => !(name === "metadata" && item === null))
-      .map(([name, item]) => [name, name === "nodes" ? normalizedNodes : item]),
+    Object.entries(plan.data).filter(
+      ([name, item]) => !(name === "metadata" && item === null),
+    ),
   );
-  const parsed = wirePlanSchema.safeParse(normalizedPlan);
+  const parsed = modelPlanProposalSchema.safeParse(normalizedPlan);
   return parsed.success
     ? { ok: true, value: parsed.data }
     : {
         ok: false,
         error: transportDiagnostic(
-          `Transport plan did not normalize to WirePlan: ${parsed.error.issues.map((issue) => issue.message).join("; ")}`,
+          `Transport plan did not normalize to a model computation proposal: ${parsed.error.issues.map((issue) => issue.message).join("; ")}`,
         ),
       };
 }

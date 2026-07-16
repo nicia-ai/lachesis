@@ -153,6 +153,31 @@ function expectPortableSchema(value: unknown, root = true): void {
       expectPortableSchema(child, false);
 }
 
+const MODEL_AUTHORITY_PROPERTY_NAMES = new Set([
+  "allowedCapabilities",
+  "budget",
+  "maxItems",
+]);
+
+function expectNoModelAuthorityProperties(value: unknown): void {
+  const parsed = z.record(z.string(), z.unknown()).safeParse(value);
+  if (!parsed.success) return;
+  const properties = z
+    .record(z.string(), z.unknown())
+    .safeParse(parsed.data["properties"]);
+  if (properties.success) {
+    for (const [name, child] of Object.entries(properties.data)) {
+      expect(MODEL_AUTHORITY_PROPERTY_NAMES.has(name)).toBe(false);
+      expectNoModelAuthorityProperties(child);
+    }
+  }
+  if (parsed.data["items"] !== undefined)
+    expectNoModelAuthorityProperties(parsed.data["items"]);
+  const variants = z.array(z.unknown()).safeParse(parsed.data["anyOf"]);
+  if (variants.success)
+    for (const child of variants.data) expectNoModelAuthorityProperties(child);
+}
+
 function schemasWithOperation(
   value: unknown,
   operation: string,
@@ -562,6 +587,8 @@ describe("AI SDK provider adapters", () => {
       );
       expectPortableSchema(openaiBody.text.format.schema);
       expectPortableSchema(anthropicBody.tools[0]?.input_schema);
+      expectNoModelAuthorityProperties(openaiBody.text.format.schema);
+      expectNoModelAuthorityProperties(anthropicBody.tools[0]?.input_schema);
       expect(unwrap(canonicalizeJson(openaiBody.text.format.schema))).toBe(
         unwrap(canonicalizeJson(expectedSchema)),
       );
@@ -689,6 +716,12 @@ describe("AI SDK provider adapters", () => {
       expect(prompt).toContain("Return raw JSON only.");
       expect(prompt).toContain("Do not use Markdown fences.");
       expect(prompt).toContain("Do not use alternate field names.");
+      expect(prompt).toContain(
+        "The plan contains operator topology and arguments only.",
+      );
+      expect(prompt).toContain(
+        "Do not return budget, allowedCapabilities, or input maxItems fields",
+      );
       expect(prompt).toContain('"taskInputs"');
       for (const value of Object.values(hostile))
         expect(prompt).not.toContain(value);

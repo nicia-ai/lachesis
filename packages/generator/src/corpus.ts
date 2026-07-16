@@ -24,12 +24,14 @@ import {
 import type { TaskInput } from "./model.js";
 
 const VERSION = "1.0.0";
+export const M1A_WORKFLOW_VERSION = "1.1.0";
+export const M1A_WORKFLOW_MAX_ITERATIONS = 16;
 
 const DEFAULT_BUDGET = Object.freeze({
-  maxEffectCalls: 32,
+  maxEffectCalls: 128,
   maxCollectionItems: 128,
   maxRecursionDepth: 16,
-  maxTokens: 4_000,
+  maxTokens: 8_192,
   maxWallClockMs: 10_000,
   maxParallelism: 8,
 });
@@ -240,7 +242,7 @@ function decisionCatalog(): Result<Catalog, Diagnostics> {
 
 const workflowStateSchema = z
   .strictObject({
-    remaining: z.number().int().nonnegative(),
+    remaining: z.number().int().nonnegative().max(M1A_WORKFLOW_MAX_ITERATIONS),
     value: z.number(),
   })
   .readonly();
@@ -248,17 +250,17 @@ const workflowStateSchema = z
 function workflowCatalog(): Result<Catalog, Diagnostics> {
   const state = defineSchema({
     id: "workflow-state",
-    version: VERSION,
+    version: M1A_WORKFLOW_VERSION,
     description: "A state with a countdown measure and accumulated value.",
     validator: workflowStateSchema,
   });
   return createCatalog({
-    identity: { id: "benchmark.workflow", version: VERSION },
+    identity: { id: "benchmark.workflow", version: M1A_WORKFLOW_VERSION },
     schemas: [state.runtime],
     operations: [
       defineFixedPointStep({
         id: "countdown-step",
-        version: VERSION,
+        version: M1A_WORKFLOW_VERSION,
         description:
           "Decrement remaining and increment value until remaining is zero.",
         state,
@@ -269,14 +271,14 @@ function workflowCatalog(): Result<Catalog, Diagnostics> {
       }),
       defineMeasure({
         id: "remaining",
-        version: VERSION,
+        version: M1A_WORKFLOW_VERSION,
         description: "Use the remaining countdown as the progress measure.",
         input: state,
         implementation: (value) => value.remaining,
       }),
       defineEffect({
         id: "enrich-state",
-        version: VERSION,
+        version: M1A_WORKFLOW_VERSION,
         description:
           "Enrich workflow state using a deterministic remote fixture.",
         input: state,
@@ -393,7 +395,10 @@ function taskInputsForCatalog(
       return Object.freeze([
         Object.freeze({
           name: "state",
-          schema: Object.freeze({ id: "workflow-state", version: VERSION }),
+          schema: Object.freeze({
+            id: "workflow-state",
+            version: M1A_WORKFLOW_VERSION,
+          }),
           declaredBounds: Object.freeze([]),
         }),
       ]);
@@ -421,10 +426,10 @@ function caseValue(seed: CaseSeed): unknown {
   };
 }
 
-const op = (id: string): unknown => ({
+const op = (id: string, version = VERSION): unknown => ({
   kind: "usesOperation",
   id,
-  version: VERSION,
+  version,
 });
 const input = (inputKey = "items"): unknown => ({
   kind: "usesInput",
@@ -708,7 +713,11 @@ const workflowSeeds: ReadonlyArray<CaseSeed> = [1, 2, 3, 5, 8].map(
       { remaining: 0, value: 10 + remaining },
       { remaining: 0, value: 4 },
     ],
-    properties: [input("state"), op("countdown-step"), op("remaining")],
+    properties: [
+      input("state"),
+      op("countdown-step", M1A_WORKFLOW_VERSION),
+      op("remaining", M1A_WORKFLOW_VERSION),
+    ],
   }),
 );
 
@@ -866,7 +875,7 @@ const impossibleSeeds: ReadonlyArray<CaseSeed> = [
     catalogId: "benchmark.workflow",
     inputs: [],
     outputs: [],
-    properties: [op("countdown-step")],
+    properties: [op("countdown-step", M1A_WORKFLOW_VERSION)],
     feasible: false,
     budget: { ...DEFAULT_BUDGET, maxRecursionDepth: 0 },
   },

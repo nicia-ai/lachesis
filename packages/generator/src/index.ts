@@ -43,6 +43,8 @@ export {
   loadM1aCorpus,
   M1A_CATALOG_IDS,
   M1A_HOLDOUTS,
+  M1A_WORKFLOW_MAX_ITERATIONS,
+  M1A_WORKFLOW_VERSION,
   type M1aCorpusPartition,
   partitionM1aCorpus,
 } from "./corpus.js";
@@ -131,5 +133,10 @@ export {
   type StructuredOutputCatalogResolver,
   type StructuredOutputTransport,
   structuredOutputTransportSchema,
+  SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS,
   validatePortableStructuredOutputSchema,
 } from "./transport.js";
+export {
+  blindPlanGenerationValidityAudit,
+  validatePlanGenerationCases,
+} from "./validity.js";

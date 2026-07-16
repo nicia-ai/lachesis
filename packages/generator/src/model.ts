@@ -3,6 +3,7 @@ import type {
   PlanLanguageManifest,
   Result,
 } from "@nicia-ai/lachesis";
+import { modelPlanProposalSchema } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
 import type { StructuredOutputTransport } from "./transport.js";
@@ -15,7 +16,9 @@ export type GenerationOutcome =
     }>;
 
 export const generationOutcomeSchema = z.discriminatedUnion("kind", [
-  z.strictObject({ kind: z.literal("plan"), plan: z.json() }).readonly(),
+  z
+    .strictObject({ kind: z.literal("plan"), plan: modelPlanProposalSchema })
+    .readonly(),
   z
     .strictObject({
       kind: z.literal("unplannable"),
@@ -47,7 +50,7 @@ export const taskInputSchema = z
         version: z.string().min(1),
       })
       .readonly(),
-    declaredBounds: z.array(taskInputBoundSchema).readonly(),
+    declaredBounds: z.array(taskInputBoundSchema).max(1).readonly(),
   })
   .readonly();
 

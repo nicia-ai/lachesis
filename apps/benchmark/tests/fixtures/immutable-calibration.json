@@ -1,0 +1,555 @@
+{
+  "budgetPoolId": "m1b-development",
+  "campaignDigest": "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+  "campaignId": "lachesis-m1b-controlled-pilot",
+  "corpusDigest": "2e69141ca6bf13c494c3530fd458055bbb08fc42581eb9dff3cb1bbc4d2bbcb9",
+  "experiment": {
+    "caps": {
+      "maxCalls": 200,
+      "maxCostUsdMicros": 10000000,
+      "maxInputTokens": 2000000,
+      "maxOutputTokens": 500000,
+      "maxOutputTokensPerCall": 8192,
+      "maxTotalTokens": 2500000,
+      "providerCostCaps": [
+        { "billingProvider": "openai", "maxCostUsdMicros": 10000000 },
+        { "billingProvider": "anthropic", "maxCostUsdMicros": 10000000 }
+      ]
+    },
+    "caseSetDigest": "75dc590d06d80e6cfca001e64adc69fe43651b752578b9b78f0f45a3d70f4a0d",
+    "cases": [
+      {
+        "caseDigest": "a1d90a4f49c9366ff1c37a004d8e4c10652d13d8f267eefbb05f99fa362a112b",
+        "id": "calibration/workflow-countdown",
+        "split": "development"
+      },
+      {
+        "caseDigest": "37c7e04740a5ee7ac2f49f7f06cea89cb9c23efc75a78247d3ced1d0902f0457",
+        "id": "decisions/approve",
+        "split": "development"
+      },
+      {
+        "caseDigest": "d03408437a8f3fc013302f35f94fe65fa853f714c9189b3a59615115bdc2ba5a",
+        "id": "numbers/increment-positive",
+        "split": "development"
+      },
+      {
+        "caseDigest": "4f2a0efb1003ada81e0878d80e76d52d4358b6ee9797290de3ef82148e8db20a",
+        "id": "numbers/missing-average",
+        "split": "development"
+      },
+      {
+        "caseDigest": "9a0c358fe95bacb023fadce77289edf20421d638a83fea38b2ebd87e21525ab9",
+        "id": "numbers/sum",
+        "split": "development"
+      },
+      {
+        "caseDigest": "4d7bd3f9750c503a7eb51116eac32ab29a42e779a3767aab274e70afb51dbc09",
+        "id": "numbers/tax-map",
+        "split": "development"
+      },
+      {
+        "caseDigest": "d29a156f7f88ff4174f88a586179fe7cd229172cc513cd8a19d4db117b511a03",
+        "id": "text/translation-map",
+        "split": "development"
+      },
+      {
+        "caseDigest": "c45a6de69b232faa579f96e22cad78abe918aaae5d4de57db243481ab0b5dd41",
+        "id": "text/trim-nonempty",
+        "split": "development"
+      }
+    ],
+    "experimentDigest": "ca742c6d0c8a4245ec06472870dcacb43fb7e1af15e53f5f00ea5814732b2e95",
+    "formatVersion": "4",
+    "methods": [
+      {
+        "id": "anthropic/json-schema",
+        "inference": {
+          "maxInputTokens": 64000,
+          "maxOutputTokens": 8192,
+          "reasoningSettings": { "effort": "low", "mode": "adaptive" },
+          "seed": null,
+          "structuredOutputMode": "json-schema",
+          "structuredOutputTransport": "anthropic-json-tool-portable-json-schema",
+          "temperature": null
+        },
+        "model": {
+          "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+          "model": "claude-sonnet-5",
+          "provider": "anthropic"
+        },
+        "modelConfigurationDigest": "a96f656b414f057663f8f772bfa5ba74d2046825cca4adbc99b7ab10585f8a76",
+        "pricingEntryId": "anthropic/claude-sonnet-5/direct/intro-2026-07-15",
+        "strategy": {
+          "constraint": "json-schema",
+          "id": "json-schema",
+          "repair": "none"
+        }
+      },
+      {
+        "id": "anthropic/json-schema-with-repair",
+        "inference": {
+          "maxInputTokens": 64000,
+          "maxOutputTokens": 8192,
+          "reasoningSettings": { "effort": "low", "mode": "adaptive" },
+          "seed": null,
+          "structuredOutputMode": "json-schema",
+          "structuredOutputTransport": "anthropic-json-tool-portable-json-schema",
+          "temperature": null
+        },
+        "model": {
+          "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+          "model": "claude-sonnet-5",
+          "provider": "anthropic"
+        },
+        "modelConfigurationDigest": "a96f656b414f057663f8f772bfa5ba74d2046825cca4adbc99b7ab10585f8a76",
+        "pricingEntryId": "anthropic/claude-sonnet-5/direct/intro-2026-07-15",
+        "strategy": {
+          "constraint": "json-schema",
+          "id": "json-schema-with-repair",
+          "repair": "compiler-guided"
+        }
+      },
+      {
+        "id": "anthropic/unconstrained-json",
+        "inference": {
+          "maxInputTokens": 64000,
+          "maxOutputTokens": 8192,
+          "reasoningSettings": { "effort": "low", "mode": "adaptive" },
+          "seed": null,
+          "structuredOutputMode": "none",
+          "structuredOutputTransport": "prompt-json",
+          "temperature": null
+        },
+        "model": {
+          "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+          "model": "claude-sonnet-5",
+          "provider": "anthropic"
+        },
+        "modelConfigurationDigest": "f842bc72ad5950890c4637a0db4edae6d165cb6e754619412c463771bfade219",
+        "pricingEntryId": "anthropic/claude-sonnet-5/direct/intro-2026-07-15",
+        "strategy": {
+          "constraint": "unconstrained-json",
+          "id": "unconstrained-json",
+          "repair": "none"
+        }
+      },
+      {
+        "id": "openai/json-schema",
+        "inference": {
+          "maxInputTokens": 64000,
+          "maxOutputTokens": 8192,
+          "reasoningSettings": { "effort": "low", "mode": "reasoning" },
+          "seed": null,
+          "structuredOutputMode": "json-schema",
+          "structuredOutputTransport": "openai-responses-portable-json-schema",
+          "temperature": null
+        },
+        "model": {
+          "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+          "model": "gpt-5.6-terra",
+          "provider": "openai"
+        },
+        "modelConfigurationDigest": "13a3cb7ea836acff71a7c031b0c1af9a1013c2915b43f542476ec67b73863503",
+        "pricingEntryId": "openai/gpt-5.6-terra/standard/2026-07-15",
+        "strategy": {
+          "constraint": "json-schema",
+          "id": "json-schema",
+          "repair": "none"
+        }
+      },
+      {
+        "id": "openai/json-schema-with-repair",
+        "inference": {
+          "maxInputTokens": 64000,
+          "maxOutputTokens": 8192,
+          "reasoningSettings": { "effort": "low", "mode": "reasoning" },
+          "seed": null,
+          "structuredOutputMode": "json-schema",
+          "structuredOutputTransport": "openai-responses-portable-json-schema",
+          "temperature": null
+        },
+        "model": {
+          "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+          "model": "gpt-5.6-terra",
+          "provider": "openai"
+        },
+        "modelConfigurationDigest": "13a3cb7ea836acff71a7c031b0c1af9a1013c2915b43f542476ec67b73863503",
+        "pricingEntryId": "openai/gpt-5.6-terra/standard/2026-07-15",
+        "strategy": {
+          "constraint": "json-schema",
+          "id": "json-schema-with-repair",
+          "repair": "compiler-guided"
+        }
+      },
+      {
+        "id": "openai/unconstrained-json",
+        "inference": {
+          "maxInputTokens": 64000,
+          "maxOutputTokens": 8192,
+          "reasoningSettings": { "effort": "low", "mode": "reasoning" },
+          "seed": null,
+          "structuredOutputMode": "none",
+          "structuredOutputTransport": "prompt-json",
+          "temperature": null
+        },
+        "model": {
+          "adapterVersion": "lachesis-ai-sdk-adapter/3;ai-sdk/7.0.28",
+          "model": "gpt-5.6-terra",
+          "provider": "openai"
+        },
+        "modelConfigurationDigest": "340b2054c5d0244286b78ea5d5740dc894b0558a8765610b83f4bc962803830a",
+        "pricingEntryId": "openai/gpt-5.6-terra/standard/2026-07-15",
+        "strategy": {
+          "constraint": "unconstrained-json",
+          "id": "unconstrained-json",
+          "repair": "none"
+        }
+      }
+    ],
+    "pricingSnapshot": {
+      "capturedAt": "2026-07-15T00:00:00-07:00",
+      "currency": "USD",
+      "digest": "7ffb2fa3538bd0194cc4bfbaa73738531b77a3ec819092ee1dbb3440be6aa2a9",
+      "entries": [
+        {
+          "billingProvider": "anthropic",
+          "cacheWriteInputUsdMicrosPerMillionTokens": 2500000,
+          "cachedInputUsdMicrosPerMillionTokens": 200000,
+          "effectiveFrom": "2026-06-30",
+          "effectiveUntil": "2026-08-31",
+          "id": "anthropic/claude-sonnet-5/bedrock/intro-2026-07-15",
+          "inputUsdMicrosPerMillionTokens": 2000000,
+          "model": "us.anthropic.claude-sonnet-5",
+          "outputUsdMicrosPerMillionTokens": 10000000,
+          "route": "aws-bedrock",
+          "sourceUrl": "https://aws.amazon.com/bedrock/pricing/"
+        },
+        {
+          "billingProvider": "anthropic",
+          "cacheWriteInputUsdMicrosPerMillionTokens": 2500000,
+          "cachedInputUsdMicrosPerMillionTokens": 200000,
+          "effectiveFrom": "2026-06-30",
+          "effectiveUntil": "2026-08-31",
+          "id": "anthropic/claude-sonnet-5/direct/intro-2026-07-15",
+          "inputUsdMicrosPerMillionTokens": 2000000,
+          "model": "claude-sonnet-5",
+          "outputUsdMicrosPerMillionTokens": 10000000,
+          "route": "anthropic-messages",
+          "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing"
+        },
+        {
+          "billingProvider": "openai",
+          "cacheWriteInputUsdMicrosPerMillionTokens": 3125000,
+          "cachedInputUsdMicrosPerMillionTokens": 250000,
+          "effectiveFrom": "2026-07-15",
+          "effectiveUntil": null,
+          "id": "openai/gpt-5.6-terra/standard/2026-07-15",
+          "inputUsdMicrosPerMillionTokens": 2500000,
+          "model": "gpt-5.6-terra",
+          "outputUsdMicrosPerMillionTokens": 15000000,
+          "route": "openai-responses",
+          "sourceUrl": "https://developers.openai.com/api/docs/pricing"
+        }
+      ],
+      "formatVersion": "1"
+    },
+    "promptDigest": "7e2c792528886e3bba6deb82891b02a6181f23102ac170dd2957e04f1b10182d",
+    "protocolDigest": "d5852644e3207fa2dc16acf52a0af248144d0aef0e2c78861e9e9464671735f2",
+    "repetitions": 1,
+    "splits": [
+      {
+        "caseDigests": [
+          "37c7e04740a5ee7ac2f49f7f06cea89cb9c23efc75a78247d3ced1d0902f0457",
+          "4d7bd3f9750c503a7eb51116eac32ab29a42e779a3767aab274e70afb51dbc09",
+          "4f2a0efb1003ada81e0878d80e76d52d4358b6ee9797290de3ef82148e8db20a",
+          "9a0c358fe95bacb023fadce77289edf20421d638a83fea38b2ebd87e21525ab9",
+          "a1d90a4f49c9366ff1c37a004d8e4c10652d13d8f267eefbb05f99fa362a112b",
+          "c45a6de69b232faa579f96e22cad78abe918aaae5d4de57db243481ab0b5dd41",
+          "d03408437a8f3fc013302f35f94fe65fa853f714c9189b3a59615115bdc2ba5a",
+          "d29a156f7f88ff4174f88a586179fe7cd229172cc513cd8a19d4db117b511a03"
+        ],
+        "digest": "d958bc3f66f59f5fcad3ade653fcf8f72dfac4391d43114daf2d01671dc108f8",
+        "id": "development"
+      },
+      {
+        "caseDigests": [],
+        "digest": "7f7d594af43d3a23da734567a132cbaa58ab229d0bb10916e6a53686b2e64114",
+        "id": "heldout-catalog"
+      },
+      {
+        "caseDigests": [],
+        "digest": "08cd699b7580d31a9ad8d5c841cc10a61bfcb87aefcc781b315ea67ed33fc5ad",
+        "id": "heldout-operator-combination"
+      },
+      {
+        "caseDigests": [],
+        "digest": "901d77bbc5ad7aec6bf750a070fd236ac57c247ce5f4e662da14f865c2c454aa",
+        "id": "heldout-phrasing"
+      }
+    ],
+    "transportSchemas": [
+      {
+        "caseDigest": "37c7e04740a5ee7ac2f49f7f06cea89cb9c23efc75a78247d3ced1d0902f0457",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "5486038edb583f495255498cf524e21dfb84f05b5458c081fc3fd89c15cd45ba",
+        "methodId": "anthropic/json-schema",
+        "schemaDigest": "755e7e4909928985e827dc0f977a66515fd50f86ded4c2b752ec1f03c24ef61a"
+      },
+      {
+        "caseDigest": "37c7e04740a5ee7ac2f49f7f06cea89cb9c23efc75a78247d3ced1d0902f0457",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "5486038edb583f495255498cf524e21dfb84f05b5458c081fc3fd89c15cd45ba",
+        "methodId": "anthropic/json-schema-with-repair",
+        "schemaDigest": "755e7e4909928985e827dc0f977a66515fd50f86ded4c2b752ec1f03c24ef61a"
+      },
+      {
+        "caseDigest": "37c7e04740a5ee7ac2f49f7f06cea89cb9c23efc75a78247d3ced1d0902f0457",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "5486038edb583f495255498cf524e21dfb84f05b5458c081fc3fd89c15cd45ba",
+        "methodId": "openai/json-schema",
+        "schemaDigest": "755e7e4909928985e827dc0f977a66515fd50f86ded4c2b752ec1f03c24ef61a"
+      },
+      {
+        "caseDigest": "37c7e04740a5ee7ac2f49f7f06cea89cb9c23efc75a78247d3ced1d0902f0457",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "5486038edb583f495255498cf524e21dfb84f05b5458c081fc3fd89c15cd45ba",
+        "methodId": "openai/json-schema-with-repair",
+        "schemaDigest": "755e7e4909928985e827dc0f977a66515fd50f86ded4c2b752ec1f03c24ef61a"
+      },
+      {
+        "caseDigest": "4d7bd3f9750c503a7eb51116eac32ab29a42e779a3767aab274e70afb51dbc09",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "17e497181a9d4ef8dc132ef172da93fe3fc1357827df54e47f779039dbb3c5af",
+        "methodId": "anthropic/json-schema",
+        "schemaDigest": "cc965d2b2441883467fa76a4adba150bf6fb98186d15989440ebda7a814ab961"
+      },
+      {
+        "caseDigest": "4d7bd3f9750c503a7eb51116eac32ab29a42e779a3767aab274e70afb51dbc09",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "17e497181a9d4ef8dc132ef172da93fe3fc1357827df54e47f779039dbb3c5af",
+        "methodId": "anthropic/json-schema-with-repair",
+        "schemaDigest": "cc965d2b2441883467fa76a4adba150bf6fb98186d15989440ebda7a814ab961"
+      },
+      {
+        "caseDigest": "4d7bd3f9750c503a7eb51116eac32ab29a42e779a3767aab274e70afb51dbc09",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "17e497181a9d4ef8dc132ef172da93fe3fc1357827df54e47f779039dbb3c5af",
+        "methodId": "openai/json-schema",
+        "schemaDigest": "cc965d2b2441883467fa76a4adba150bf6fb98186d15989440ebda7a814ab961"
+      },
+      {
+        "caseDigest": "4d7bd3f9750c503a7eb51116eac32ab29a42e779a3767aab274e70afb51dbc09",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "17e497181a9d4ef8dc132ef172da93fe3fc1357827df54e47f779039dbb3c5af",
+        "methodId": "openai/json-schema-with-repair",
+        "schemaDigest": "cc965d2b2441883467fa76a4adba150bf6fb98186d15989440ebda7a814ab961"
+      },
+      {
+        "caseDigest": "4f2a0efb1003ada81e0878d80e76d52d4358b6ee9797290de3ef82148e8db20a",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "anthropic/json-schema",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "4f2a0efb1003ada81e0878d80e76d52d4358b6ee9797290de3ef82148e8db20a",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "anthropic/json-schema-with-repair",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "4f2a0efb1003ada81e0878d80e76d52d4358b6ee9797290de3ef82148e8db20a",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "openai/json-schema",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "4f2a0efb1003ada81e0878d80e76d52d4358b6ee9797290de3ef82148e8db20a",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "openai/json-schema-with-repair",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "9a0c358fe95bacb023fadce77289edf20421d638a83fea38b2ebd87e21525ab9",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "anthropic/json-schema",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "9a0c358fe95bacb023fadce77289edf20421d638a83fea38b2ebd87e21525ab9",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "anthropic/json-schema-with-repair",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "9a0c358fe95bacb023fadce77289edf20421d638a83fea38b2ebd87e21525ab9",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "openai/json-schema",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "9a0c358fe95bacb023fadce77289edf20421d638a83fea38b2ebd87e21525ab9",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "openai/json-schema-with-repair",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "a1d90a4f49c9366ff1c37a004d8e4c10652d13d8f267eefbb05f99fa362a112b",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "4e9c0f8640fb932f9c2b216f830c64ef613de66fcf24a307d70461eb659409b2",
+        "methodId": "anthropic/json-schema",
+        "schemaDigest": "4a286ac5575d1d2f519ca250475c9e6e6632495e76792d7d44a9c9c28970e123"
+      },
+      {
+        "caseDigest": "a1d90a4f49c9366ff1c37a004d8e4c10652d13d8f267eefbb05f99fa362a112b",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "4e9c0f8640fb932f9c2b216f830c64ef613de66fcf24a307d70461eb659409b2",
+        "methodId": "anthropic/json-schema-with-repair",
+        "schemaDigest": "4a286ac5575d1d2f519ca250475c9e6e6632495e76792d7d44a9c9c28970e123"
+      },
+      {
+        "caseDigest": "a1d90a4f49c9366ff1c37a004d8e4c10652d13d8f267eefbb05f99fa362a112b",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "4e9c0f8640fb932f9c2b216f830c64ef613de66fcf24a307d70461eb659409b2",
+        "methodId": "openai/json-schema",
+        "schemaDigest": "4a286ac5575d1d2f519ca250475c9e6e6632495e76792d7d44a9c9c28970e123"
+      },
+      {
+        "caseDigest": "a1d90a4f49c9366ff1c37a004d8e4c10652d13d8f267eefbb05f99fa362a112b",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "4e9c0f8640fb932f9c2b216f830c64ef613de66fcf24a307d70461eb659409b2",
+        "methodId": "openai/json-schema-with-repair",
+        "schemaDigest": "4a286ac5575d1d2f519ca250475c9e6e6632495e76792d7d44a9c9c28970e123"
+      },
+      {
+        "caseDigest": "c45a6de69b232faa579f96e22cad78abe918aaae5d4de57db243481ab0b5dd41",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "213b3b8c9199f1ea4764b4fac98ce9b88eceda99db27842a4b5829cafaf43280",
+        "methodId": "anthropic/json-schema",
+        "schemaDigest": "27a8db98f0ac766e0ea83818b0a91fa0bfba462e12e83619dc83983599cfc373"
+      },
+      {
+        "caseDigest": "c45a6de69b232faa579f96e22cad78abe918aaae5d4de57db243481ab0b5dd41",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "213b3b8c9199f1ea4764b4fac98ce9b88eceda99db27842a4b5829cafaf43280",
+        "methodId": "anthropic/json-schema-with-repair",
+        "schemaDigest": "27a8db98f0ac766e0ea83818b0a91fa0bfba462e12e83619dc83983599cfc373"
+      },
+      {
+        "caseDigest": "c45a6de69b232faa579f96e22cad78abe918aaae5d4de57db243481ab0b5dd41",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "213b3b8c9199f1ea4764b4fac98ce9b88eceda99db27842a4b5829cafaf43280",
+        "methodId": "openai/json-schema",
+        "schemaDigest": "27a8db98f0ac766e0ea83818b0a91fa0bfba462e12e83619dc83983599cfc373"
+      },
+      {
+        "caseDigest": "c45a6de69b232faa579f96e22cad78abe918aaae5d4de57db243481ab0b5dd41",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "213b3b8c9199f1ea4764b4fac98ce9b88eceda99db27842a4b5829cafaf43280",
+        "methodId": "openai/json-schema-with-repair",
+        "schemaDigest": "27a8db98f0ac766e0ea83818b0a91fa0bfba462e12e83619dc83983599cfc373"
+      },
+      {
+        "caseDigest": "d03408437a8f3fc013302f35f94fe65fa853f714c9189b3a59615115bdc2ba5a",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "anthropic/json-schema",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "d03408437a8f3fc013302f35f94fe65fa853f714c9189b3a59615115bdc2ba5a",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "anthropic/json-schema-with-repair",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "d03408437a8f3fc013302f35f94fe65fa853f714c9189b3a59615115bdc2ba5a",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "openai/json-schema",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "d03408437a8f3fc013302f35f94fe65fa853f714c9189b3a59615115bdc2ba5a",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "d560874414668e09b6593da0d5bb4905a91c0cd75dc9818ea8ee40cacd61b1e1",
+        "methodId": "openai/json-schema-with-repair",
+        "schemaDigest": "d02f09c55c14e53437a22e2b6bbf5944ace9efd59cec1ff8574a4f703a1ad62b"
+      },
+      {
+        "caseDigest": "d29a156f7f88ff4174f88a586179fe7cd229172cc513cd8a19d4db117b511a03",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "91f7a487049d96ecdc04ea862840f6d9deee02b661de56df5655cb54f299960e",
+        "methodId": "anthropic/json-schema",
+        "schemaDigest": "7a1ff6ca43752d2796751d7fb67bfdc4fcb4fd917c9887afbbcbecb6eb921a5d"
+      },
+      {
+        "caseDigest": "d29a156f7f88ff4174f88a586179fe7cd229172cc513cd8a19d4db117b511a03",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "91f7a487049d96ecdc04ea862840f6d9deee02b661de56df5655cb54f299960e",
+        "methodId": "anthropic/json-schema-with-repair",
+        "schemaDigest": "7a1ff6ca43752d2796751d7fb67bfdc4fcb4fd917c9887afbbcbecb6eb921a5d"
+      },
+      {
+        "caseDigest": "d29a156f7f88ff4174f88a586179fe7cd229172cc513cd8a19d4db117b511a03",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "91f7a487049d96ecdc04ea862840f6d9deee02b661de56df5655cb54f299960e",
+        "methodId": "openai/json-schema",
+        "schemaDigest": "7a1ff6ca43752d2796751d7fb67bfdc4fcb4fd917c9887afbbcbecb6eb921a5d"
+      },
+      {
+        "caseDigest": "d29a156f7f88ff4174f88a586179fe7cd229172cc513cd8a19d4db117b511a03",
+        "compilerVersion": "lachesis-portable-transport-schema/1",
+        "manifestDigest": "91f7a487049d96ecdc04ea862840f6d9deee02b661de56df5655cb54f299960e",
+        "methodId": "openai/json-schema-with-repair",
+        "schemaDigest": "7a1ff6ca43752d2796751d7fb67bfdc4fcb4fd917c9887afbbcbecb6eb921a5d"
+      }
+    ],
+    "versions": {
+      "generatorVersion": "0.1.0",
+      "gitCommit": "83388e4687a4ed42e766f96df91db140e4aa97ef",
+      "kernelVersion": "0.1.0",
+      "workspaceVersion": "0.1.0"
+    }
+  },
+  "experimentDigest": "ca742c6d0c8a4245ec06472870dcacb43fb7e1af15e53f5f00ea5814732b2e95",
+  "failurePolicy": {
+    "adapterDispatchEvidence": "v1",
+    "compilerGuidedRepairLimit": 2,
+    "postDispatchUnknownUsage": "authorized-conservative",
+    "preDispatchSettlement": "zero",
+    "providerAutomaticRetries": 0,
+    "schemaPreflight": "before-budget-reservation",
+    "selectiveSemanticReruns": "prohibited",
+    "storedProviderFailureOnResume": "do-not-retry",
+    "timeoutMs": 120000,
+    "transport": "record-and-continue",
+    "transportSchemaCompiler": "lachesis-portable-transport-schema/1"
+  },
+  "formatVersion": "3",
+  "phase": "calibration",
+  "phaseManifestDigest": "ae455e81b940c55c1fa317789d419ff5582c1bbea2caa43f91767df3fd9b27bd",
+  "repetitions": 1,
+  "runtimeVersions": {
+    "aiSdk": "7.0.28",
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "typescript": "6.0.3",
+    "zod": "4.4.3"
+  },
+  "scorer": {
+    "digest": "b4b95f06ccf9978900a90cac74fad36a78158c00f14b84d35f2c7ab4bf54df1d",
+    "id": "lachesis-hidden-semantic-scorer",
+    "version": "1"
+  },
+  "storageNamespace": "m1b/calibration/experiments/ca742c6d0c8a4245ec06472870dcacb43fb7e1af15e53f5f00ea5814732b2e95"
+}

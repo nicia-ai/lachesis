@@ -74,9 +74,8 @@ export function inspectExecutablePlan(
           version: artifacts.checked.root.outputSchema.version,
         },
         analysis: cloneAnalysis(artifacts.analysis),
-        allowedCapabilities:
-          artifacts.checked.normalized.wire.allowedCapabilities,
-        budget: artifacts.checked.normalized.wire.budget,
+        allowedCapabilities: [...artifacts.policy.allowedCapabilities],
+        budget: { ...artifacts.policy.budget },
         canonicalPlan: artifacts.canonicalPlan,
       };
 }

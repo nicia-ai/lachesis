@@ -3,7 +3,7 @@ import { type Diagnostic, diagnostic } from "./diagnostic.js";
 import { nodeDependencies } from "./normalize.js";
 import type { Bound, CheckedNode, CheckedPlan, PlanAnalysis } from "./plan.js";
 import { err, ok, type Result } from "./result.js";
-import type { NodeId, PlanBudget } from "./wire.js";
+import type { NodeId } from "./wire.js";
 
 type Metrics = Readonly<{
   effects: ReadonlySet<string>;
@@ -187,13 +187,6 @@ function computeMetrics(
           }),
         };
       }
-      if (checkedNode.cardinality.kind === "unknown") {
-        diagnostics.push(
-          diagnostic("UNBOUNDED_CARDINALITY", checkedNode.cardinality.reason, {
-            nodeId: node.id,
-          }),
-        );
-      }
       return addEffect(
         base,
         checkedNode.operation,
@@ -246,75 +239,6 @@ function computeMetrics(
   }
 }
 
-function budgetChecks(
-  metrics: Metrics,
-  budget: PlanBudget,
-): ReadonlyArray<Diagnostic> {
-  const checks: ReadonlyArray<
-    Readonly<{ name: string; bound: Bound; limit: number }>
-  > = [
-    {
-      name: "effect calls",
-      bound: metrics.effectCalls,
-      limit: budget.maxEffectCalls,
-    },
-    {
-      name: "collection items",
-      bound: metrics.collectionFanOut,
-      limit: budget.maxCollectionItems,
-    },
-    {
-      name: "recursion depth",
-      bound: metrics.recursionDepth,
-      limit: budget.maxRecursionDepth,
-    },
-    { name: "tokens", bound: metrics.tokens, limit: budget.maxTokens },
-    {
-      name: "wall-clock milliseconds",
-      bound: metrics.wallClockMs,
-      limit: budget.maxWallClockMs,
-    },
-    {
-      name: "parallelism",
-      bound: metrics.parallelism,
-      limit: budget.maxParallelism,
-    },
-  ];
-  const diagnostics: Array<Diagnostic> = [];
-  for (const check of checks) {
-    if (check.bound.kind === "unknown") {
-      diagnostics.push(
-        diagnostic(
-          "UNBOUNDED_CARDINALITY",
-          `Cannot prove maximum ${check.name}: ${check.bound.reason}`,
-        ),
-      );
-    } else if (check.bound.value > check.limit) {
-      diagnostics.push(
-        diagnostic(
-          "BUDGET_EXCEEDED",
-          `Maximum ${check.name} ${check.bound.value} exceeds budget ${check.limit}.`,
-          {},
-          [
-            { key: "resource", value: check.name },
-            { key: "maximum", value: check.bound.value },
-            { key: "limit", value: check.limit },
-          ],
-          {
-            limit: {
-              resource: check.name,
-              actual: check.bound.value,
-              limit: check.limit,
-            },
-            repair: { path: ["budget"] },
-          },
-        ),
-      );
-    }
-  }
-  return diagnostics;
-}
-
 function buildStages(plan: CheckedPlan): ReadonlyArray<ReadonlyArray<NodeId>> {
   const depths = new Map<NodeId, number>();
   const stages: Array<Array<NodeId>> = [];
@@ -363,24 +287,23 @@ export function analyzePlan(
     );
     return err(diagnostics);
   }
-  for (const capability of rootMetrics.capabilities) {
-    if (!plan.normalized.wire.allowedCapabilities.includes(capability)) {
+  const requirements: ReadonlyArray<readonly [string, Bound]> = [
+    ["effect calls", rootMetrics.effectCalls],
+    ["collection items", rootMetrics.collectionFanOut],
+    ["recursion depth", rootMetrics.recursionDepth],
+    ["tokens", rootMetrics.tokens],
+    ["wall-clock milliseconds", rootMetrics.wallClockMs],
+    ["parallelism", rootMetrics.parallelism],
+  ];
+  for (const [name, bound] of requirements) {
+    if (bound.kind === "unknown")
       diagnostics.push(
         diagnostic(
-          "DENIED_CAPABILITY",
-          `Required capability ${capability} is not allowed.`,
-          {},
-          [{ key: "capability", value: capability }],
-          {
-            expected: { value: "declared allowed capability" },
-            actual: { value: capability },
-            repair: { path: ["allowedCapabilities"] },
-          },
+          "UNBOUNDED_CARDINALITY",
+          `Cannot prove maximum ${name}: ${bound.reason}`,
         ),
       );
-    }
   }
-  diagnostics.push(...budgetChecks(rootMetrics, plan.normalized.wire.budget));
   if (diagnostics.length > 0) return err(diagnostics);
   const inferredSchemas = new Map<
     NodeId,

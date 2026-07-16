@@ -18,12 +18,12 @@ import {
 import { err, ok, type Result } from "./result.js";
 import {
   type CatalogReference,
+  modelPlanProposalSchema,
   type OperationReference,
   operationReferenceSchema,
   type PlanBudget,
   type SchemaReference,
   schemaReferenceSchema,
-  wirePlanSchema,
 } from "./wire.js";
 
 type JsonValue = z.infer<ReturnType<typeof z.json>>;
@@ -203,7 +203,7 @@ export async function createPlanLanguageManifest(
   if (!fingerprint.ok) return fingerprint;
   const partial = {
     ...core,
-    planJsonSchema: z.json().parse(z.toJSONSchema(wirePlanSchema)),
+    planJsonSchema: z.json().parse(z.toJSONSchema(modelPlanProposalSchema)),
     catalogFingerprint: fingerprint.value,
     policy: {
       allowedCapabilities: [...policy.allowedCapabilities],

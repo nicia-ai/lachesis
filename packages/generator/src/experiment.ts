@@ -20,7 +20,10 @@ import {
   verifyPricingSnapshot,
 } from "./pricing.js";
 import { generationStrategySchema, modelIdentitySchema } from "./records.js";
-import { PORTABLE_TRANSPORT_COMPILER_VERSION } from "./transport.js";
+import {
+  PORTABLE_TRANSPORT_COMPILER_VERSION,
+  SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS,
+} from "./transport.js";
 
 export const benchmarkSplitSchema = z.enum([
   "development",
@@ -208,6 +211,9 @@ function transportBindingsAreValid(
   cases: ReadonlyArray<z.infer<typeof experimentCaseSchema>>,
   methods: ReadonlyArray<ExperimentMethodInput>,
   bindings: ReadonlyArray<ExperimentTransportSchemaBinding>,
+  supportedCompilerVersions: ReadonlyArray<string> = [
+    PORTABLE_TRANSPORT_COMPILER_VERSION,
+  ],
 ): boolean {
   const expected = cases.flatMap((benchmarkCase) =>
     methods
@@ -217,13 +223,16 @@ function transportBindingsAreValid(
   const actual = bindings.map(
     (binding) => `${binding.caseDigest}\u0000${binding.methodId}`,
   );
+  const compilerVersions = new Set(
+    bindings.map((binding) => binding.compilerVersion),
+  );
   return (
     duplicate(actual) === undefined &&
     expected.length === actual.length &&
     expected.every((key) => actual.includes(key)) &&
-    bindings.every(
-      (binding) =>
-        binding.compilerVersion === PORTABLE_TRANSPORT_COMPILER_VERSION,
+    compilerVersions.size === 1 &&
+    [...compilerVersions].every((version) =>
+      supportedCompilerVersions.includes(version),
     )
   );
 }
@@ -549,6 +558,7 @@ export async function verifyExperimentManifest(
         parsed.data.cases,
         parsed.data.methods,
         parsed.data.transportSchemas,
+        SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS,
       ))
   )
     return {

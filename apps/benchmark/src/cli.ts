@@ -14,7 +14,11 @@ import {
   loadPhaseFiles,
   preflightPhase,
 } from "./controller.js";
-import { materializeM1bPhase, type RuntimeVersions } from "./manifests.js";
+import {
+  blindHeldOutIntegrityAudit,
+  materializeM1bPhase,
+  type RuntimeVersions,
+} from "./manifests.js";
 import { campaignPhaseSchema } from "./protocol.js";
 
 const execFileAsync = promisify(execFile);
@@ -38,7 +42,7 @@ function flag(args: ReadonlyArray<string>, name: string): string | undefined {
 
 function usage(): void {
   process.stderr.write(
-    "Usage: lachesis-benchmark <materialize|validate|dry-run|execute|resume|report> [phase] --campaign FILE --manifest FILE [--storage-root DIR] [--ack-experiment DIGEST --ack-phase PHASE --ack-max-usd-micros INTEGER]\n",
+    "Usage: lachesis-benchmark <materialize|audit-heldout|validate|dry-run|execute|resume|report> [phase] --campaign FILE --manifest FILE [--storage-root DIR] [--ack-experiment DIGEST --ack-phase PHASE --ack-max-usd-micros INTEGER]\n",
   );
 }
 
@@ -115,6 +119,12 @@ async function main(args: ReadonlyArray<string>): Promise<number> {
   const [command, phaseValue] = args;
   const cwd = process.cwd();
   if (command === "materialize") return materialize(phaseValue, args, cwd);
+  if (command === "audit-heldout") {
+    const audit = await blindHeldOutIntegrityAudit();
+    if (!audit.ok) return failure(audit.error);
+    output(audit.value);
+    return 0;
+  }
   if (
     !["validate", "dry-run", "execute", "resume", "report"].includes(
       command ?? "",

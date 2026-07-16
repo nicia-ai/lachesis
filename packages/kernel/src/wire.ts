@@ -34,6 +34,11 @@ const inputNodeSchema = z
   })
   .readonly();
 
+const modelInputNodeSchema = inputNodeSchema
+  .unwrap()
+  .omit({ maxItems: true })
+  .readonly();
+
 const constantNodeSchema = z
   .strictObject({
     id: nodeIdSchema,
@@ -138,6 +143,20 @@ export const wireNodeSchema = z.discriminatedUnion("op", [
   boundedFixNodeSchema,
 ]);
 
+/** Model-authored computation excludes runtime-supplied input bounds. */
+export const modelPlanNodeSchema = z.discriminatedUnion("op", [
+  modelInputNodeSchema,
+  constantNodeSchema,
+  invokeNodeSchema,
+  mapNodeSchema,
+  filterNodeSchema,
+  foldNodeSchema,
+  selectNodeSchema,
+  effectNodeSchema,
+  checkpointNodeSchema,
+  boundedFixNodeSchema,
+]);
+
 export const planBudgetSchema = z
   .strictObject({
     maxEffectCalls: z.number().int().nonnegative(),
@@ -167,6 +186,15 @@ export const wirePlanSchema = z
   })
   .readonly();
 
+/** Untrusted model proposal: operator topology and arguments only. */
+export const modelPlanProposalSchema = wirePlanSchema
+  .unwrap()
+  .omit({ budget: true, allowedCapabilities: true })
+  .extend({
+    nodes: z.array(modelPlanNodeSchema).min(1).max(10_000).readonly(),
+  })
+  .readonly();
+
 export type NodeId = z.infer<typeof nodeIdSchema>;
 export type SchemaReference = z.infer<typeof schemaReferenceSchema>;
 export type OperationReference = z.infer<typeof operationReferenceSchema>;
@@ -174,3 +202,4 @@ export type CatalogReference = z.infer<typeof catalogReferenceSchema>;
 export type PlanBudget = z.infer<typeof planBudgetSchema>;
 export type WireNode = z.infer<typeof wireNodeSchema>;
 export type WirePlan = z.infer<typeof wirePlanSchema>;
+export type ModelPlanProposal = z.infer<typeof modelPlanProposalSchema>;

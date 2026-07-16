@@ -127,6 +127,16 @@ const IMMUTABLE_EXPERIMENT_IDENTITIES = Object.freeze([
     phase: "transport-probe" as const,
     executionPolicy: "report-only" as const,
   }),
+  Object.freeze({
+    campaignDigest:
+      "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+    experimentDigest:
+      "ca742c6d0c8a4245ec06472870dcacb43fb7e1af15e53f5f00ea5814732b2e95",
+    phaseManifestDigest:
+      "ae455e81b940c55c1fa317789d419ff5582c1bbea2caa43f91767df3fd9b27bd",
+    phase: "calibration" as const,
+    executionPolicy: "report-only" as const,
+  }),
 ]);
 
 function immutableExecutionPolicy(

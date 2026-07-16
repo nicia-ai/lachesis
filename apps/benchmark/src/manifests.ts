@@ -5,6 +5,7 @@ import {
   type Result,
 } from "@nicia-ai/lachesis";
 import {
+  blindPlanGenerationValidityAudit,
   calculateMaximumCostUsdMicros,
   compileCaseStructuredOutputTransports,
   createExperimentManifest,
@@ -17,8 +18,11 @@ import {
   type FrozenPlanGenerationCase,
   loadM1aCorpus,
   M1A_GENERATION_STRATEGIES,
+  M1A_WORKFLOW_MAX_ITERATIONS,
+  M1A_WORKFLOW_VERSION,
   partitionM1aCorpus,
   type PricingSnapshot,
+  validatePlanGenerationCases,
 } from "@nicia-ai/lachesis-generator";
 import {
   createM1bPricingSnapshot,
@@ -62,9 +66,9 @@ const SMOKE_CAPS: ExperimentCaps = Object.freeze({
 
 export const M1B_PROMPT_CANDIDATE = Object.freeze({
   id: "lachesis-m1b-plan-generator",
-  version: "development-candidate-3",
+  version: "development-candidate-4",
   instruction:
-    'Propose only registered Lachesis operators and schemas. Return raw JSON as exactly { "kind": "plan", "plan": ... } or { "kind": "unplannable", "reasons": [...] }; never use Markdown fences or alternate field names. A constrained provider may carry that exact logical outcome inside the internal structured-output transport envelope { "outcome": ... }; this JSON tool is output transport only and does not authorize external tools. Use unplannable only when the supplied manifest, public input contract, and policy cannot satisfy the task.',
+    'Propose only registered Lachesis operator topology and arguments. Do not author budget, allowedCapabilities, or input maxItems fields; the trusted runtime supplies public input bounds, capabilities, and policy limits, the analyzer derives requirements, and the compiler checks those requirements. Return raw JSON as exactly { "kind": "plan", "plan": ... } or { "kind": "unplannable", "reasons": [...] }; never use Markdown fences or alternate field names. A constrained provider may carry that exact logical outcome inside the internal structured-output transport envelope { "outcome": ... }; this JSON tool is output transport only and does not authorize external tools. Use unplannable only when the supplied manifest, public input contract, and trusted policy cannot satisfy the task.',
 });
 
 export type MaterializedPhase = Readonly<{
@@ -78,7 +82,7 @@ export type RuntimeVersions = PhaseManifest["runtimeVersions"];
 const DEFAULT_BUDGET = Object.freeze({
   maxEffectCalls: 16,
   maxCollectionItems: 128,
-  maxRecursionDepth: 16,
+  maxRecursionDepth: M1A_WORKFLOW_MAX_ITERATIONS,
   maxTokens: 4096,
   maxWallClockMs: 5000,
   maxParallelism: 8,
@@ -96,7 +100,7 @@ async function calibrationWorkflowCase(): Promise<
     taskInputs: [
       {
         name: "state",
-        schema: { id: "workflow-state", version: "1.0.0" },
+        schema: { id: "workflow-state", version: M1A_WORKFLOW_VERSION },
         declaredBounds: [],
       },
     ],
@@ -112,8 +116,16 @@ async function calibrationWorkflowCase(): Promise<
     expectedFeasibility: "plannable",
     requiredProperties: [
       { kind: "usesInput", inputKey: "state" },
-      { kind: "usesOperation", id: "countdown-step", version: "1" },
-      { kind: "usesOperation", id: "remaining", version: "1" },
+      {
+        kind: "usesOperation",
+        id: "countdown-step",
+        version: M1A_WORKFLOW_VERSION,
+      },
+      {
+        kind: "usesOperation",
+        id: "remaining",
+        version: M1A_WORKFLOW_VERSION,
+      },
     ],
     forbiddenCapabilities: [],
   });
@@ -179,6 +191,29 @@ async function phaseCases(
     selected.push(workflow.value);
   }
   return { ok: true, value: Object.freeze(selected) };
+}
+
+/** Audits held-out fixture validity without returning identities or contents. */
+export async function blindHeldOutIntegrityAudit(): Promise<
+  Result<
+    Awaited<ReturnType<typeof blindPlanGenerationValidityAudit>>,
+    Diagnostics
+  >
+> {
+  const loaded = await loadM1aCorpus();
+  if (!loaded.ok) return loaded;
+  const partition = partitionM1aCorpus(loaded.value);
+  const heldOut = Object.freeze([
+    ...partition.heldOutCatalogs,
+    ...partition.heldOutOperatorCombinations,
+    ...partition.heldOutPhrasings,
+  ]);
+  const resolver = createM1aCatalogResolver();
+  if (!resolver.ok) return resolver;
+  return {
+    ok: true,
+    value: await blindPlanGenerationValidityAudit(heldOut, resolver.value),
+  };
 }
 
 function experimentMethods(
@@ -504,6 +539,13 @@ export async function materializeM1bPhase(
   if (!campaign.ok) return campaign;
   const cases = await phaseCases(input.phase);
   if (!cases.ok) return cases;
+  const resolver = createM1aCatalogResolver();
+  if (!resolver.ok) return resolver;
+  const validCases = await validatePlanGenerationCases(
+    cases.value,
+    resolver.value,
+  );
+  if (!validCases.ok) return validCases;
   const pricing = await createM1bPricingSnapshot();
   if (!pricing.ok) return pricing;
   const methods = experimentMethods(input.phase);

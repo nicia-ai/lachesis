@@ -31,6 +31,14 @@ diagnostics. A declaration contains only an input name, schema reference, and
 declared bounds. Hidden input values, expected outputs, effect results, and
 semantic scores are excluded from both initial and repair requests.
 
+M1b.5 makes the authority boundary structural. The model-authored proposal may
+contain only registered operator topology and arguments. It cannot declare a
+budget, capability authorization, or a narrower input collection bound. The
+benchmark/runtime binds the complete public input bounds and trusted policy, the
+analyzer derives required resources and capabilities, and the compiler compares
+those requirements with the trusted limits. Legacy wire declarations remain
+readable, but they are not authority.
+
 Adapters do not decide whether model output is valid. For unconstrained methods,
 the generator parses `rawResponse` itself. For constrained methods, it validates
 the optional provider-decoded value with the same `generationOutcomeSchema`.
@@ -60,6 +68,15 @@ phrasing-holdout sets, with whole catalog holdout taking precedence.
 Recorded-provider fixtures cover direct compilation, compiler-guided repair, and
 correct abstention. They are validated, deeply frozen, and content-addressed
 before use.
+
+Materialization resolves every public schema and required schema, operation,
+effect, and input reference against the exact catalog. Each plannable fixture
+also has a deterministic offline reference proposal that must compile and pass
+its hidden properties after trusted public bounds are bound. These witnesses
+prove benchmark validity; they are never included in model prompts. A blind
+held-out integrity audit exposes numeric validity counts only, so fixture
+development cannot inspect held-out identities, instructions, inputs, or
+expected results.
 
 Every new run requires a deeply frozen `ExperimentManifest` (format version 3;
 version 2 remains readable for immutable resume). Its digest binds the case set
@@ -160,6 +177,13 @@ wire alternatives, constrains catalog references and constants, and rejects
 unsupported schema dialects before reservation. The compiler version and schema
 digest are bound into the experiment and every constrained request. Anthropic's
 `json` tool is an internal structured-output transport, not an external tool.
+
+M1b.5 transport schemas describe the computation proposal rather than the final
+trusted wire plan. Provider schemas therefore omit policy budgets, capability
+authorization, and input `maxItems`; those fields are bound locally before
+analysis and compilation. The workflow catalog and its operations share the same
+`1.1.0` version, and its public state domain is bounded to the trusted
+fixed-point limit.
 
 The deterministic fixtures prove the measurement machinery, not these empirical
 rates. Prompts, cases, manifests, scoring code, providers, capability tiers,

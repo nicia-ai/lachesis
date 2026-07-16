@@ -5,15 +5,6 @@ import {
   type FrozenRecordedModelFixture,
 } from "./recorded-adapter.js";
 
-const PLAN_BUDGET = Object.freeze({
-  maxEffectCalls: 0,
-  maxCollectionItems: 32,
-  maxRecursionDepth: 0,
-  maxTokens: 0,
-  maxWallClockMs: 0,
-  maxParallelism: 2,
-});
-
 export const RECORDED_DOUBLE_PLAN = Object.freeze({
   formatVersion: "1",
   catalog: { id: "benchmark.numbers", version: "1.0.0" },
@@ -24,7 +15,6 @@ export const RECORDED_DOUBLE_PLAN = Object.freeze({
       op: "input",
       inputKey: "items",
       schema: { id: "numbers", version: "1.0.0" },
-      maxItems: 32,
     },
     {
       id: "doubled",
@@ -35,8 +25,6 @@ export const RECORDED_DOUBLE_PLAN = Object.freeze({
       parallelism: 2,
     },
   ],
-  budget: PLAN_BUDGET,
-  allowedCapabilities: [],
 });
 
 const DOUBLE_OUTCOME = Object.freeze({

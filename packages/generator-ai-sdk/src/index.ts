@@ -34,12 +34,14 @@ export const GENERATION_OUTCOME_PROMPT_CONTRACT = Object.freeze({
     "Do not use Markdown fences.",
     "Do not use alternate field names.",
     "Return exactly one of the two shapes above.",
+    "The plan contains operator topology and arguments only.",
+    "Do not return budget, allowedCapabilities, or input maxItems fields; trusted runtime authority supplies them.",
   ]),
 });
 
 export const M1B_PROMPT_PROTOCOL = Object.freeze({
   id: "lachesis-plan-generation",
-  version: "3",
+  version: "4",
   outputContract: GENERATION_OUTCOME_PROMPT_CONTRACT,
   repairVisibility: Object.freeze([
     "original task",
@@ -50,6 +52,8 @@ export const M1B_PROMPT_PROTOCOL = Object.freeze({
   ]),
   hiddenExecutionResultsVisible: false,
   toolsEnabled: false,
+  authorityBinding:
+    "The model proposes computation only. The runtime binds public input bounds, capabilities, and policy limits; the analyzer derives requirements and the compiler compares them to trusted limits.",
   internalOutputTransport:
     "Constrained methods use a versioned root-object outcome envelope that normalizes to GenerationOutcome. Anthropic's json tool is an internal structured-output transport only; external tools remain disabled.",
 });

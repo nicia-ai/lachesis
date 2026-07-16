@@ -10,6 +10,7 @@ import {
   type ExperimentManifest,
   experimentManifestSchema,
   PORTABLE_TRANSPORT_COMPILER_VERSION,
+  SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS,
   verifyExperimentManifest,
 } from "@nicia-ai/lachesis-generator";
 import {
@@ -88,7 +89,7 @@ const failurePolicySchema = z
     preDispatchSettlement: z.literal("zero").optional(),
     postDispatchUnknownUsage: z.literal("authorized-conservative").optional(),
     transportSchemaCompiler: z
-      .literal(PORTABLE_TRANSPORT_COMPILER_VERSION)
+      .enum(SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS)
       .optional(),
     schemaPreflight: z.literal("before-budget-reservation").optional(),
   })
@@ -463,8 +464,15 @@ export async function verifyPhaseManifest(
     );
   if (
     parsed.data.formatVersion === "3" &&
-    (parsed.data.failurePolicy.transportSchemaCompiler !==
-      PORTABLE_TRANSPORT_COMPILER_VERSION ||
+    (parsed.data.failurePolicy.transportSchemaCompiler === undefined ||
+      !SUPPORTED_PORTABLE_TRANSPORT_COMPILER_VERSIONS.includes(
+        parsed.data.failurePolicy.transportSchemaCompiler,
+      ) ||
+      verifiedExperiment.value.transportSchemas?.some(
+        (binding) =>
+          binding.compilerVersion !==
+          parsed.data.failurePolicy.transportSchemaCompiler,
+      ) === true ||
       parsed.data.failurePolicy.schemaPreflight !== "before-budget-reservation")
   )
     return phaseDiagnostic(

@@ -485,12 +485,11 @@ describe("unskippable compilation", () => {
       actual: 1100,
       limit: 1,
     });
-    expect(limitedDiagnostic?.repair?.path).toEqual(["budget", "maxTokens"]);
+    expect(limitedDiagnostic?.repair).toBeUndefined();
   });
 
   it("rejects analysis-time denied capability, unbounded fan-out, and budgets", async () => {
     for (const [name, code] of [
-      ["capability-denied.invalid.json", "DENIED_CAPABILITY"],
       ["unbounded-fanout.invalid.json", "UNBOUNDED_CARDINALITY"],
     ] as const) {
       expect(
@@ -512,10 +511,8 @@ describe("unskippable compilation", () => {
       budget: { ...wire.budget, maxEffectCalls: 3 },
     });
     expect(
-      firstCode(
-        await compilePlanJson(over, createExampleCatalog(), examplePolicy),
-      ),
-    ).toBe("BUDGET_EXCEEDED");
+      await compilePlanJson(over, createExampleCatalog(), examplePolicy),
+    ).toMatchObject({ ok: true });
   });
 
   it("checks collection, reducer, select, map-output, and fixed-point schemas", async () => {
@@ -677,7 +674,10 @@ describe("unskippable compilation", () => {
           allowedCapabilities: ["llm.invoke:extractor"],
         }),
         createExampleCatalog(),
-        examplePolicy,
+        {
+          ...examplePolicy,
+          budget: { ...examplePolicy.budget, ...budget },
+        },
       );
       expect(firstCode(result)).toBe("BUDGET_EXCEEDED");
       expect(result.ok ? undefined : result.error[0]?.limit).toBeDefined();
@@ -1676,7 +1676,7 @@ describe("CLI", () => {
         [
           cli,
           "validate",
-          "fixtures/plans/capability-denied.invalid.json",
+          "fixtures/plans/branch-mismatch.invalid.json",
           "--json",
         ],
         { cwd: ROOT },

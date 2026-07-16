@@ -37,6 +37,13 @@ wrapper. Anthropic uses the AI SDK's `jsonTool` mode with the same schema. Its
 tools remain disabled. Every initial and repair prompt carries the same exact
 plan or unplannable JSON contract and the public task-input declarations.
 
+M1b.5 further separates computation proposals from authority. Provider schemas
+and prompts permit only registered topology and operator arguments. The runtime
+binds the full public task-input bounds, authorized capabilities, and policy
+limits; the analyzer derives resource requirements; and the compiler compares
+those requirements with the trusted limits. A model-authored budget, capability
+list, or input `maxItems` is rejected instead of being trusted.
+
 This transport choice was rechecked against the current
 [AI SDK structured-data guide](https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data),
 [AI SDK JSON Schema helper](https://ai-sdk.dev/docs/reference/ai-sdk-core/json-schema),
@@ -68,6 +75,7 @@ node apps/benchmark/dist/cli.js materialize transport-probe --out /secure/m1b/tr
 node apps/benchmark/dist/cli.js materialize smoke --out /secure/m1b/smoke
 node apps/benchmark/dist/cli.js materialize calibration --out /secure/m1b/calibration
 node apps/benchmark/dist/cli.js materialize heldout --out /secure/m1b/heldout
+node apps/benchmark/dist/cli.js audit-heldout
 ```
 
 Each phase file embeds the verified experiment manifest and binds campaign,
@@ -85,6 +93,13 @@ Do not hand-edit a manifest. Rematerialize it and review the new digest. M1b.4
 derives `storageNamespace` from the complete experiment digest, so a fresh smoke
 registers beside the immutable original smoke without receiving a new
 development allowance.
+
+Before identity materialization, M1b.5 resolves every required public schema,
+operation, effect, root schema, and input reference. It then compiles and
+semantically checks an offline reference proposal for every plannable fixture
+using the full declared input bounds. Failure prevents manifest creation. The
+`audit-heldout` command uses the same checks but returns counts only—never case
+identities or content—and performs no inference.
 
 ## 2. Zero-network dry run
 
@@ -187,6 +202,14 @@ operations; a dedicated development-only `boundedFix` probe; and an impossible
 task. The workflow probe is not a held-out corpus example. Smoke spend reduces
 the same $10 balance available to calibration.
 
+The completed M1b.4.1 calibration experiment
+`ca742c6d0c8a4245ec06472870dcacb43fb7e1af15e53f5f00ea5814732b2e95` is an
+immutable, report-only, non-decisive validity finding. Its manifest, records,
+report, and ledger settlements must not be edited, credited, executed, or
+resumed. It exposed workflow reference-version drift and benchmark domains that
+exceeded trusted limits; its model-quality results therefore cannot select a
+prompt.
+
 Before calibration, preregister no more than three prompt candidates. Record
 every candidate body, version, digest, rationale, and result, including failed
 candidates. Never open, print, render, or score held-out examples while revising
@@ -197,6 +220,12 @@ turns, then fewer total output/reasoning tokens, then retain the earlier prompt
 version. Do not selectively rerun a poor semantic outcome. Any new prompt
 candidate is a new content-addressed calibration manifest but remains charged to
 the same development pool.
+
+For the repaired M1b.5 calibration, the prospective development go criterion is
+strict: the `json-schema-with-repair` method must compile and semantically pass
+all seven feasible cases for both direct providers. Anything less requires
+diagnosis before freezing a held-out manifest or spending the held-out pool.
+Held-out execution always requires separate authorization.
 
 ## 5. Freeze held-out
 

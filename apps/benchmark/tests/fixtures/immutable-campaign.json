@@ -1,0 +1,37 @@
+{
+  "budgetPools": [
+    {
+      "id": "m1b-development",
+      "maxCostUsdMicros": 10000000,
+      "providerCostCaps": []
+    },
+    {
+      "id": "m1b-heldout-pilot",
+      "maxCostUsdMicros": 50000000,
+      "providerCostCaps": [
+        { "billingProvider": "openai", "maxCostUsdMicros": 25000000 },
+        { "billingProvider": "anthropic", "maxCostUsdMicros": 25000000 }
+      ]
+    }
+  ],
+  "campaignDigest": "d4f618dc57320f2d25ebdadedef43301d2b12d1e46339ca3b1ff90ecf9d55d39",
+  "campaignId": "lachesis-m1b-controlled-pilot",
+  "formatVersion": "1",
+  "maximumAuthorizedCostUsdMicros": 60000000,
+  "primaryComparison": {
+    "aiSdkVersion": "7.0.28",
+    "anthropic": {
+      "effort": "low",
+      "model": "claude-sonnet-5",
+      "route": "anthropic-messages",
+      "thinking": "adaptive"
+    },
+    "interpretation": "within-model-constraint-effects",
+    "openai": {
+      "model": "gpt-5.6-terra",
+      "reasoning": "low",
+      "route": "openai-responses"
+    }
+  },
+  "title": "Lachesis M1b controlled constraint and repair pilot"
+}

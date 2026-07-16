@@ -82,6 +82,7 @@ export type { Result } from "./result.js";
 export { err, ok } from "./result.js";
 export type {
   CatalogReference,
+  ModelPlanProposal,
   NodeId,
   OperationReference,
   PlanBudget,
@@ -92,6 +93,8 @@ export type {
 export {
   catalogIdSchema,
   catalogReferenceSchema,
+  modelPlanNodeSchema,
+  modelPlanProposalSchema,
   nodeIdSchema,
   operationIdSchema,
   operationReferenceSchema,

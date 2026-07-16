@@ -16,6 +16,7 @@ import {
   benchmarkCaseRecordSchema,
   type BenchmarkMethod,
   type BenchmarkSplit,
+  blindPlanGenerationValidityAudit,
   calculateCostUsdMicros,
   calculateMaximumCostUsdMicros,
   compileCaseStructuredOutputTransports,
@@ -49,6 +50,7 @@ import {
   runBenchmark,
   scoreGeneration,
   summarizeBenchmark,
+  validatePlanGenerationCases,
   validatePortableStructuredOutputSchema,
   verifyExperimentManifest,
   verifyPricingSnapshot,
@@ -63,6 +65,26 @@ function unwrap<T, E>(result: Result<T, E>): T {
 function required<T>(value: T | undefined, message: string): T {
   if (value === undefined) throw new Error(message);
   return value;
+}
+
+function modelProposal(value: unknown): unknown {
+  const object = z.record(z.string(), z.unknown()).parse(value);
+  const nodes = z
+    .array(z.record(z.string(), z.unknown()))
+    .parse(object["nodes"])
+    .map((node) =>
+      Object.fromEntries(
+        Object.entries(node).filter(([name]) => name !== "maxItems"),
+      ),
+    );
+  return {
+    ...Object.fromEntries(
+      Object.entries(object).filter(
+        ([name]) => name !== "budget" && name !== "allowedCapabilities",
+      ),
+    ),
+    nodes,
+  };
 }
 
 function strategy(id: GenerationStrategy["id"]): GenerationStrategy {
@@ -190,6 +212,7 @@ async function sessionFor(
   }>
 > {
   const benchmarkCase = await corpusCase(caseId);
+  const proposal = modelProposal(plan);
   const fixture = unwrap(
     await freezeRecordedModelFixture({
       identity: { provider: "recorded", model, adapterVersion: "1" },
@@ -197,8 +220,8 @@ async function sessionFor(
         {
           kind: "response",
           response: {
-            structuredOutput: { kind: "plan", plan },
-            rawResponse: JSON.stringify({ kind: "plan", plan }),
+            structuredOutput: { kind: "plan", plan: proposal },
+            rawResponse: JSON.stringify({ kind: "plan", plan: proposal }),
             usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
             latencyMs: 1,
           },
@@ -340,9 +363,6 @@ describe("M1a frozen substrate", () => {
   it("normalizes the portable outcome envelope and rejects malformed transports", () => {
     const transportPlan = {
       ...RECORDED_DOUBLE_PLAN,
-      nodes: RECORDED_DOUBLE_PLAN.nodes.map((node) =>
-        node.op === "input" ? { ...node, maxItems: null } : node,
-      ),
       metadata: null,
     };
     const normalized = unwrap(
@@ -574,6 +594,103 @@ describe("M1a frozen substrate", () => {
         ]);
       }
     }
+  });
+
+  it("proves every plannable fixture with offline references and hidden properties", async () => {
+    const corpus = unwrap(await loadM1aCorpus());
+    const resolver = unwrap(createM1aCatalogResolver());
+    expect(await validatePlanGenerationCases(corpus, resolver)).toEqual({
+      ok: true,
+      value: undefined,
+    });
+    const partition = partitionM1aCorpus(corpus);
+    const heldOut = [
+      ...partition.heldOutCatalogs,
+      ...partition.heldOutOperatorCombinations,
+      ...partition.heldOutPhrasings,
+    ];
+    const audit = await blindPlanGenerationValidityAudit(heldOut, resolver);
+    expect(audit).toEqual({
+      totalCases: 17,
+      plannableCases: 13,
+      unplannableCases: 4,
+      referencesValid: 17,
+      witnessesCompiled: 13,
+      hiddenPropertiesPassed: 13,
+      invalidCases: 0,
+    });
+    expect(
+      Object.values(audit).every((value) => typeof value === "number"),
+    ).toBe(true);
+  });
+
+  it("rejects unresolved public and required fixture references", async () => {
+    const benchmarkCase = await corpusCase("numbers/double");
+    const invalid = unwrap(
+      await freezePlanGenerationCase({
+        ...benchmarkCase.case,
+        taskInputs: benchmarkCase.case.taskInputs.map((input) => ({
+          ...input,
+          schema: { ...input.schema, version: "missing" },
+        })),
+        requiredProperties: [
+          {
+            kind: "usesOperation",
+            id: "double",
+            version: "missing",
+          },
+          { kind: "rootSchema", id: "numbers", version: "missing" },
+          { kind: "usesEffect", name: "missing.effect" },
+          { kind: "usesInput", inputKey: "missing-input" },
+        ],
+      }),
+    );
+    const validation = await validatePlanGenerationCases(
+      [invalid],
+      unwrap(createM1aCatalogResolver()),
+    );
+    expect(validation.ok).toBe(false);
+    expect(
+      validation.ok
+        ? []
+        : validation.error.map((item) => item.message).toSorted(),
+    ).toEqual([
+      "numbers/double: public input items references unknown schema numbers@missing",
+      "numbers/double: required effect missing.effect is not registered",
+      "numbers/double: required input missing-input is not public",
+      "numbers/double: required operation double@missing is not registered",
+      "numbers/double: required root schema numbers@missing is not registered",
+    ]);
+
+    const unknownCatalog = unwrap(
+      await freezePlanGenerationCase({
+        ...benchmarkCase.case,
+        id: "numbers/unknown-catalog",
+        catalogId: "benchmark.missing",
+      }),
+    );
+    expect(
+      (
+        await validatePlanGenerationCases(
+          [unknownCatalog],
+          unwrap(createM1aCatalogResolver()),
+        )
+      ).ok,
+    ).toBe(false);
+    expect(
+      await blindPlanGenerationValidityAudit(
+        [invalid, unknownCatalog],
+        unwrap(createM1aCatalogResolver()),
+      ),
+    ).toEqual({
+      totalCases: 2,
+      plannableCases: 2,
+      unplannableCases: 0,
+      referencesValid: 0,
+      witnessesCompiled: 0,
+      hiddenPropertiesPassed: 0,
+      invalidCases: 2,
+    });
   });
 
   it("rejects malformed cases and freezes complete recorded fixtures", async () => {
@@ -882,6 +999,59 @@ describe("M1a frozen substrate", () => {
 });
 
 describe("generate, compile, and bounded repair", () => {
+  it("rejects model-authored authority and narrowed public input bounds", async () => {
+    const benchmarkCase = await corpusCase("numbers/double");
+    const narrowed = {
+      ...RECORDED_DOUBLE_PLAN,
+      nodes: RECORDED_DOUBLE_PLAN.nodes.map((node) =>
+        node.op === "input" ? { ...node, maxItems: 1 } : node,
+      ),
+      budget: benchmarkCase.case.policy.budget,
+      allowedCapabilities: [],
+    };
+    const fixture = unwrap(
+      await freezeRecordedModelFixture({
+        identity: {
+          provider: "recorded",
+          model: "model-authored-authority",
+          adapterVersion: "1",
+        },
+        responses: [
+          {
+            kind: "response",
+            response: {
+              structuredOutput: { kind: "plan", plan: narrowed },
+              rawResponse: JSON.stringify({ kind: "plan", plan: narrowed }),
+              usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
+              latencyMs: 1,
+            },
+          },
+        ],
+      }),
+    );
+    const session = unwrap(
+      await generatePlan({
+        task: benchmarkCase.case.instruction,
+        taskInputs: benchmarkCase.case.taskInputs,
+        catalog: unwrap(
+          unwrap(createM1aCatalogResolver())(benchmarkCase.case.catalogId),
+        ),
+        policy: benchmarkCase.case.policy,
+        publicExamples: [],
+        adapter: createRecordedModelAdapter(fixture),
+        strategy: strategy("json-schema"),
+      }),
+    );
+    expect(session.kind).toBe("rejected");
+    expect(
+      session.record.attempts[0]?.diagnostics.map((item) => item.message),
+    ).toEqual([
+      "Model proposals cannot author trusted policy budgets.",
+      "Model proposals cannot authorize capabilities.",
+      "Model input bound 1 cannot narrow public task bound 128.",
+    ]);
+  });
+
   it("compiles a recorded plan and writes a canonical generation record", async () => {
     const benchmarkCase = await corpusCase("numbers/double");
     const catalog = unwrap(
@@ -1372,6 +1542,7 @@ describe("behavioral benchmark runner", () => {
         },
       ],
     };
+    const constantProposal = modelProposal(constantPlan);
     const frozen = unwrap(
       await freezeRecordedModelFixture({
         identity: {
@@ -1383,8 +1554,11 @@ describe("behavioral benchmark runner", () => {
           {
             kind: "response",
             response: {
-              structuredOutput: { kind: "plan", plan: constantPlan },
-              rawResponse: JSON.stringify({ kind: "plan", plan: constantPlan }),
+              structuredOutput: { kind: "plan", plan: constantProposal },
+              rawResponse: JSON.stringify({
+                kind: "plan",
+                plan: constantProposal,
+              }),
               usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
               latencyMs: 1,
             },
@@ -1637,8 +1811,14 @@ describe("behavioral benchmark runner", () => {
           {
             kind: "response",
             response: {
-              structuredOutput: { kind: "plan", plan: effectPlan },
-              rawResponse: JSON.stringify({ kind: "plan", plan: effectPlan }),
+              structuredOutput: {
+                kind: "plan",
+                plan: modelProposal(effectPlan),
+              },
+              rawResponse: JSON.stringify({
+                kind: "plan",
+                plan: modelProposal(effectPlan),
+              }),
               usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
               latencyMs: 1,
             },
@@ -1682,21 +1862,21 @@ describe("behavioral benchmark runner", () => {
     const benchmarkCase = await corpusCase("workflow/countdown-3");
     const recursionPlan = {
       formatVersion: "1",
-      catalog: { id: "benchmark.workflow", version: "1.0.0" },
+      catalog: { id: "benchmark.workflow", version: "1.1.0" },
       root: "done",
       nodes: [
         {
           id: "seed",
           op: "input",
           inputKey: "state",
-          schema: { id: "workflow-state", version: "1.0.0" },
+          schema: { id: "workflow-state", version: "1.1.0" },
         },
         {
           id: "done",
           op: "boundedFix",
           seed: "seed",
-          step: { id: "countdown-step", version: "1.0.0" },
-          measure: { id: "remaining", version: "1.0.0" },
+          step: { id: "countdown-step", version: "1.1.0" },
+          measure: { id: "remaining", version: "1.1.0" },
           maxIterations: 3,
         },
       ],
@@ -1721,10 +1901,13 @@ describe("behavioral benchmark runner", () => {
           {
             kind: "response",
             response: {
-              structuredOutput: { kind: "plan", plan: recursionPlan },
+              structuredOutput: {
+                kind: "plan",
+                plan: modelProposal(recursionPlan),
+              },
               rawResponse: JSON.stringify({
                 kind: "plan",
-                plan: recursionPlan,
+                plan: modelProposal(recursionPlan),
               }),
               usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
               latencyMs: 1,
@@ -1965,8 +2148,14 @@ describe("behavioral benchmark runner", () => {
           {
             kind: "response",
             response: {
-              structuredOutput: { kind: "plan", plan: effectPlan },
-              rawResponse: JSON.stringify({ kind: "plan", plan: effectPlan }),
+              structuredOutput: {
+                kind: "plan",
+                plan: modelProposal(effectPlan),
+              },
+              rawResponse: JSON.stringify({
+                kind: "plan",
+                plan: modelProposal(effectPlan),
+              }),
               usage: { inputTokens: 1, outputTokens: 1, costUsdMicros: 1 },
               latencyMs: 1,
             },

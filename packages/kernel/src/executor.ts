@@ -31,6 +31,7 @@ import {
   nodeIdSchema,
   type OperationReference,
   operationReferenceSchema,
+  type PlanBudget,
 } from "./wire.js";
 
 export type RuntimeUsage = Readonly<{
@@ -155,12 +156,11 @@ function budgetFailure(
 }
 
 function checkUsage(
-  plan: CheckedPlan,
+  budget: PlanBudget,
   usage: MutableUsage,
   nodeId: NodeId,
 ): Diagnostic | undefined {
   /* v8 ignore start -- compilation proves these totals; checks remain defense in depth */
-  const budget = plan.normalized.wire.budget;
   if (usage.effectCalls > budget.maxEffectCalls)
     return budgetFailure(
       "effect calls",
@@ -271,7 +271,6 @@ export async function executePlan(
     const invocationId = `${nodeId}:${index}`;
     const invokedAt = options.clock.now();
     if (
-      !plan.normalized.wire.allowedCapabilities.includes(effect.capability) ||
       !compiledArtifacts.policy.allowedCapabilities.includes(
         effect.capability,
       ) ||
@@ -292,7 +291,11 @@ export async function executePlan(
       );
     }
     usage.effectCalls += 1;
-    const beforeFailure = checkUsage(plan, usage, nodeId);
+    const beforeFailure = checkUsage(
+      compiledArtifacts.policy.budget,
+      usage,
+      nodeId,
+    );
     /* v8 ignore next -- analysis proves the maximum effect-call count */
     if (beforeFailure !== undefined) return err(beforeFailure);
     const inputDigest = await digestValue(input);
@@ -368,7 +371,11 @@ export async function executePlan(
     }
     usage.tokens += handled.value.usage.tokens;
     usage.wallClockMs += handled.value.usage.wallClockMs;
-    const afterFailure = checkUsage(plan, usage, nodeId);
+    const afterFailure = checkUsage(
+      compiledArtifacts.policy.budget,
+      usage,
+      nodeId,
+    );
     /* v8 ignore next -- analysis and per-effect checks prove aggregate usage */
     if (afterFailure !== undefined) return err(afterFailure);
     const schema = outputSchemaForEffect(catalog, effect);
@@ -448,13 +455,14 @@ export async function executePlan(
               ? checkedNode.outputSchema.kind.defaultMaxItems
               : undefined);
           if (
-            parsed.value.length > plan.normalized.wire.budget.maxCollectionItems
+            parsed.value.length >
+            compiledArtifacts.policy.budget.maxCollectionItems
           ) {
             result = err(
               budgetFailure(
                 "collection items",
                 parsed.value.length,
-                plan.normalized.wire.budget.maxCollectionItems,
+                compiledArtifacts.policy.budget.maxCollectionItems,
                 node.id,
               ),
             );
@@ -521,7 +529,11 @@ export async function executePlan(
             usage.maximumParallelism,
             Math.min(node.parallelism, array.value.length),
           );
-          const usageFailure = checkUsage(plan, usage, node.id);
+          const usageFailure = checkUsage(
+            compiledArtifacts.policy.budget,
+            usage,
+            node.id,
+          );
           /* v8 ignore next -- analysis proves map parallelism and effect totals */
           if (usageFailure !== undefined) {
             result = err(usageFailure);
@@ -718,7 +730,11 @@ export async function executePlan(
             break;
           }
           usage.recursionDepth = Math.max(usage.recursionDepth, iteration + 1);
-          const usageFailure = checkUsage(plan, usage, node.id);
+          const usageFailure = checkUsage(
+            compiledArtifacts.policy.budget,
+            usage,
+            node.id,
+          );
           if (usageFailure !== undefined) {
             failure = usageFailure;
             break;
