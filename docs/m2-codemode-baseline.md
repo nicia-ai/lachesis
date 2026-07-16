@@ -225,16 +225,18 @@ models, inference settings, schedule algorithm, scorer, analysis, or prospective
 gates.
 
 The unexecuted M2.2 calibration `79bf9900…` and held-out `98e7da38…` experiments
-are `superseded-unexecuted`. Neither may execute or resume. M2.3 requires a
-fresh matched eight-call probe and separate authorization before any development
-calibration.
+are `superseded-unexecuted`. Neither may execute or resume. Historically, M2.3
+then required a fresh matched eight-call probe and separate authorization before
+development calibration; those corrected phases and the frozen held-out study
+subsequently completed.
 
 ## Claim boundary
 
 The failed M2.2 protocol probe is transport and protocol evidence only. It is
 not calibration evidence and cannot support a representation comparison. The
-intended live order remains a fresh matched protocol probe, development
+historical live order was a fresh matched protocol probe, development
 calibration, offline held-out freeze review, then separately authorized held-out
-execution. The implementation and campaign definitions are offline substrate,
-not evidence that either representation is superior. TypeGraph and
-bounded-general CodeMode remain deferred.
+execution. That sequence is complete, and M2 is closed as a valid formal
+failure. See the immutable [M2 results](m2-results.md) for the preregistered
+conclusion, descriptive operational findings, post-hoc sensitivity analysis, and
+final claim boundary. TypeGraph and bounded-general CodeMode remain unevaluated.

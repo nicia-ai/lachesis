@@ -67,19 +67,24 @@ IR is the only implemented representation, so the M1c corpus and protocol make
 no IR-versus-CodeMode claim. See
 [the M1c design note](../../docs/m1c-typed-semantic-obligations.md).
 
-M2 is a separate, paired representation-ablation campaign: functional JSON IR
+M2 was a separate, paired representation-ablation campaign: functional JSON IR
 versus restricted capability-oriented TypeScript. A content-addressed,
-provider-stratified schedule counterbalances which representation runs first and
-is preserved across resume. Preregistered repetition 1 is the primary paired
-analysis and repetition 2 is an unpooled confirmation; the conclusion must hold
-in both. The semantic non-inferiority gate uses the lower bound of a validated
-95% Tango paired risk-difference interval. The protocol probe is exactly eight
-calls: two representations × one feasible and one typed-unplannable task × two
-providers. Theoretical phase ceilings are disclosed separately from the
-fail-closed $10 development and $60 held-out operational pools. Neither is
-authorization to spend. Conventional CodeMode and TypeGraph remain unevaluated.
-M2.3 binds the compiler-owned exact entry point, every awaited `ops` capability
-signature, value grammar, and canonical compiling witness into every initial and
-repair prompt. The failed M2.2 probe is immutable and report-only; its
-unexecuted calibration and held-out identities are superseded. See
-[the M2 design note](../../docs/m2-codemode-baseline.md).
+provider-stratified schedule counterbalanced which representation ran first and
+was preserved across resume. Preregistered repetition 1 was the primary paired
+analysis and repetition 2 was an unpooled confirmation; the conclusion had to
+hold in both. The semantic non-inferiority gate used the lower bound of a
+validated 95% Tango paired risk-difference interval. M2.3 bound the
+compiler-owned exact entry point, every awaited `ops` capability signature,
+value grammar, and canonical compiling witness into every initial and repair
+prompt.
+
+M2 is now complete and closed as a valid formal failure. The failed M2.2 probe
+remains immutable and report-only, while the corrected M2.3 probe, calibration,
+and held-out study are complete. The frozen held-out result achieved exceptional
+final correctness in both arms but failed the replicated functional-IR
+non-inferiority rule because the primary Tango lower bound narrowly missed the
+preregistered margin after one provider overload. See
+[the M2 design note](../../docs/m2-codemode-baseline.md) for the historical
+protocol and the immutable [M2 results](../../docs/m2-results.md) for the
+conclusions and claim boundary. Conventional CodeMode and TypeGraph remain
+unevaluated.

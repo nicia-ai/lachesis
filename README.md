@@ -121,13 +121,15 @@ git diff --check
 
 ## Not yet implemented
 
-The milestone still excludes conventional or bounded-general CodeMode,
-TypeGraph, SQL/Drizzle, knowledge-graph persistence, graph-native traversal,
-joins, `boundedExplore`, optimizer rewrites, durable/distributed scheduling,
-general adaptive loops, package publication, and deployment. M2 has not been run
-beyond its failed, immutable M2.2 protocol probe. M2.3 corrects the
-model-visible restricted-TypeScript grammar before calibration or held-out
-access; every fresh phase still requires offline review and separate explicit
-authorization. TypeGraph remains deferred.
+The project still excludes conventional or bounded-general CodeMode, TypeGraph,
+SQL/Drizzle, knowledge-graph persistence, graph-native traversal, joins,
+`boundedExplore`, optimizer rewrites, durable/distributed scheduling, general
+adaptive loops, package publication, and deployment.
+
+M2 is complete and closed as a valid formal failure. Its historical M2.2
+protocol failure was corrected before the completed M2.3 probe, calibration, and
+frozen held-out study. See the immutable [M2 results](docs/m2-results.md) for
+the preregistered conclusion, descriptive operational findings, and claim
+boundary. No M2 phase may be rerun or reinterpreted under changed gates.
 
 Licensed under [Apache License 2.0](LICENSE).
