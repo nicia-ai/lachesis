@@ -21,6 +21,7 @@ import {
   evidencePathSchema,
   type EvidenceSource,
   type EvidenceSourceIdentity,
+  evidenceSourceIdentitySchema,
   selectEvidence,
 } from "./contract.js";
 import type { M3aTask } from "./corpus.js";
@@ -39,6 +40,7 @@ import {
   auditM3bWilliamsSchedule,
   createM3bWilliamsSchedule,
   type M3bArm,
+  m3bArmSchema,
   type M3bScheduleEntry,
   type M3bWilliamsSchedule,
 } from "./m3b-schedule.js";
@@ -288,7 +290,7 @@ export type M3bManifest = Readonly<{
   sourceCommit: string;
   corpusProtocol: typeof M3B_CORPUS_PROTOCOL;
   cases: ReadonlyArray<ManifestCase>;
-  providers: typeof M3B_ORACLE_MODELS;
+  providers: ReadonlyArray<M3bOracleIdentity>;
   repetitions: number;
   initialCalls: number;
   maximumTransportRetries: number;
@@ -402,6 +404,7 @@ export async function materializeM3bPhase(
   input: Readonly<{
     phase: M3bPhase;
     sourceCommit: string;
+    providers?: ReadonlyArray<M3bOracleIdentity> | undefined;
   }>,
 ): Promise<Result<M3bMaterializedPhase, ReadonlyArray<Diagnostic>>> {
   const sharedPlan = await createM3bSharedPlan();
@@ -415,14 +418,14 @@ export async function materializeM3bPhase(
     cases.push(frozen.value);
   }
   const repetitions = input.phase === "m3b-heldout" ? 2 : 1;
+  const providers = Object.freeze([...(input.providers ?? M3B_ORACLE_MODELS)]);
   const schedule = await createM3bWilliamsSchedule({
     cases: cases.map((item) => ({ id: item.task.id, digest: item.caseDigest })),
-    providers: M3B_ORACLE_MODELS,
+    providers,
     repetitions,
   });
   if (!schedule.ok) return { ok: false, error: [schedule.error] };
-  const initialCalls =
-    cases.length * 4 * M3B_ORACLE_MODELS.length * repetitions;
+  const initialCalls = cases.length * 4 * providers.length * repetitions;
   const body = {
     formatVersion: "1" as const,
     phase: input.phase,
@@ -439,7 +442,7 @@ export async function materializeM3bPhase(
         contextDigest: neighborhood.contextDigest,
       })),
     })),
-    providers: M3B_ORACLE_MODELS,
+    providers,
     repetitions,
     initialCalls,
     maximumTransportRetries:
@@ -488,6 +491,7 @@ export async function validateM3bMaterialization(
   const expected = await materializeM3bPhase({
     phase: materialized.manifest.phase,
     sourceCommit: materialized.manifest.sourceCommit,
+    providers: materialized.manifest.providers,
   });
   if (!expected.ok)
     return {
@@ -591,48 +595,101 @@ export async function validateM3bMaterialization(
   return ok(undefined);
 }
 
-export type M3bOracleFailureCode =
-  | "provider-overload"
-  | "provider-timeout"
-  | "provider-unavailable"
-  | "provider-refusal"
-  | "budget-rejected"
-  | "contract-mismatch";
+export const m3bOracleFailureCodeSchema = z.enum([
+  "provider-overload",
+  "provider-timeout",
+  "provider-unavailable",
+  "provider-refusal",
+  "budget-rejected",
+  "contract-mismatch",
+]);
+export type M3bOracleFailureCode = z.infer<typeof m3bOracleFailureCodeSchema>;
 
-type OracleUsage = Readonly<{
-  inputTokens: number;
-  outputTokens: number;
-  costUsdMicros: number;
-  latencyMs: number;
+export const m3bOracleUsageSchema = z
+  .strictObject({
+    inputTokens: z.number().int().nonnegative(),
+    outputTokens: z.number().int().nonnegative(),
+    costUsdMicros: z.number().int().nonnegative(),
+    latencyMs: z.number().int().nonnegative(),
+  })
+  .readonly();
+export type M3bOracleUsage = z.infer<typeof m3bOracleUsageSchema>;
+
+export const m3bOracleAttemptSchema = z.discriminatedUnion("kind", [
+  z
+    .strictObject({
+      kind: z.literal("success"),
+      output: z.unknown(),
+      usage: m3bOracleUsageSchema,
+    })
+    .readonly(),
+  z
+    .strictObject({
+      kind: z.literal("failure"),
+      code: m3bOracleFailureCodeSchema,
+      dispatchEvidence: z.enum([
+        "not-dispatched",
+        "dispatched-with-usage",
+        "dispatched-usage-unknown",
+      ]),
+      usage: m3bOracleUsageSchema.nullable(),
+      latencyMs: z.number().int().nonnegative().optional(),
+    })
+    .readonly(),
+]);
+export type M3bOracleAttempt = z.infer<typeof m3bOracleAttemptSchema>;
+
+export const m3bOracleIdentitySchema = z
+  .strictObject({
+    provider: z.enum(["openai", "anthropic"]),
+    model: z.string().min(1),
+    adapterVersion: z.string().min(1),
+    settings: z
+      .strictObject({
+        temperature: z.number().nullable(),
+        reasoning: z.enum(["low", "adaptive-low"]),
+        maxInputTokens: z.number().int().positive(),
+        maxOutputTokens: z.number().int().positive(),
+        sdkRetries: z.number().int().nonnegative(),
+        structuredOutput: z.enum(["json-schema", "json-tool"]),
+      })
+      .readonly(),
+  })
+  .readonly();
+export type M3bOracleIdentity = z.infer<typeof m3bOracleIdentitySchema>;
+
+export type M3bOracleDispatchContext = Readonly<{
+  recordKey: string;
+  attemptIndex: number;
 }>;
 
-export type M3bOracleAttempt =
-  | Readonly<{ kind: "success"; output: unknown; usage: OracleUsage }>
-  | Readonly<{
-      kind: "failure";
-      code: M3bOracleFailureCode;
-      dispatchEvidence:
-        "not-dispatched" | "dispatched-with-usage" | "dispatched-usage-unknown";
-      usage: OracleUsage | null;
-    }>;
-
-export type M3bOracleIdentity = Readonly<{
-  provider: "openai" | "anthropic";
-  model: string;
-  adapterVersion: string;
-  settings: Readonly<{
-    temperature: number;
-    reasoning: "low" | "adaptive-low";
-    maxInputTokens: number;
-    maxOutputTokens: number;
-    sdkRetries: number;
-    structuredOutput: "json-schema" | "json-tool";
-  }>;
-}>;
+export const m3bExecutionBindingSchema = z
+  .strictObject({
+    experimentDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+    phaseManifestDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+    pricingSnapshotDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+    providerBindings: z
+      .array(
+        z
+          .strictObject({
+            provider: z.enum(["openai", "anthropic"]),
+            transportDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+            pricingEntryDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+          })
+          .readonly(),
+      )
+      .length(2)
+      .readonly(),
+  })
+  .readonly();
+export type M3bExecutionBinding = z.infer<typeof m3bExecutionBindingSchema>;
 
 export type M3bOracle = Readonly<{
   identity: M3bOracleIdentity;
-  generate: (request: M3bOracleRequest) => Promise<M3bOracleAttempt>;
+  generate: (
+    request: M3bOracleRequest,
+    context: M3bOracleDispatchContext,
+  ) => Promise<M3bOracleAttempt>;
 }>;
 
 export type DeterministicM3bOracle = M3bOracle &
@@ -669,38 +726,47 @@ export function createDeterministicM3bOracle(
   };
 }
 
-export type M3bRecord = Readonly<{
-  key: string;
-  experimentDigest: string;
-  scheduleDigest: string;
-  unitDigest: string;
-  executionPosition: number;
-  predecessorArm: M3bArm | null;
-  caseId: string;
-  caseDigest: string;
-  provider: string;
-  model: string;
-  modelIdentityDigest: string;
-  repetition: number;
-  arm: M3bArm;
-  source: EvidenceSourceIdentity;
-  neighborhoodDigest: string;
-  contextDigest: string;
-  planHash: string;
-  oraclePromptDigest: string;
-  outputSchemaDigest: string;
-  attempts: ReadonlyArray<M3bOracleAttempt>;
-  terminalFailure: M3bOracleFailureCode | null;
-  validOutput: boolean;
-  output: M3bOracleOutput | null;
-  answerCorrect: boolean;
-  citationsCorrect: boolean;
-  pathsCorrect: boolean;
-  endToEndSuccess: boolean;
-  conditionalSemanticSuccess: boolean | null;
-  semanticRepairCalls: 0;
-  digest: string;
-}>;
+const digestSchema = z.string().regex(/^[a-f0-9]{64}$/u);
+
+export const m3bRecordSchema = z
+  .strictObject({
+    key: z.string().min(1),
+    experimentDigest: digestSchema,
+    scheduleDigest: digestSchema,
+    unitDigest: digestSchema,
+    executionPosition: z.number().int().min(0).max(3),
+    predecessorArm: m3bArmSchema.nullable(),
+    caseId: z.string().min(1),
+    caseDigest: digestSchema,
+    provider: z.string().min(1),
+    model: z.string().min(1),
+    modelIdentityDigest: digestSchema,
+    repetition: z.number().int().nonnegative(),
+    arm: m3bArmSchema,
+    source: evidenceSourceIdentitySchema,
+    neighborhoodDigest: digestSchema,
+    contextDigest: digestSchema,
+    planHash: digestSchema,
+    oraclePromptDigest: digestSchema,
+    outputSchemaDigest: digestSchema,
+    executionBinding: m3bExecutionBindingSchema.nullable(),
+    attempts: z.array(m3bOracleAttemptSchema).min(1).max(2).readonly(),
+    terminalFailure: m3bOracleFailureCodeSchema.nullable(),
+    validOutput: z.boolean(),
+    output: m3bOracleOutputSchema.nullable(),
+    answerCorrect: z.boolean(),
+    citationsCorrect: z.boolean(),
+    relationshipCitationsCorrect: z.boolean(),
+    pathsCorrect: z.boolean(),
+    pathUtilized: z.boolean(),
+    pathUtilizationSuccess: z.boolean(),
+    endToEndSuccess: z.boolean(),
+    conditionalSemanticSuccess: z.boolean().nullable(),
+    semanticRepairCalls: z.literal(0),
+    digest: digestSchema,
+  })
+  .readonly();
+export type M3bRecord = z.infer<typeof m3bRecordSchema>;
 
 export type M3bStore = Readonly<{
   load: (key: string) => Promise<Result<M3bRecord | undefined, Diagnostic>>;
@@ -736,6 +802,7 @@ async function validStoredRecord(
   entry: M3bScheduleEntry,
   position: number,
   arm: M3bArm,
+  executionBinding: M3bExecutionBinding | null,
 ): Promise<boolean> {
   const { digest, ...body } = record;
   const computed = await digestValue(body);
@@ -756,12 +823,19 @@ async function validStoredRecord(
     neighborhood === undefined
   )
     return false;
-  const [modelIdentityDigest, expectedSourceDigest, actualSourceDigest] =
-    await Promise.all([
-      digestValue(modelIdentity),
-      digestValue(neighborhood.source),
-      digestValue(record.source),
-    ]);
+  const [
+    modelIdentityDigest,
+    expectedSourceDigest,
+    actualSourceDigest,
+    expectedExecutionBindingDigest,
+    actualExecutionBindingDigest,
+  ] = await Promise.all([
+    digestValue(modelIdentity),
+    digestValue(neighborhood.source),
+    digestValue(record.source),
+    digestValue(executionBinding),
+    digestValue(record.executionBinding),
+  ]);
   return (
     computed.ok &&
     computed.value === digest &&
@@ -770,9 +844,13 @@ async function validStoredRecord(
     expectedSourceDigest.ok &&
     actualSourceDigest.ok &&
     expectedSourceDigest.value === actualSourceDigest.value &&
+    expectedExecutionBindingDigest.ok &&
+    actualExecutionBindingDigest.ok &&
+    expectedExecutionBindingDigest.value ===
+      actualExecutionBindingDigest.value &&
     record.experimentDigest === manifest.experimentDigest &&
     record.scheduleDigest === manifest.schedule.scheduleDigest &&
-    record.key === recordKey(manifest, entry, arm) &&
+    record.key === recordKey(manifest, entry, arm, executionBinding) &&
     record.unitDigest === entry.unitDigest &&
     record.executionPosition === position &&
     record.predecessorArm ===
@@ -795,8 +873,9 @@ function recordKey(
   manifest: M3bManifest,
   entry: M3bScheduleEntry,
   arm: M3bArm,
+  executionBinding: M3bExecutionBinding | null,
 ): string {
-  return `${manifest.experimentDigest}/${entry.unitDigest}/${arm}`;
+  return `${executionBinding?.experimentDigest ?? manifest.experimentDigest}/${entry.unitDigest}/${arm}`;
 }
 
 function modelVisibleRequest(
@@ -816,6 +895,7 @@ async function executeRecord(
     position: number;
     arm: M3bArm;
     oracle: M3bOracle;
+    executionBinding: M3bExecutionBinding | null;
   }>,
 ): Promise<Result<M3bRecord, Diagnostic>> {
   const frozen = input.materialized.cases.find(
@@ -835,6 +915,16 @@ async function executeRecord(
   const request = modelVisibleRequest(frozen, neighborhood);
   const modelIdentityDigest = await digestValue(input.oracle.identity);
   if (!modelIdentityDigest.ok) return modelIdentityDigest;
+  const persistentRecordKey = recordKey(
+    input.materialized.manifest,
+    input.entry,
+    input.arm,
+    input.executionBinding,
+  );
+  const dispatchRecordKey = await digestValue({
+    recordKey: persistentRecordKey,
+  });
+  if (!dispatchRecordKey.ok) return dispatchRecordKey;
   const attempts: Array<M3bOracleAttempt> = [];
   let terminalFailure: M3bOracleFailureCode | null = null;
   const execution = await executePlan(
@@ -848,7 +938,10 @@ async function executeRecord(
           M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt;
           attemptIndex += 1
         ) {
-          const attempt = await input.oracle.generate(request);
+          const attempt = await input.oracle.generate(request, {
+            recordKey: dispatchRecordKey.value,
+            attemptIndex,
+          });
           attempts.push(attempt);
           if (attempt.kind === "success") {
             terminalFailure = null;
@@ -886,12 +979,19 @@ async function executeRecord(
     neighborhood.neighborhood.context.citations.map((citation) => citation.id),
   );
   const expectedCitationIds = new Set(frozen.task.expectedCitationIds);
-  for (const citationId of frozen.task.expectedEdgeCitationIds)
-    if (visibleCitationIds.has(citationId)) expectedCitationIds.add(citationId);
   const citationsCorrect =
     output !== null &&
     output.citationIds.every((id) => visibleCitationIds.has(id)) &&
     [...expectedCitationIds].every((id) => output.citationIds.includes(id));
+  const expectedVisibleRelationshipCitationIds =
+    frozen.task.expectedEdgeCitationIds.filter((citationId) =>
+      visibleCitationIds.has(citationId),
+    );
+  const relationshipCitationsCorrect =
+    output !== null &&
+    expectedVisibleRelationshipCitationIds.every((citationId) =>
+      output.citationIds.includes(citationId),
+    );
   const visiblePaths = new Set(
     neighborhood.neighborhood.context.paths.map((path) => pathKey(path)),
   );
@@ -905,10 +1005,12 @@ async function executeRecord(
       output.paths.some((candidate) => pathKey(candidate) === pathKey(path)),
     );
   const answerCorrect = output?.answer === frozen.task.expectedAnswer;
-  const endToEndSuccess =
-    output !== null && answerCorrect && citationsCorrect && pathsCorrect;
+  const pathUtilized = (output?.paths.length ?? 0) > 0;
+  const pathUtilizationSuccess =
+    pathUtilized && pathsCorrect && relationshipCitationsCorrect;
+  const endToEndSuccess = output !== null && answerCorrect && citationsCorrect;
   const body = {
-    key: recordKey(input.materialized.manifest, input.entry, input.arm),
+    key: persistentRecordKey,
     experimentDigest: input.materialized.manifest.experimentDigest,
     scheduleDigest: input.materialized.manifest.schedule.scheduleDigest,
     unitDigest: input.entry.unitDigest,
@@ -930,18 +1032,20 @@ async function executeRecord(
     planHash: input.materialized.sharedPlan.planHash,
     oraclePromptDigest: frozen.oraclePromptDigest,
     outputSchemaDigest: input.materialized.sharedPlan.outputSchemaDigest,
+    executionBinding: input.executionBinding,
     attempts,
     terminalFailure,
     validOutput: output !== null,
     output,
     answerCorrect,
     citationsCorrect,
+    relationshipCitationsCorrect,
     pathsCorrect,
+    pathUtilized,
+    pathUtilizationSuccess,
     endToEndSuccess,
     conditionalSemanticSuccess:
-      output === null
-        ? null
-        : answerCorrect && citationsCorrect && pathsCorrect,
+      output === null ? null : answerCorrect && citationsCorrect,
     semanticRepairCalls: 0 as const,
   };
   const digest = await digestValue(body);
@@ -963,6 +1067,7 @@ export async function runM3bWithOracles(
     materialized: M3bMaterializedPhase;
     oracles: ReadonlyArray<M3bOracle>;
     store: M3bStore;
+    executionBinding?: M3bExecutionBinding | undefined;
   }>,
 ): Promise<Result<M3bRunResult, Diagnostic>> {
   const validated = await validateM3bMaterialization(input.materialized);
@@ -1024,7 +1129,12 @@ export async function runM3bWithOracles(
         ),
       };
     for (const [position, arm] of entry.order.entries()) {
-      const key = recordKey(input.materialized.manifest, entry, arm);
+      const key = recordKey(
+        input.materialized.manifest,
+        entry,
+        arm,
+        input.executionBinding ?? null,
+      );
       const stored = await input.store.load(key);
       if (!stored.ok) return stored;
       if (stored.value !== undefined) {
@@ -1035,6 +1145,7 @@ export async function runM3bWithOracles(
             entry,
             position,
             arm,
+            input.executionBinding ?? null,
           ))
         )
           return {
@@ -1054,8 +1165,17 @@ export async function runM3bWithOracles(
         position,
         arm,
         oracle,
+        executionBinding: input.executionBinding ?? null,
       });
       if (!record.ok) return record;
+      if (record.value.terminalFailure === "budget-rejected")
+        return {
+          ok: false,
+          error: diagnostic(
+            "BUDGET_EXCEEDED",
+            "M3b controller rejected the complete request reservation before dispatch.",
+          ),
+        };
       const saved = await input.store.save(record.value);
       if (!saved.ok) return saved;
       records.push(record.value);
@@ -1080,8 +1200,26 @@ export async function runM3bWithOracles(
         validOutput: record.validOutput,
         endToEndSuccess: record.endToEndSuccess,
         conditionalSemanticSuccess: record.conditionalSemanticSuccess,
+        pathUtilizationSuccess: record.pathUtilizationSuccess,
+        safetyViolation: record.attempts.some(
+          (attempt) =>
+            attempt.kind === "failure" &&
+            (attempt.code === "budget-rejected" ||
+              attempt.code === "contract-mismatch"),
+        ),
       };
     },
+  );
+  const expectedStrata = input.materialized.manifest.providers.flatMap(
+    (provider) =>
+      Array.from(
+        { length: input.materialized.manifest.repetitions },
+        (_, repetition) => ({
+          provider: provider.provider,
+          model: provider.model,
+          repetition,
+        }),
+      ),
   );
   return {
     ok: true,
@@ -1093,7 +1231,7 @@ export async function runM3bWithOracles(
         (total, record) => total + Math.max(0, record.attempts.length - 1),
         0,
       ),
-      statistics: evaluateM3bStatistics(observations),
+      statistics: evaluateM3bStatistics(observations, expectedStrata),
     },
   };
 }

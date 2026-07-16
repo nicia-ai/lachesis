@@ -88,3 +88,11 @@ preregistered margin after one provider overload. See
 protocol and the immutable [M2 results](../../docs/m2-results.md) for the
 conclusions and claim boundary. Conventional CodeMode and TypeGraph remain
 unevaluated.
+
+M3b.1 adds a separately versioned Node-only live-binding controller with exact
+acknowledgement preflight, independently bounded development/held-out pools, a
+digest-chained append-only ledger, conservative per-attempt retry accounting,
+immutable JSON records, and content-addressed resume. The historical
+offline-unbound M3b identities are report-only. No M3b.1 phase is authorized by
+materialization alone. See
+[the M3b.1 protocol](../../docs/m3b1-live-binding.md).

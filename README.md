@@ -61,6 +61,9 @@ offline shared-plan execution infrastructure.
 - Offline M3b matched execution infrastructure with one shared compiled plan,
   arm-blinded oracle requests, digest-bound Williams scheduling, symmetric
   transport retries, safe resume, and contrast-specific paired statistics.
+- Offline M3b.1 live-binding infrastructure with direct Responses/Messages
+  transports, explicit prospective conclusions, conservative attempt-level
+  accounting, an append-only ledger, and durable content-addressed resume.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -118,7 +121,8 @@ comparison boundary, and the
 [M3a.1 evidence design](docs/m3a-graph-native-decomposition.md) for the offline
 four-arm substrate benchmark and M3b kill gates, and the
 [M3b offline protocol](docs/m3b-offline-execution.md) for the unexecuted matched
-study infrastructure.
+study substrate, and [M3b.1 live binding](docs/m3b1-live-binding.md) for the
+unpreregistered Node-only provider and accounting controller.
 
 ## Validation
 
@@ -139,7 +143,9 @@ The project still excludes conventional or bounded-general CodeMode, TypeGraph,
 SQL/Drizzle, persistent knowledge-graph storage, model-facing graph-native
 traversal, joins, `boundedExplore`, optimizer rewrites, durable/distributed
 scheduling, general adaptive loops, package publication, and deployment. M3a.1
-and M3b remain offline-only; neither milestone authorizes provider calls.
+and the archived M3b identities remain offline-only. M3b.1 adds an unexecuted
+live-capable controller, but its fresh identities have no spend authority until
+external preregistration and a separate exact phase acknowledgement.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

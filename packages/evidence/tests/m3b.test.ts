@@ -7,6 +7,7 @@ import {
   calculateM3bPairedInterval,
   createDeterministicM3bOracle,
   createMemoryM3bStore,
+  evaluateM3bStatistics,
   M3B_CONTRASTS,
   M3B_ORACLE_MODELS,
   M3B_PREREGISTERED_CORPUS,
@@ -15,6 +16,8 @@ import {
   type M3bOracle,
   type M3bOracleAttempt,
   type M3bOracleRequest,
+  m3bOverallConclusionSchema,
+  type M3bStatisticalObservation,
   materializeM3bPhase,
   runM3bWithOracles,
   validateM3bMaterialization,
@@ -547,5 +550,88 @@ describe("M3b offline execution infrastructure", () => {
     );
     expect(sixty.lowerBound).toBeCloseTo(-0.0886, 4);
     expect(forty.lowerBound).toBeCloseTo(-0.1288, 4);
+  });
+
+  it("encodes complete prospective decisions without pooling provider strata", () => {
+    const retrieval: Array<M3bStatisticalObservation> = [];
+    const negative: Array<M3bStatisticalObservation> = [];
+    for (let index = 0; index < 60; index += 1) {
+      for (const arm of [
+        "lexical-facts",
+        "graph-facts",
+        "graph-adjacency",
+        "graph-typed",
+      ] as const) {
+        const graphSucceeded = arm !== "lexical-facts" || index >= 20;
+        retrieval.push({
+          caseId: `retrieval-${index}`,
+          provider: "openai",
+          model: "fixture",
+          repetition: 0,
+          arm,
+          retrievalAdvantageExpected: true,
+          relationshipEncodingExpected: false,
+          negativeControl: false,
+          validOutput: true,
+          endToEndSuccess: graphSucceeded,
+          conditionalSemanticSuccess: graphSucceeded,
+          pathUtilizationSuccess: arm === "graph-typed",
+          safetyViolation: false,
+        });
+        negative.push({
+          caseId: `negative-${index}`,
+          provider: "openai",
+          model: "fixture",
+          repetition: 0,
+          arm,
+          retrievalAdvantageExpected: false,
+          relationshipEncodingExpected: false,
+          negativeControl: true,
+          validOutput: true,
+          endToEndSuccess: true,
+          conditionalSemanticSuccess: true,
+          pathUtilizationSuccess: false,
+          safetyViolation: index === 0 && arm === "graph-typed",
+        });
+      }
+    }
+    const expected = [{ provider: "openai", model: "fixture", repetition: 0 }];
+    const report = evaluateM3bStatistics([...retrieval, ...negative], expected);
+    const retrievalConclusion = report.conclusion.contrasts.find(
+      (conclusion) =>
+        conclusion.contrast === "retrieval-graph-facts-vs-lexical",
+    );
+    const negativeConclusion = report.conclusion.contrasts.find(
+      (conclusion) =>
+        conclusion.contrast === "negative-control-typed-vs-lexical",
+    );
+
+    expect(retrievalConclusion).toMatchObject({
+      decision: "structural-superiority",
+      passed: true,
+      strata: [
+        {
+          complete: true,
+          correctDirection: true,
+          minimumDiscordantPairsPassed: true,
+          multiplicityPassed: true,
+          passed: true,
+        },
+      ],
+    });
+    expect(negativeConclusion).toMatchObject({
+      decision: "negative-control-non-inferiority",
+      passed: true,
+      strata: [{ complete: true, nonInferiorityPassed: true, passed: true }],
+    });
+    expect(report.conclusion).toMatchObject({
+      safetyViolations: 1,
+      zeroSafetyViolationsPassed: false,
+      passed: false,
+    });
+    expect(
+      m3bOverallConclusionSchema.safeParse(report.conclusion).success,
+    ).toBe(true);
+    expect(report.conclusion.contrasts).toHaveLength(4);
   });
 });

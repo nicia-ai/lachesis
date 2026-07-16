@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "smoke": "node --input-type=module -e \"const api = await import('./dist/controller.js'); if (typeof api.preflightPhase !== 'function' || typeof api.generateStoredReport !== 'function') process.exit(1);\"",
+    "smoke": "node --input-type=module -e \"const api = await import('./dist/controller.js'); const m3b = await import('./dist/m3b1-controller.js'); const manifests = await import('./dist/m3b1-manifests.js'); if (typeof api.preflightPhase !== 'function' || typeof api.generateStoredReport !== 'function' || typeof m3b.preflightM3b1 !== 'function' || typeof m3b.executeM3b1 !== 'function' || typeof manifests.materializeM3b1Phase !== 'function') process.exit(1);\"",
     "start": "node dist/cli.js",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
@@ -26,6 +26,7 @@
     "@nicia-ai/lachesis": "workspace:*",
     "@nicia-ai/lachesis-generator": "workspace:*",
     "@nicia-ai/lachesis-generator-ai-sdk": "workspace:*",
+    "@nicia-ai/lachesis-evidence": "workspace:*",
     "zod": "4.4.3"
   },
   "devDependencies": {

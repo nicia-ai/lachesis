@@ -48,6 +48,7 @@ export default defineConfig({
         "apps/benchmark/src/controller.ts",
         "apps/benchmark/src/ledger.ts",
         "apps/benchmark/src/manifests.ts",
+        "apps/benchmark/src/m3b1-*.ts",
         "apps/benchmark/src/protocol.ts",
         "apps/cli/src/example-catalog.ts",
       ],

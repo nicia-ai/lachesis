@@ -7,6 +7,10 @@ import {
   semanticObligationSchema,
 } from "@nicia-ai/lachesis";
 import {
+  M3B_REFERENCE_GRAPH,
+  m3bOracleRequestSchema,
+} from "@nicia-ai/lachesis-evidence";
+import {
   CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
   type CodeModeRepairRequest,
   compileCodeModeStructuredOutputTransport,
@@ -29,16 +33,20 @@ import {
   type AiSdkRuntime,
   createAiSdkModelAdapter,
   createAnthropicCodeModeAdapter,
+  createAnthropicM3bOracle,
   createBedrockAnthropicPlanAdapter,
   createM1bPricingSnapshot,
   createM1bPrimaryAdapters,
   createOpenAiCodeModeAdapter,
+  createOpenAiM3bOracle,
   M1B_ANTHROPIC_MODEL,
   M1B_BEDROCK_ANTHROPIC_MODEL,
   M1B_OPENAI_MODEL,
   M1B_PILOT_CAPS,
   M1B_PRICING_ENTRIES,
   M1B_REPETITIONS,
+  M3B1_ORACLE_IDENTITIES,
+  M3B1_OUTPUT_JSON_SCHEMA,
 } from "../src/index.js";
 
 function unwrap<T, E>(result: Result<T, E>): T {
@@ -104,6 +112,10 @@ function reflectedProperty(value: unknown, key: string): unknown {
 
 function interceptedFetch(
   captured: Array<CapturedFetchRequest>,
+  response: Readonly<{ status: number; message: string }> = {
+    status: 500,
+    message: "provider unavailable: offline interception",
+  },
 ): typeof globalThis.fetch {
   return (resource, options) => {
     const url =
@@ -121,9 +133,15 @@ function interceptedFetch(
       new Response(
         JSON.stringify({
           type: "error",
-          error: { type: "intercepted", message: "offline interception" },
+          error: {
+            type: "intercepted",
+            message: response.message,
+          },
         }),
-        { status: 500, headers: { "content-type": "application/json" } },
+        {
+          status: response.status,
+          headers: { "content-type": "application/json" },
+        },
       ),
     );
   };
@@ -649,6 +667,158 @@ describe("AI SDK provider adapters", () => {
         "select",
       ].toSorted(),
     );
+  });
+
+  it("serializes arm-blinded M3b requests through both real provider routes without network", async () => {
+    const openaiRequests: Array<CapturedFetchRequest> = [];
+    const anthropicRequests: Array<CapturedFetchRequest> = [];
+    const fact = required(
+      M3B_REFERENCE_GRAPH.facts[0],
+      "Missing M3b transport fact.",
+    );
+    const citationIds = new Set(fact.citationIds);
+    const request = m3bOracleRequestSchema.parse({
+      instruction: "Answer this public evidence question.",
+      evidence: {
+        facts: [fact],
+        citations: M3B_REFERENCE_GRAPH.citations.filter((citation) =>
+          citationIds.has(citation.id),
+        ),
+        edges: [],
+        paths: [],
+      },
+    });
+    const openai = createOpenAiM3bOracle({
+      apiKey: "offline-dummy",
+      fetch: interceptedFetch(openaiRequests),
+    });
+    const anthropic = createAnthropicM3bOracle({
+      acknowledgeAdaptiveThinking: true,
+      provider: {
+        apiKey: "offline-dummy",
+        fetch: interceptedFetch(anthropicRequests),
+      },
+    });
+    const context = { recordKey: "0".repeat(64), attemptIndex: 0 };
+
+    const openaiAttempt = await openai.generate(request, context);
+    const anthropicAttempt = await anthropic.generate(request, context);
+    expect(openaiAttempt).toMatchObject({
+      kind: "failure",
+      code: "provider-unavailable",
+      dispatchEvidence: "dispatched-usage-unknown",
+    });
+    expect(anthropicAttempt).toMatchObject({
+      kind: "failure",
+      code: "provider-unavailable",
+      dispatchEvidence: "dispatched-usage-unknown",
+    });
+    const overloaded = createOpenAiM3bOracle({
+      apiKey: "offline-dummy",
+      fetch: interceptedFetch([], { status: 429, message: "overloaded" }),
+    });
+    const timedOut = createAnthropicM3bOracle({
+      acknowledgeAdaptiveThinking: true,
+      provider: {
+        apiKey: "offline-dummy",
+        fetch: interceptedFetch([], { status: 504, message: "timed out" }),
+      },
+    });
+    expect(await overloaded.generate(request, context)).toMatchObject({
+      kind: "failure",
+      code: "provider-overload",
+    });
+    expect(await timedOut.generate(request, context)).toMatchObject({
+      kind: "failure",
+      code: "provider-timeout",
+    });
+    expect(openaiRequests).toHaveLength(1);
+    expect(anthropicRequests).toHaveLength(1);
+    expect(openai.identity).toEqual(
+      M3B1_ORACLE_IDENTITIES.find((identity) => identity.provider === "openai"),
+    );
+    expect(anthropic.identity).toEqual(
+      M3B1_ORACLE_IDENTITIES.find(
+        (identity) => identity.provider === "anthropic",
+      ),
+    );
+
+    const openaiRequest = required(
+      openaiRequests[0],
+      "Missing OpenAI M3b request.",
+    );
+    expect(openaiRequest.url).toMatch(/\/v1\/responses$/u);
+    const openaiBody = z
+      .looseObject({
+        model: z.string(),
+        temperature: z.number().optional(),
+        reasoning: z.looseObject({ effort: z.string() }),
+        store: z.boolean(),
+        service_tier: z.string(),
+        text: z.looseObject({
+          format: z.looseObject({ type: z.string(), schema: z.unknown() }),
+        }),
+        tools: z.array(z.unknown()).optional(),
+      })
+      .parse(openaiRequest.body);
+    expect(openaiBody.model).toBe(M1B_OPENAI_MODEL);
+    expect(openaiBody.temperature).toBeUndefined();
+    expect(openaiBody.reasoning.effort).toBe("low");
+    expect(openaiBody.store).toBe(false);
+    expect(openaiBody.service_tier).toBe("default");
+    expect(openaiBody.tools).toBeUndefined();
+    expectPortableSchema(openaiBody.text.format.schema);
+    expect(unwrap(canonicalizeJson(openaiBody.text.format.schema))).toBe(
+      unwrap(canonicalizeJson(M3B1_OUTPUT_JSON_SCHEMA)),
+    );
+
+    const anthropicRequest = required(
+      anthropicRequests[0],
+      "Missing Anthropic M3b request.",
+    );
+    expect(anthropicRequest.url).toMatch(/\/v1\/messages$/u);
+    const anthropicBody = z
+      .looseObject({
+        model: z.string(),
+        temperature: z.number().optional(),
+        thinking: z.looseObject({ type: z.string() }),
+        output_config: z.looseObject({
+          effort: z.string(),
+          format: z.unknown().optional(),
+        }),
+        tools: z.array(
+          z.looseObject({ name: z.string(), input_schema: z.unknown() }),
+        ),
+        tool_choice: z.looseObject({
+          type: z.string(),
+          disable_parallel_tool_use: z.boolean(),
+        }),
+      })
+      .parse(anthropicRequest.body);
+    expect(anthropicBody.model).toBe(M1B_ANTHROPIC_MODEL);
+    expect(anthropicBody.temperature).toBeUndefined();
+    expect(anthropicBody.thinking.type).toBe("adaptive");
+    expect(anthropicBody.output_config.effort).toBe("low");
+    expect(anthropicBody.output_config.format).toBeUndefined();
+    expect(anthropicBody.tools.map((tool) => tool.name)).toEqual(["json"]);
+    expect(anthropicBody.tool_choice).toEqual({
+      type: "any",
+      disable_parallel_tool_use: true,
+    });
+    expectPortableSchema(anthropicBody.tools[0]?.input_schema);
+    expect(unwrap(canonicalizeJson(anthropicBody.tools[0]?.input_schema))).toBe(
+      unwrap(canonicalizeJson(M3B1_OUTPUT_JSON_SCHEMA)),
+    );
+
+    for (const providerRequest of [openaiRequest, anthropicRequest]) {
+      const serialized = JSON.stringify(providerRequest.body);
+      expect(serialized).toContain(request.instruction);
+      expect(serialized).not.toMatch(
+        /lexical-facts|graph-facts|graph-adjacency|graph-typed|in-memory-reference-graph|matched-text/u,
+      );
+      expect(serialized).not.toContain(context.recordKey);
+      expect(serialized).not.toContain("attemptIndex");
+    }
   });
 
   it("serializes the restricted CodeMode schema through both real provider routes without network", async () => {

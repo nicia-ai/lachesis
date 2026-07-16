@@ -1,8 +1,9 @@
 # M3b: offline execution infrastructure
 
-Status: implemented offline, not externally preregistered, not frozen for live
-inference, and not authorized to spend. TypeGraph and provider SDKs remain
-absent from `@nicia-ai/lachesis-evidence`.
+Status: archived as the offline-unbound design substrate. Its three materialized
+identities are report-only and cannot become live experiments. Provider,
+transport, pricing, durable-controller, and explicit-decision bindings are added
+under the fresh [M3b.1 live-binding protocol](./m3b1-live-binding.md).
 
 M3b turns the M3a.1 substrate benchmark into a matched execution protocol while
 preserving the representation boundary:

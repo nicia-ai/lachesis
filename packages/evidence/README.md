@@ -30,5 +30,11 @@ identity, for 60 total, without changing the frozen M3a.1 constants.
 All generated M3b manifests remain unauthorized with zero operational pool
 allowance. No provider adapter or TypeGraph dependency is present.
 
+M3b.1 keeps this package provider-neutral while generalizing provider identity
+bindings and separating the common answer/citation endpoint from relationship
+citation and path-utilization outcomes. Explicit conclusion objects encode
+direction, discordance, Holm multiplicity, non-inferiority, independent
+provider/repetition passage, and zero-safety requirements.
+
 See [the M3a design](../../docs/m3a-graph-native-decomposition.md) and the
 [M3b offline execution protocol](../../docs/m3b-offline-execution.md).

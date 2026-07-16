@@ -1,4 +1,13 @@
 import {
+  M3B_ORACLE_PROMPT,
+  type M3bOracle,
+  type M3bOracleFailureCode,
+  type M3bOracleIdentity,
+  m3bOracleOutputSchema,
+  type M3bOracleRequest,
+  type M3bOracleUsage,
+} from "@nicia-ai/lachesis-evidence";
+import {
   type AdapterDispatchEvidence,
   calculateCostUsdMicros,
   type CodeModeModelAdapter,
@@ -22,8 +31,11 @@ import {
 import { z } from "zod";
 
 export const AI_SDK_VERSION = "7.0.28";
+export const OPENAI_AI_SDK_PROVIDER_VERSION = "4.0.15";
+export const ANTHROPIC_AI_SDK_PROVIDER_VERSION = "4.0.15";
 export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/4;ai-sdk/${AI_SDK_VERSION}`;
 export const M2_CODEMODE_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};restricted-capability-typescript/3`;
+export const M3B1_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-evidence-oracle/1`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -121,6 +133,65 @@ const ANTHROPIC_BEDROCK_PRICING: PricingEntry = Object.freeze({
   model: M1B_BEDROCK_ANTHROPIC_MODEL,
   sourceUrl: "https://aws.amazon.com/bedrock/pricing/",
 });
+
+export const M3B1_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
+  OPENAI_PRICING,
+  ANTHROPIC_DIRECT_PRICING,
+]);
+
+export function createM3b1PricingSnapshot(): ReturnType<
+  typeof createPricingSnapshot
+> {
+  return createPricingSnapshot({
+    capturedAt: "2026-07-15T00:00:00-07:00",
+    entries: M3B1_PRICING_ENTRIES,
+  });
+}
+
+export const M3B1_OUTPUT_SCHEMA_VERSION =
+  "m3b-provider-portable-answer-citation-path/1";
+function deepFreezeValue(value: unknown): void {
+  if (value === null || typeof value !== "object") return;
+  for (const child of Object.values(value)) deepFreezeValue(child);
+  Object.freeze(value);
+}
+
+const m3b1OutputJsonSchema = {
+  type: "object",
+  properties: {
+    answer: { type: "string", minLength: 1 },
+    citationIds: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 128,
+    },
+    paths: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          factIds: {
+            type: "array",
+            items: { type: "string", minLength: 1 },
+            maxItems: 256,
+          },
+          edgeIds: {
+            type: "array",
+            items: { type: "string", minLength: 1 },
+            maxItems: 256,
+          },
+        },
+        required: ["factIds", "edgeIds"],
+        additionalProperties: false,
+      },
+      maxItems: 256,
+    },
+  },
+  required: ["answer", "citationIds", "paths"],
+  additionalProperties: false,
+};
+deepFreezeValue(m3b1OutputJsonSchema);
+export const M3B1_OUTPUT_JSON_SCHEMA = m3b1OutputJsonSchema;
 
 export const M1B_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
   OPENAI_PRICING,
@@ -899,6 +970,244 @@ export function createAnthropicCodeModeAdapter(
         "createAnthropic",
         providerSettings(input.provider),
         M1B_ANTHROPIC_MODEL,
+        observer,
+      ),
+    providerOptions: {
+      anthropic: {
+        thinking: { type: "adaptive" },
+        effort: "low",
+        structuredOutputMode: "jsonTool",
+      },
+    },
+  });
+}
+
+function m3bOracleIdentity(
+  provider: "openai" | "anthropic",
+): M3bOracleIdentity {
+  return Object.freeze({
+    provider,
+    model: provider === "openai" ? M1B_OPENAI_MODEL : M1B_ANTHROPIC_MODEL,
+    adapterVersion: M3B1_PROVIDER_ADAPTER_VERSION,
+    settings: Object.freeze({
+      temperature: null,
+      reasoning: provider === "openai" ? "low" : "adaptive-low",
+      maxInputTokens: 8_000,
+      maxOutputTokens: 2_000,
+      sdkRetries: 0,
+      structuredOutput: provider === "openai" ? "json-schema" : "json-tool",
+    }),
+  });
+}
+
+export const M3B1_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
+  Object.freeze([m3bOracleIdentity("openai"), m3bOracleIdentity("anthropic")]);
+
+function renderM3bOracleRequest(request: M3bOracleRequest): string {
+  return JSON.stringify({
+    protocol: M3B_ORACLE_PROMPT,
+    instruction: request.instruction,
+    evidence: request.evidence,
+  });
+}
+
+function m3bFailureCode(error: unknown): M3bOracleFailureCode {
+  const message = errorMessage(error).toLowerCase();
+  if (message.includes("overload") || message.includes("429"))
+    return "provider-overload";
+  if (
+    message.includes("timeout") ||
+    message.includes("timed out") ||
+    message.includes("408") ||
+    message.includes("504")
+  )
+    return "provider-timeout";
+  if (
+    message.includes("unavailable") ||
+    message.includes("fetch failed") ||
+    message.includes("network") ||
+    message.includes("econnreset") ||
+    message.includes("socket") ||
+    message.includes("500") ||
+    message.includes("503") ||
+    message.includes("502")
+  )
+    return "provider-unavailable";
+  return "contract-mismatch";
+}
+
+function m3bUsage(
+  usage: z.infer<typeof usageSchema>,
+  pricing: PricingEntry,
+  latencyMs: number,
+): M3bOracleUsage {
+  const normalized = usageFromAiSdk(usage, pricing);
+  return {
+    inputTokens: normalized.inputTokens,
+    outputTokens: normalized.outputTokens,
+    costUsdMicros: normalized.costUsdMicros,
+    latencyMs,
+  };
+}
+
+type M3bAiSdkOracleInput = Readonly<{
+  identity: M3bOracleIdentity;
+  pricing: PricingEntry;
+  loadModel: (observer: DispatchObserver) => Promise<unknown>;
+  providerOptions: ProviderOptions;
+  runtime?: AiSdkRuntime | undefined;
+  timeoutMs?: number | undefined;
+}>;
+
+function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
+  return {
+    identity: input.identity,
+    async generate(request) {
+      const portable = validatePortableStructuredOutputSchema(
+        M3B1_OUTPUT_JSON_SCHEMA,
+      );
+      if (!portable.ok)
+        return {
+          kind: "failure",
+          code: "contract-mismatch",
+          dispatchEvidence: "not-dispatched",
+          usage: null,
+        };
+      const started = performance.now();
+      let dispatched = false;
+      const observer: DispatchObserver = {
+        markDispatched: () => {
+          dispatched = true;
+        },
+      };
+      const abortSignal = AbortSignal.timeout(
+        input.timeoutMs ?? M1B_TIMEOUT_MS,
+      );
+      try {
+        const sdk = input.runtime ?? (await loadAiSdk());
+        const output = sdk.outputObject({
+          name: "m3b_evidence_answer",
+          description:
+            "An answer with supporting citations and evidence paths.",
+          schema: sdk.jsonSchema(M3B1_OUTPUT_JSON_SCHEMA, {
+            validate: (value: unknown) => {
+              const parsed = m3bOracleOutputSchema.safeParse(value);
+              return parsed.success
+                ? { success: true, value: parsed.data }
+                : {
+                    success: false,
+                    error: new Error(
+                      parsed.error.issues
+                        .map((issue) => issue.message)
+                        .join("; "),
+                    ),
+                  };
+            },
+          }),
+        });
+        const raw = await sdk.generateText({
+          model: await input.loadModel(observer),
+          prompt: renderM3bOracleRequest(request),
+          maxOutputTokens: input.identity.settings.maxOutputTokens,
+          maxRetries: 0,
+          abortSignal,
+          ...(input.identity.settings.temperature === null
+            ? {}
+            : { temperature: input.identity.settings.temperature }),
+          providerOptions: input.providerOptions,
+          output,
+        });
+        const parsed = generationResultSchema.safeParse(raw);
+        const latencyMs = Math.max(0, Math.round(performance.now() - started));
+        if (!parsed.success || parsed.data.usage === undefined)
+          return {
+            kind: "failure",
+            code: "contract-mismatch",
+            dispatchEvidence: failureEvidence(dispatched, false),
+            usage: null,
+          };
+        const usage = m3bUsage(parsed.data.usage, input.pricing, latencyMs);
+        const metadata = responseMetadata({
+          configuredModel: input.identity.model,
+          response: parsed.data.response,
+          providerMetadata: parsed.data.providerMetadata,
+          finishReason: parsed.data.finishReason,
+          rawFinishReason: parsed.data.rawFinishReason,
+        });
+        if (isSafetyRefusal(metadata))
+          return {
+            kind: "failure",
+            code: "provider-refusal",
+            dispatchEvidence: "dispatched-with-usage",
+            usage,
+          };
+        const normalized = m3bOracleOutputSchema.safeParse(parsed.data.output);
+        return normalized.success
+          ? { kind: "success", output: normalized.data, usage }
+          : {
+              kind: "failure",
+              code: "contract-mismatch",
+              dispatchEvidence: "dispatched-with-usage",
+              usage,
+            };
+      } catch (error) {
+        const latencyMs = Math.max(0, Math.round(performance.now() - started));
+        return {
+          kind: "failure",
+          code: abortSignal.aborted
+            ? "provider-timeout"
+            : m3bFailureCode(error),
+          dispatchEvidence: failureEvidence(dispatched, false),
+          usage: null,
+          latencyMs,
+        };
+      }
+    },
+  };
+}
+
+export function createOpenAiM3bOracle(
+  provider?: OpenAiProviderSettings,
+): M3bOracle {
+  const identity = m3bOracleIdentity("openai");
+  return createM3bAiSdkOracle({
+    identity,
+    pricing: OPENAI_PRICING,
+    loadModel: (observer) =>
+      providerModel(
+        ["@ai-sdk", "openai"].join("/"),
+        "createOpenAI",
+        providerSettings(provider),
+        identity.model,
+        observer,
+        "responses",
+      ),
+    providerOptions: {
+      openai: {
+        reasoningEffort: "low",
+        store: false,
+        serviceTier: "default",
+      },
+    },
+  });
+}
+
+export function createAnthropicM3bOracle(
+  input: Readonly<{
+    acknowledgeAdaptiveThinking: true;
+    provider?: AnthropicProviderSettings | undefined;
+  }>,
+): M3bOracle {
+  const identity = m3bOracleIdentity("anthropic");
+  return createM3bAiSdkOracle({
+    identity,
+    pricing: ANTHROPIC_DIRECT_PRICING,
+    loadModel: (observer) =>
+      providerModel(
+        ["@ai-sdk", "anthropic"].join("/"),
+        "createAnthropic",
+        providerSettings(input.provider),
+        identity.model,
         observer,
       ),
     providerOptions: {

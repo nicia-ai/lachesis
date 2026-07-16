@@ -11,7 +11,8 @@
       "@nicia-ai/lachesis": ["../../packages/kernel/dist/index.d.ts"],
       "@nicia-ai/lachesis-generator": [
         "../../packages/generator/dist/index.d.ts"
-      ]
+      ],
+      "@nicia-ai/lachesis-evidence": ["../../packages/evidence/dist/index.d.ts"]
     }
   },
   "include": ["src/**/*.ts"],

@@ -58,6 +58,9 @@ importers:
       "@nicia-ai/lachesis":
         specifier: workspace:*
         version: link:../../packages/kernel
+      "@nicia-ai/lachesis-evidence":
+        specifier: workspace:*
+        version: link:../../packages/evidence
       "@nicia-ai/lachesis-generator":
         specifier: workspace:*
         version: link:../../packages/generator
@@ -151,6 +154,9 @@ importers:
       "@ai-sdk/openai":
         specifier: 4.0.15
         version: 4.0.15(zod@4.4.3)
+      "@nicia-ai/lachesis-evidence":
+        specifier: workspace:*
+        version: link:../evidence
       "@nicia-ai/lachesis-generator":
         specifier: workspace:*
         version: link:../generator

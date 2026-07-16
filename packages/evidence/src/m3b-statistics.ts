@@ -1,4 +1,5 @@
 import { type Diagnostic, diagnostic, type Result } from "@nicia-ai/lachesis";
+import { z } from "zod";
 
 import type { M3bArm } from "./m3b-schedule.js";
 
@@ -6,11 +7,14 @@ const TANGO_Z_95 = 1.959963984540054;
 const ROOT_ITERATIONS = 160;
 const ROOT_BOUNDARY_EPSILON = 1e-12;
 
-export type M3bContrastId =
-  | "retrieval-graph-facts-vs-lexical"
-  | "adjacency-vs-graph-facts"
-  | "typed-vs-adjacency"
-  | "negative-control-typed-vs-lexical";
+export const m3bContrastIdSchema = z.enum([
+  "retrieval-graph-facts-vs-lexical",
+  "adjacency-vs-graph-facts",
+  "typed-vs-adjacency",
+  "negative-control-typed-vs-lexical",
+]);
+
+export type M3bContrastId = z.infer<typeof m3bContrastIdSchema>;
 
 export const M3B_CONTRASTS = Object.freeze([
   Object.freeze({
@@ -48,7 +52,7 @@ export const M3B_CONTRASTS = Object.freeze([
 ]);
 
 export const M3B_MULTIPLICITY_POLICY = Object.freeze({
-  version: "1",
+  version: "2",
   primaryRepetition: 0,
   confirmationRepetition: 1,
   repetitionsPooled: false,
@@ -56,6 +60,12 @@ export const M3B_MULTIPLICITY_POLICY = Object.freeze({
     "Holm-Bonferroni at family-wise alpha 0.05 across the three structural contrasts, independently within provider and repetition.",
   negativeControl:
     "Separate paired non-inferiority safety gate with a -0.10 margin; it is not credited as structural superiority.",
+  structuralDecision:
+    "Correct direction, at least 20 discordant pairs, and Holm-adjusted p <= 0.05 must each pass independently in every required provider and repetition.",
+  negativeControlDecision:
+    "The 95% paired risk-difference lower bound must be at least -0.10 independently in every required provider and repetition.",
+  overallDecision:
+    "Every contrast conclusion and the zero-safety-violation gate must pass; repetitions and providers are never pooled for a conclusion.",
   terminalFailures:
     "Failures remain failures in the primary end-to-end estimand. Conditional-on-both-valid-output analysis is secondary only.",
 });
@@ -72,6 +82,14 @@ export type M3bStatisticalObservation = Readonly<{
   validOutput: boolean;
   endToEndSuccess: boolean;
   conditionalSemanticSuccess: boolean | null;
+  pathUtilizationSuccess: boolean;
+  safetyViolation: boolean;
+}>;
+
+export type M3bRequiredStratum = Readonly<{
+  provider: string;
+  model: string;
+  repetition: number;
 }>;
 
 export type M3bPairedInterval = Readonly<{
@@ -107,12 +125,54 @@ export type M3bContrastReport = Readonly<{
   expectedSampleCount: number;
   endToEnd: M3bContrastEstimand;
   conditionalOnBothValidOutputs: M3bContrastEstimand;
+  pathUtilization: M3bContrastEstimand;
 }>;
 
+export const m3bStratumConclusionSchema = z.strictObject({
+  provider: z.string().min(1),
+  model: z.string().min(1),
+  repetition: z.number().int().nonnegative(),
+  complete: z.boolean(),
+  correctDirection: z.boolean(),
+  minimumDiscordantPairsPassed: z.boolean(),
+  multiplicityPassed: z.boolean(),
+  nonInferiorityPassed: z.boolean(),
+  passed: z.boolean(),
+});
+
+export type M3bStratumConclusion = z.infer<typeof m3bStratumConclusionSchema>;
+
+export const m3bContrastConclusionSchema = z.strictObject({
+  contrast: m3bContrastIdSchema,
+  decision: z.enum([
+    "structural-superiority",
+    "negative-control-non-inferiority",
+  ]),
+  requiredProvidersAndRepetitionsPassIndependently: z.literal(true),
+  strata: z.array(m3bStratumConclusionSchema).readonly(),
+  passed: z.boolean(),
+});
+
+export type M3bContrastConclusion = z.infer<typeof m3bContrastConclusionSchema>;
+
+export const m3bOverallConclusionSchema = z.strictObject({
+  structuralSuperiorityRequiresCorrectDirection: z.literal(true),
+  minimumDiscordantPairs: z.literal(20),
+  holmAdjustedAlpha: z.literal(0.05),
+  negativeControlMargin: z.literal(-0.1),
+  safetyViolations: z.number().int().nonnegative(),
+  zeroSafetyViolationsPassed: z.boolean(),
+  contrasts: z.array(m3bContrastConclusionSchema).readonly(),
+  passed: z.boolean(),
+});
+
+export type M3bOverallConclusion = z.infer<typeof m3bOverallConclusionSchema>;
+
 export type M3bStatisticalReport = Readonly<{
-  protocol: "m3b-contrast-statistics/1";
+  protocol: "m3b-contrast-statistics/2";
   multiplicity: typeof M3B_MULTIPLICITY_POLICY;
   contrasts: ReadonlyArray<M3bContrastReport>;
+  conclusion: M3bOverallConclusion;
 }>;
 
 function binomialProbability(n: number, k: number): number {
@@ -280,7 +340,7 @@ function pairsFor(
   observations: ReadonlyArray<M3bStatisticalObservation>,
   left: M3bArm,
   right: M3bArm,
-  conditional: boolean,
+  endpoint: "end-to-end" | "conditional" | "path-utilization",
 ): ReadonlyArray<Pair> {
   const byCase = new Map<string, Map<M3bArm, M3bStatisticalObservation>>();
   for (const observation of observations) {
@@ -297,26 +357,86 @@ function pairsFor(
     if (
       leftObservation === undefined ||
       rightObservation === undefined ||
-      (conditional &&
+      (endpoint === "conditional" &&
         (!leftObservation.validOutput || !rightObservation.validOutput))
     )
       continue;
     pairs.push({
-      left: conditional
-        ? leftObservation.conditionalSemanticSuccess === true
-        : leftObservation.endToEndSuccess,
-      right: conditional
-        ? rightObservation.conditionalSemanticSuccess === true
-        : rightObservation.endToEndSuccess,
+      left:
+        endpoint === "conditional"
+          ? leftObservation.conditionalSemanticSuccess === true
+          : endpoint === "path-utilization"
+            ? leftObservation.pathUtilizationSuccess
+            : leftObservation.endToEndSuccess,
+      right:
+        endpoint === "conditional"
+          ? rightObservation.conditionalSemanticSuccess === true
+          : endpoint === "path-utilization"
+            ? rightObservation.pathUtilizationSuccess
+            : rightObservation.endToEndSuccess,
     });
   }
   return pairs;
 }
 
+function contrastConclusion(
+  contrast: (typeof M3B_CONTRASTS)[number],
+  reports: ReadonlyArray<M3bContrastReport>,
+  requiredStrata: ReadonlyArray<M3bRequiredStratum>,
+): M3bContrastConclusion {
+  const decision =
+    contrast.family === "structural-superiority"
+      ? ("structural-superiority" as const)
+      : ("negative-control-non-inferiority" as const);
+  const strata = requiredStrata.map((required) => {
+    const report = reports.find(
+      (candidate) =>
+        candidate.contrast === contrast.id &&
+        candidate.provider === required.provider &&
+        candidate.model === required.model &&
+        candidate.repetition === required.repetition,
+    );
+    const complete =
+      report?.endToEnd.sampleCount ===
+      contrast.heldoutSamplePerProviderRepetition;
+    const estimate = report?.endToEnd.interval?.estimate;
+    const correctDirection = estimate !== undefined && estimate > 0;
+    const minimumDiscordantPairsPassed =
+      (report?.endToEnd.discordantPairs ?? 0) >= 20;
+    const multiplicityPassed =
+      report?.endToEnd.holmAdjustedPValue !== null &&
+      report?.endToEnd.holmAdjustedPValue !== undefined &&
+      report.endToEnd.holmAdjustedPValue <= 0.05;
+    const nonInferiorityPassed = report?.endToEnd.nonInferiorityPassed === true;
+    const passed =
+      decision === "structural-superiority"
+        ? complete &&
+          correctDirection &&
+          minimumDiscordantPairsPassed &&
+          multiplicityPassed
+        : complete && nonInferiorityPassed;
+    return {
+      ...required,
+      complete,
+      correctDirection,
+      minimumDiscordantPairsPassed,
+      multiplicityPassed,
+      nonInferiorityPassed,
+      passed,
+    };
+  });
+  return {
+    contrast: contrast.id,
+    decision,
+    requiredProvidersAndRepetitionsPassIndependently: true,
+    strata,
+    passed: strata.length > 0 && strata.every((stratum) => stratum.passed),
+  };
+}
+
 function applyHolm(reports: Array<M3bContrastReport>): void {
   const structural = reports
     .filter((report) => report.contrast !== "negative-control-typed-vs-lexical")
-    .filter((report) => report.endToEnd.exactMcNemarPValue !== null)
     .toSorted(
       (left, right) =>
         (left.endToEnd.exactMcNemarPValue ?? 1) -
@@ -324,12 +444,10 @@ function applyHolm(reports: Array<M3bContrastReport>): void {
     );
   let prior = 0;
   for (const [index, report] of structural.entries()) {
+    const pValue = report.endToEnd.exactMcNemarPValue ?? 1;
     const adjusted = Math.min(
       1,
-      Math.max(
-        prior,
-        (report.endToEnd.exactMcNemarPValue ?? 1) * (structural.length - index),
-      ),
+      Math.max(prior, pValue * (structural.length - index)),
     );
     prior = adjusted;
     const position = reports.indexOf(report);
@@ -343,6 +461,7 @@ function applyHolm(reports: Array<M3bContrastReport>): void {
 
 export function evaluateM3bStatistics(
   observations: ReadonlyArray<M3bStatisticalObservation>,
+  expectedStrata?: ReadonlyArray<M3bRequiredStratum>,
 ): M3bStatisticalReport {
   const strata = new Map<string, Array<M3bStatisticalObservation>>();
   for (const observation of observations) {
@@ -367,19 +486,60 @@ export function evaluateM3bStatistics(
         repetition: first.repetition,
         expectedSampleCount: contrast.heldoutSamplePerProviderRepetition,
         endToEnd: estimand(
-          pairsFor(population, contrast.left, contrast.right, false),
+          pairsFor(population, contrast.left, contrast.right, "end-to-end"),
         ),
         conditionalOnBothValidOutputs: estimand(
-          pairsFor(population, contrast.left, contrast.right, true),
+          pairsFor(population, contrast.left, contrast.right, "conditional"),
+        ),
+        pathUtilization: estimand(
+          pairsFor(
+            population,
+            contrast.left,
+            contrast.right,
+            "path-utilization",
+          ),
         ),
       });
     }
     applyHolm(stratumReports);
     reports.push(...stratumReports);
   }
+  const requiredStrata =
+    expectedStrata ??
+    [...strata.values()].flatMap((stratum) => {
+      const first = stratum[0];
+      return first === undefined
+        ? []
+        : [
+            {
+              provider: first.provider,
+              model: first.model,
+              repetition: first.repetition,
+            },
+          ];
+    });
+  const conclusions = M3B_CONTRASTS.map((contrast) =>
+    contrastConclusion(contrast, reports, requiredStrata),
+  );
+  const safetyViolations = observations.filter(
+    (observation) => observation.safetyViolation,
+  ).length;
+  const conclusion: M3bOverallConclusion = {
+    structuralSuperiorityRequiresCorrectDirection: true,
+    minimumDiscordantPairs: 20,
+    holmAdjustedAlpha: 0.05,
+    negativeControlMargin: -0.1,
+    safetyViolations,
+    zeroSafetyViolationsPassed: safetyViolations === 0,
+    contrasts: conclusions,
+    passed:
+      safetyViolations === 0 &&
+      conclusions.every((contrast) => contrast.passed),
+  };
   return {
-    protocol: "m3b-contrast-statistics/1",
+    protocol: "m3b-contrast-statistics/2",
     multiplicity: M3B_MULTIPLICITY_POLICY,
     contrasts: reports,
+    conclusion,
   };
 }

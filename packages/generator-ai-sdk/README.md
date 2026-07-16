@@ -49,3 +49,9 @@ Dispatched failures without usage retain the authorized conservative
 reservation.
 
 The package does not launch a pilot or read credentials on import.
+
+M3b.1 adds arm-blinded evidence-oracle adapters over direct OpenAI Responses and
+Anthropic Messages. Both receive the same strict answer/citation/path schema;
+Anthropic uses the internal JSON tool. Provider retries remain zero.
+Real-package intercepted-fetch tests prove arm and evidence-source
+implementation identities are absent from outgoing requests.

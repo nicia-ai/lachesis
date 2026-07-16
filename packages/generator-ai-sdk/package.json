@@ -30,6 +30,7 @@
     "@ai-sdk/anthropic": "4.0.15",
     "@ai-sdk/openai": "4.0.15",
     "@nicia-ai/lachesis-generator": "workspace:*",
+    "@nicia-ai/lachesis-evidence": "workspace:*",
     "ai": "7.0.28",
     "zod": "4.4.3"
   },
