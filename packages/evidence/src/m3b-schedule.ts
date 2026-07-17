@@ -15,9 +15,11 @@ export const m3bArmSchema = z.enum([
 
 export type M3bArm = z.infer<typeof m3bArmSchema>;
 
-const armOrderSchema = z
+const twoArmOrderSchema = z.tuple([m3bArmSchema, m3bArmSchema]).readonly();
+const fourArmOrderSchema = z
   .tuple([m3bArmSchema, m3bArmSchema, m3bArmSchema, m3bArmSchema])
   .readonly();
+const armOrderSchema = z.union([twoArmOrderSchema, fourArmOrderSchema]);
 
 const scheduleEntrySchema = z
   .strictObject({
@@ -35,9 +37,10 @@ const scheduleEntrySchema = z
 export const m3bWilliamsScheduleSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
-    algorithm: z.literal(
+    algorithm: z.enum([
       "sha256-provider-repetition-balanced-williams-four-arm-v1",
-    ),
+      "sha256-provider-repetition-counterbalanced-two-arm-v1",
+    ]),
     entries: z.array(scheduleEntrySchema).min(1).readonly(),
     scheduleDigest: z.string().regex(/^[a-f0-9]{64}$/),
   })
@@ -54,6 +57,13 @@ export const M3B_WILLIAMS_SEQUENCES: ReadonlyArray<M3bScheduleEntry["order"]> =
     ["graph-typed", "lexical-facts", "graph-adjacency", "graph-facts"],
   ]);
 
+export const M3B_WIRE_STRESS_SEQUENCES: ReadonlyArray<
+  M3bScheduleEntry["order"]
+> = Object.freeze([
+  ["graph-facts", "graph-adjacency"],
+  ["graph-adjacency", "graph-facts"],
+]);
+
 type ScheduleCase = Readonly<{ id: string; digest: string }>;
 type ScheduleProvider = Readonly<{ provider: string; model: string }>;
 
@@ -66,6 +76,14 @@ export async function createM3bWilliamsSchedule(
     cases: ReadonlyArray<ScheduleCase>;
     providers: ReadonlyArray<ScheduleProvider>;
     repetitions: number;
+    arms?:
+      | readonly ["graph-facts", "graph-adjacency"]
+      | readonly [
+          "lexical-facts",
+          "graph-facts",
+          "graph-adjacency",
+          "graph-typed",
+        ];
   }>,
 ): Promise<Result<M3bWilliamsSchedule, Diagnostic>> {
   if (
@@ -93,6 +111,8 @@ export async function createM3bWilliamsSchedule(
       ),
     };
   const entries: Array<M3bScheduleEntry> = [];
+  const stress = input.arms?.length === 2;
+  const sequences = stress ? M3B_WIRE_STRESS_SEQUENCES : M3B_WILLIAMS_SEQUENCES;
   for (const provider of providers)
     for (let repetition = 0; repetition < input.repetitions; repetition += 1) {
       const seeded = [];
@@ -112,10 +132,11 @@ export async function createM3bWilliamsSchedule(
         left.unitDigest.localeCompare(right.unitDigest),
       );
       const offset =
-        Number.parseInt(ordered[0]?.unitDigest.slice(0, 2) ?? "0", 16) % 4;
+        Number.parseInt(ordered[0]?.unitDigest.slice(0, 2) ?? "0", 16) %
+        sequences.length;
       for (const [index, unit] of ordered.entries()) {
-        const sequenceIndex = (index + offset) % 4;
-        const order = M3B_WILLIAMS_SEQUENCES[sequenceIndex];
+        const sequenceIndex = (index + offset) % sequences.length;
+        const order = sequences[sequenceIndex];
         if (order === undefined)
           return {
             ok: false,
@@ -129,8 +150,9 @@ export async function createM3bWilliamsSchedule(
     }
   const body = {
     formatVersion: "1" as const,
-    algorithm:
-      "sha256-provider-repetition-balanced-williams-four-arm-v1" as const,
+    algorithm: stress
+      ? ("sha256-provider-repetition-counterbalanced-two-arm-v1" as const)
+      : ("sha256-provider-repetition-balanced-williams-four-arm-v1" as const),
     entries: entries.toSorted((left, right) =>
       left.unitDigest.localeCompare(right.unitDigest),
     ),
@@ -187,7 +209,8 @@ export function auditM3bWilliamsSchedule(
     }
     const positionValues = [...positions.values()];
     const predecessorValues = [...predecessors.values()];
-    const expectedFloor = Math.floor(entries.length / 4);
+    const armCount = entries[0]?.order.length ?? 4;
+    const expectedFloor = Math.floor(entries.length / armCount);
     positionImbalanceMaximum = Math.max(
       positionImbalanceMaximum,
       ...positionValues.map((value) => Math.abs(value - expectedFloor)),

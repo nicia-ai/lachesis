@@ -20,10 +20,11 @@ import {
 import {
   AI_SDK_VERSION,
   ANTHROPIC_AI_SDK_PROVIDER_VERSION,
-  createM3b3PricingSnapshot,
-  M3B3_ORACLE_IDENTITIES,
-  M3B3_OUTPUT_JSON_SCHEMA,
-  M3B3_OUTPUT_SCHEMA_VERSION,
+  createM3b4PricingSnapshot,
+  M3B4_ANTHROPIC_TRANSPORT_SELECTION,
+  M3B4_ORACLE_IDENTITIES,
+  M3B4_OUTPUT_JSON_SCHEMA,
+  M3B4_OUTPUT_SCHEMA_VERSION,
   OPENAI_AI_SDK_PROVIDER_VERSION,
 } from "@nicia-ai/lachesis-generator-ai-sdk";
 import { z } from "zod";
@@ -31,6 +32,7 @@ import { z } from "zod";
 const digestSchema = z.string().regex(/^[a-f0-9]{64}$/u);
 const phaseSchema = z.enum([
   "m3b-protocol-probe",
+  "m3b-wire-stress-probe",
   "m3b-calibration",
   "m3b-heldout",
 ]);
@@ -84,7 +86,7 @@ const transportBindingSchema = z
     adapterVersion: z.string().min(1),
     route: z.enum(["openai-responses", "anthropic-messages"]),
     structuredOutput: z.enum(["json-schema", "json-tool"]),
-    outputSchemaVersion: z.literal(M3B3_OUTPUT_SCHEMA_VERSION),
+    outputSchemaVersion: z.literal(M3B4_OUTPUT_SCHEMA_VERSION),
     outputSchemaDigest: digestSchema,
     transportDigest: digestSchema,
     pricingEntryId: z.string().min(1),
@@ -117,7 +119,7 @@ const theoreticalCeilingSchema = z
 export const m3b1PhaseManifestSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
-    milestone: z.literal("m3b.3"),
+    milestone: z.literal("m3b.4"),
     status: z.literal("unexecuted-live-capable"),
     phase: phaseSchema,
     sourceCommit: z.string().regex(/^[a-f0-9]{40}$/u),
@@ -138,6 +140,7 @@ export const m3b1PhaseManifestSchema = z
     maximumTransportRetries: z.number().int().nonnegative(),
     maximumCalls: z.number().int().positive(),
     semanticRepairCalls: z.number().int().nonnegative(),
+    wireRepairCalls: z.number().int().nonnegative(),
     failurePolicy: z
       .strictObject({
         sdkRetries: z.literal(0),
@@ -153,11 +156,17 @@ export const m3b1PhaseManifestSchema = z
           "full-conservative-charge-per-dispatched-attempt",
         ),
         semanticRepairsPerRecord: z.literal(1),
+        wireRepairsPerRecord: z.literal(1),
+        contractFailuresRetryable: z.literal(false),
       })
       .readonly(),
     executionPolicy: z.literal("exact-controller-authorization-required"),
     experimentDigest: digestSchema,
     storageNamespace: z.string().min(1),
+    anthropicTransportSelection: z.literal(
+      M3B4_ANTHROPIC_TRANSPORT_SELECTION.selected,
+    ),
+    anthropicTransportComparisonDigest: digestSchema,
     phaseManifestDigest: digestSchema,
   })
   .readonly();
@@ -214,6 +223,16 @@ export const M3B_OFFLINE_DESIGN_IDENTITIES = Object.freeze([
     experimentDigest:
       "32fef0c2365a8f6a7af96030d10720b67d3665a570a15a04c2a39824922dbfaa",
     disposition: "superseded-unexecuted" as const,
+  }),
+  Object.freeze({
+    experimentDigest:
+      "aff7fd3f5ca2cd059feccd390e5c4ee91b78713969ed4d48da2bcab5afb1d871",
+    disposition: "complete-calibration-fail" as const,
+  }),
+  Object.freeze({
+    experimentDigest:
+      "d36ddbd031df4194b9be0f3b1b13ef169cca4028e4fe58b7afab6676c27e7ce5",
+    disposition: "blocked-unexecuted" as const,
   }),
 ]);
 
@@ -297,10 +316,11 @@ function theoreticalCeiling(
       substrate.manifest.schedule.entries.filter(
         (scheduled) => scheduled.provider === identity.provider,
       ).length *
-      4 *
+      substrate.manifest.scheduledArms.length *
       (1 +
         substrate.manifest.semanticRepairCalls /
-          substrate.manifest.initialCalls) *
+          substrate.manifest.initialCalls +
+        substrate.manifest.wireRepairCalls / substrate.manifest.initialCalls) *
       (1 + M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt);
     const perCall = calculateMaximumCostUsdMicros(
       entry,
@@ -353,13 +373,13 @@ async function providerBindings(
   Result<ReadonlyArray<z.infer<typeof transportBindingSchema>>, Diagnostic>
 > {
   const portable = validatePortableStructuredOutputSchema(
-    M3B3_OUTPUT_JSON_SCHEMA,
+    M3B4_OUTPUT_JSON_SCHEMA,
   );
   if (!portable.ok) return portable;
-  const outputSchemaDigest = await digestValue(M3B3_OUTPUT_JSON_SCHEMA);
+  const outputSchemaDigest = await digestValue(M3B4_OUTPUT_JSON_SCHEMA);
   if (!outputSchemaDigest.ok) return outputSchemaDigest;
   const bindings: Array<z.infer<typeof transportBindingSchema>> = [];
-  for (const identity of M3B3_ORACLE_IDENTITIES.toSorted((left, right) =>
+  for (const identity of M3B4_ORACLE_IDENTITIES.toSorted((left, right) =>
     left.provider.localeCompare(right.provider),
   )) {
     const pricingEntry = pricingFor(pricing, identity.provider);
@@ -403,7 +423,7 @@ async function providerBindings(
           ? ("openai-responses" as const)
           : ("anthropic-messages" as const),
       structuredOutput: identity.settings.structuredOutput,
-      outputSchemaVersion: M3B3_OUTPUT_SCHEMA_VERSION,
+      outputSchemaVersion: M3B4_OUTPUT_SCHEMA_VERSION,
       outputSchemaDigest: outputSchemaDigest.value,
       pricingEntryId: pricingEntry.id,
       pricingEntryDigest: pricingEntryDigest.value,
@@ -428,15 +448,20 @@ export async function materializeM3b1Phase(input: {
   if (!campaign.ok) return { ok: false, error: [campaign.error] };
   const substrate = await materializeM3bPhase({
     ...input,
-    providers: M3B3_ORACLE_IDENTITIES,
+    providers: M3B4_ORACLE_IDENTITIES,
   });
   if (!substrate.ok) return substrate;
-  const pricing = await createM3b3PricingSnapshot();
+  const pricing = await createM3b4PricingSnapshot();
   if (!pricing.ok) return pricing;
   const bindings = await providerBindings(pricing.value);
   if (!bindings.ok) return { ok: false, error: [bindings.error] };
   const ceiling = theoreticalCeiling(substrate.value, pricing.value);
   if (!ceiling.ok) return { ok: false, error: [ceiling.error] };
+  const anthropicTransportComparisonDigest = await digestValue(
+    M3B4_ANTHROPIC_TRANSPORT_SELECTION,
+  );
+  if (!anthropicTransportComparisonDigest.ok)
+    return { ok: false, error: [anthropicTransportComparisonDigest.error] };
   const budgetPoolId =
     input.phase === "m3b-heldout"
       ? ("m3b-heldout" as const)
@@ -473,7 +498,7 @@ export async function materializeM3b1Phase(input: {
       };
   }
   const experimentBody = {
-    milestone: "m3b.3" as const,
+    milestone: "m3b.4" as const,
     phase: input.phase,
     sourceCommit: input.sourceCommit,
     campaignDigest: campaign.value.campaignDigest,
@@ -495,6 +520,7 @@ export async function materializeM3b1Phase(input: {
     maximumTransportRetries: substrate.value.manifest.maximumTransportRetries,
     maximumCalls: substrate.value.manifest.maximumCalls,
     semanticRepairCalls: substrate.value.manifest.semanticRepairCalls,
+    wireRepairCalls: substrate.value.manifest.wireRepairCalls,
     failurePolicy: {
       sdkRetries: 0 as const,
       controllerRetriesPerRecord: 1 as const,
@@ -506,8 +532,13 @@ export async function materializeM3b1Phase(input: {
       unknownUsageSettlement:
         "full-conservative-charge-per-dispatched-attempt" as const,
       semanticRepairsPerRecord: 1 as const,
+      wireRepairsPerRecord: 1 as const,
+      contractFailuresRetryable: false as const,
     },
     executionPolicy: "exact-controller-authorization-required" as const,
+    anthropicTransportSelection: M3B4_ANTHROPIC_TRANSPORT_SELECTION.selected,
+    anthropicTransportComparisonDigest:
+      anthropicTransportComparisonDigest.value,
   };
   const experimentDigest = await digestValue(experimentBody);
   if (!experimentDigest.ok)
@@ -518,7 +549,7 @@ export async function materializeM3b1Phase(input: {
     campaignId: campaign.value.campaignId,
     ...experimentBody,
     experimentDigest: experimentDigest.value,
-    storageNamespace: `m3b3/${input.phase}/experiments/${experimentDigest.value}`,
+    storageNamespace: `m3b4/${input.phase}/experiments/${experimentDigest.value}`,
   };
   const phaseManifestDigest = await digestValue(manifestBody);
   return phaseManifestDigest.ok

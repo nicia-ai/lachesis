@@ -125,7 +125,10 @@ four-arm substrate benchmark and M3b kill gates, and the
 study substrate, [M3b.1 live binding](docs/m3b1-live-binding.md) for the frozen
 failed probe, the [M3b.2 correction](docs/m3b2-protocol-correction.md), and the
 [M3b.3 semantic-obligation correction](docs/m3b3-semantic-obligations.md) for
-the current offline-only provider and scoring protocol.
+the frozen calibration failure. The current offline milestone is
+[M3b.4 structured-output forensics](docs/m3b4-structured-output-forensics.md),
+which adds staged decoding, bounded raw-output artifacts, one wire repair, and a
+fresh matched stress-probe design.
 
 ## Validation
 
@@ -147,9 +150,10 @@ SQL/Drizzle, persistent knowledge-graph storage, model-facing graph-native
 traversal, joins, `boundedExplore`, optimizer rewrites, durable/distributed
 scheduling, general adaptive loops, package publication, and deployment. M3b.1
 is closed as a protocol failure; its calibration and held-out identities were
-never executed. M3b.2 is frozen as a semantic-gate failure. Fresh M3b.3
-identities have no spend authority until external preregistration and a separate
-exact phase acknowledgement.
+never executed. M3b.2 is frozen as a semantic-gate failure. M3b.3 passed its
+probe and is frozen as an immutable calibration failure; held-out was not
+authorized. M3b.4 is offline-only and has no spend authority until external
+preregistration and a separate exact stress-probe acknowledgement.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

@@ -41,4 +41,5 @@ final repaired outcomes remain separate.
 See [the M3a design](../../docs/m3a-graph-native-decomposition.md) and the
 [M3b offline execution protocol](../../docs/m3b-offline-execution.md), and the
 [M3b.2 correction](../../docs/m3b2-protocol-correction.md), and the
-[M3b.3 semantic obligations](../../docs/m3b3-semantic-obligations.md).
+[M3b.3 semantic obligations](../../docs/m3b3-semantic-obligations.md), and the
+[M3b.4 staged wire-recovery design](../../docs/m3b4-structured-output-forensics.md).

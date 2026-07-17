@@ -1,8 +1,11 @@
 # M3b.3: typed evidence-answer obligations
 
-Status: implemented and verified offline. This document does not authorize a
-provider call, materialization into a frozen directory, calibration, or held-out
-inference.
+Status: frozen historical protocol. Its 48-record probe passed. Its calibration
+is an immutable `complete-calibration-fail` after four Anthropic
+`graph-adjacency` responses failed at the provider-to-AI-SDK structured-output
+decoding boundary. Held-out was never authorized and remains blocked. The
+forward-looking probe language below records the preregistered design before
+execution; it is not current authorization.
 
 M3b.2 is frozen as `complete-semantic-gate-fail`. Its 16 durable records, ledger
 settlements, report, and preregistration artifacts remain immutable. The M3b.2
@@ -77,3 +80,7 @@ The frozen gate requires:
 
 External preregistration and a fresh exact authorization are required before the
 probe. Calibration and held-out execution remain unauthorized.
+
+The subsequent execution history and M3b.4 correction are documented in
+[M3b.4 structured-output forensics](m3b4-structured-output-forensics.md). No
+M3b.3 identity may be rerun.

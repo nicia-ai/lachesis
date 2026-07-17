@@ -104,4 +104,11 @@ as `complete-semantic-gate-fail`. M3b.3 adds public executable answer
 obligations, independently reported bounded semantic repair, and a 48-record
 six-category probe. It retains the same append-only campaign ledger and uses a
 new content-addressed `m3b3/` record namespace. No M3b.3 phase is authorized by
-materialization. See [M3b.3](../../docs/m3b3-semantic-obligations.md).
+materialization. Its probe passed, but calibration is frozen as
+`complete-calibration-fail` after four post-provider Anthropic decoding
+failures; held-out remains blocked. M3b.4 adds explicit SDK error forensics,
+content-addressed mode-`0600` bounded raw-output artifacts, SDK-independent
+staged decoding, and one non-retryable wire-repair stage. Its new 96-record
+matched stress probe is offline-only. See
+[M3b.3](../../docs/m3b3-semantic-obligations.md) and
+[M3b.4](../../docs/m3b4-structured-output-forensics.md).

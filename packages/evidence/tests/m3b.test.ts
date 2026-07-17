@@ -94,6 +94,7 @@ function recordedOracle(
 
 describe("M3b offline execution infrastructure", () => {
   let probe: M3bMaterializedPhase;
+  let stress: M3bMaterializedPhase;
   let calibration: M3bMaterializedPhase;
   let heldout: M3bMaterializedPhase;
 
@@ -101,6 +102,12 @@ describe("M3b offline execution infrastructure", () => {
     probe = unwrap(
       await materializeM3bPhase({
         phase: "m3b-protocol-probe",
+        sourceCommit: "793a033d963921823d5bdde1ead6bcb74238a439",
+      }),
+    );
+    stress = unwrap(
+      await materializeM3bPhase({
+        phase: "m3b-wire-stress-probe",
         sourceCommit: "793a033d963921823d5bdde1ead6bcb74238a439",
       }),
     );
@@ -150,19 +157,49 @@ describe("M3b offline execution infrastructure", () => {
       cases: 6,
       initialCalls: 48,
       maximumSemanticRepairs: 48,
-      maximumTransportRetries: 96,
-      maximumCalls: 192,
+      maximumWireRepairs: 48,
+      maximumTransportRetries: 144,
+      maximumCalls: 288,
       frozenNeighborhoods: 24,
       sharedPlanIdentities: 1,
       liveExecutionAuthorized: false,
       passed: true,
     });
+    expect(blindAuditM3bMaterialization(stress)).toMatchObject({
+      cases: 6,
+      initialCalls: 96,
+      maximumSemanticRepairs: 96,
+      maximumWireRepairs: 96,
+      maximumTransportRetries: 288,
+      maximumCalls: 576,
+      frozenNeighborhoods: 24,
+      passed: true,
+    });
+    expect(stress.manifest.scheduledArms).toEqual([
+      "graph-facts",
+      "graph-adjacency",
+    ]);
+    expect(
+      Object.fromEntries(
+        ["provenance", "temporal"].map((category) => [
+          category,
+          stress.cases.filter((item) => item.task.category === category).length,
+        ]),
+      ),
+    ).toEqual({ provenance: 3, temporal: 3 });
+    for (const provider of stress.manifest.providers)
+      expect(
+        stress.manifest.schedule.entries.filter(
+          (entry) => entry.provider === provider.provider,
+        ).length,
+      ).toBe(24);
     expect(blindAuditM3bMaterialization(calibration)).toMatchObject({
       cases: 30,
       initialCalls: 240,
       maximumSemanticRepairs: 240,
-      maximumTransportRetries: 480,
-      maximumCalls: 960,
+      maximumWireRepairs: 240,
+      maximumTransportRetries: 720,
+      maximumCalls: 1_440,
       frozenNeighborhoods: 120,
       passed: true,
     });
@@ -170,8 +207,9 @@ describe("M3b offline execution infrastructure", () => {
       cases: 160,
       initialCalls: 2_560,
       maximumSemanticRepairs: 2_560,
-      maximumTransportRetries: 5_120,
-      maximumCalls: 10_240,
+      maximumWireRepairs: 2_560,
+      maximumTransportRetries: 7_680,
+      maximumCalls: 15_360,
       frozenNeighborhoods: 640,
       passed: true,
     });
@@ -181,10 +219,11 @@ describe("M3b offline execution infrastructure", () => {
     expect(
       new Set([
         probe.manifest.experimentDigest,
+        stress.manifest.experimentDigest,
         calibration.manifest.experimentDigest,
         heldout.manifest.experimentDigest,
       ]).size,
-    ).toBe(3);
+    ).toBe(4);
   });
 
   it("uses balanced four-arm Williams sequences in every stratum", () => {
@@ -197,6 +236,10 @@ describe("M3b offline execution infrastructure", () => {
     expect(
       auditM3bWilliamsSchedule(calibration.manifest.schedule),
     ).toMatchObject({ strata: 2, passed: true });
+    expect(auditM3bWilliamsSchedule(stress.manifest.schedule)).toMatchObject({
+      strata: 8,
+      passed: true,
+    });
     expect(auditM3bWilliamsSchedule(heldout.manifest.schedule)).toEqual({
       strata: 4,
       positionImbalanceMaximum: 0,
@@ -227,6 +270,7 @@ describe("M3b offline execution infrastructure", () => {
       resumed: 0,
       transportRetries: 0,
       semanticRepairs: 0,
+      wireRepairs: 0,
     });
     expect(new Set(first.records.map((record) => record.planHash)).size).toBe(
       1,
@@ -273,6 +317,7 @@ describe("M3b offline execution infrastructure", () => {
         "instruction",
         "answerContract",
         "evidence",
+        "wireRepair",
         "semanticRepair",
       ]);
       expect(JSON.stringify(request)).not.toMatch(
@@ -387,6 +432,104 @@ describe("M3b offline execution infrastructure", () => {
           createM3bContractOutput(example),
       ).map((issue) => issue.code),
     ).toContain("answer-values-not-derived-from-supporting-facts");
+  });
+
+  it("performs one bounded wire repair without treating deterministic decoding failures as transport retries", async () => {
+    const requests: Array<M3bOracleRequest> = [];
+    const wireOracle = (modelIndex: 0 | 1): M3bOracle =>
+      recordedOracle({
+        modelIndex,
+        requests,
+        generate: (request) =>
+          request.wireRepair === null
+            ? {
+                kind: "failure",
+                code: "wire-schema-rejected",
+                dispatchEvidence: "dispatched-with-usage",
+                usage: {
+                  inputTokens: 80,
+                  outputTokens: 15,
+                  costUsdMicros: 8,
+                  latencyMs: 3,
+                },
+                provenance: {
+                  ...provenance("wire-schema-rejected", true),
+                  rawOutputArtifact: {
+                    digest: "3".repeat(64),
+                    storedSizeBytes: 2,
+                    originalSizeBytes: 2,
+                    truncated: false,
+                  },
+                  jsonParseResult: "passed",
+                  wireSchemaResult: "failed",
+                  issues: [
+                    {
+                      code: "invalid_type",
+                      path: ["pathIds"],
+                      message: "Expected an array.",
+                    },
+                  ],
+                },
+              }
+            : successfulOutput(request),
+      });
+    const result = unwrap(
+      await runM3bWithOracles({
+        materialized: probe,
+        oracles: [wireOracle(0), wireOracle(1)],
+        store: createMemoryM3bStore(),
+        rawOutputReader: () => Promise.resolve({ ok: true, value: "{}" }),
+      }),
+    );
+
+    expect(result).toMatchObject({
+      dispatched: 48,
+      transportRetries: 0,
+      wireRepairs: 48,
+      semanticRepairs: 0,
+    });
+    expect(
+      result.records.every(
+        (record) =>
+          record.firstAttemptOutput === null &&
+          !record.firstAttemptEndToEndSuccess &&
+          record.wireRepairCalls === 1 &&
+          record.wireRepairSucceeded === true &&
+          record.postWireRepairSuccess &&
+          record.endToEndSuccess,
+      ),
+    ).toBe(true);
+    expect(
+      requests.filter((request) => request.wireRepair !== null),
+    ).toHaveLength(48);
+    expect(
+      requests
+        .filter((request) => request.wireRepair !== null)
+        .every(
+          (request) =>
+            request.semanticRepair === null &&
+            request.wireRepair?.previousRawOutput === "{}" &&
+            request.wireRepair.decodingIssues[0]?.code === "invalid_type",
+        ),
+    ).toBe(true);
+    for (const request of requests.filter(
+      (candidate) => candidate.wireRepair !== null,
+    )) {
+      const serialized = JSON.stringify(request);
+      const benchmarkCase = probe.cases.find(
+        (candidate) => candidate.task.instruction === request.instruction,
+      );
+      expect(serialized).not.toMatch(
+        /expectedAnswerValues|expectedCitationIds|semanticScore|lexical-facts|graph-facts|graph-adjacency|graph-typed/u,
+      );
+      for (const hiddenValue of benchmarkCase?.task.expectedAnswerValues ??
+        []) {
+        const visible = request.evidence.facts.some(
+          (fact) => fact.subject === hiddenValue || fact.object === hiddenValue,
+        );
+        expect(visible || !serialized.includes(hiddenValue)).toBe(true);
+      }
+    }
   });
 
   it("retries transport failures symmetrically inside each scheduled slot", async () => {
@@ -686,6 +829,7 @@ describe("M3b offline execution infrastructure", () => {
       "cases",
       "initialCalls",
       "maximumSemanticRepairs",
+      "maximumWireRepairs",
       "maximumTransportRetries",
       "maximumCalls",
       "frozenNeighborhoods",

@@ -49,8 +49,9 @@ import {
   M1B_PILOT_CAPS,
   M1B_PRICING_ENTRIES,
   M1B_REPETITIONS,
-  M3B3_ORACLE_IDENTITIES,
-  M3B3_OUTPUT_JSON_SCHEMA,
+  M3B4_ANTHROPIC_TRANSPORT_SELECTION,
+  M3B4_ORACLE_IDENTITIES,
+  M3B4_OUTPUT_JSON_SCHEMA,
 } from "../src/index.js";
 
 function unwrap<T, E>(result: Result<T, E>): T {
@@ -105,6 +106,33 @@ type RealOpenAiFactory = (
   settings: Readonly<{ apiKey: string; fetch: typeof globalThis.fetch }>,
 ) => unknown;
 
+class FixtureNoObjectGeneratedError extends Error {
+  readonly text: string;
+  readonly usage: Readonly<{ inputTokens: number; outputTokens: number }>;
+  readonly response: Readonly<{ id: string; modelId: string }>;
+  readonly finishReason = "stop";
+
+  constructor(input: {
+    readonly message: string;
+    readonly text: string;
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+    readonly responseId: string;
+  }) {
+    super(input.message);
+    this.name = "AI_NoObjectGeneratedError";
+    this.text = input.text;
+    this.usage = {
+      inputTokens: input.inputTokens,
+      outputTokens: input.outputTokens,
+    };
+    this.response = {
+      id: input.responseId,
+      modelId: M1B_ANTHROPIC_MODEL,
+    };
+  }
+}
+
 function reflectedProperty(value: unknown, key: string): unknown {
   if (
     value === null ||
@@ -144,6 +172,49 @@ function interceptedFetch(
         }),
         {
           status: response.status,
+          headers: { "content-type": "application/json" },
+        },
+      ),
+    );
+  };
+}
+
+function interceptedAnthropicOutput(
+  captured: Array<CapturedFetchRequest>,
+  input: unknown,
+): typeof globalThis.fetch {
+  return (resource, options) => {
+    const url =
+      typeof resource === "string"
+        ? resource
+        : resource instanceof URL
+          ? resource.toString()
+          : resource.url;
+    const body = options?.body;
+    if (typeof body !== "string") throw new Error("Expected a JSON body.");
+    const parsed = parseJson(body);
+    if (!parsed.ok) throw new Error(parsed.error.message);
+    captured.push({ url, body: parsed.value });
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          type: "message",
+          id: "msg_offline_no_object",
+          model: M1B_ANTHROPIC_MODEL,
+          content: [
+            {
+              type: "tool_use",
+              id: "tool_offline_no_object",
+              name: "json",
+              input,
+            },
+          ],
+          stop_reason: "tool_use",
+          stop_sequence: null,
+          usage: { input_tokens: 40, output_tokens: 20 },
+        }),
+        {
+          status: 200,
           headers: { "content-type": "application/json" },
         },
       ),
@@ -761,10 +832,10 @@ describe("AI SDK provider adapters", () => {
     expect(openaiRequests).toHaveLength(1);
     expect(anthropicRequests).toHaveLength(1);
     expect(openai.identity).toEqual(
-      M3B3_ORACLE_IDENTITIES.find((identity) => identity.provider === "openai"),
+      M3B4_ORACLE_IDENTITIES.find((identity) => identity.provider === "openai"),
     );
     expect(anthropic.identity).toEqual(
-      M3B3_ORACLE_IDENTITIES.find(
+      M3B4_ORACLE_IDENTITIES.find(
         (identity) => identity.provider === "anthropic",
       ),
     );
@@ -795,7 +866,7 @@ describe("AI SDK provider adapters", () => {
     expect(openaiBody.tools).toBeUndefined();
     expectPortableSchema(openaiBody.text.format.schema);
     expect(unwrap(canonicalizeJson(openaiBody.text.format.schema))).toBe(
-      unwrap(canonicalizeJson(M3B3_OUTPUT_JSON_SCHEMA)),
+      unwrap(canonicalizeJson(M3B4_OUTPUT_JSON_SCHEMA)),
     );
 
     const anthropicRequest = required(
@@ -810,31 +881,31 @@ describe("AI SDK provider adapters", () => {
         thinking: z.looseObject({ type: z.string() }),
         output_config: z.looseObject({
           effort: z.string(),
-          format: z.unknown().optional(),
+          format: z
+            .looseObject({ type: z.string(), schema: z.unknown() })
+            .optional(),
         }),
-        tools: z.array(
-          z.looseObject({ name: z.string(), input_schema: z.unknown() }),
-        ),
-        tool_choice: z.looseObject({
-          type: z.string(),
-          disable_parallel_tool_use: z.boolean(),
-        }),
+        tools: z
+          .array(z.looseObject({ name: z.string(), input_schema: z.unknown() }))
+          .optional(),
+        tool_choice: z.unknown().optional(),
       })
       .parse(anthropicRequest.body);
     expect(anthropicBody.model).toBe(M1B_ANTHROPIC_MODEL);
     expect(anthropicBody.temperature).toBeUndefined();
     expect(anthropicBody.thinking.type).toBe("adaptive");
     expect(anthropicBody.output_config.effort).toBe("low");
+    expect(M3B4_ANTHROPIC_TRANSPORT_SELECTION.selected).toBe("jsonTool");
     expect(anthropicBody.output_config.format).toBeUndefined();
-    expect(anthropicBody.tools.map((tool) => tool.name)).toEqual(["json"]);
+    expect(anthropicBody.tools?.map((tool) => tool.name)).toEqual(["json"]);
     expect(anthropicBody.tool_choice).toEqual({
       type: "any",
       disable_parallel_tool_use: true,
     });
-    expectPortableSchema(anthropicBody.tools[0]?.input_schema);
-    expect(unwrap(canonicalizeJson(anthropicBody.tools[0]?.input_schema))).toBe(
-      unwrap(canonicalizeJson(M3B3_OUTPUT_JSON_SCHEMA)),
-    );
+    expectPortableSchema(anthropicBody.tools?.[0]?.input_schema);
+    expect(
+      unwrap(canonicalizeJson(anthropicBody.tools?.[0]?.input_schema)),
+    ).toBe(unwrap(canonicalizeJson(M3B4_OUTPUT_JSON_SCHEMA)));
 
     for (const providerRequest of [openaiRequest, anthropicRequest]) {
       const serialized = JSON.stringify(providerRequest.body);
@@ -887,6 +958,46 @@ describe("AI SDK provider adapters", () => {
       expect(visibleText).toContain(
         "answer-values-not-derived-from-supporting-facts",
       );
+      expect(serialized).toContain("publicOutputSchema");
+      expect(serialized).toContain('"maxItems":128');
+      expect(serialized).not.toMatch(
+        /lexical-facts|graph-facts|graph-adjacency|graph-typed|implementation/u,
+      );
+    }
+
+    const wireRepairRequest = m3bOracleRequestSchema.parse({
+      ...request,
+      wireRepair: {
+        previousRawOutput: '{"outcome":"answered"}',
+        decodingIssues: [
+          {
+            code: "invalid_type",
+            path: ["pathIds"],
+            message: "Expected an array.",
+          },
+        ],
+      },
+      semanticRepair: null,
+    });
+    await openai.generate(wireRepairRequest, { ...context, attemptIndex: 2 });
+    await anthropic.generate(wireRepairRequest, {
+      ...context,
+      attemptIndex: 2,
+    });
+    expect(openaiRequests).toHaveLength(3);
+    expect(anthropicRequests).toHaveLength(3);
+    for (const providerRequest of [openaiRequests[2], anthropicRequests[2]]) {
+      const requestBody = required(
+        providerRequest,
+        "Missing M3b wire-repair request.",
+      ).body;
+      const serialized = JSON.stringify(requestBody);
+      const visibleText = stringLeaves(requestBody).join("\n");
+      expect(visibleText).toContain("wireRepair");
+      expect(visibleText).toContain("previousRawOutput");
+      expect(visibleText).toContain("invalid_type");
+      expect(serialized).toContain("publicOutputSchema");
+      expect(serialized).toContain('"maxItems":128');
       expect(serialized).not.toMatch(
         /lexical-facts|graph-facts|graph-adjacency|graph-typed|implementation/u,
       );
@@ -894,7 +1005,7 @@ describe("AI SDK provider adapters", () => {
   });
 
   it("keeps the provider schema equivalent to the wire validator while deferring domain rules", () => {
-    const providerValidator = z.fromJSONSchema(M3B3_OUTPUT_JSON_SCHEMA);
+    const providerValidator = z.fromJSONSchema(M3B4_OUTPUT_JSON_SCHEMA);
     const identifier = fc
       .tuple(
         fc.constantFrom(...Array.from("abcdefghijklmnopqrstuvwxyz0123456789")),
@@ -970,6 +1081,310 @@ describe("AI SDK provider adapters", () => {
         "supporting-facts-do-not-form-required-derivation",
         "answer-values-not-derived-from-supporting-facts",
       ]),
+    );
+  });
+
+  it("compares Anthropic native output format and jsonTool on provenance and temporal shapes offline", async () => {
+    for (const category of ["provenance", "temporal"] as const) {
+      const task = required(
+        M3B_PREREGISTERED_CORPUS.find(
+          (candidate) =>
+            candidate.split === "development" &&
+            candidate.category === category,
+        ),
+        `Missing M3b ${category} comparison task.`,
+      );
+      const factIds = new Set(task.expectedFactIds);
+      const edgeIds = new Set(task.expectedEdgeIds);
+      const facts = M3B_REFERENCE_GRAPH.facts.filter((fact) =>
+        factIds.has(fact.id),
+      );
+      const citationIds = new Set(facts.flatMap((fact) => fact.citationIds));
+      const request = m3bOracleRequestSchema.parse({
+        instruction: task.instruction,
+        answerContract: task.answerContract,
+        evidence: {
+          facts,
+          citations: M3B_REFERENCE_GRAPH.citations.filter((citation) =>
+            citationIds.has(citation.id),
+          ),
+          edges: M3B_REFERENCE_GRAPH.edges.filter((edge) =>
+            edgeIds.has(edge.id),
+          ),
+          paths: [],
+        },
+        semanticRepair: null,
+      });
+      const nativeRequests: Array<CapturedFetchRequest> = [];
+      const jsonToolRequests: Array<CapturedFetchRequest> = [];
+      for (const [transportMode, captured] of [
+        ["outputFormat", nativeRequests],
+        ["jsonTool", jsonToolRequests],
+      ] as const) {
+        const oracle = createAnthropicM3bOracle({
+          acknowledgeAdaptiveThinking: true,
+          transportMode,
+          provider: {
+            apiKey: "offline-dummy",
+            fetch: interceptedFetch(captured),
+          },
+        });
+        await oracle.generate(request, {
+          recordKey: "0".repeat(64),
+          attemptIndex: 0,
+        });
+      }
+      const nativeBody = z
+        .looseObject({
+          output_config: z.looseObject({
+            format: z.looseObject({ schema: z.unknown() }),
+          }),
+          tools: z.array(z.unknown()).optional(),
+        })
+        .parse(required(nativeRequests[0], "Missing native request.").body);
+      const jsonToolBody = z
+        .looseObject({
+          output_config: z.looseObject({ format: z.unknown().optional() }),
+          tools: z.array(
+            z.looseObject({ name: z.string(), input_schema: z.unknown() }),
+          ),
+        })
+        .parse(required(jsonToolRequests[0], "Missing jsonTool request.").body);
+      expect(nativeBody.tools).toBeUndefined();
+      expect(jsonToolBody.output_config.format).toBeUndefined();
+      expect(jsonToolBody.tools.map((tool) => tool.name)).toEqual(["json"]);
+      expect(
+        unwrap(canonicalizeJson(nativeBody.output_config.format.schema)),
+      ).not.toBe(unwrap(canonicalizeJson(jsonToolBody.tools[0]?.input_schema)));
+      expect(
+        unwrap(canonicalizeJson(jsonToolBody.tools[0]?.input_schema)),
+      ).toBe(unwrap(canonicalizeJson(M3B4_OUTPUT_JSON_SCHEMA)));
+      expect(JSON.stringify(nativeBody.output_config.format.schema)).toContain(
+        "max items: 128",
+      );
+      for (const captured of [...nativeRequests, ...jsonToolRequests]) {
+        const serialized = JSON.stringify(captured.body);
+        expect(serialized).not.toMatch(
+          /lexical-facts|graph-facts|graph-adjacency|graph-typed/u,
+        );
+        expect(serialized).toContain(task.instruction);
+      }
+    }
+  });
+
+  it("classifies an AI SDK NoObjectGeneratedError without losing diagnostics", async () => {
+    const persistedRawOutputs: Array<string> = [];
+    const task = required(
+      M3B_PREREGISTERED_CORPUS.find(
+        (candidate) =>
+          candidate.split === "development" &&
+          candidate.category === "negative-control",
+      ),
+      "Missing M3b transport task.",
+    );
+    const fact = required(
+      M3B_REFERENCE_GRAPH.facts.find(
+        (candidate) => candidate.id === task.expectedFactIds[0],
+      ),
+      "Missing M3b transport fact.",
+    );
+    const request = m3bOracleRequestSchema.parse({
+      instruction: "Answer this public evidence question.",
+      answerContract: task.answerContract,
+      evidence: {
+        facts: [fact],
+        citations: M3B_REFERENCE_GRAPH.citations.filter((citation) =>
+          fact.citationIds.includes(citation.id),
+        ),
+        edges: [],
+        paths: [],
+      },
+      semanticRepair: null,
+    });
+    const malformedOutput = {
+      outcome: "answered",
+      answerValues: [fact.object],
+      supportingFactIds: [fact.id],
+      citationIds: fact.citationIds,
+    };
+    const oracle = createAnthropicM3bOracle({
+      acknowledgeAdaptiveThinking: true,
+      transportMode: "jsonTool",
+      rawOutputWriter: (input) => {
+        persistedRawOutputs.push(input.text);
+        return Promise.resolve({
+          ok: true,
+          value: {
+            digest: "1".repeat(64),
+            storedSizeBytes: new TextEncoder().encode(input.text).byteLength,
+            originalSizeBytes: new TextEncoder().encode(input.text).byteLength,
+            truncated: false,
+          },
+        });
+      },
+      provider: {
+        apiKey: "offline-dummy",
+        fetch: interceptedAnthropicOutput([], malformedOutput),
+      },
+    });
+
+    const attempt = await oracle.generate(request, {
+      recordKey: "0".repeat(64),
+      attemptIndex: 0,
+    });
+
+    expect(attempt).toMatchObject({
+      kind: "failure",
+      code: "wire-schema-rejected",
+      provenance: {
+        stage: "wire-decoding",
+        category: "wire-schema-rejected",
+        errorClass: "AI_NoObjectGeneratedError",
+        outputPresent: true,
+        usageAvailable: true,
+        rawOutputArtifact: { digest: "1".repeat(64) },
+        issues: [{ code: "invalid_type", path: ["pathIds"] }],
+      },
+    });
+    if (attempt.kind !== "failure")
+      throw new Error("Expected a wire-schema failure fixture.");
+    expect(attempt.provenance.causeClass).not.toBeNull();
+    expect(attempt.provenance.sanitizedMessage).toContain(
+      "response did not match schema",
+    );
+    expect(persistedRawOutputs).toEqual([JSON.stringify(malformedOutput)]);
+  });
+
+  it("recovers runtime-valid raw output after an SDK structured-output disagreement", async () => {
+    const task = required(
+      M3B_PREREGISTERED_CORPUS.find(
+        (candidate) =>
+          candidate.split === "development" &&
+          candidate.category === "negative-control",
+      ),
+      "Missing M3b recovery task.",
+    );
+    const fact = required(
+      M3B_REFERENCE_GRAPH.facts.find(
+        (candidate) => candidate.id === task.expectedFactIds[0],
+      ),
+      "Missing M3b recovery fact.",
+    );
+    const output = {
+      outcome: "answered" as const,
+      answerValues: [fact.object],
+      supportingFactIds: [fact.id],
+      citationIds: fact.citationIds,
+      pathIds: [],
+    };
+    const request = m3bOracleRequestSchema.parse({
+      instruction: task.instruction,
+      answerContract: task.answerContract,
+      evidence: {
+        facts: [fact],
+        citations: M3B_REFERENCE_GRAPH.citations.filter((citation) =>
+          fact.citationIds.includes(citation.id),
+        ),
+        edges: [],
+        paths: [],
+      },
+      semanticRepair: null,
+    });
+    const raw = JSON.stringify(output);
+    const runtime: AiSdkRuntime = {
+      generateText: () => {
+        throw new FixtureNoObjectGeneratedError({
+          message: "SDK fixture rejected a runtime-valid value.",
+          text: raw,
+          inputTokens: 50,
+          outputTokens: 25,
+          responseId: "msg_sdk_runtime_disagreement",
+        });
+      },
+      outputObject: () => ({ kind: "output-object-fixture" }),
+      jsonSchema: (schema) => schema,
+      isNoObjectGeneratedError: () => true,
+    };
+    const oracle = createAnthropicM3bOracle({
+      acknowledgeAdaptiveThinking: true,
+      provider: { apiKey: "offline-dummy" },
+      runtime,
+      rawOutputWriter: (input) =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            digest: "2".repeat(64),
+            storedSizeBytes: new TextEncoder().encode(input.text).byteLength,
+            originalSizeBytes: new TextEncoder().encode(input.text).byteLength,
+            truncated: false,
+          },
+        }),
+    });
+
+    expect(
+      await oracle.generate(request, {
+        recordKey: "0".repeat(64),
+        attemptIndex: 0,
+      }),
+    ).toMatchObject({
+      kind: "success",
+      output,
+      provenance: {
+        stage: "wire-decoding",
+        category: "sdk-runtime-schema-disagreement",
+        errorClass: "AI_NoObjectGeneratedError",
+        jsonParseResult: "passed",
+        wireSchemaResult: "passed",
+        rawOutputArtifact: { digest: "2".repeat(64) },
+      },
+    });
+
+    const invalidJsonOracle = createAnthropicM3bOracle({
+      acknowledgeAdaptiveThinking: true,
+      provider: { apiKey: "offline-dummy" },
+      runtime: {
+        ...runtime,
+        generateText: () => {
+          throw new FixtureNoObjectGeneratedError({
+            message:
+              "SDK fixture could not parse JSON with sk-supersecret123456.",
+            text: "not-json",
+            inputTokens: 50,
+            outputTokens: 5,
+            responseId: "msg_json_parse_failed",
+          });
+        },
+      },
+      rawOutputWriter: () =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            digest: "4".repeat(64),
+            storedSizeBytes: 8,
+            originalSizeBytes: 8,
+            truncated: false,
+          },
+        }),
+    });
+    const invalidAttempt = await invalidJsonOracle.generate(request, {
+      recordKey: "0".repeat(64),
+      attemptIndex: 1,
+    });
+    expect(invalidAttempt).toMatchObject({
+      kind: "failure",
+      code: "json-parse-failed",
+      dispatchEvidence: "dispatched-with-usage",
+      provenance: {
+        stage: "wire-decoding",
+        category: "json-parse-failed",
+        jsonParseResult: "failed",
+        wireSchemaResult: "not-attempted",
+        issues: [{ code: "invalid-json", path: [] }],
+      },
+    });
+    expect(invalidAttempt.provenance.sanitizedMessage).toContain("[redacted]");
+    expect(invalidAttempt.provenance.sanitizedMessage).not.toContain(
+      "supersecret",
     );
   });
 

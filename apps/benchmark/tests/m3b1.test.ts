@@ -19,7 +19,7 @@ import {
   type M3bOracleAttempt,
   type M3bOracleRequest,
 } from "@nicia-ai/lachesis-evidence";
-import { M3B3_ORACLE_IDENTITIES } from "@nicia-ai/lachesis-generator-ai-sdk";
+import { M3B4_ORACLE_IDENTITIES } from "@nicia-ai/lachesis-generator-ai-sdk";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -35,6 +35,7 @@ import {
   materializeM3b1Phase,
   validateM3b1Materialization,
 } from "../src/m3b1-manifests.js";
+import { createM3bRawOutputArtifactStore } from "../src/m3b1-raw-output-store.js";
 import { createJsonFileM3b1Store } from "../src/m3b1-store.js";
 
 const SOURCE_COMMIT = "7e25f52c18a0f5879e1dd9de708d79edb663410d";
@@ -101,7 +102,7 @@ function retryingOracle(
   provider: "openai" | "anthropic",
   requests: Array<M3bOracleRequest>,
 ): M3bOracle {
-  const identity = M3B3_ORACLE_IDENTITIES.find(
+  const identity = M3B4_ORACLE_IDENTITIES.find(
     (candidate) => candidate.provider === provider,
   );
   if (identity === undefined) throw new Error(`Missing ${provider} identity.`);
@@ -129,7 +130,7 @@ function terminalFailureOracle(
   provider: "openai" | "anthropic",
   requests: Array<M3bOracleRequest>,
 ): M3bOracle {
-  const identity = M3B3_ORACLE_IDENTITIES.find(
+  const identity = M3B4_ORACLE_IDENTITIES.find(
     (candidate) => candidate.provider === provider,
   );
   if (identity === undefined) throw new Error(`Missing ${provider} identity.`);
@@ -177,6 +178,38 @@ function acknowledgement(
 }
 
 describe("M3b.1 live-binding substrate", () => {
+  it("persists bounded raw-output artifacts content-addressed with user-only permissions", async () => {
+    const root = await temporaryRoot();
+    const artifacts = createM3bRawOutputArtifactStore(join(root, "raw"));
+    const text = `${"x".repeat(70_000)}secret-boundary`;
+    const written = unwrap(
+      await artifacts.write({
+        recordKey: "record",
+        attemptIndex: 0,
+        text,
+      }),
+    );
+    expect(written).toMatchObject({
+      storedSizeBytes: 65_536,
+      originalSizeBytes: new TextEncoder().encode(text).byteLength,
+      truncated: true,
+    });
+    const path = join(root, "raw", `${written.digest}.txt`);
+    expect((await stat(path)).mode & 0o777).toBe(0o600);
+    const recovered = unwrap(await artifacts.read(written));
+    expect(new TextEncoder().encode(recovered).byteLength).toBe(65_536);
+    expect(
+      unwrap(
+        await artifacts.write({ recordKey: "other", attemptIndex: 1, text }),
+      ).digest,
+    ).toBe(written.digest);
+    await writeFile(path, "tampered", "utf8");
+    expect(await artifacts.read(written)).toMatchObject({
+      ok: false,
+      error: { code: "REPLAY_OUTPUT_MISMATCH" },
+    });
+  });
+
   it("derives fresh provider, pricing, transport, and phase identities", async () => {
     const probe = unwrap(
       await materializeM3b1Phase({
@@ -187,6 +220,12 @@ describe("M3b.1 live-binding substrate", () => {
     const calibration = unwrap(
       await materializeM3b1Phase({
         phase: "m3b-calibration",
+        sourceCommit: SOURCE_COMMIT,
+      }),
+    );
+    const stress = unwrap(
+      await materializeM3b1Phase({
+        phase: "m3b-wire-stress-probe",
         sourceCommit: SOURCE_COMMIT,
       }),
     );
@@ -205,7 +244,7 @@ describe("M3b.1 live-binding substrate", () => {
       "6e5cc9dcb80b9c1c82ef005987f30bf560f33d2c1400cb5de9ca2460c755369a",
     );
     expect(
-      [probe, calibration, heldout].map((item) => ({
+      [probe, stress, calibration, heldout].map((item) => ({
         phase: item.phase.phase,
         initialCalls: item.phase.initialCalls,
         retries: item.phase.maximumTransportRetries,
@@ -217,44 +256,52 @@ describe("M3b.1 live-binding substrate", () => {
       {
         phase: "m3b-protocol-probe",
         initialCalls: 48,
-        retries: 96,
-        maximumCalls: 192,
-        theoretical: 9_120_000,
+        retries: 144,
+        maximumCalls: 288,
+        theoretical: 13_680_000,
+        operational: 10_000_000,
+      },
+      {
+        phase: "m3b-wire-stress-probe",
+        initialCalls: 96,
+        retries: 288,
+        maximumCalls: 576,
+        theoretical: 27_360_000,
         operational: 10_000_000,
       },
       {
         phase: "m3b-calibration",
         initialCalls: 240,
-        retries: 480,
-        maximumCalls: 960,
-        theoretical: 45_600_000,
+        retries: 720,
+        maximumCalls: 1_440,
+        theoretical: 68_400_000,
         operational: 10_000_000,
       },
       {
         phase: "m3b-heldout",
         initialCalls: 2_560,
-        retries: 5_120,
-        maximumCalls: 10_240,
-        theoretical: 486_400_000,
+        retries: 7_680,
+        maximumCalls: 15_360,
+        theoretical: 729_600_000,
         operational: 60_000_000,
       },
     ]);
     expect(probe.phase.theoreticalCeiling.providers).toEqual([
       {
         billingProvider: "anthropic",
-        maximumCalls: 96,
-        maximumInputTokens: 768_000,
-        maximumOutputTokens: 192_000,
-        maximumTotalTokens: 960_000,
-        maximumCostUsdMicros: 3_840_000,
+        maximumCalls: 144,
+        maximumInputTokens: 1_152_000,
+        maximumOutputTokens: 288_000,
+        maximumTotalTokens: 1_440_000,
+        maximumCostUsdMicros: 5_760_000,
       },
       {
         billingProvider: "openai",
-        maximumCalls: 96,
-        maximumInputTokens: 768_000,
-        maximumOutputTokens: 192_000,
-        maximumTotalTokens: 960_000,
-        maximumCostUsdMicros: 5_280_000,
+        maximumCalls: 144,
+        maximumInputTokens: 1_152_000,
+        maximumOutputTokens: 288_000,
+        maximumTotalTokens: 1_440_000,
+        maximumCostUsdMicros: 7_920_000,
       },
     ]);
     expect(
@@ -284,20 +331,32 @@ describe("M3b.1 live-binding substrate", () => {
       ),
     ).toBe("complete-semantic-gate-fail");
     expect(
-      M3B_OFFLINE_DESIGN_IDENTITIES.slice(7).every(
-        (identity) =>
-          m3bExecutionDisposition(identity.experimentDigest) ===
-          "superseded-unexecuted",
-      ),
+      M3B_OFFLINE_DESIGN_IDENTITIES.slice(7).every((identity) => {
+        const disposition = m3bExecutionDisposition(identity.experimentDigest);
+        return (
+          disposition === "superseded-unexecuted" ||
+          disposition === "complete-calibration-fail" ||
+          disposition === "blocked-unexecuted"
+        );
+      }),
     ).toBe(true);
     expect(
       M3B_OFFLINE_DESIGN_IDENTITIES.every(
         (identity) =>
-          ![probe, calibration, heldout].some(
+          ![probe, stress, calibration, heldout].some(
             (item) => item.phase.experimentDigest === identity.experimentDigest,
           ),
       ),
     ).toBe(true);
+    const heldoutPreflight = await preflightM3b1({
+      materialized: heldout,
+      currentCommit: SOURCE_COMMIT,
+      cleanWorktree: true,
+      credentials: { OPENAI_API_KEY: true, ANTHROPIC_API_KEY: true },
+      acknowledgement: acknowledgement(heldout),
+    });
+    expect(heldoutPreflight.executionDisposition).toBe("blocked-unexecuted");
+    expect(heldoutPreflight.liveExecutionPermitted).toBe(false);
     expect(
       await validateM3b1Materialization({
         ...probe,
@@ -310,7 +369,7 @@ describe("M3b.1 live-binding substrate", () => {
       ok: false,
       error: { code: "REPLAY_OUTPUT_MISMATCH" },
     });
-  }, 10_000);
+  }, 20_000);
 
   it("keeps credential-free and acknowledgement-free preflight read-only", async () => {
     const root = await temporaryRoot();

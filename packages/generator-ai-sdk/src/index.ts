@@ -1,4 +1,5 @@
 import {
+  decodeM3bOracleWire,
   M3B_ORACLE_PROMPT,
   type M3bAttemptProvenance,
   type M3bOracle,
@@ -7,6 +8,8 @@ import {
   m3bOracleOutputSchema,
   type M3bOracleRequest,
   type M3bOracleUsage,
+  type M3bRawOutputArtifact,
+  type M3bRawOutputWriter,
 } from "@nicia-ai/lachesis-evidence";
 import {
   type AdapterDispatchEvidence,
@@ -39,6 +42,7 @@ export const M2_CODEMODE_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};restricted
 export const M3B1_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-evidence-oracle/1`;
 export const M3B2_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-typed-evidence-oracle/2`;
 export const M3B3_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-semantic-obligation-oracle/3`;
+export const M3B4_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-staged-wire-recovery-oracle/4`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -143,6 +147,7 @@ export const M3B1_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
 ]);
 export const M3B2_PRICING_ENTRIES = M3B1_PRICING_ENTRIES;
 export const M3B3_PRICING_ENTRIES = M3B1_PRICING_ENTRIES;
+export const M3B4_PRICING_ENTRIES = M3B1_PRICING_ENTRIES;
 
 export function createM3b1PricingSnapshot(): ReturnType<
   typeof createPricingSnapshot
@@ -155,6 +160,7 @@ export function createM3b1PricingSnapshot(): ReturnType<
 
 export const createM3b2PricingSnapshot = createM3b1PricingSnapshot;
 export const createM3b3PricingSnapshot = createM3b1PricingSnapshot;
+export const createM3b4PricingSnapshot = createM3b1PricingSnapshot;
 
 export const M3B1_OUTPUT_SCHEMA_VERSION =
   "m3b-provider-portable-answer-citation-path/1";
@@ -162,6 +168,8 @@ export const M3B2_OUTPUT_SCHEMA_VERSION =
   "m3b-provider-portable-typed-answer-reference/2";
 export const M3B3_OUTPUT_SCHEMA_VERSION =
   "m3b-provider-portable-semantic-obligation-answer/3";
+export const M3B4_OUTPUT_SCHEMA_VERSION =
+  "m3b-provider-portable-staged-wire-answer/4";
 function deepFreezeValue(value: unknown): void {
   if (value === null || typeof value !== "object") return;
   for (const child of Object.values(value)) deepFreezeValue(child);
@@ -278,6 +286,7 @@ const m3b3OutputJsonSchema: ProviderJsonSchema = {
 };
 deepFreezeValue(m3b3OutputJsonSchema);
 export const M3B3_OUTPUT_JSON_SCHEMA = m3b3OutputJsonSchema;
+export const M3B4_OUTPUT_JSON_SCHEMA = M3B3_OUTPUT_JSON_SCHEMA;
 
 export const M1B_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
   OPENAI_PRICING,
@@ -302,6 +311,7 @@ export type AiSdkRuntime = Readonly<{
   generateText: UnknownFunction;
   outputObject: UnknownFunction;
   jsonSchema: UnknownFunction;
+  isNoObjectGeneratedError?: ((error: unknown) => boolean) | undefined;
 }>;
 
 export type DispatchObserver = Readonly<{
@@ -492,6 +502,10 @@ async function loadAiSdk(): Promise<AiSdkRuntime> {
   const generateText = property(module, "generateText");
   const outputObject = property(property(module, "Output"), "object");
   const jsonSchema = property(module, "jsonSchema");
+  const isNoObjectGeneratedError = property(
+    property(module, "NoObjectGeneratedError"),
+    "isInstance",
+  );
   if (
     !callable(generateText) ||
     !callable(outputObject) ||
@@ -501,7 +515,17 @@ async function loadAiSdk(): Promise<AiSdkRuntime> {
       "AI SDK 7 generateText, Output.object, or jsonSchema is unavailable.",
     );
   }
-  return { generateText, outputObject, jsonSchema };
+  return {
+    generateText,
+    outputObject,
+    jsonSchema,
+    ...(callable(isNoObjectGeneratedError)
+      ? {
+          isNoObjectGeneratedError: (error: unknown): boolean =>
+            isNoObjectGeneratedError(error) === true,
+        }
+      : {}),
+  };
 }
 
 async function providerModel(
@@ -636,11 +660,11 @@ function failureEvidence(
   dispatched: boolean,
   usageKnown: boolean,
 ): AdapterDispatchEvidence {
-  return dispatched
-    ? usageKnown
-      ? "dispatched-with-usage"
-      : "dispatched-usage-unknown"
-    : "not-dispatched";
+  return usageKnown
+    ? "dispatched-with-usage"
+    : dispatched
+      ? "dispatched-usage-unknown"
+      : "not-dispatched";
 }
 
 function portableSchemaFailure(message: string): ModelAdapterFailure {
@@ -1071,6 +1095,7 @@ export function createAnthropicCodeModeAdapter(
 function m3bOracleIdentity(
   provider: "openai" | "anthropic",
   adapterVersion: string,
+  anthropicTransport: "json-tool" | "json-schema" = "json-tool",
 ): M3bOracleIdentity {
   return Object.freeze({
     provider,
@@ -1082,10 +1107,25 @@ function m3bOracleIdentity(
       maxInputTokens: 8_000,
       maxOutputTokens: 2_000,
       sdkRetries: 0,
-      structuredOutput: provider === "openai" ? "json-schema" : "json-tool",
+      structuredOutput:
+        provider === "openai" ? "json-schema" : anthropicTransport,
     }),
   });
 }
+
+export const M3B4_ANTHROPIC_TRANSPORT_SELECTION = Object.freeze({
+  comparisonVersion: "m3b-anthropic-structured-output-comparison/1",
+  candidates: Object.freeze(["jsonTool", "outputFormat"]),
+  selected: "jsonTool" as const,
+  prospectiveRule:
+    "Select only a route that serializes the exact frozen portable schema. The installed native output-format route rewrites minLength and maxItems as descriptions, while jsonTool preserves the schema exactly; external tools remain disabled.",
+});
+
+export const M3B4_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
+  Object.freeze([
+    m3bOracleIdentity("openai", M3B4_PROVIDER_ADAPTER_VERSION),
+    m3bOracleIdentity("anthropic", M3B4_PROVIDER_ADAPTER_VERSION, "json-tool"),
+  ]);
 
 export const M3B3_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
   Object.freeze([
@@ -1106,9 +1146,11 @@ export const M3B1_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
 function renderM3bOracleRequest(request: M3bOracleRequest): string {
   return JSON.stringify({
     protocol: M3B_ORACLE_PROMPT,
+    publicOutputSchema: M3B4_OUTPUT_JSON_SCHEMA,
     instruction: request.instruction,
     answerContract: request.answerContract,
     evidence: request.evidence,
+    wireRepair: request.wireRepair,
     semanticRepair: request.semanticRepair,
   });
 }
@@ -1166,6 +1208,28 @@ function diagnosticIssues(value: unknown): M3bAttemptProvenance["issues"] {
   }));
 }
 
+function errorClass(value: unknown): string | null {
+  const name = stringProperty(value, "name");
+  if (name !== null) return name.slice(0, 128);
+  const constructorName = stringProperty(
+    property(value, "constructor"),
+    "name",
+  );
+  return constructorName?.slice(0, 128) ?? null;
+}
+
+function sanitizedErrorMessage(value: unknown): string | null {
+  let withoutControlCharacters = "";
+  for (const character of errorMessage(value)) {
+    const code = character.codePointAt(0) ?? 0;
+    withoutControlCharacters += code <= 31 || code === 127 ? " " : character;
+  }
+  const message = withoutControlCharacters
+    .replaceAll(/(?:sk|key|token)-[a-z0-9_-]{8,}/giu, "[redacted]")
+    .trim();
+  return message.length === 0 ? null : message.slice(0, 512);
+}
+
 async function boundedOutputEvidence(value: unknown): Promise<
   Readonly<{
     outputPresent: boolean;
@@ -1219,6 +1283,10 @@ function provenance(
     }>;
     metadata?: ModelResponseMetadata | undefined;
     error?: unknown;
+    issues?: M3bAttemptProvenance["issues"] | undefined;
+    rawOutputArtifact?: M3bRawOutputArtifact | null | undefined;
+    jsonParseResult?: "not-attempted" | "passed" | "failed" | undefined;
+    wireSchemaResult?: "not-attempted" | "passed" | "failed" | undefined;
   }>,
 ): M3bAttemptProvenance {
   return {
@@ -1243,7 +1311,19 @@ function provenance(
     outputDigest: input.outputEvidence?.outputDigest ?? null,
     outputSizeBytes: input.outputEvidence?.outputSizeBytes ?? null,
     outputTruncated: input.outputEvidence?.outputTruncated ?? false,
-    issues: input.error === undefined ? [] : diagnosticIssues(input.error),
+    issues:
+      input.issues ??
+      (input.error === undefined ? [] : diagnosticIssues(input.error)),
+    errorClass: input.error === undefined ? null : errorClass(input.error),
+    causeClass:
+      input.error === undefined
+        ? null
+        : errorClass(property(input.error, "cause")),
+    sanitizedMessage:
+      input.error === undefined ? null : sanitizedErrorMessage(input.error),
+    rawOutputArtifact: input.rawOutputArtifact ?? null,
+    jsonParseResult: input.jsonParseResult ?? "not-attempted",
+    wireSchemaResult: input.wireSchemaResult ?? "not-attempted",
   };
 }
 
@@ -1286,14 +1366,33 @@ type M3bAiSdkOracleInput = Readonly<{
   providerOptions: ProviderOptions;
   runtime?: AiSdkRuntime | undefined;
   timeoutMs?: number | undefined;
+  rawOutputWriter?: M3bRawOutputWriter | undefined;
 }>;
+
+async function persistRawOutput(
+  writer: M3bRawOutputWriter | undefined,
+  context: Readonly<{ recordKey: string; attemptIndex: number }>,
+  text: string | undefined,
+): Promise<
+  Readonly<{
+    artifact: M3bRawOutputArtifact | null;
+    error: unknown;
+  }>
+> {
+  if (writer === undefined || text === undefined)
+    return { artifact: null, error: null };
+  const written = await writer({ ...context, text });
+  return written.ok
+    ? { artifact: written.value, error: null }
+    : { artifact: null, error: written.error };
+}
 
 function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
   return {
     identity: input.identity,
-    async generate(request) {
+    async generate(request, context) {
       const portable = validatePortableStructuredOutputSchema(
-        M3B3_OUTPUT_JSON_SCHEMA,
+        M3B4_OUTPUT_JSON_SCHEMA,
       );
       if (!portable.ok)
         return {
@@ -1303,7 +1402,7 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
           usage: null,
           provenance: provenance({
             stage: "pre-dispatch",
-            category: "portable-schema-rejected",
+            category: "wire-schema-rejected",
             usageAvailable: false,
           }),
         };
@@ -1317,24 +1416,23 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
       const abortSignal = AbortSignal.timeout(
         input.timeoutMs ?? M1B_TIMEOUT_MS,
       );
+      let isNoObjectGeneratedError: (error: unknown) => boolean = () => false;
       try {
         const sdk = input.runtime ?? (await loadAiSdk());
+        isNoObjectGeneratedError =
+          sdk.isNoObjectGeneratedError ?? isNoObjectGeneratedError;
         const output = sdk.outputObject({
           name: "m3b_evidence_answer",
           description:
             "A typed answer or insufficient-evidence outcome with citation and canonical-path references.",
-          schema: sdk.jsonSchema(M3B3_OUTPUT_JSON_SCHEMA, {
+          schema: sdk.jsonSchema(M3B4_OUTPUT_JSON_SCHEMA, {
             validate: (value: unknown) => {
               const parsed = m3bOracleOutputSchema.safeParse(value);
               return parsed.success
                 ? { success: true, value: parsed.data }
                 : {
                     success: false,
-                    error: new Error(
-                      parsed.error.issues
-                        .map((issue) => issue.message)
-                        .join("; "),
-                    ),
+                    error: parsed.error,
                   };
             },
           }),
@@ -1397,6 +1495,28 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
           };
         const normalized = m3bOracleOutputSchema.safeParse(parsed.data.output);
         const outputEvidence = await boundedOutputEvidence(parsed.data.output);
+        const rejectedOutputArtifact = normalized.success
+          ? { artifact: null, error: null }
+          : await persistRawOutput(
+              input.rawOutputWriter,
+              context,
+              JSON.stringify(parsed.data.output),
+            );
+        if (rejectedOutputArtifact.error !== null)
+          return {
+            kind: "failure",
+            code: "wire-schema-rejected",
+            dispatchEvidence: "dispatched-with-usage",
+            usage,
+            provenance: provenance({
+              stage: "wire-decoding",
+              category: "raw-output-artifact-write-failed",
+              usageAvailable: true,
+              metadata,
+              outputEvidence,
+              error: rejectedOutputArtifact.error,
+            }),
+          };
         return normalized.success
           ? {
               kind: "success",
@@ -1408,11 +1528,13 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
                 usageAvailable: true,
                 metadata,
                 outputEvidence,
+                jsonParseResult: "passed",
+                wireSchemaResult: "passed",
               }),
             }
           : {
               kind: "failure",
-              code: "contract-mismatch",
+              code: "wire-schema-rejected",
               dispatchEvidence: "dispatched-with-usage",
               usage,
               provenance: provenance({
@@ -1422,6 +1544,9 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
                 metadata,
                 outputEvidence,
                 error: normalized.error,
+                rawOutputArtifact: rejectedOutputArtifact.artifact,
+                jsonParseResult: "passed",
+                wireSchemaResult: "failed",
               }),
             };
       } catch (error) {
@@ -1446,13 +1571,83 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
               rawFinishReason: structured.data.rawFinishReason,
             })
           : undefined;
-        const outputEvidence = await boundedOutputEvidence(
-          structured.success ? structured.data.text : property(error, "text"),
-        );
+        const rawText = structured.success
+          ? structured.data.text
+          : (stringProperty(error, "text") ?? undefined);
+        const outputEvidence = await boundedOutputEvidence(rawText);
         const dispatchEvidence = failureEvidence(
           dispatched,
           caughtUsage !== null,
         );
+        const noObjectGenerated = isNoObjectGeneratedError(error);
+        if (
+          typeof rawText === "string" &&
+          caughtUsage !== null &&
+          (noObjectGenerated || structured.success)
+        ) {
+          const artifact = await persistRawOutput(
+            input.rawOutputWriter,
+            context,
+            rawText,
+          );
+          if (artifact.error !== null)
+            return {
+              kind: "failure",
+              code: "wire-schema-rejected",
+              dispatchEvidence,
+              usage: caughtUsage,
+              latencyMs,
+              provenance: provenance({
+                stage: "wire-decoding",
+                category: "raw-output-artifact-write-failed",
+                usageAvailable: true,
+                metadata,
+                outputEvidence,
+                error: artifact.error,
+              }),
+            };
+          const decoded = decodeM3bOracleWire(rawText);
+          if (decoded.kind === "accepted")
+            return {
+              kind: "success",
+              output: decoded.output,
+              usage: caughtUsage,
+              provenance: provenance({
+                stage: "wire-decoding",
+                category: "sdk-runtime-schema-disagreement",
+                usageAvailable: true,
+                metadata,
+                outputEvidence,
+                rawOutputArtifact: artifact.artifact,
+                error,
+                jsonParseResult: "passed",
+                wireSchemaResult: "passed",
+              }),
+            };
+          return {
+            kind: "failure",
+            code: decoded.kind,
+            dispatchEvidence,
+            usage: caughtUsage,
+            latencyMs,
+            provenance: provenance({
+              stage: "wire-decoding",
+              category: decoded.kind,
+              usageAvailable: true,
+              metadata,
+              outputEvidence,
+              rawOutputArtifact: artifact.artifact,
+              error,
+              issues: decoded.issues,
+              jsonParseResult:
+                decoded.kind === "json-parse-failed" ? "failed" : "passed",
+              wireSchemaResult:
+                decoded.kind === "wire-schema-rejected"
+                  ? "failed"
+                  : "not-attempted",
+            }),
+          };
+        }
         return {
           kind: "failure",
           code: abortSignal.aborted
@@ -1481,8 +1676,12 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
 
 export function createOpenAiM3bOracle(
   provider?: OpenAiProviderSettings,
+  diagnostics?: Readonly<{
+    rawOutputWriter?: M3bRawOutputWriter | undefined;
+    runtime?: AiSdkRuntime | undefined;
+  }>,
 ): M3bOracle {
-  const identity = m3bOracleIdentity("openai", M3B3_PROVIDER_ADAPTER_VERSION);
+  const identity = m3bOracleIdentity("openai", M3B4_PROVIDER_ADAPTER_VERSION);
   return createM3bAiSdkOracle({
     identity,
     pricing: OPENAI_PRICING,
@@ -1502,6 +1701,12 @@ export function createOpenAiM3bOracle(
         serviceTier: "default",
       },
     },
+    ...(diagnostics?.rawOutputWriter === undefined
+      ? {}
+      : { rawOutputWriter: diagnostics.rawOutputWriter }),
+    ...(diagnostics?.runtime === undefined
+      ? {}
+      : { runtime: diagnostics.runtime }),
   });
 }
 
@@ -1509,11 +1714,17 @@ export function createAnthropicM3bOracle(
   input: Readonly<{
     acknowledgeAdaptiveThinking: true;
     provider?: AnthropicProviderSettings | undefined;
+    rawOutputWriter?: M3bRawOutputWriter | undefined;
+    transportMode?: "jsonTool" | "outputFormat" | undefined;
+    runtime?: AiSdkRuntime | undefined;
   }>,
 ): M3bOracle {
+  const transportMode =
+    input.transportMode ?? M3B4_ANTHROPIC_TRANSPORT_SELECTION.selected;
   const identity = m3bOracleIdentity(
     "anthropic",
-    M3B3_PROVIDER_ADAPTER_VERSION,
+    M3B4_PROVIDER_ADAPTER_VERSION,
+    transportMode === "jsonTool" ? "json-tool" : "json-schema",
   );
   return createM3bAiSdkOracle({
     identity,
@@ -1530,9 +1741,13 @@ export function createAnthropicM3bOracle(
       anthropic: {
         thinking: { type: "adaptive" },
         effort: "low",
-        structuredOutputMode: "jsonTool",
+        structuredOutputMode: transportMode,
       },
     },
+    ...(input.rawOutputWriter === undefined
+      ? {}
+      : { rawOutputWriter: input.rawOutputWriter }),
+    ...(input.runtime === undefined ? {} : { runtime: input.runtime }),
   });
 }
 

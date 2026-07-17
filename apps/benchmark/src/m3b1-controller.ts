@@ -27,6 +27,7 @@ import {
   type M3b1MaterializedPhase,
   validateM3b1Materialization,
 } from "./m3b1-manifests.js";
+import { createM3bRawOutputArtifactStore } from "./m3b1-raw-output-store.js";
 import { createJsonFileM3b1Store } from "./m3b1-store.js";
 
 export type M3b1LiveAcknowledgement = Readonly<{
@@ -52,11 +53,14 @@ export type M3b1PreflightReport = Readonly<{
     | "report-only-offline-unbound"
     | "complete-protocol-fail"
     | "complete-semantic-gate-fail"
+    | "complete-calibration-fail"
+    | "blocked-unexecuted"
     | "superseded-unexecuted";
   initialCalls: number;
   maximumTransportRetries: number;
   maximumCalls: number;
   semanticRepairCalls: number;
+  wireRepairCalls: number;
   theoreticalCeilingUsdMicros: number;
   operationalPoolUsdMicros: number;
   missingCredentialNames: ReadonlyArray<"OPENAI_API_KEY" | "ANTHROPIC_API_KEY">;
@@ -126,9 +130,14 @@ export async function preflightM3b1(input: {
   readonly acknowledgement?: M3b1LiveAcknowledgement | undefined;
 }): Promise<M3b1PreflightReport> {
   const validated = await validateM3b1Materialization(input.materialized);
-  const disposition = m3bExecutionDisposition(
+  const historicalDisposition = m3bExecutionDisposition(
     input.materialized.phase.experimentDigest,
   );
+  const disposition =
+    historicalDisposition === "live-capable" &&
+    input.materialized.phase.phase === "m3b-heldout"
+      ? ("blocked-unexecuted" as const)
+      : historicalDisposition;
   const missingCredentialNames = missingCredentials(input.credentials);
   const checks = {
     materialization: validated.ok,
@@ -155,6 +164,7 @@ export async function preflightM3b1(input: {
     maximumTransportRetries: input.materialized.phase.maximumTransportRetries,
     maximumCalls: input.materialized.phase.maximumCalls,
     semanticRepairCalls: input.materialized.phase.semanticRepairCalls,
+    wireRepairCalls: input.materialized.phase.wireRepairCalls,
     theoreticalCeilingUsdMicros:
       input.materialized.phase.theoreticalCeiling.maximumCostUsdMicros,
     operationalPoolUsdMicros:
@@ -317,6 +327,7 @@ export type M3b1ExecutionReport = Readonly<{
       provider: string;
       attempts: number;
       retries: number;
+      wireRepairs: number;
       semanticRepairs: number;
       inputTokens: number;
       outputTokens: number;
@@ -325,6 +336,12 @@ export type M3b1ExecutionReport = Readonly<{
       terminalFailures: number;
     }>
   >;
+  outcomeStages: Readonly<{
+    firstAttemptEndToEndSuccesses: number;
+    firstAttemptSemanticSuccesses: number;
+    postWireRepairSuccesses: number;
+    finalPostSemanticRepairSuccesses: number;
+  }>;
   protocolProbeGate: Readonly<{
     applicable: boolean;
     nonOpaqueOutcomes: number;
@@ -333,6 +350,17 @@ export type M3b1ExecutionReport = Readonly<{
     firstAttemptContractCorrectOutcomes: number;
     repairedOutcomes: number;
     providerCategoryCoverage: number;
+    unauthorizedOrIdentityMismatchedCalls: 0;
+    passed: boolean;
+  }>;
+  wireStressProbeGate: Readonly<{
+    applicable: boolean;
+    preciseDecodingClassifications: number;
+    sdkRuntimeSchemaDisagreements: number;
+    anthropicGraphAdjacencyFirstAttemptWireFailures: number;
+    graphAdjacencyTrialsByProvider: Readonly<Record<string, number>>;
+    matchedGraphFactsTrialsByProvider: Readonly<Record<string, number>>;
+    opaqueFailures: number;
     unauthorizedOrIdentityMismatchedCalls: 0;
     passed: boolean;
   }>;
@@ -353,10 +381,16 @@ function executionReport(
         (total, record) => total + record.semanticRepairCalls,
         0,
       );
+      const wireRepairs = records.reduce(
+        (total, record) => total + (record.wireRepairCalls ?? 0),
+        0,
+      );
       return {
         provider: binding.provider,
         attempts: attempts.length,
-        retries: attempts.length - records.length - semanticRepairs,
+        retries:
+          attempts.length - records.length - semanticRepairs - wireRepairs,
+        wireRepairs,
         semanticRepairs,
         inputTokens: attempts.reduce(
           (total, attempt) => total + (attempt.usage?.inputTokens ?? 0),
@@ -432,13 +466,112 @@ function executionReport(
       correctTypedOutcomes === 48 &&
       providerCategoryCoverage === 12,
   };
+  const precise = (record: M3bRunResult["records"][number]): boolean =>
+    record.attempts.every(
+      (attempt) =>
+        attempt.provenance.stage.length > 0 &&
+        attempt.provenance.category.length > 0 &&
+        attempt.provenance.jsonParseResult !== undefined &&
+        attempt.provenance.wireSchemaResult !== undefined &&
+        (attempt.kind !== "failure" ||
+          (attempt.code !== "json-parse-failed" &&
+            attempt.code !== "wire-schema-rejected") ||
+          (attempt.provenance.rawOutputArtifact !== undefined &&
+            attempt.provenance.rawOutputArtifact !== null &&
+            attempt.provenance.errorClass !== undefined &&
+            attempt.provenance.errorClass !== null &&
+            attempt.provenance.sanitizedMessage !== undefined &&
+            attempt.provenance.sanitizedMessage !== null)),
+    );
+  const graphAdjacencyTrialsByProvider = Object.fromEntries(
+    materialized.phase.providerBindings.map((binding) => [
+      binding.provider,
+      run.records.filter(
+        (record) =>
+          record.provider === binding.provider &&
+          record.arm === "graph-adjacency",
+      ).length,
+    ]),
+  );
+  const matchedGraphFactsTrialsByProvider = Object.fromEntries(
+    materialized.phase.providerBindings.map((binding) => [
+      binding.provider,
+      run.records.filter(
+        (record) =>
+          record.provider === binding.provider && record.arm === "graph-facts",
+      ).length,
+    ]),
+  );
+  const preciseDecodingClassifications = run.records.filter(precise).length;
+  const sdkRuntimeSchemaDisagreements = run.records.filter((record) =>
+    record.attempts.some(
+      (attempt) =>
+        attempt.provenance.category === "sdk-runtime-schema-disagreement",
+    ),
+  ).length;
+  const anthropicGraphAdjacencyFirstAttemptWireFailures = run.records.filter(
+    (record) =>
+      record.provider === "anthropic" &&
+      record.arm === "graph-adjacency" &&
+      record.attempts[0]?.kind === "failure" &&
+      (record.attempts[0].code === "json-parse-failed" ||
+        record.attempts[0].code === "wire-schema-rejected"),
+  ).length;
+  const opaqueFailures = run.records.filter((record) =>
+    record.attempts.some(
+      (attempt) =>
+        attempt.kind === "failure" &&
+        (attempt.provenance.category.length === 0 ||
+          attempt.provenance.stage.length === 0),
+    ),
+  ).length;
+  const wireStressApplicable =
+    materialized.phase.phase === "m3b-wire-stress-probe";
+  const wireStressProbeGate = {
+    applicable: wireStressApplicable,
+    preciseDecodingClassifications,
+    sdkRuntimeSchemaDisagreements,
+    anthropicGraphAdjacencyFirstAttemptWireFailures,
+    graphAdjacencyTrialsByProvider,
+    matchedGraphFactsTrialsByProvider,
+    opaqueFailures,
+    unauthorizedOrIdentityMismatchedCalls: 0 as const,
+    passed:
+      wireStressApplicable &&
+      run.records.length === 96 &&
+      preciseDecodingClassifications === 96 &&
+      sdkRuntimeSchemaDisagreements === 0 &&
+      anthropicGraphAdjacencyFirstAttemptWireFailures === 0 &&
+      opaqueFailures === 0 &&
+      Object.values(graphAdjacencyTrialsByProvider).every(
+        (count) => count === 24,
+      ) &&
+      Object.values(matchedGraphFactsTrialsByProvider).every(
+        (count) => count === 24,
+      ),
+  };
   return {
     experimentDigest: materialized.phase.experimentDigest,
     phaseManifestDigest: materialized.phase.phaseManifestDigest,
     run,
     budget,
     providerAttempts,
+    outcomeStages: {
+      firstAttemptEndToEndSuccesses: run.records.filter(
+        (record) => record.firstAttemptEndToEndSuccess,
+      ).length,
+      firstAttemptSemanticSuccesses: run.records.filter(
+        (record) => record.firstAttemptSemanticValidationPassed,
+      ).length,
+      postWireRepairSuccesses: run.records.filter(
+        (record) => record.postWireRepairSuccess === true,
+      ).length,
+      finalPostSemanticRepairSuccesses: run.records.filter(
+        (record) => record.endToEndSuccess,
+      ).length,
+    },
     protocolProbeGate,
+    wireStressProbeGate,
   };
 }
 
@@ -491,11 +624,22 @@ export async function executeM3b1(input: {
     );
     if (!registered.ok) return registered;
     const controller = ledger.value.budgetController(input.materialized.phase);
+    const experimentRoot = join(
+      input.storageRoot,
+      input.materialized.phase.storageNamespace,
+    );
+    const rawOutputArtifacts = createM3bRawOutputArtifactStore(
+      join(experimentRoot, "raw-output"),
+    );
     const oracles = input.oracles ?? [
-      createOpenAiM3bOracle({ apiKey: input.credentials.openaiApiKey }),
+      createOpenAiM3bOracle(
+        { apiKey: input.credentials.openaiApiKey },
+        { rawOutputWriter: rawOutputArtifacts.write },
+      ),
       createAnthropicM3bOracle({
         acknowledgeAdaptiveThinking: true,
         provider: { apiKey: input.credentials.anthropicApiKey },
+        rawOutputWriter: rawOutputArtifacts.write,
       }),
     ];
     const budgeted: Array<M3bOracle> = [];
@@ -508,13 +652,12 @@ export async function executeM3b1(input: {
       if (!wrapped.ok) return wrapped;
       budgeted.push(wrapped.value);
     }
-    const store = createJsonFileM3b1Store(
-      join(input.storageRoot, input.materialized.phase.storageNamespace),
-    );
+    const store = createJsonFileM3b1Store(experimentRoot);
     const run = await runM3bWithOracles({
       materialized: input.materialized.substrate,
       oracles: budgeted,
       store,
+      rawOutputReader: rawOutputArtifacts.read,
       executionBinding: {
         experimentDigest: input.materialized.phase.experimentDigest,
         phaseManifestDigest: input.materialized.phase.phaseManifestDigest,

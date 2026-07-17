@@ -113,7 +113,7 @@ export const M3B_PREREGISTERED_CORPUS: ReadonlyArray<M3aTask> = z
 
 export const M3B_CORPUS_PROTOCOL = Object.freeze({
   id: "lachesis-m3b-factorial-evidence-live-corpus",
-  version: "1",
+  version: "2",
   developmentCases: 30,
   heldoutCases: 160,
   heldoutRetrievalContrastCases: 60,
@@ -122,12 +122,20 @@ export const M3B_CORPUS_PROTOCOL = Object.freeze({
   developmentInitialCalls: 240,
   heldoutInitialCalls: 2_560,
   semanticRepairCallsPerRecord: 1,
+  wireRepairCallsPerRecord: 1,
+  wireStressProbeCases: 6,
+  wireStressProbeRepetitions: 4,
+  wireStressProbeInitialCalls: 96,
   liveInferenceAuthorized: false,
   typeGraphIntegrated: false,
 });
 
 export function loadM3bPhaseCases(
-  phase: "m3b-protocol-probe" | "m3b-calibration" | "m3b-heldout",
+  phase:
+    | "m3b-protocol-probe"
+    | "m3b-wire-stress-probe"
+    | "m3b-calibration"
+    | "m3b-heldout",
 ): ReadonlyArray<M3aTask> {
   if (phase === "m3b-protocol-probe") {
     return M3B_PREREGISTERED_CORPUS.filter(
@@ -138,6 +146,12 @@ export function loadM3bPhaseCases(
         index,
     );
   }
+  if (phase === "m3b-wire-stress-probe")
+    return (["provenance", "temporal"] as const).flatMap((category) =>
+      M3B_PREREGISTERED_CORPUS.filter(
+        (task) => task.split === "development" && task.category === category,
+      ).slice(0, 3),
+    );
   const split = phase === "m3b-calibration" ? "development" : "heldout";
   return M3B_PREREGISTERED_CORPUS.filter((task) => task.split === split);
 }
