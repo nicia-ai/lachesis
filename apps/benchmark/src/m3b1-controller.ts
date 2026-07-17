@@ -2,6 +2,7 @@ import { join } from "node:path";
 
 import { type Diagnostic, diagnostic, type Result } from "@nicia-ai/lachesis";
 import {
+  type M3bAttemptProvenance,
   type M3bOracle,
   type M3bOracleAttempt,
   type M3bRunResult,
@@ -46,7 +47,11 @@ export type M3b1PreflightReport = Readonly<{
   experimentDigest: string;
   phaseManifestDigest: string;
   phase: M3b1MaterializedPhase["phase"]["phase"];
-  executionDisposition: "live-capable" | "report-only-offline-unbound";
+  executionDisposition:
+    | "live-capable"
+    | "report-only-offline-unbound"
+    | "complete-protocol-fail"
+    | "superseded-unexecuted";
   initialCalls: number;
   maximumTransportRetries: number;
   maximumCalls: number;
@@ -67,12 +72,12 @@ export type M3b1PreflightReport = Readonly<{
 
 export function m3bExecutionDisposition(
   experimentDigest: string,
-): "live-capable" | "report-only-offline-unbound" {
-  return M3B_OFFLINE_DESIGN_IDENTITIES.some(
-    (identity) => identity.experimentDigest === experimentDigest,
-  )
-    ? "report-only-offline-unbound"
-    : "live-capable";
+): M3b1PreflightReport["executionDisposition"] {
+  return (
+    M3B_OFFLINE_DESIGN_IDENTITIES.find(
+      (identity) => identity.experimentDigest === experimentDigest,
+    )?.disposition ?? "live-capable"
+  );
 }
 
 function acknowledgementMatches(
@@ -195,6 +200,28 @@ function settlement(
   };
 }
 
+function controllerProvenance(
+  stage: "pre-dispatch" | "provider-response",
+  category: string,
+  usageAvailable: boolean,
+): M3bAttemptProvenance {
+  return {
+    stage,
+    category,
+    providerStatusCode: null,
+    providerErrorCode: null,
+    providerResponseId: null,
+    finishReason: null,
+    rawFinishReason: null,
+    usageAvailable,
+    outputPresent: false,
+    outputDigest: null,
+    outputSizeBytes: null,
+    outputTruncated: false,
+    issues: [],
+  };
+}
+
 function budgetedOracle(input: {
   readonly materialized: M3b1MaterializedPhase;
   readonly oracle: M3bOracle;
@@ -236,6 +263,11 @@ function budgetedOracle(input: {
             code: "budget-rejected",
             dispatchEvidence: "not-dispatched",
             usage: null,
+            provenance: controllerProvenance(
+              "pre-dispatch",
+              "budget-rejected",
+              false,
+            ),
           };
         if (reserved.value === "previous-attempt-accounted")
           return {
@@ -243,6 +275,11 @@ function budgetedOracle(input: {
             code: "provider-unavailable",
             dispatchEvidence: "dispatched-usage-unknown",
             usage: null,
+            provenance: controllerProvenance(
+              "provider-response",
+              "previous-attempt-accounted",
+              false,
+            ),
           };
         const result = await input.oracle.generate(request, context);
         const settled = await input.controller.settle(
@@ -258,6 +295,11 @@ function budgetedOracle(input: {
                   ? result.dispatchEvidence
                   : "dispatched-with-usage",
               usage: result.usage,
+              provenance: controllerProvenance(
+                "provider-response",
+                "budget-settlement-failed",
+                result.usage !== null,
+              ),
             };
       },
     },
@@ -281,6 +323,15 @@ export type M3b1ExecutionReport = Readonly<{
       terminalFailures: number;
     }>
   >;
+  protocolProbeGate: Readonly<{
+    applicable: boolean;
+    nonOpaqueOutcomes: number;
+    durableResponseUsageClassifications: number;
+    correctTypedOutcomes: number;
+    graphFactsProvidersPassed: number;
+    unauthorizedOrIdentityMismatchedCalls: 0;
+    passed: boolean;
+  }>;
 }>;
 
 function executionReport(
@@ -323,12 +374,57 @@ function executionReport(
       };
     },
   );
+  const applicable = materialized.phase.phase === "m3b-protocol-probe";
+  const nonOpaqueOutcomes = run.records.filter((record) =>
+    record.attempts.every(
+      (attempt) =>
+        attempt.provenance.category.length > 0 &&
+        attempt.provenance.stage.length > 0,
+    ),
+  ).length;
+  const durableResponseUsageClassifications = run.records.filter((record) =>
+    record.attempts.every(
+      (attempt) =>
+        attempt.provenance.usageAvailable === (attempt.usage !== null) &&
+        (attempt.kind === "failure" || attempt.provenance.outputPresent),
+    ),
+  ).length;
+  const correctTypedOutcomes = run.records.filter(
+    (record) => record.endToEndSuccess,
+  ).length;
+  const graphFactsProvidersPassed = materialized.phase.providerBindings.filter(
+    (binding) => {
+      const records = run.records.filter(
+        (record) =>
+          record.provider === binding.provider && record.arm === "graph-facts",
+      );
+      return (
+        records.length > 0 && records.every((record) => record.endToEndSuccess)
+      );
+    },
+  ).length;
+  const protocolProbeGate = {
+    applicable,
+    nonOpaqueOutcomes,
+    durableResponseUsageClassifications,
+    correctTypedOutcomes,
+    graphFactsProvidersPassed,
+    unauthorizedOrIdentityMismatchedCalls: 0 as const,
+    passed:
+      applicable &&
+      run.records.length === 16 &&
+      nonOpaqueOutcomes === 16 &&
+      durableResponseUsageClassifications === 16 &&
+      correctTypedOutcomes === 16 &&
+      graphFactsProvidersPassed === 2,
+  };
   return {
     experimentDigest: materialized.phase.experimentDigest,
     phaseManifestDigest: materialized.phase.phaseManifestDigest,
     run,
     budget,
     providerAttempts,
+    protocolProbeGate,
   };
 }
 
@@ -364,7 +460,7 @@ export async function executeM3b1(input: {
     };
   const ledgerPath = join(
     input.storageRoot,
-    "m3b1",
+    "m3b2",
     input.materialized.campaign.campaignDigest,
     "ledger.ndjson",
   );

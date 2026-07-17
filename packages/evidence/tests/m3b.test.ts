@@ -12,6 +12,7 @@ import {
   M3B_ORACLE_MODELS,
   M3B_PREREGISTERED_CORPUS,
   M3B_REFERENCE_GRAPH,
+  type M3bAttemptProvenance,
   type M3bMaterializedPhase,
   type M3bOracle,
   type M3bOracleAttempt,
@@ -22,6 +23,27 @@ import {
   runM3bWithOracles,
   validateM3bMaterialization,
 } from "../src/index.js";
+
+function provenance(
+  category = "fixture",
+  usageAvailable = true,
+): M3bAttemptProvenance {
+  return {
+    stage: usageAvailable ? "wire-decoding" : "transport",
+    category,
+    providerStatusCode: null,
+    providerErrorCode: null,
+    providerResponseId: null,
+    finishReason: usageAvailable ? "stop" : null,
+    rawFinishReason: null,
+    usageAvailable,
+    outputPresent: usageAvailable,
+    outputDigest: null,
+    outputSizeBytes: null,
+    outputTruncated: false,
+    issues: [],
+  };
+}
 
 function unwrap<T>(
   result:
@@ -36,9 +58,10 @@ function successfulOutput(request: M3bOracleRequest): M3bOracleAttempt {
   return {
     kind: "success",
     output: {
-      answer: finalFact?.object ?? "unknown",
+      outcome: finalFact === undefined ? "insufficient-evidence" : "answered",
+      answerValues: finalFact === undefined ? [] : [finalFact.object],
       citationIds: request.evidence.citations.map((citation) => citation.id),
-      paths: request.evidence.paths,
+      pathIds: request.evidence.paths.map((path) => path.id),
     },
     usage: {
       inputTokens: 100,
@@ -46,6 +69,7 @@ function successfulOutput(request: M3bOracleRequest): M3bOracleAttempt {
       costUsdMicros: 10,
       latencyMs: 5,
     },
+    provenance: provenance(),
   };
 }
 
@@ -239,7 +263,11 @@ describe("M3b offline execution infrastructure", () => {
       Array.from({ length: 16 }, () => 0),
     );
     for (const request of [...openAi.requests(), ...anthropic.requests()]) {
-      expect(Object.keys(request)).toEqual(["instruction", "evidence"]);
+      expect(Object.keys(request)).toEqual([
+        "instruction",
+        "answerShape",
+        "evidence",
+      ]);
       expect(JSON.stringify(request)).not.toMatch(
         /lexical-facts|graph-facts|graph-adjacency|graph-typed|implementation/,
       );
@@ -274,6 +302,7 @@ describe("M3b offline execution infrastructure", () => {
                 code: "provider-overload",
                 dispatchEvidence: "dispatched-usage-unknown",
                 usage: null,
+                provenance: provenance("provider-overload", false),
               }
             : successfulOutput(request);
         },
@@ -312,11 +341,20 @@ describe("M3b offline execution infrastructure", () => {
         generate: (request) => ({
           kind: "success",
           output: {
-            answer: answers.get(request.instruction) ?? "unknown",
+            outcome: request.evidence.facts.some(
+              (fact) => fact.object === answers.get(request.instruction),
+            )
+              ? "answered"
+              : "insufficient-evidence",
+            answerValues: request.evidence.facts.some(
+              (fact) => fact.object === answers.get(request.instruction),
+            )
+              ? [answers.get(request.instruction) ?? "unknown"]
+              : [],
             citationIds: request.evidence.citations.map(
               (citation) => citation.id,
             ),
-            paths: request.evidence.paths,
+            pathIds: request.evidence.paths.map((path) => path.id),
           },
           usage: {
             inputTokens: 100,
@@ -324,6 +362,7 @@ describe("M3b offline execution infrastructure", () => {
             costUsdMicros: 0,
             latencyMs: 1,
           },
+          provenance: provenance(),
         }),
       });
     const result = unwrap(
@@ -363,6 +402,7 @@ describe("M3b offline execution infrastructure", () => {
               code: "provider-timeout",
               dispatchEvidence: "dispatched-usage-unknown",
               usage: null,
+              provenance: provenance("provider-timeout", false),
             }),
           }),
           recordedOracle({ modelIndex: 1, requests: anthropicRequests }),
@@ -380,6 +420,53 @@ describe("M3b offline execution infrastructure", () => {
       failed.every((record) => record.conditionalSemanticSuccess === null),
     ).toBe(true);
     expect(failed.every((record) => record.attempts.length === 2)).toBe(true);
+  });
+
+  it("persists usage and diagnostics before rejecting a domain-invalid wire output", async () => {
+    const requests: Array<M3bOracleRequest> = [];
+    const invalidSemanticOracle = (modelIndex: 0 | 1): M3bOracle =>
+      recordedOracle({
+        modelIndex,
+        requests,
+        generate: () => ({
+          kind: "success",
+          output: {
+            outcome: "answered",
+            answerValues: [],
+            citationIds: ["missing-citation"],
+            pathIds: ["missing-path"],
+          },
+          usage: {
+            inputTokens: 73,
+            outputTokens: 11,
+            costUsdMicros: 19,
+            latencyMs: 7,
+          },
+          provenance: provenance("accepted-wire-envelope", true),
+        }),
+      });
+    const result = unwrap(
+      await runM3bWithOracles({
+        materialized: probe,
+        oracles: [invalidSemanticOracle(0), invalidSemanticOracle(1)],
+        store: createMemoryM3bStore(),
+      }),
+    );
+
+    expect(result.transportRetries).toBe(0);
+    expect(result.records).toHaveLength(16);
+    expect(
+      result.records.every(
+        (record) =>
+          record.validOutput &&
+          !record.semanticValidationPassed &&
+          record.terminalFailure === null &&
+          record.attempts[0]?.kind === "success" &&
+          record.attempts[0].usage.costUsdMicros === 19 &&
+          record.attempts[0].provenance.category === "accepted-wire-envelope" &&
+          record.semanticIssues.length > 0,
+      ),
+    ).toBe(true);
   });
 
   it("rejects identity tampering before oracle dispatch or store mutation", async () => {

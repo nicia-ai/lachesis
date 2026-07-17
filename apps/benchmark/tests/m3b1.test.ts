@@ -2,6 +2,7 @@ import {
   chmod,
   mkdir,
   mkdtemp,
+  readdir,
   readFile,
   rm,
   stat,
@@ -13,11 +14,12 @@ import { join } from "node:path";
 import { digestValue } from "@nicia-ai/lachesis";
 import {
   M3B_PREREGISTERED_CORPUS,
+  type M3bAttemptProvenance,
   type M3bOracle,
   type M3bOracleAttempt,
   type M3bOracleRequest,
 } from "@nicia-ai/lachesis-evidence";
-import { M3B1_ORACLE_IDENTITIES } from "@nicia-ai/lachesis-generator-ai-sdk";
+import { M3B2_ORACLE_IDENTITIES } from "@nicia-ai/lachesis-generator-ai-sdk";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -67,9 +69,18 @@ function semanticOutput(request: M3bOracleRequest): M3bOracleAttempt {
   return {
     kind: "success",
     output: {
-      answer: task?.expectedAnswer ?? "unknown",
+      outcome: request.evidence.facts.some(
+        (fact) => fact.object === task?.expectedAnswer,
+      )
+        ? "answered"
+        : "insufficient-evidence",
+      answerValues: request.evidence.facts.some(
+        (fact) => fact.object === task?.expectedAnswer,
+      )
+        ? [task?.expectedAnswer ?? "unknown"]
+        : [],
       citationIds: request.evidence.citations.map((citation) => citation.id),
-      paths: request.evidence.paths,
+      pathIds: request.evidence.paths.map((path) => path.id),
     },
     usage: {
       inputTokens: 100,
@@ -77,6 +88,28 @@ function semanticOutput(request: M3bOracleRequest): M3bOracleAttempt {
       costUsdMicros: 10,
       latencyMs: 5,
     },
+    provenance: attemptProvenance("accepted", true),
+  };
+}
+
+function attemptProvenance(
+  category: string,
+  usageAvailable: boolean,
+): M3bAttemptProvenance {
+  return {
+    stage: usageAvailable ? "wire-decoding" : "transport",
+    category,
+    providerStatusCode: null,
+    providerErrorCode: null,
+    providerResponseId: null,
+    finishReason: usageAvailable ? "stop" : null,
+    rawFinishReason: null,
+    usageAvailable,
+    outputPresent: usageAvailable,
+    outputDigest: null,
+    outputSizeBytes: null,
+    outputTruncated: false,
+    issues: [],
   };
 }
 
@@ -84,7 +117,7 @@ function retryingOracle(
   provider: "openai" | "anthropic",
   requests: Array<M3bOracleRequest>,
 ): M3bOracle {
-  const identity = M3B1_ORACLE_IDENTITIES.find(
+  const identity = M3B2_ORACLE_IDENTITIES.find(
     (candidate) => candidate.provider === provider,
   );
   if (identity === undefined) throw new Error(`Missing ${provider} identity.`);
@@ -100,6 +133,7 @@ function retryingOracle(
               dispatchEvidence: "dispatched-usage-unknown",
               usage: null,
               latencyMs: 3,
+              provenance: attemptProvenance("provider-overload", false),
             }
           : semanticOutput(request),
       );
@@ -111,7 +145,7 @@ function terminalFailureOracle(
   provider: "openai" | "anthropic",
   requests: Array<M3bOracleRequest>,
 ): M3bOracle {
-  const identity = M3B1_ORACLE_IDENTITIES.find(
+  const identity = M3B2_ORACLE_IDENTITIES.find(
     (candidate) => candidate.provider === provider,
   );
   if (identity === undefined) throw new Error(`Missing ${provider} identity.`);
@@ -131,6 +165,7 @@ function terminalFailureOracle(
                 costUsdMicros: 7,
                 latencyMs: 2,
               },
+              provenance: attemptProvenance("provider-refusal", true),
             }
           : {
               kind: "failure",
@@ -138,6 +173,7 @@ function terminalFailureOracle(
               dispatchEvidence: "not-dispatched",
               usage: null,
               latencyMs: 1,
+              provenance: attemptProvenance("contract-mismatch", false),
             },
       );
     },
@@ -241,13 +277,20 @@ describe("M3b.1 live-binding substrate", () => {
       probe.phase.providerBindings.map((item) => item.providerSdkPackage),
     ).toEqual(["@ai-sdk/anthropic", "@ai-sdk/openai"]);
     expect(
-      M3B_OFFLINE_DESIGN_IDENTITIES.map((item) => item.disposition),
+      M3B_OFFLINE_DESIGN_IDENTITIES.slice(0, 3).map((item) => item.disposition),
     ).toEqual(Array.from({ length: 3 }, () => "report-only-offline-unbound"));
     expect(
-      M3B_OFFLINE_DESIGN_IDENTITIES.map((identity) =>
-        m3bExecutionDisposition(identity.experimentDigest),
+      m3bExecutionDisposition(
+        M3B_OFFLINE_DESIGN_IDENTITIES[3]?.experimentDigest ?? "",
       ),
-    ).toEqual(Array.from({ length: 3 }, () => "report-only-offline-unbound"));
+    ).toBe("complete-protocol-fail");
+    expect(
+      M3B_OFFLINE_DESIGN_IDENTITIES.slice(4).every(
+        (identity) =>
+          m3bExecutionDisposition(identity.experimentDigest) ===
+          "superseded-unexecuted",
+      ),
+    ).toBe(true);
     expect(
       M3B_OFFLINE_DESIGN_IDENTITIES.every(
         (identity) =>
@@ -291,9 +334,47 @@ describe("M3b.1 live-binding substrate", () => {
       missingCredentialNames: ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"],
       liveExecutionPermitted: false,
     });
-    await expect(stat(join(root, "m3b1"))).rejects.toMatchObject({
+    await expect(stat(join(root, "m3b2"))).rejects.toMatchObject({
       code: "ENOENT",
     });
+  });
+
+  it("rejects the failed and superseded M3b.1 identities before ledger mutation or dispatch", async () => {
+    const root = await temporaryRoot();
+    const fresh = unwrap(
+      await materializeM3b1Phase({
+        phase: "m3b-protocol-probe",
+        sourceCommit: SOURCE_COMMIT,
+      }),
+    );
+    for (const historical of M3B_OFFLINE_DESIGN_IDENTITIES.slice(3)) {
+      const materialized: M3b1MaterializedPhase = {
+        ...fresh,
+        phase: {
+          ...fresh.phase,
+          experimentDigest: historical.experimentDigest,
+        },
+      };
+      const requests: Array<M3bOracleRequest> = [];
+      const result = await executeM3b1({
+        materialized,
+        currentCommit: SOURCE_COMMIT,
+        cleanWorktree: true,
+        credentials: {
+          openaiApiKey: "offline-dummy",
+          anthropicApiKey: "offline-dummy",
+        },
+        acknowledgement: acknowledgement(materialized),
+        storageRoot: root,
+        oracles: [
+          retryingOracle("openai", requests),
+          retryingOracle("anthropic", requests),
+        ],
+      });
+      expect(result).toMatchObject({ ok: false });
+      expect(requests).toEqual([]);
+    }
+    expect(await readdir(root)).toEqual([]);
   });
 
   it("charges both attempts when an unknown-usage failure is retried and resumes without dispatch", async () => {
@@ -385,7 +466,7 @@ describe("M3b.1 live-binding substrate", () => {
 
     const ledgerPath = join(
       root,
-      "m3b1",
+      "m3b2",
       materialized.campaign.campaignDigest,
       "ledger.ndjson",
     );
@@ -425,7 +506,7 @@ describe("M3b.1 live-binding substrate", () => {
       throw new Error("The scheduled provider has no ceiling.");
     const ledgerPath = join(
       root,
-      "m3b1",
+      "m3b2",
       materialized.campaign.campaignDigest,
       "ledger.ndjson",
     );
@@ -581,7 +662,7 @@ describe("M3b.1 live-binding substrate", () => {
 
     const ledgerPath = join(
       root,
-      "m3b1",
+      "m3b2",
       materialized.campaign.campaignDigest,
       "ledger.ndjson",
     );
@@ -698,7 +779,7 @@ describe("M3b.1 live-binding substrate", () => {
       error: { code: "BUDGET_EXCEEDED" },
     });
     expect(requests).toEqual([]);
-    await expect(stat(join(root, "m3b1"))).rejects.toMatchObject({
+    await expect(stat(join(root, "m3b2"))).rejects.toMatchObject({
       code: "ENOENT",
     });
   });

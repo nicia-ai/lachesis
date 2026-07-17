@@ -70,7 +70,13 @@ export {
   type DeterministicM3bOracle,
   M3B_ORACLE_MODELS,
   M3B_ORACLE_PROMPT,
+  M3B_PROTOCOL_PROBE_GATE,
+  M3B_SCORER_PROTOCOL,
   M3B_TRANSPORT_RETRY_POLICY,
+  type M3bAnswerShape,
+  m3bAnswerShapeSchema,
+  type M3bAttemptProvenance,
+  m3bAttemptProvenanceSchema,
   type M3bBlindAuditCounts,
   type M3bExecutionBinding,
   m3bExecutionBindingSchema,
@@ -100,6 +106,7 @@ export {
   materializeM3bPhase,
   runM3bWithOracles,
   validateM3bMaterialization,
+  validateM3bSemanticOutput,
 } from "./m3b.js";
 export {
   loadM3bPhaseCases,

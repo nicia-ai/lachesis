@@ -149,9 +149,14 @@ The counts-only audit reports phase counts, resource ceilings, leakage and
 ground-truth failure counts, schedule imbalance, and shared-plan identity count.
 It returns no case IDs, prompts, answers, contexts, or digests.
 
-## Next gate
+## Historical boundary
 
-No M3b result or live claim exists yet. Before any provider call:
+This document describes the substrate frozen before live binding. M3b.1 later
+reached a 16-record provider probe and closed as a protocol failure; it did not
+reach calibration or held-out inference. The identity-changing
+[M3b.2 correction](./m3b2-protocol-correction.md) is the current protocol.
+
+Before any fresh provider call:
 
 1. review and freeze the offline manifests and source commit;
 2. derive and authorize independent development-pool caps;

@@ -1,7 +1,10 @@
 # M3b.1: live-binding substrate
 
-Status: implemented and verified offline. No M3b.1 experiment is externally
-preregistered or authorized to execute.
+Status: closed as `complete-protocol-fail`. The immutable protocol probe
+`a104cd5c...` executed 16 initial records and exposed a deterministic schema and
+measurement defect. Its ledger, records, and report are frozen. The M3b.1
+calibration `a4e61610...` and held-out `9feb01a0...` identities are
+`superseded-unexecuted`.
 
 M3b.1 binds the portable M3b evidence study to the already validated direct
 provider routes without changing the four-arm factorial comparison:
@@ -14,13 +17,13 @@ provider routes without changing the four-arm factorial comparison:
 - one conservative controller-managed retry for overload, timeout, or provider
   unavailability.
 
-The provider-portable output schema is a strict root object containing `answer`,
-`citationIds`, and `paths`. Its exact schema digest, provider/model identity,
-core and provider AI SDK package versions, adapter version, route, transport
-choice, and pricing entry are bound into each experiment. Intercepted-fetch
-tests exercise the real installed provider packages and prove that neither the
-arm label nor the evidence-source implementation identity enters the provider
-request.
+The historical provider output schema was a strict root object containing
+`answer`, `citationIds`, and reconstructed `paths`. Its exact schema digest,
+provider/model identity, core and provider AI SDK package versions, adapter
+version, route, transport choice, and pricing entry are bound into each
+experiment. Intercepted-fetch tests exercise the real installed provider
+packages and prove that neither the arm label nor the evidence-source
+implementation identity enters the provider request.
 
 ## Endpoints and decisions
 
@@ -90,8 +93,7 @@ The M3b offline-unbound experiments `99dc013f...`, `aa88eeb7...`, and
 `2101fe92...` remain report-only offline design identities. They cannot execute
 or resume through the M3b.1 controller.
 
-After a clean M3b.1 commit, fresh probe, calibration, and held-out manifests may
-be materialized for external preregistration. The first separately authorized
-live gate remains the 16-record protocol probe with at most 16 controller
-retries. It does not authorize calibration or held-out execution. TypeGraph
-remains absent.
+M3b.1 must not be rerun. [M3b.2](./m3b2-protocol-correction.md) replaces prose
+answers and reconstructed paths with typed answer values, explicit abstention,
+and canonical path references. It also preserves bounded provider and wire
+diagnostics before applying domain validation. TypeGraph remains absent.

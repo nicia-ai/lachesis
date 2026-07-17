@@ -15,10 +15,12 @@ import {
 import { z } from "zod";
 
 import { blindM3a1IntegrityAudit } from "./audit.js";
+import type { evidenceContextSchema, evidencePathSchema } from "./contract.js";
 import {
-  evidenceContextSchema,
+  evidenceCitationSchema,
+  evidenceEdgeSchema,
+  evidenceFactSchema,
   type EvidenceNeighborhood,
-  evidencePathSchema,
   type EvidenceSource,
   type EvidenceSourceIdentity,
   evidenceSourceIdentitySchema,
@@ -55,26 +57,52 @@ import { createMatchedTextEvidenceSource } from "./text.js";
 
 export type M3bPhase = "m3b-protocol-probe" | "m3b-calibration" | "m3b-heldout";
 
+const m3bIdentifierSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]*$/);
+const digestSchema = z.string().regex(/^[a-f0-9]{64}$/u);
+
+export const m3bAnswerShapeSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("scalar") }).readonly(),
+  z.strictObject({ kind: z.literal("ordered-values") }).readonly(),
+  z.strictObject({ kind: z.literal("unordered-values") }).readonly(),
+]);
+export type M3bAnswerShape = z.infer<typeof m3bAnswerShapeSchema>;
+
+export const m3bVisiblePathSchema = z
+  .strictObject({
+    id: m3bIdentifierSchema,
+    factIds: z.array(m3bIdentifierSchema).min(1).max(256).readonly(),
+    edgeIds: z.array(m3bIdentifierSchema).max(256).readonly(),
+  })
+  .readonly();
+
+export const m3bOracleEvidenceSchema = z
+  .strictObject({
+    facts: z.array(evidenceFactSchema).max(64).readonly(),
+    citations: z.array(evidenceCitationSchema).max(128).readonly(),
+    edges: z.array(evidenceEdgeSchema).max(256).readonly(),
+    paths: z.array(m3bVisiblePathSchema).max(256).readonly(),
+  })
+  .readonly();
+
+/**
+ * Provider-portable wire contract. Domain rules (uniqueness, visible
+ * references, answer cardinality, and correctness) are deliberately applied
+ * only after the response envelope and usage have been made durable.
+ */
 export const m3bOracleOutputSchema = z
   .strictObject({
-    answer: z.string().min(1),
+    outcome: z.enum(["answered", "insufficient-evidence"]),
+    answerValues: z.array(z.string().min(1)).max(128).readonly(),
     citationIds: z.array(z.string().min(1)).max(128).readonly(),
-    paths: z.array(evidencePathSchema).max(256).readonly(),
-  })
-  .superRefine((value, context) => {
-    if (new Set(value.citationIds).size !== value.citationIds.length)
-      context.addIssue({
-        code: "custom",
-        message: "Oracle citations must be unique.",
-        path: ["citationIds"],
-      });
+    pathIds: z.array(z.string().min(1)).max(256).readonly(),
   })
   .readonly();
 
 export const m3bOracleRequestSchema = z
   .strictObject({
     instruction: z.string().min(1).max(4_000),
-    evidence: evidenceContextSchema,
+    answerShape: m3bAnswerShapeSchema,
+    evidence: m3bOracleEvidenceSchema,
   })
   .readonly();
 
@@ -83,20 +111,44 @@ export type M3bOracleRequest = z.infer<typeof m3bOracleRequestSchema>;
 
 export const M3B_ORACLE_PROMPT = Object.freeze({
   id: "lachesis-m3b-arm-blinded-evidence-oracle",
-  version: "1",
+  version: "2",
   text: [
-    "Answer the public instruction using only the supplied normalized evidence context.",
-    "Return one strict JSON object with answer, citationIds, and paths.",
-    "Every citation and path must be supported by the supplied context.",
+    "Use only the supplied normalized evidence context to address the public instruction.",
+    "Return one strict JSON object with outcome, answerValues, citationIds, and pathIds.",
+    "For answered, encode only typed answer values matching answerShape; do not put prose in answerValues.",
+    "For insufficient-evidence, return an empty answerValues array.",
+    "Every citationId and pathId must be copied from the supplied context. Never reconstruct a path.",
     "The evidence source and experimental arm are deliberately undisclosed.",
   ].join("\n"),
+});
+
+export const M3B_SCORER_PROTOCOL = Object.freeze({
+  id: "m3b-common-typed-answer-citation-scorer",
+  version: "2",
+  commonPrimaryEndpoint:
+    "typed-outcome-correct-and-required-visible-fact-citations-present",
+  insufficientEvidenceRule:
+    "required-answer-citations-not-all-visible-in-the-frozen-context",
+  pathEndpoint: "separate-canonical-path-reference-utilization",
+  proseScoring: false,
+});
+
+export const M3B_PROTOCOL_PROBE_GATE = Object.freeze({
+  id: "m3b-typed-output-protocol-probe-gate",
+  version: "2",
+  requiredRecords: 16,
+  requiredNonOpaqueOutcomes: 16,
+  requiredDurableResponseUsageClassifications: 16,
+  requireCorrectTypedOutcomeRelativeToVisibleEvidence: true,
+  requireGraphFactsPassFromBothProviders: true,
+  maximumUnauthorizedOrIdentityMismatchedCalls: 0,
 });
 
 export const M3B_ORACLE_MODELS = Object.freeze([
   Object.freeze({
     provider: "openai",
     model: "gpt-5.6-terra",
-    adapterVersion: "m3b-offline-unbound/1",
+    adapterVersion: "m3b-offline-unbound/2",
     settings: Object.freeze({
       temperature: 0,
       reasoning: "low",
@@ -109,7 +161,7 @@ export const M3B_ORACLE_MODELS = Object.freeze([
   Object.freeze({
     provider: "anthropic",
     model: "claude-sonnet-5",
-    adapterVersion: "m3b-offline-unbound/1",
+    adapterVersion: "m3b-offline-unbound/2",
     settings: Object.freeze({
       temperature: 0,
       reasoning: "adaptive-low",
@@ -123,7 +175,7 @@ export const M3B_ORACLE_MODELS = Object.freeze([
 
 export const M3B_TRANSPORT_RETRY_POLICY = Object.freeze({
   id: "m3b-symmetric-controller-transport-retry",
-  version: "1",
+  version: "2",
   maximumRetriesAfterInitialAttempt: 1,
   retryableCodes: Object.freeze([
     "provider-overload",
@@ -139,7 +191,7 @@ export const M3B_TRANSPORT_RETRY_POLICY = Object.freeze({
 
 const requestRegistration = defineSchema({
   id: "m3b/oracle-request",
-  version: "1",
+  version: "2",
   description:
     "Arm-blinded public instruction and normalized evidence context.",
   validator: m3bOracleRequestSchema,
@@ -147,14 +199,15 @@ const requestRegistration = defineSchema({
 
 const outputRegistration = defineSchema({
   id: "m3b/oracle-output",
-  version: "1",
-  description: "Structured answer, citations, and evidence paths.",
+  version: "2",
+  description:
+    "Typed answer outcome with citation and canonical-path references.",
   validator: m3bOracleOutputSchema,
 });
 
 const oracleEffect = defineEffect({
   id: "m3b/oracle",
-  version: "1",
+  version: "2",
   description: "Invokes the capability-scoped, arm-blinded evidence oracle.",
   input: requestRegistration,
   output: outputRegistration,
@@ -166,27 +219,27 @@ const oracleEffect = defineEffect({
 });
 
 const catalogResult = createCatalog({
-  identity: { id: "m3b/oracle-catalog", version: "1" },
+  identity: { id: "m3b/oracle-catalog", version: "2" },
   schemas: [requestRegistration.runtime, outputRegistration.runtime],
   operations: [oracleEffect],
 });
 
 const M3B_SHARED_PLAN_JSON = JSON.stringify({
   formatVersion: "1",
-  catalog: { id: "m3b/oracle-catalog", version: "1" },
+  catalog: { id: "m3b/oracle-catalog", version: "2" },
   root: "answer",
   nodes: [
     {
       id: "request",
       op: "input",
       inputKey: "request",
-      schema: { id: "m3b/oracle-request", version: "1" },
+      schema: { id: "m3b/oracle-request", version: "2" },
     },
     {
       id: "answer",
       op: "effect",
       source: "request",
-      effect: { id: "m3b/oracle", version: "1" },
+      effect: { id: "m3b/oracle", version: "2" },
     },
   ],
   budget: {
@@ -207,6 +260,7 @@ export type M3bSharedPlan = Readonly<{
   catalogFingerprint: string;
   outputSchemaDigest: string;
   oracleProtocolDigest: string;
+  scorerProtocolDigest: string;
 }>;
 
 export async function createM3bSharedPlan(): Promise<
@@ -245,10 +299,13 @@ export async function createM3bSharedPlan(): Promise<
     z.toJSONSchema(m3bOracleOutputSchema),
   );
   const oracleProtocolDigest = await digestValue(M3B_ORACLE_PROMPT);
+  const scorerProtocolDigest = await digestValue(M3B_SCORER_PROTOCOL);
   if (!outputSchemaDigest.ok)
     return { ok: false, error: [outputSchemaDigest.error] };
   if (!oracleProtocolDigest.ok)
     return { ok: false, error: [oracleProtocolDigest.error] };
+  if (!scorerProtocolDigest.ok)
+    return { ok: false, error: [scorerProtocolDigest.error] };
   return {
     ok: true,
     value: {
@@ -258,6 +315,7 @@ export async function createM3bSharedPlan(): Promise<
       catalogFingerprint: summary.catalogFingerprint,
       outputSchemaDigest: outputSchemaDigest.value,
       oracleProtocolDigest: oracleProtocolDigest.value,
+      scorerProtocolDigest: scorerProtocolDigest.value,
     },
   };
 }
@@ -272,6 +330,7 @@ type FrozenNeighborhood = Readonly<{
 
 export type M3bFrozenCase = Readonly<{
   task: M3aTask;
+  answerShape: z.infer<typeof m3bAnswerShapeSchema>;
   caseDigest: string;
   oraclePromptDigest: string;
   neighborhoods: ReadonlyArray<FrozenNeighborhood>;
@@ -305,6 +364,7 @@ export type M3bManifest = Readonly<{
   retryPolicy: typeof M3B_TRANSPORT_RETRY_POLICY;
   contrasts: typeof M3B_CONTRASTS;
   multiplicityPolicy: typeof M3B_MULTIPLICITY_POLICY;
+  protocolProbeGate: typeof M3B_PROTOCOL_PROBE_GATE;
   schedule: M3bWilliamsSchedule;
   experimentDigest: string;
 }>;
@@ -349,10 +409,12 @@ async function freezeCase(
   sources: ReadonlyMap<M3bArm, EvidenceSource>,
   sharedPlan: M3bSharedPlan,
 ): Promise<Result<M3bFrozenCase, Diagnostic>> {
-  const caseDigest = await digestValue(task);
+  const answerShape = m3bAnswerShapeSchema.parse({ kind: "scalar" });
+  const caseDigest = await digestValue({ task, answerShape });
   const oraclePromptDigest = await digestValue({
     prompt: M3B_ORACLE_PROMPT,
     instruction: task.instruction,
+    answerShape,
     outputSchemaDigest: sharedPlan.outputSchemaDigest,
     planHash: sharedPlan.planHash,
   });
@@ -393,6 +455,7 @@ async function freezeCase(
     ok: true,
     value: {
       task,
+      answerShape,
       caseDigest: caseDigest.value,
       oraclePromptDigest: oraclePromptDigest.value,
       neighborhoods,
@@ -466,10 +529,12 @@ export async function materializeM3bPhase(
       catalogFingerprint: sharedPlan.value.catalogFingerprint,
       outputSchemaDigest: sharedPlan.value.outputSchemaDigest,
       oracleProtocolDigest: sharedPlan.value.oracleProtocolDigest,
+      scorerProtocolDigest: sharedPlan.value.scorerProtocolDigest,
     },
     retryPolicy: M3B_TRANSPORT_RETRY_POLICY,
     contrasts: M3B_CONTRASTS,
     multiplicityPolicy: M3B_MULTIPLICITY_POLICY,
+    protocolProbeGate: M3B_PROTOCOL_PROBE_GATE,
     schedule: schedule.value,
   };
   const experimentDigest = await digestValue(body);
@@ -537,7 +602,9 @@ export async function validateM3bMaterialization(
     materialized.sharedPlan.outputSchemaDigest !==
       materialized.manifest.sharedPlan.outputSchemaDigest ||
     materialized.sharedPlan.oracleProtocolDigest !==
-      materialized.manifest.sharedPlan.oracleProtocolDigest
+      materialized.manifest.sharedPlan.oracleProtocolDigest ||
+    materialized.sharedPlan.scorerProtocolDigest !==
+      materialized.manifest.sharedPlan.scorerProtocolDigest
   )
     return {
       ok: false,
@@ -550,7 +617,10 @@ export async function validateM3bMaterialization(
     const reference = materialized.manifest.cases.find(
       (item) => item.caseId === frozen.task.id,
     );
-    const caseDigest = await digestValue(frozen.task);
+    const caseDigest = await digestValue({
+      task: frozen.task,
+      answerShape: frozen.answerShape,
+    });
     if (
       reference === undefined ||
       !caseDigest.ok ||
@@ -615,12 +685,47 @@ export const m3bOracleUsageSchema = z
   .readonly();
 export type M3bOracleUsage = z.infer<typeof m3bOracleUsageSchema>;
 
+export const m3bDiagnosticIssueSchema = z
+  .strictObject({
+    code: z.string().min(1).max(128),
+    path: z
+      .array(z.union([z.string(), z.number().int().nonnegative()]))
+      .readonly(),
+  })
+  .readonly();
+
+export const m3bAttemptProvenanceSchema = z
+  .strictObject({
+    stage: z.enum([
+      "pre-dispatch",
+      "transport",
+      "provider-response",
+      "wire-decoding",
+      "semantic-validation",
+    ]),
+    category: z.string().min(1).max(128),
+    providerStatusCode: z.number().int().min(100).max(599).nullable(),
+    providerErrorCode: z.string().min(1).max(128).nullable(),
+    providerResponseId: z.string().min(1).max(512).nullable(),
+    finishReason: z.string().min(1).max(128).nullable(),
+    rawFinishReason: z.string().min(1).max(128).nullable(),
+    usageAvailable: z.boolean(),
+    outputPresent: z.boolean(),
+    outputDigest: digestSchema.nullable(),
+    outputSizeBytes: z.number().int().nonnegative().nullable(),
+    outputTruncated: z.boolean(),
+    issues: z.array(m3bDiagnosticIssueSchema).max(64).readonly(),
+  })
+  .readonly();
+export type M3bAttemptProvenance = z.infer<typeof m3bAttemptProvenanceSchema>;
+
 export const m3bOracleAttemptSchema = z.discriminatedUnion("kind", [
   z
     .strictObject({
       kind: z.literal("success"),
-      output: z.unknown(),
+      output: m3bOracleOutputSchema,
       usage: m3bOracleUsageSchema,
+      provenance: m3bAttemptProvenanceSchema,
     })
     .readonly(),
   z
@@ -634,6 +739,7 @@ export const m3bOracleAttemptSchema = z.discriminatedUnion("kind", [
       ]),
       usage: m3bOracleUsageSchema.nullable(),
       latencyMs: z.number().int().nonnegative().optional(),
+      provenance: m3bAttemptProvenanceSchema,
     })
     .readonly(),
 ]);
@@ -706,14 +812,16 @@ export function createDeterministicM3bOracle(
     generate: (request) => {
       requests.push(request);
       const finalFact = request.evidence.facts.at(-1);
+      const answered = finalFact !== undefined;
       return Promise.resolve({
         kind: "success",
         output: {
-          answer: finalFact?.object ?? "unknown",
+          outcome: answered ? "answered" : "insufficient-evidence",
+          answerValues: finalFact === undefined ? [] : [finalFact.object],
           citationIds: request.evidence.citations.map(
             (citation) => citation.id,
           ),
-          paths: request.evidence.paths,
+          pathIds: request.evidence.paths.map((path) => path.id),
         },
         usage: {
           inputTokens: 100,
@@ -721,12 +829,25 @@ export function createDeterministicM3bOracle(
           costUsdMicros: 0,
           latencyMs: 1,
         },
+        provenance: {
+          stage: "wire-decoding",
+          category: "accepted",
+          providerStatusCode: null,
+          providerErrorCode: null,
+          providerResponseId: "deterministic-fixture",
+          finishReason: "stop",
+          rawFinishReason: null,
+          usageAvailable: true,
+          outputPresent: true,
+          outputDigest: null,
+          outputSizeBytes: null,
+          outputTruncated: false,
+          issues: [],
+        },
       });
     },
   };
 }
-
-const digestSchema = z.string().regex(/^[a-f0-9]{64}$/u);
 
 export const m3bRecordSchema = z
   .strictObject({
@@ -754,6 +875,10 @@ export const m3bRecordSchema = z
     terminalFailure: m3bOracleFailureCodeSchema.nullable(),
     validOutput: z.boolean(),
     output: m3bOracleOutputSchema.nullable(),
+    semanticValidationPassed: z.boolean(),
+    semanticIssues: z.array(m3bDiagnosticIssueSchema).max(64).readonly(),
+    semanticProvenance: m3bAttemptProvenanceSchema.nullable(),
+    expectedOutcome: z.enum(["answered", "insufficient-evidence"]),
     answerCorrect: z.boolean(),
     citationsCorrect: z.boolean(),
     relationshipCitationsCorrect: z.boolean(),
@@ -794,6 +919,75 @@ function retryable(code: M3bOracleFailureCode): boolean {
 
 function pathKey(path: z.infer<typeof evidencePathSchema>): string {
   return `${path.factIds.join("/")}:${path.edgeIds.join("/")}`;
+}
+
+function visiblePathId(index: number): string {
+  return `path-${String(index + 1).padStart(3, "0")}`;
+}
+
+function visibleEvidence(
+  context: z.infer<typeof evidenceContextSchema>,
+): z.infer<typeof m3bOracleEvidenceSchema> {
+  return m3bOracleEvidenceSchema.parse({
+    facts: context.facts,
+    citations: context.citations,
+    edges: context.edges,
+    paths: context.paths.map((path, index) => ({
+      id: visiblePathId(index),
+      factIds: path.factIds,
+      edgeIds: path.edgeIds,
+    })),
+  });
+}
+
+function duplicateIssue(
+  values: ReadonlyArray<string>,
+  path: string,
+): ReadonlyArray<z.infer<typeof m3bDiagnosticIssueSchema>> {
+  return new Set(values).size === values.length
+    ? []
+    : [{ code: "duplicate-reference", path: [path] }];
+}
+
+/** Domain validation runs only after the provider envelope and usage exist. */
+export function validateM3bSemanticOutput(
+  request: M3bOracleRequest,
+  output: M3bOracleOutput,
+): ReadonlyArray<z.infer<typeof m3bDiagnosticIssueSchema>> {
+  const issues: Array<z.infer<typeof m3bDiagnosticIssueSchema>> = [
+    ...duplicateIssue(output.citationIds, "citationIds"),
+    ...duplicateIssue(output.pathIds, "pathIds"),
+  ];
+  const visibleCitations = new Set(
+    request.evidence.citations.map((citation) => citation.id),
+  );
+  const visiblePaths = new Set(request.evidence.paths.map((path) => path.id));
+  if (output.citationIds.some((id) => !visibleCitations.has(id)))
+    issues.push({ code: "unknown-citation-reference", path: ["citationIds"] });
+  if (output.pathIds.some((id) => !visiblePaths.has(id)))
+    issues.push({ code: "unknown-path-reference", path: ["pathIds"] });
+  if (
+    output.outcome === "insufficient-evidence" &&
+    output.answerValues.length !== 0
+  )
+    issues.push({
+      code: "abstention-has-answer-values",
+      path: ["answerValues"],
+    });
+  if (output.outcome === "answered") {
+    const cardinalityValid =
+      request.answerShape.kind === "scalar"
+        ? output.answerValues.length === 1
+        : output.answerValues.length > 0;
+    if (!cardinalityValid)
+      issues.push({ code: "answer-shape-mismatch", path: ["answerValues"] });
+    if (
+      request.answerShape.kind === "unordered-values" &&
+      new Set(output.answerValues).size !== output.answerValues.length
+    )
+      issues.push({ code: "duplicate-answer-value", path: ["answerValues"] });
+  }
+  return issues;
 }
 
 async function validStoredRecord(
@@ -884,7 +1078,8 @@ function modelVisibleRequest(
 ): M3bOracleRequest {
   return m3bOracleRequestSchema.parse({
     instruction: frozen.task.instruction,
-    evidence: neighborhood.neighborhood.context,
+    answerShape: frozen.answerShape,
+    evidence: visibleEvidence(neighborhood.neighborhood.context),
   });
 }
 
@@ -975,40 +1170,83 @@ async function executeRecord(
     ? m3bOracleOutputSchema.safeParse(execution.value.output)
     : { success: false as const };
   const output = parsedOutput.success ? parsedOutput.data : null;
+  const semanticIssues =
+    output === null ? [] : validateM3bSemanticOutput(request, output);
+  const semanticValidationPassed =
+    output !== null && semanticIssues.length === 0;
+  const successfulAttempt = attempts.findLast(
+    (attempt) => attempt.kind === "success",
+  );
+  const semanticProvenance =
+    output !== null && !semanticValidationPassed
+      ? {
+          ...(successfulAttempt?.provenance ?? {
+            providerStatusCode: null,
+            providerErrorCode: null,
+            providerResponseId: null,
+            finishReason: null,
+            rawFinishReason: null,
+            usageAvailable: successfulAttempt !== undefined,
+            outputPresent: true,
+            outputDigest: null,
+            outputSizeBytes: null,
+            outputTruncated: false,
+          }),
+          stage: "semantic-validation" as const,
+          category: "semantic-domain-rejected",
+          issues: semanticIssues,
+        }
+      : null;
   const visibleCitationIds = new Set(
-    neighborhood.neighborhood.context.citations.map((citation) => citation.id),
+    request.evidence.citations.map((citation) => citation.id),
   );
   const expectedCitationIds = new Set(frozen.task.expectedCitationIds);
+  const expectedOutcome = [...expectedCitationIds].every((id) =>
+    visibleCitationIds.has(id),
+  )
+    ? ("answered" as const)
+    : ("insufficient-evidence" as const);
   const citationsCorrect =
-    output !== null &&
+    semanticValidationPassed &&
     output.citationIds.every((id) => visibleCitationIds.has(id)) &&
-    [...expectedCitationIds].every((id) => output.citationIds.includes(id));
+    (expectedOutcome === "insufficient-evidence" ||
+      [...expectedCitationIds].every((id) => output.citationIds.includes(id)));
   const expectedVisibleRelationshipCitationIds =
     frozen.task.expectedEdgeCitationIds.filter((citationId) =>
       visibleCitationIds.has(citationId),
     );
   const relationshipCitationsCorrect =
-    output !== null &&
+    semanticValidationPassed &&
     expectedVisibleRelationshipCitationIds.every((citationId) =>
       output.citationIds.includes(citationId),
     );
-  const visiblePaths = new Set(
-    neighborhood.neighborhood.context.paths.map((path) => pathKey(path)),
+  const pathIdsByKey = new Map(
+    neighborhood.neighborhood.context.paths.map((path, index) => [
+      pathKey(path),
+      visiblePathId(index),
+    ]),
   );
-  const expectedVisiblePaths = frozen.task.expectedPaths.filter((path) =>
-    visiblePaths.has(pathKey(path)),
-  );
+  const visiblePathIds = new Set(pathIdsByKey.values());
+  const expectedVisiblePathIds = frozen.task.expectedPaths.flatMap((path) => {
+    const id = pathIdsByKey.get(pathKey(path));
+    return id === undefined ? [] : [id];
+  });
   const pathsCorrect =
-    output !== null &&
-    output.paths.every((path) => visiblePaths.has(pathKey(path))) &&
-    expectedVisiblePaths.every((path) =>
-      output.paths.some((candidate) => pathKey(candidate) === pathKey(path)),
-    );
-  const answerCorrect = output?.answer === frozen.task.expectedAnswer;
-  const pathUtilized = (output?.paths.length ?? 0) > 0;
+    semanticValidationPassed &&
+    output.pathIds.every((id) => visiblePathIds.has(id)) &&
+    expectedVisiblePathIds.every((id) => output.pathIds.includes(id));
+  const answerCorrect =
+    semanticValidationPassed &&
+    output.outcome === expectedOutcome &&
+    (expectedOutcome === "insufficient-evidence"
+      ? output.answerValues.length === 0
+      : output.answerValues.length === 1 &&
+        output.answerValues[0] === frozen.task.expectedAnswer);
+  const pathUtilized = (output?.pathIds.length ?? 0) > 0;
   const pathUtilizationSuccess =
     pathUtilized && pathsCorrect && relationshipCitationsCorrect;
-  const endToEndSuccess = output !== null && answerCorrect && citationsCorrect;
+  const endToEndSuccess =
+    semanticValidationPassed && answerCorrect && citationsCorrect;
   const body = {
     key: persistentRecordKey,
     experimentDigest: input.materialized.manifest.experimentDigest,
@@ -1037,6 +1275,10 @@ async function executeRecord(
     terminalFailure,
     validOutput: output !== null,
     output,
+    semanticValidationPassed,
+    semanticIssues,
+    semanticProvenance,
+    expectedOutcome,
     answerCorrect,
     citationsCorrect,
     relationshipCitationsCorrect,
@@ -1045,7 +1287,9 @@ async function executeRecord(
     pathUtilizationSuccess,
     endToEndSuccess,
     conditionalSemanticSuccess:
-      output === null ? null : answerCorrect && citationsCorrect,
+      output === null || !semanticValidationPassed
+        ? null
+        : answerCorrect && citationsCorrect,
     semanticRepairCalls: 0 as const,
   };
   const digest = await digestValue(body);

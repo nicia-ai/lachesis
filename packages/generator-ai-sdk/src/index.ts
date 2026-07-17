@@ -1,5 +1,6 @@
 import {
   M3B_ORACLE_PROMPT,
+  type M3bAttemptProvenance,
   type M3bOracle,
   type M3bOracleFailureCode,
   type M3bOracleIdentity,
@@ -36,6 +37,7 @@ export const ANTHROPIC_AI_SDK_PROVIDER_VERSION = "4.0.15";
 export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/4;ai-sdk/${AI_SDK_VERSION}`;
 export const M2_CODEMODE_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};restricted-capability-typescript/3`;
 export const M3B1_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-evidence-oracle/1`;
+export const M3B2_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-typed-evidence-oracle/2`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -138,6 +140,7 @@ export const M3B1_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
   OPENAI_PRICING,
   ANTHROPIC_DIRECT_PRICING,
 ]);
+export const M3B2_PRICING_ENTRIES = M3B1_PRICING_ENTRIES;
 
 export function createM3b1PricingSnapshot(): ReturnType<
   typeof createPricingSnapshot
@@ -148,8 +151,12 @@ export function createM3b1PricingSnapshot(): ReturnType<
   });
 }
 
+export const createM3b2PricingSnapshot = createM3b1PricingSnapshot;
+
 export const M3B1_OUTPUT_SCHEMA_VERSION =
   "m3b-provider-portable-answer-citation-path/1";
+export const M3B2_OUTPUT_SCHEMA_VERSION =
+  "m3b-provider-portable-typed-answer-reference/2";
 function deepFreezeValue(value: unknown): void {
   if (value === null || typeof value !== "object") return;
   for (const child of Object.values(value)) deepFreezeValue(child);
@@ -192,6 +199,40 @@ const m3b1OutputJsonSchema = {
 };
 deepFreezeValue(m3b1OutputJsonSchema);
 export const M3B1_OUTPUT_JSON_SCHEMA = m3b1OutputJsonSchema;
+
+type ProviderJsonSchema = Exclude<
+  Parameters<typeof z.fromJSONSchema>[0],
+  boolean
+>;
+
+const m3b2OutputJsonSchema: ProviderJsonSchema = {
+  type: "object",
+  properties: {
+    outcome: {
+      type: "string",
+      enum: ["answered", "insufficient-evidence"],
+    },
+    answerValues: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 128,
+    },
+    citationIds: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 128,
+    },
+    pathIds: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 256,
+    },
+  },
+  required: ["outcome", "answerValues", "citationIds", "pathIds"],
+  additionalProperties: false,
+};
+deepFreezeValue(m3b2OutputJsonSchema);
+export const M3B2_OUTPUT_JSON_SCHEMA = m3b2OutputJsonSchema;
 
 export const M1B_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
   OPENAI_PRICING,
@@ -984,11 +1025,12 @@ export function createAnthropicCodeModeAdapter(
 
 function m3bOracleIdentity(
   provider: "openai" | "anthropic",
+  adapterVersion: string,
 ): M3bOracleIdentity {
   return Object.freeze({
     provider,
     model: provider === "openai" ? M1B_OPENAI_MODEL : M1B_ANTHROPIC_MODEL,
-    adapterVersion: M3B1_PROVIDER_ADAPTER_VERSION,
+    adapterVersion,
     settings: Object.freeze({
       temperature: null,
       reasoning: provider === "openai" ? "low" : "adaptive-low",
@@ -1000,13 +1042,22 @@ function m3bOracleIdentity(
   });
 }
 
+export const M3B2_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
+  Object.freeze([
+    m3bOracleIdentity("openai", M3B2_PROVIDER_ADAPTER_VERSION),
+    m3bOracleIdentity("anthropic", M3B2_PROVIDER_ADAPTER_VERSION),
+  ]);
 export const M3B1_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
-  Object.freeze([m3bOracleIdentity("openai"), m3bOracleIdentity("anthropic")]);
+  Object.freeze([
+    m3bOracleIdentity("openai", M3B1_PROVIDER_ADAPTER_VERSION),
+    m3bOracleIdentity("anthropic", M3B1_PROVIDER_ADAPTER_VERSION),
+  ]);
 
 function renderM3bOracleRequest(request: M3bOracleRequest): string {
   return JSON.stringify({
     protocol: M3B_ORACLE_PROMPT,
     instruction: request.instruction,
+    answerShape: request.answerShape,
     evidence: request.evidence,
   });
 }
@@ -1034,6 +1085,133 @@ function m3bFailureCode(error: unknown): M3bOracleFailureCode {
   )
     return "provider-unavailable";
   return "contract-mismatch";
+}
+
+function numericProperty(value: unknown, key: string): number | null {
+  const found = property(value, key);
+  return typeof found === "number" && Number.isInteger(found) ? found : null;
+}
+
+const diagnosticIssuesSchema = z.array(
+  z.looseObject({
+    code: z.string(),
+    path: z.array(z.union([z.string(), z.number().int().nonnegative()])),
+  }),
+);
+
+function diagnosticIssues(value: unknown): M3bAttemptProvenance["issues"] {
+  const direct = diagnosticIssuesSchema.safeParse(property(value, "issues"));
+  const caused = diagnosticIssuesSchema.safeParse(
+    property(property(value, "cause"), "issues"),
+  );
+  const issues = direct.success
+    ? direct.data
+    : caused.success
+      ? caused.data
+      : [];
+  return issues.slice(0, 64).map((issue) => ({
+    code: issue.code,
+    path: issue.path,
+  }));
+}
+
+async function boundedOutputEvidence(value: unknown): Promise<
+  Readonly<{
+    outputPresent: boolean;
+    outputDigest: string | null;
+    outputSizeBytes: number | null;
+    outputTruncated: boolean;
+  }>
+> {
+  if (value === undefined || value === null)
+    return {
+      outputPresent: false,
+      outputDigest: null,
+      outputSizeBytes: null,
+      outputTruncated: false,
+    };
+  let serialized: string;
+  try {
+    serialized = typeof value === "string" ? value : JSON.stringify(value);
+  } catch {
+    return {
+      outputPresent: true,
+      outputDigest: null,
+      outputSizeBytes: null,
+      outputTruncated: false,
+    };
+  }
+  const bytes = new TextEncoder().encode(serialized);
+  const bounded = bytes.subarray(0, 65_536);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bounded);
+  const outputDigest = [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  return {
+    outputPresent: true,
+    outputDigest,
+    outputSizeBytes: bytes.byteLength,
+    outputTruncated: bounded.byteLength !== bytes.byteLength,
+  };
+}
+
+function provenance(
+  input: Readonly<{
+    stage: M3bAttemptProvenance["stage"];
+    category: string;
+    usageAvailable: boolean;
+    outputEvidence?: Readonly<{
+      outputPresent: boolean;
+      outputDigest: string | null;
+      outputSizeBytes: number | null;
+      outputTruncated: boolean;
+    }>;
+    metadata?: ModelResponseMetadata | undefined;
+    error?: unknown;
+  }>,
+): M3bAttemptProvenance {
+  return {
+    stage: input.stage,
+    category: input.category,
+    providerStatusCode:
+      numericProperty(input.error, "statusCode") ??
+      numericProperty(input.error, "status") ??
+      numericProperty(property(input.error, "cause"), "statusCode") ??
+      numericProperty(property(input.error, "cause"), "status"),
+    providerErrorCode:
+      stringProperty(input.error, "code") ??
+      stringProperty(property(input.error, "cause"), "code"),
+    providerResponseId:
+      input.metadata?.providerResponseId ??
+      input.metadata?.providerRequestId ??
+      null,
+    finishReason: input.metadata?.finishReason ?? null,
+    rawFinishReason: input.metadata?.rawFinishReason ?? null,
+    usageAvailable: input.usageAvailable,
+    outputPresent: input.outputEvidence?.outputPresent ?? false,
+    outputDigest: input.outputEvidence?.outputDigest ?? null,
+    outputSizeBytes: input.outputEvidence?.outputSizeBytes ?? null,
+    outputTruncated: input.outputEvidence?.outputTruncated ?? false,
+    issues: input.error === undefined ? [] : diagnosticIssues(input.error),
+  };
+}
+
+function exceptionStage(
+  dispatchEvidence: AdapterDispatchEvidence,
+): M3bAttemptProvenance["stage"] {
+  return dispatchEvidence === "not-dispatched" ? "pre-dispatch" : "transport";
+}
+
+function exceptionCategory(
+  aborted: boolean,
+  outputPresent: boolean,
+  dispatchEvidence: AdapterDispatchEvidence,
+): string {
+  if (aborted) return "provider-timeout";
+  if (outputPresent) return "structured-output-exception";
+  return dispatchEvidence === "not-dispatched"
+    ? "adapter-configuration-exception"
+    : "provider-transport-exception";
 }
 
 function m3bUsage(
@@ -1064,7 +1242,7 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
     identity: input.identity,
     async generate(request) {
       const portable = validatePortableStructuredOutputSchema(
-        M3B1_OUTPUT_JSON_SCHEMA,
+        M3B2_OUTPUT_JSON_SCHEMA,
       );
       if (!portable.ok)
         return {
@@ -1072,6 +1250,11 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
           code: "contract-mismatch",
           dispatchEvidence: "not-dispatched",
           usage: null,
+          provenance: provenance({
+            stage: "pre-dispatch",
+            category: "portable-schema-rejected",
+            usageAvailable: false,
+          }),
         };
       const started = performance.now();
       let dispatched = false;
@@ -1088,8 +1271,8 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
         const output = sdk.outputObject({
           name: "m3b_evidence_answer",
           description:
-            "An answer with supporting citations and evidence paths.",
-          schema: sdk.jsonSchema(M3B1_OUTPUT_JSON_SCHEMA, {
+            "A typed answer or insufficient-evidence outcome with citation and canonical-path references.",
+          schema: sdk.jsonSchema(M3B2_OUTPUT_JSON_SCHEMA, {
             validate: (value: unknown) => {
               const parsed = m3bOracleOutputSchema.safeParse(value);
               return parsed.success
@@ -1119,13 +1302,26 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
         });
         const parsed = generationResultSchema.safeParse(raw);
         const latencyMs = Math.max(0, Math.round(performance.now() - started));
-        if (!parsed.success || parsed.data.usage === undefined)
+        if (!parsed.success || parsed.data.usage === undefined) {
+          const outputEvidence = await boundedOutputEvidence(
+            parsed.success ? (parsed.data.output ?? parsed.data.text) : raw,
+          );
           return {
             kind: "failure",
             code: "contract-mismatch",
             dispatchEvidence: failureEvidence(dispatched, false),
             usage: null,
+            provenance: provenance({
+              stage: "provider-response",
+              category: parsed.success
+                ? "usage-unavailable"
+                : "provider-envelope-invalid",
+              usageAvailable: false,
+              outputEvidence,
+              error: parsed.success ? undefined : parsed.error,
+            }),
           };
+        }
         const usage = m3bUsage(parsed.data.usage, input.pricing, latencyMs);
         const metadata = responseMetadata({
           configuredModel: input.identity.model,
@@ -1140,26 +1336,92 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
             code: "provider-refusal",
             dispatchEvidence: "dispatched-with-usage",
             usage,
+            provenance: provenance({
+              stage: "provider-response",
+              category: "provider-refusal",
+              usageAvailable: true,
+              metadata,
+              outputEvidence: await boundedOutputEvidence(parsed.data.output),
+            }),
           };
         const normalized = m3bOracleOutputSchema.safeParse(parsed.data.output);
+        const outputEvidence = await boundedOutputEvidence(parsed.data.output);
         return normalized.success
-          ? { kind: "success", output: normalized.data, usage }
+          ? {
+              kind: "success",
+              output: normalized.data,
+              usage,
+              provenance: provenance({
+                stage: "wire-decoding",
+                category: "accepted",
+                usageAvailable: true,
+                metadata,
+                outputEvidence,
+              }),
+            }
           : {
               kind: "failure",
               code: "contract-mismatch",
               dispatchEvidence: "dispatched-with-usage",
               usage,
+              provenance: provenance({
+                stage: "wire-decoding",
+                category: "wire-schema-rejected",
+                usageAvailable: true,
+                metadata,
+                outputEvidence,
+                error: normalized.error,
+              }),
             };
       } catch (error) {
         const latencyMs = Math.max(0, Math.round(performance.now() - started));
+        const directStructured =
+          structuredGenerationErrorSchema.safeParse(error);
+        const causedStructured = structuredGenerationErrorSchema.safeParse(
+          property(error, "cause"),
+        );
+        const structured = directStructured.success
+          ? directStructured
+          : causedStructured;
+        const caughtUsage =
+          structured.success && structured.data.usage !== undefined
+            ? m3bUsage(structured.data.usage, input.pricing, latencyMs)
+            : null;
+        const metadata = structured.success
+          ? responseMetadata({
+              configuredModel: input.identity.model,
+              response: structured.data.response,
+              finishReason: structured.data.finishReason,
+              rawFinishReason: structured.data.rawFinishReason,
+            })
+          : undefined;
+        const outputEvidence = await boundedOutputEvidence(
+          structured.success ? structured.data.text : property(error, "text"),
+        );
+        const dispatchEvidence = failureEvidence(
+          dispatched,
+          caughtUsage !== null,
+        );
         return {
           kind: "failure",
           code: abortSignal.aborted
             ? "provider-timeout"
             : m3bFailureCode(error),
-          dispatchEvidence: failureEvidence(dispatched, false),
-          usage: null,
+          dispatchEvidence,
+          usage: caughtUsage,
           latencyMs,
+          provenance: provenance({
+            stage: exceptionStage(dispatchEvidence),
+            category: exceptionCategory(
+              abortSignal.aborted,
+              outputEvidence.outputPresent,
+              dispatchEvidence,
+            ),
+            usageAvailable: caughtUsage !== null,
+            metadata,
+            outputEvidence,
+            error,
+          }),
         };
       }
     },
@@ -1169,7 +1431,7 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
 export function createOpenAiM3bOracle(
   provider?: OpenAiProviderSettings,
 ): M3bOracle {
-  const identity = m3bOracleIdentity("openai");
+  const identity = m3bOracleIdentity("openai", M3B2_PROVIDER_ADAPTER_VERSION);
   return createM3bAiSdkOracle({
     identity,
     pricing: OPENAI_PRICING,
@@ -1198,7 +1460,10 @@ export function createAnthropicM3bOracle(
     provider?: AnthropicProviderSettings | undefined;
   }>,
 ): M3bOracle {
-  const identity = m3bOracleIdentity("anthropic");
+  const identity = m3bOracleIdentity(
+    "anthropic",
+    M3B2_PROVIDER_ADAPTER_VERSION,
+  );
   return createM3bAiSdkOracle({
     identity,
     pricing: ANTHROPIC_DIRECT_PRICING,

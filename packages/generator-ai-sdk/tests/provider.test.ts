@@ -8,7 +8,9 @@ import {
 } from "@nicia-ai/lachesis";
 import {
   M3B_REFERENCE_GRAPH,
+  m3bOracleOutputSchema,
   m3bOracleRequestSchema,
+  validateM3bSemanticOutput,
 } from "@nicia-ai/lachesis-evidence";
 import {
   CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
@@ -25,6 +27,7 @@ import {
   type ModelRequest,
   RECORDED_DOUBLE_PLAN,
 } from "@nicia-ai/lachesis-generator";
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
@@ -45,8 +48,8 @@ import {
   M1B_PILOT_CAPS,
   M1B_PRICING_ENTRIES,
   M1B_REPETITIONS,
-  M3B1_ORACLE_IDENTITIES,
-  M3B1_OUTPUT_JSON_SCHEMA,
+  M3B2_ORACLE_IDENTITIES,
+  M3B2_OUTPUT_JSON_SCHEMA,
 } from "../src/index.js";
 
 function unwrap<T, E>(result: Result<T, E>): T {
@@ -679,6 +682,7 @@ describe("AI SDK provider adapters", () => {
     const citationIds = new Set(fact.citationIds);
     const request = m3bOracleRequestSchema.parse({
       instruction: "Answer this public evidence question.",
+      answerShape: { kind: "scalar" },
       evidence: {
         facts: [fact],
         citations: M3B_REFERENCE_GRAPH.citations.filter((citation) =>
@@ -707,11 +711,21 @@ describe("AI SDK provider adapters", () => {
       kind: "failure",
       code: "provider-unavailable",
       dispatchEvidence: "dispatched-usage-unknown",
+      provenance: {
+        stage: "transport",
+        outputPresent: false,
+        usageAvailable: false,
+      },
     });
     expect(anthropicAttempt).toMatchObject({
       kind: "failure",
       code: "provider-unavailable",
       dispatchEvidence: "dispatched-usage-unknown",
+      provenance: {
+        stage: "transport",
+        outputPresent: false,
+        usageAvailable: false,
+      },
     });
     const overloaded = createOpenAiM3bOracle({
       apiKey: "offline-dummy",
@@ -735,10 +749,10 @@ describe("AI SDK provider adapters", () => {
     expect(openaiRequests).toHaveLength(1);
     expect(anthropicRequests).toHaveLength(1);
     expect(openai.identity).toEqual(
-      M3B1_ORACLE_IDENTITIES.find((identity) => identity.provider === "openai"),
+      M3B2_ORACLE_IDENTITIES.find((identity) => identity.provider === "openai"),
     );
     expect(anthropic.identity).toEqual(
-      M3B1_ORACLE_IDENTITIES.find(
+      M3B2_ORACLE_IDENTITIES.find(
         (identity) => identity.provider === "anthropic",
       ),
     );
@@ -769,7 +783,7 @@ describe("AI SDK provider adapters", () => {
     expect(openaiBody.tools).toBeUndefined();
     expectPortableSchema(openaiBody.text.format.schema);
     expect(unwrap(canonicalizeJson(openaiBody.text.format.schema))).toBe(
-      unwrap(canonicalizeJson(M3B1_OUTPUT_JSON_SCHEMA)),
+      unwrap(canonicalizeJson(M3B2_OUTPUT_JSON_SCHEMA)),
     );
 
     const anthropicRequest = required(
@@ -807,18 +821,82 @@ describe("AI SDK provider adapters", () => {
     });
     expectPortableSchema(anthropicBody.tools[0]?.input_schema);
     expect(unwrap(canonicalizeJson(anthropicBody.tools[0]?.input_schema))).toBe(
-      unwrap(canonicalizeJson(M3B1_OUTPUT_JSON_SCHEMA)),
+      unwrap(canonicalizeJson(M3B2_OUTPUT_JSON_SCHEMA)),
     );
 
     for (const providerRequest of [openaiRequest, anthropicRequest]) {
       const serialized = JSON.stringify(providerRequest.body);
+      const visibleText = stringLeaves(providerRequest.body).join("\n");
       expect(serialized).toContain(request.instruction);
+      expect(visibleText).toContain('"kind":"scalar"');
+      expect(serialized).toContain("insufficient-evidence");
+      expect(serialized).toContain("pathIds");
       expect(serialized).not.toMatch(
         /lexical-facts|graph-facts|graph-adjacency|graph-typed|in-memory-reference-graph|matched-text/u,
       );
       expect(serialized).not.toContain(context.recordKey);
       expect(serialized).not.toContain("attemptIndex");
     }
+  });
+
+  it("keeps the provider schema equivalent to the wire validator while deferring domain rules", () => {
+    const providerValidator = z.fromJSONSchema(M3B2_OUTPUT_JSON_SCHEMA);
+    const identifier = fc
+      .tuple(
+        fc.constantFrom(...Array.from("abcdefghijklmnopqrstuvwxyz0123456789")),
+        fc.array(
+          fc.constantFrom(
+            ...Array.from("abcdefghijklmnopqrstuvwxyz0123456789._-"),
+          ),
+          { maxLength: 24 },
+        ),
+      )
+      .map(([head, tail]) => `${head}${tail.join("")}`);
+    const output = fc.record({
+      outcome: fc.constantFrom("answered", "insufficient-evidence"),
+      answerValues: fc.array(fc.string({ minLength: 1, maxLength: 32 }), {
+        maxLength: 8,
+      }),
+      citationIds: fc.array(identifier, { maxLength: 8 }),
+      pathIds: fc.array(identifier, { maxLength: 8 }),
+    });
+    fc.assert(
+      fc.property(output, (value) => {
+        expect(providerValidator.safeParse(value).success).toBe(true);
+        expect(m3bOracleOutputSchema.safeParse(value).success).toBe(true);
+      }),
+      { numRuns: 500 },
+    );
+    fc.assert(
+      fc.property(fc.jsonValue(), (value) => {
+        expect(providerValidator.safeParse(value).success).toBe(
+          m3bOracleOutputSchema.safeParse(value).success,
+        );
+      }),
+      { numRuns: 1_000 },
+    );
+
+    const request = m3bOracleRequestSchema.parse({
+      instruction: "Use visible evidence.",
+      answerShape: { kind: "scalar" },
+      evidence: { facts: [], citations: [], edges: [], paths: [] },
+    });
+    const wireValidButDomainInvalid = m3bOracleOutputSchema.parse({
+      outcome: "answered",
+      answerValues: [],
+      citationIds: ["missing", "missing"],
+      pathIds: ["path-999"],
+    });
+    expect(
+      validateM3bSemanticOutput(request, wireValidButDomainInvalid).map(
+        (issue) => issue.code,
+      ),
+    ).toEqual([
+      "duplicate-reference",
+      "unknown-citation-reference",
+      "unknown-path-reference",
+      "answer-shape-mismatch",
+    ]);
   });
 
   it("serializes the restricted CodeMode schema through both real provider routes without network", async () => {

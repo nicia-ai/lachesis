@@ -19,10 +19,10 @@ import {
 import {
   AI_SDK_VERSION,
   ANTHROPIC_AI_SDK_PROVIDER_VERSION,
-  createM3b1PricingSnapshot,
-  M3B1_ORACLE_IDENTITIES,
-  M3B1_OUTPUT_JSON_SCHEMA,
-  M3B1_OUTPUT_SCHEMA_VERSION,
+  createM3b2PricingSnapshot,
+  M3B2_ORACLE_IDENTITIES,
+  M3B2_OUTPUT_JSON_SCHEMA,
+  M3B2_OUTPUT_SCHEMA_VERSION,
   OPENAI_AI_SDK_PROVIDER_VERSION,
 } from "@nicia-ai/lachesis-generator-ai-sdk";
 import { z } from "zod";
@@ -50,8 +50,8 @@ const poolSchema = z
 export const m3b1CampaignManifestSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
-    campaignId: z.literal("lachesis-m3b1-live-graph-substrate"),
-    milestone: z.literal("m3b.1"),
+    campaignId: z.literal("lachesis-m3b2-live-graph-substrate"),
+    milestone: z.literal("m3b.2"),
     maximumOperationalCostUsdMicros: z.literal(70_000_000),
     budgetPools: z.array(poolSchema).length(2).readonly(),
     authorizationPolicy: z
@@ -83,7 +83,7 @@ const transportBindingSchema = z
     adapterVersion: z.string().min(1),
     route: z.enum(["openai-responses", "anthropic-messages"]),
     structuredOutput: z.enum(["json-schema", "json-tool"]),
-    outputSchemaVersion: z.literal(M3B1_OUTPUT_SCHEMA_VERSION),
+    outputSchemaVersion: z.literal(M3B2_OUTPUT_SCHEMA_VERSION),
     outputSchemaDigest: digestSchema,
     transportDigest: digestSchema,
     pricingEntryId: z.string().min(1),
@@ -116,11 +116,11 @@ const theoreticalCeilingSchema = z
 export const m3b1PhaseManifestSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
-    milestone: z.literal("m3b.1"),
+    milestone: z.literal("m3b.2"),
     status: z.literal("unexecuted-live-capable"),
     phase: phaseSchema,
     sourceCommit: z.string().regex(/^[a-f0-9]{40}$/u),
-    campaignId: z.literal("lachesis-m3b1-live-graph-substrate"),
+    campaignId: z.literal("lachesis-m3b2-live-graph-substrate"),
     campaignDigest: digestSchema,
     budgetPoolId: z.enum(["m3b-development", "m3b-heldout"]),
     operationalPool: poolSchema,
@@ -129,6 +129,7 @@ export const m3b1PhaseManifestSchema = z
     planHash: digestSchema,
     oraclePromptDigest: digestSchema,
     commonOutputSchemaDigest: digestSchema,
+    scorerProtocolDigest: digestSchema,
     pricingSnapshot: pricingSnapshotSchema,
     providerBindings: z.array(transportBindingSchema).length(2).readonly(),
     theoreticalCeiling: theoreticalCeilingSchema,
@@ -183,6 +184,21 @@ export const M3B_OFFLINE_DESIGN_IDENTITIES = Object.freeze([
       "2101fe92fdcf88de3000048d44e1e9a4ce137a60412126dc64cb06f713b8a159",
     disposition: "report-only-offline-unbound" as const,
   }),
+  Object.freeze({
+    experimentDigest:
+      "a104cd5c6584670d27c8a34cf15bea90ba2fa1935cda36ddc54477d6422a92d6",
+    disposition: "complete-protocol-fail" as const,
+  }),
+  Object.freeze({
+    experimentDigest:
+      "a4e61610ec0a53c0d116bcb7c01bee0ffe48f8bf6adc8c46b6376d9211c63334",
+    disposition: "superseded-unexecuted" as const,
+  }),
+  Object.freeze({
+    experimentDigest:
+      "9feb01a05bdae10ba6865cee4e4f6e0cc561689279f87404afc76b8bd7064cf0",
+    disposition: "superseded-unexecuted" as const,
+  }),
 ]);
 
 export async function createM3b1CampaignManifest(): Promise<
@@ -190,8 +206,8 @@ export async function createM3b1CampaignManifest(): Promise<
 > {
   const body = {
     formatVersion: "1" as const,
-    campaignId: "lachesis-m3b1-live-graph-substrate" as const,
-    milestone: "m3b.1" as const,
+    campaignId: "lachesis-m3b2-live-graph-substrate" as const,
+    milestone: "m3b.2" as const,
     maximumOperationalCostUsdMicros: 70_000_000 as const,
     budgetPools: [
       {
@@ -318,13 +334,13 @@ async function providerBindings(
   Result<ReadonlyArray<z.infer<typeof transportBindingSchema>>, Diagnostic>
 > {
   const portable = validatePortableStructuredOutputSchema(
-    M3B1_OUTPUT_JSON_SCHEMA,
+    M3B2_OUTPUT_JSON_SCHEMA,
   );
   if (!portable.ok) return portable;
-  const outputSchemaDigest = await digestValue(M3B1_OUTPUT_JSON_SCHEMA);
+  const outputSchemaDigest = await digestValue(M3B2_OUTPUT_JSON_SCHEMA);
   if (!outputSchemaDigest.ok) return outputSchemaDigest;
   const bindings: Array<z.infer<typeof transportBindingSchema>> = [];
-  for (const identity of M3B1_ORACLE_IDENTITIES.toSorted((left, right) =>
+  for (const identity of M3B2_ORACLE_IDENTITIES.toSorted((left, right) =>
     left.provider.localeCompare(right.provider),
   )) {
     const pricingEntry = pricingFor(pricing, identity.provider);
@@ -368,7 +384,7 @@ async function providerBindings(
           ? ("openai-responses" as const)
           : ("anthropic-messages" as const),
       structuredOutput: identity.settings.structuredOutput,
-      outputSchemaVersion: M3B1_OUTPUT_SCHEMA_VERSION,
+      outputSchemaVersion: M3B2_OUTPUT_SCHEMA_VERSION,
       outputSchemaDigest: outputSchemaDigest.value,
       pricingEntryId: pricingEntry.id,
       pricingEntryDigest: pricingEntryDigest.value,
@@ -393,10 +409,10 @@ export async function materializeM3b1Phase(input: {
   if (!campaign.ok) return { ok: false, error: [campaign.error] };
   const substrate = await materializeM3bPhase({
     ...input,
-    providers: M3B1_ORACLE_IDENTITIES,
+    providers: M3B2_ORACLE_IDENTITIES,
   });
   if (!substrate.ok) return substrate;
-  const pricing = await createM3b1PricingSnapshot();
+  const pricing = await createM3b2PricingSnapshot();
   if (!pricing.ok) return pricing;
   const bindings = await providerBindings(pricing.value);
   if (!bindings.ok) return { ok: false, error: [bindings.error] };
@@ -438,7 +454,7 @@ export async function materializeM3b1Phase(input: {
       };
   }
   const experimentBody = {
-    milestone: "m3b.1" as const,
+    milestone: "m3b.2" as const,
     phase: input.phase,
     sourceCommit: input.sourceCommit,
     campaignDigest: campaign.value.campaignDigest,
@@ -451,6 +467,8 @@ export async function materializeM3b1Phase(input: {
       substrate.value.manifest.sharedPlan.oracleProtocolDigest,
     commonOutputSchemaDigest:
       substrate.value.manifest.sharedPlan.outputSchemaDigest,
+    scorerProtocolDigest:
+      substrate.value.manifest.sharedPlan.scorerProtocolDigest,
     pricingSnapshot: pricing.value,
     providerBindings: bindings.value,
     theoreticalCeiling: ceiling.value,
@@ -481,7 +499,7 @@ export async function materializeM3b1Phase(input: {
     campaignId: campaign.value.campaignId,
     ...experimentBody,
     experimentDigest: experimentDigest.value,
-    storageNamespace: `m3b1/${input.phase}/experiments/${experimentDigest.value}`,
+    storageNamespace: `m3b2/${input.phase}/experiments/${experimentDigest.value}`,
   };
   const phaseManifestDigest = await digestValue(manifestBody);
   return phaseManifestDigest.ok

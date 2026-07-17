@@ -50,8 +50,11 @@ reservation.
 
 The package does not launch a pilot or read credentials on import.
 
-M3b.1 adds arm-blinded evidence-oracle adapters over direct OpenAI Responses and
-Anthropic Messages. Both receive the same strict answer/citation/path schema;
-Anthropic uses the internal JSON tool. Provider retries remain zero.
-Real-package intercepted-fetch tests prove arm and evidence-source
-implementation identities are absent from outgoing requests.
+M3b.2 adds arm-blinded evidence-oracle adapters over direct OpenAI Responses and
+Anthropic Messages. Both receive the same provider-portable typed
+answer/abstention, citation-reference, and canonical-path-reference schema;
+Anthropic uses the internal JSON tool. Provider retries remain zero. The wire
+validator is equivalent to the provider schema, while semantic validation runs
+after durable response and usage classification. Real-package intercepted-fetch
+tests prove arm and evidence-source implementation identities are absent from
+outgoing requests.
