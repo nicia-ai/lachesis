@@ -1,8 +1,9 @@
 # M3b.4: structured-output forensics and bounded wire recovery
 
-Status: implemented and verified offline. This document does not authorize a
-provider call, external preregistration, calibration, held-out inference, or
-creation of a new budget pool.
+Status: the stress probe is complete and passed its frozen protocol gate. The
+calibration correction below is implemented and verified offline. This document
+does not authorize calibration, held-out inference, or creation of a new budget
+pool.
 
 M3b.3 is frozen as an immutable calibration failure. Its probe passed, but four
 Anthropic `graph-adjacency` calibration records completed at the provider and
@@ -94,3 +95,36 @@ source for M3b.4. Materialization alone conveys zero spend authority.
 Calibration may receive a new identity only after a separately preregistered and
 authorized stress probe passes. The campaign contains no held-out pool; held-out
 and TypeGraph remain blocked.
+
+## Calibration cohort envelope
+
+The completed stress probe observed zero wire repairs, 18 semantic repairs, and
+zero transport retries across 96 initial records. Calibration therefore keeps
+the same per-record recovery rules while prospectively imposing these durable
+provider-level quotas:
+
+| Attempt type    | OpenAI | Anthropic |
+| --------------- | -----: | --------: |
+| Initial         |    120 |       120 |
+| Wire repair     |     24 |        24 |
+| Semantic repair |     48 |        48 |
+| Transport retry |     48 |        48 |
+| Total           |    240 |       240 |
+
+The append-only ledger checks the applicable cohort quota before every dispatch.
+Exhausting any quota makes calibration incomplete and therefore `NO-GO`; it does
+not change the per-record repair or retry rule. Before a new manifest is
+registered, the ledger also requires the complete phase envelope to fit the
+campaign's then-current total and provider balances. Admission failure appends
+no manifest or reservation event.
+
+At frozen pricing, the 480-attempt ceiling is `22,800,000 µUSD`:
+`13,200,000 µUSD` for OpenAI and `9,600,000 µUSD` for Anthropic. This is a
+resource limit, not permission to spend.
+
+Calibration uses a fresh 30-case development corpus with five cases in each of
+the six categories. Offline audits require no reused fixture identity, entity,
+normalized instruction wording, answer, fixture structure, or frozen
+neighborhood from the earlier development corpus; zero answer-bearing query
+leakage; valid ground-truth references; deterministic selection; and all four
+factorial arms for every case. The frozen held-out corpus is unchanged.

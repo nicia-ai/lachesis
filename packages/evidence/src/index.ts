@@ -78,8 +78,10 @@ export {
   M3B_SCORER_PROTOCOL,
   M3B_TRANSPORT_RETRY_POLICY,
   M3B_WIRE_STRESS_PROBE_GATE,
+  M3B4_CALIBRATION_PROVIDER_ATTEMPT_QUOTAS,
   type M3bAttemptProvenance,
   m3bAttemptProvenanceSchema,
+  type M3bAttemptType,
   type M3bBlindAuditCounts,
   type M3bDiagnosticIssue,
   m3bDiagnosticIssueSchema,
@@ -119,10 +121,12 @@ export {
   validateM3bSemanticOutput,
 } from "./m3b.js";
 export {
+  auditM3b4CalibrationCorpusDisjointness,
   loadM3bPhaseCases,
   M3B_CORPUS_PROTOCOL,
   M3B_PREREGISTERED_CORPUS,
   M3B_REFERENCE_GRAPH,
+  type M3b4CalibrationCorpusAudit,
 } from "./m3b-corpus.js";
 export {
   auditM3bWilliamsSchedule,
@@ -156,6 +160,10 @@ export {
   type M3bStratumConclusion,
   m3bStratumConclusionSchema,
 } from "./m3b-statistics.js";
+export {
+  M3B4_CALIBRATION_GRAPH_ADDITIONS,
+  M3B4_CALIBRATION_TASKS,
+} from "./m3b4-calibration-corpus.js";
 export {
   createMatchedTextChunks,
   createMatchedTextEvidenceSource,

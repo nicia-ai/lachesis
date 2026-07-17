@@ -108,7 +108,10 @@ materialization. Its probe passed, but calibration is frozen as
 `complete-calibration-fail` after four post-provider Anthropic decoding
 failures; held-out remains blocked. M3b.4 adds explicit SDK error forensics,
 content-addressed mode-`0600` bounded raw-output artifacts, SDK-independent
-staged decoding, and one non-retryable wire-repair stage. Its new 96-record
-matched stress probe is offline-only. See
+staged decoding, and one non-retryable wire-repair stage. Its 96-record matched
+stress probe passed and is immutable. The next offline calibration identity uses
+a structurally fresh 30-case corpus and per-provider cohort quotas of 120
+initial, 24 wire-repair, 48 semantic-repair, and 48 transport-retry attempts;
+quota exhaustion makes the phase incomplete. See
 [M3b.3](../../docs/m3b3-semantic-obligations.md) and
 [M3b.4](../../docs/m3b4-structured-output-forensics.md).

@@ -152,8 +152,10 @@ scheduling, general adaptive loops, package publication, and deployment. M3b.1
 is closed as a protocol failure; its calibration and held-out identities were
 never executed. M3b.2 is frozen as a semantic-gate failure. M3b.3 passed its
 probe and is frozen as an immutable calibration failure; held-out was not
-authorized. M3b.4 is offline-only and has no spend authority until external
-preregistration and a separate exact stress-probe acknowledgement.
+authorized. M3b.4's stress probe passed and is immutable. Its fresh 30-case
+calibration corpus and provider-cohort attempt envelope are offline-only and
+have no spend authority until external preregistration and a separate exact
+calibration acknowledgement.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

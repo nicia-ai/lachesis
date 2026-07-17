@@ -5,7 +5,6 @@ import {
   type Result,
 } from "@nicia-ai/lachesis";
 import {
-  M3B_TRANSPORT_RETRY_POLICY,
   type M3bMaterializedPhase,
   type M3bPhase,
   materializeM3bPhase,
@@ -116,6 +115,40 @@ const theoreticalCeilingSchema = z
   })
   .readonly();
 
+const attemptQuotaSchema = z
+  .strictObject({
+    provider: z.enum(["openai", "anthropic"]),
+    initial: z.number().int().nonnegative(),
+    wireRepair: z.number().int().nonnegative(),
+    semanticRepair: z.number().int().nonnegative(),
+    transportRetry: z.number().int().nonnegative(),
+    total: z.number().int().positive(),
+  })
+  .superRefine((value, context) => {
+    if (
+      value.total !==
+      value.initial +
+        value.wireRepair +
+        value.semanticRepair +
+        value.transportRetry
+    )
+      context.addIssue({
+        code: "custom",
+        message: "Provider attempt quota total must equal its components.",
+        path: ["total"],
+      });
+  })
+  .readonly();
+
+const attemptQuotasSchema = z
+  .strictObject({
+    id: z.string().min(1),
+    version: z.string().min(1),
+    providers: z.array(attemptQuotaSchema).length(2).readonly(),
+    exhaustion: z.string().min(1),
+  })
+  .readonly();
+
 export const m3b1PhaseManifestSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
@@ -141,6 +174,7 @@ export const m3b1PhaseManifestSchema = z
     maximumCalls: z.number().int().positive(),
     semanticRepairCalls: z.number().int().nonnegative(),
     wireRepairCalls: z.number().int().nonnegative(),
+    attemptQuotas: attemptQuotasSchema,
     failurePolicy: z
       .strictObject({
         sdkRetries: z.literal(0),
@@ -158,6 +192,7 @@ export const m3b1PhaseManifestSchema = z
         semanticRepairsPerRecord: z.literal(1),
         wireRepairsPerRecord: z.literal(1),
         contractFailuresRetryable: z.literal(false),
+        cohortQuotaEnforcement: z.literal("append-only-ledger-before-dispatch"),
       })
       .readonly(),
     executionPolicy: z.literal("exact-controller-authorization-required"),
@@ -168,6 +203,55 @@ export const m3b1PhaseManifestSchema = z
     ),
     anthropicTransportComparisonDigest: digestSchema,
     phaseManifestDigest: digestSchema,
+  })
+  .superRefine((value, context) => {
+    const providers = value.attemptQuotas.providers;
+    const quotaProviders = providers.map((provider) => provider.provider);
+    const sums = {
+      initial: providers.reduce(
+        (total, provider) => total + provider.initial,
+        0,
+      ),
+      wireRepair: providers.reduce(
+        (total, provider) => total + provider.wireRepair,
+        0,
+      ),
+      semanticRepair: providers.reduce(
+        (total, provider) => total + provider.semanticRepair,
+        0,
+      ),
+      transportRetry: providers.reduce(
+        (total, provider) => total + provider.transportRetry,
+        0,
+      ),
+      total: providers.reduce((total, provider) => total + provider.total, 0),
+    };
+    const theoreticalCalls = value.theoreticalCeiling.providers.map(
+      (provider) => ({
+        provider: provider.billingProvider,
+        maximumCalls: provider.maximumCalls,
+      }),
+    );
+    if (
+      quotaProviders[0] !== "anthropic" ||
+      quotaProviders[1] !== "openai" ||
+      sums.initial !== value.initialCalls ||
+      sums.wireRepair !== value.wireRepairCalls ||
+      sums.semanticRepair !== value.semanticRepairCalls ||
+      sums.transportRetry !== value.maximumTransportRetries ||
+      sums.total !== value.maximumCalls ||
+      theoreticalCalls.some(
+        (provider) =>
+          providers.find((quota) => quota.provider === provider.provider)
+            ?.total !== provider.maximumCalls,
+      )
+    )
+      context.addIssue({
+        code: "custom",
+        message:
+          "M3b.4 provider quotas must be sorted and reconcile with every phase and pricing ceiling count.",
+        path: ["attemptQuotas"],
+      });
   })
   .readonly();
 export type M3b1PhaseManifest = z.infer<typeof m3b1PhaseManifestSchema>;
@@ -233,6 +317,11 @@ export const M3B_OFFLINE_DESIGN_IDENTITIES = Object.freeze([
     experimentDigest:
       "d36ddbd031df4194b9be0f3b1b13ef169cca4028e4fe58b7afab6676c27e7ce5",
     disposition: "blocked-unexecuted" as const,
+  }),
+  Object.freeze({
+    experimentDigest:
+      "0eea0fc23ae1992acb96f0ef92e65a199bb654d06b71c5bc358292c3187d7359",
+    disposition: "complete-protocol-pass" as const,
   }),
 ]);
 
@@ -301,16 +390,17 @@ function theoreticalCeiling(
           `M3b.1 provider ${identity.provider} has no frozen pricing entry.`,
         ),
       };
-    const maximumCalls =
-      substrate.manifest.schedule.entries.filter(
-        (scheduled) => scheduled.provider === identity.provider,
-      ).length *
-      substrate.manifest.scheduledArms.length *
-      (1 +
-        substrate.manifest.semanticRepairCalls /
-          substrate.manifest.initialCalls +
-        substrate.manifest.wireRepairCalls / substrate.manifest.initialCalls) *
-      (1 + M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt);
+    const maximumCalls = substrate.manifest.attemptQuotas.providers.find(
+      (quota) => quota.provider === identity.provider,
+    )?.total;
+    if (maximumCalls === undefined)
+      return {
+        ok: false,
+        error: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          `M3b.4 provider ${identity.provider} has no attempt quota.`,
+        ),
+      };
     const perCall = calculateMaximumCostUsdMicros(
       entry,
       identity.settings.maxInputTokens,
@@ -515,6 +605,7 @@ export async function materializeM3b1Phase(input: {
     maximumCalls: substrate.value.manifest.maximumCalls,
     semanticRepairCalls: substrate.value.manifest.semanticRepairCalls,
     wireRepairCalls: substrate.value.manifest.wireRepairCalls,
+    attemptQuotas: substrate.value.manifest.attemptQuotas,
     failurePolicy: {
       sdkRetries: 0 as const,
       controllerRetriesPerRecord: 1 as const,
@@ -528,6 +619,7 @@ export async function materializeM3b1Phase(input: {
       semanticRepairsPerRecord: 1 as const,
       wireRepairsPerRecord: 1 as const,
       contractFailuresRetryable: false as const,
+      cohortQuotaEnforcement: "append-only-ledger-before-dispatch" as const,
     },
     executionPolicy: "exact-controller-authorization-required" as const,
     anthropicTransportSelection: M3B4_ANTHROPIC_TRANSPORT_SELECTION.selected,

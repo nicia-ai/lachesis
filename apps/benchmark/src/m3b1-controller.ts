@@ -52,6 +52,7 @@ export type M3b1PreflightReport = Readonly<{
     | "live-capable"
     | "report-only-offline-unbound"
     | "complete-protocol-fail"
+    | "complete-protocol-pass"
     | "complete-semantic-gate-fail"
     | "complete-calibration-fail"
     | "blocked-unexecuted"
@@ -287,6 +288,7 @@ function budgetedOracle(input: {
           recordKey: context.recordKey,
           attemptIndex: context.attemptIndex,
           billingProvider: input.oracle.identity.provider,
+          attemptType: context.attemptType,
           maximumCostUsdMicros: maximum.value,
         };
         const reserved = await input.controller.reserve(reservation);

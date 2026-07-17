@@ -15,6 +15,7 @@ import { digestValue } from "@nicia-ai/lachesis";
 import {
   createM3bContractOutput,
   type M3bAttemptProvenance,
+  type M3bAttemptType,
   type M3bOracle,
   type M3bOracleAttempt,
   type M3bOracleRequest,
@@ -285,9 +286,9 @@ describe("M3b.1 live-binding substrate", () => {
       {
         phase: "m3b-calibration",
         initialCalls: 240,
-        retries: 720,
-        maximumCalls: 1_440,
-        theoretical: 68_400_000,
+        retries: 96,
+        maximumCalls: 480,
+        theoretical: 22_800_000,
         operational: 30_000_000,
       },
     ]);
@@ -317,6 +318,42 @@ describe("M3b.1 live-binding substrate", () => {
         maximumOutputTokens: 288_000,
         maximumTotalTokens: 1_440_000,
         maximumCostUsdMicros: 7_920_000,
+      },
+    ]);
+    expect(calibration.phase.theoreticalCeiling.providers).toEqual([
+      {
+        billingProvider: "anthropic",
+        maximumCalls: 240,
+        maximumInputTokens: 1_920_000,
+        maximumOutputTokens: 480_000,
+        maximumTotalTokens: 2_400_000,
+        maximumCostUsdMicros: 9_600_000,
+      },
+      {
+        billingProvider: "openai",
+        maximumCalls: 240,
+        maximumInputTokens: 1_920_000,
+        maximumOutputTokens: 480_000,
+        maximumTotalTokens: 2_400_000,
+        maximumCostUsdMicros: 13_200_000,
+      },
+    ]);
+    expect(calibration.phase.attemptQuotas.providers).toEqual([
+      {
+        provider: "anthropic",
+        initial: 120,
+        wireRepair: 24,
+        semanticRepair: 48,
+        transportRetry: 48,
+        total: 240,
+      },
+      {
+        provider: "openai",
+        initial: 120,
+        wireRepair: 24,
+        semanticRepair: 48,
+        transportRetry: 48,
+        total: 240,
       },
     ]);
     expect(
@@ -351,6 +388,7 @@ describe("M3b.1 live-binding substrate", () => {
         return (
           disposition === "superseded-unexecuted" ||
           disposition === "complete-calibration-fail" ||
+          disposition === "complete-protocol-pass" ||
           disposition === "blocked-unexecuted"
         );
       }),
@@ -379,9 +417,7 @@ describe("M3b.1 live-binding substrate", () => {
       cleanWorktree: true,
       credentials: { OPENAI_API_KEY: false, ANTHROPIC_API_KEY: false },
     });
-    expect(calibrationPreflight.checks.completePhaseReservationsFit).toBe(
-      false,
-    );
+    expect(calibrationPreflight.checks.completePhaseReservationsFit).toBe(true);
     expect(
       await validateM3b1Materialization({
         ...probe,
@@ -617,6 +653,7 @@ describe("M3b.1 live-binding substrate", () => {
           recordKey: dispatchKey,
           attemptIndex: 0,
           billingProvider: firstEntry.provider,
+          attemptType: "initial",
           maximumCostUsdMicros:
             providerCeiling.maximumCostUsdMicros / providerCeiling.maximumCalls,
         }),
@@ -628,6 +665,7 @@ describe("M3b.1 live-binding substrate", () => {
         recordKey: "unfundable-offline-fixture",
         attemptIndex: 0,
         billingProvider: firstEntry.provider,
+        attemptType: "initial",
         maximumCostUsdMicros:
           materialized.phase.operationalPool.maxCostUsdMicros,
       }),
@@ -638,6 +676,7 @@ describe("M3b.1 live-binding substrate", () => {
         recordKey: "missing-offline-fixture",
         attemptIndex: 0,
         billingProvider: firstEntry.provider,
+        attemptType: "initial",
         maximumCostUsdMicros: 1,
         actualCostUsdMicros: 0,
         conservative: false,
@@ -828,6 +867,105 @@ describe("M3b.1 live-binding substrate", () => {
       error: { code: "REPLAY_OUTPUT_MISMATCH" },
     });
   });
+
+  it("enforces provider cohort quotas and complete-phase admission before ledger mutation", async () => {
+    const quotaRoot = await temporaryRoot();
+    const calibration = unwrap(
+      await materializeM3b1Phase({
+        phase: "m3b-calibration",
+        sourceCommit: SOURCE_COMMIT,
+      }),
+    );
+    const quotaLedgerPath = join(
+      quotaRoot,
+      "m3b4",
+      calibration.campaign.campaignDigest,
+      "ledger.ndjson",
+    );
+    const quotaLedger = unwrap(
+      await openM3b1Ledger({
+        path: quotaLedgerPath,
+        campaign: calibration.campaign,
+      }),
+    );
+    unwrap(await quotaLedger.registerManifest(calibration.phase));
+    const quotaController = quotaLedger.budgetController(calibration.phase);
+    for (let index = 0; index < 24; index += 1)
+      expect(
+        unwrap(
+          await quotaController.reserve({
+            experimentDigest: calibration.phase.experimentDigest,
+            recordKey: `wire-quota-${index.toString().padStart(2, "0")}`,
+            attemptIndex: index,
+            billingProvider: "anthropic",
+            attemptType: "wire-repair",
+            maximumCostUsdMicros: 40_000,
+          }),
+        ),
+      ).toBe("reserved");
+    const beforeQuotaFailure = await readFile(quotaLedgerPath, "utf8");
+    expect(
+      await quotaController.reserve({
+        experimentDigest: calibration.phase.experimentDigest,
+        recordKey: "wire-quota-overflow",
+        attemptIndex: 24,
+        billingProvider: "anthropic",
+        attemptType: "wire-repair",
+        maximumCostUsdMicros: 40_000,
+      }),
+    ).toMatchObject({ ok: false, error: { code: "BUDGET_EXCEEDED" } });
+    expect(await readFile(quotaLedgerPath, "utf8")).toBe(beforeQuotaFailure);
+
+    const admissionRoot = await temporaryRoot();
+    const stress = unwrap(
+      await materializeM3b1Phase({
+        phase: "m3b-wire-stress-probe",
+        sourceCommit: SOURCE_COMMIT,
+      }),
+    );
+    const admissionLedgerPath = join(
+      admissionRoot,
+      "m3b4",
+      stress.campaign.campaignDigest,
+      "ledger.ndjson",
+    );
+    const admissionLedger = unwrap(
+      await openM3b1Ledger({
+        path: admissionLedgerPath,
+        campaign: stress.campaign,
+      }),
+    );
+    unwrap(await admissionLedger.registerManifest(stress.phase));
+    const stressController = admissionLedger.budgetController(stress.phase);
+    for (let index = 0; index < 86; index += 1) {
+      const attemptType: M3bAttemptType =
+        index < 48 ? "initial" : "wire-repair";
+      const reservation = {
+        experimentDigest: stress.phase.experimentDigest,
+        recordKey: `admission-spend-${index.toString().padStart(2, "0")}`,
+        attemptIndex: index,
+        billingProvider: "anthropic" as const,
+        attemptType,
+        maximumCostUsdMicros: 40_000,
+      };
+      unwrap(await stressController.reserve(reservation));
+      unwrap(
+        await stressController.settle({
+          ...reservation,
+          actualCostUsdMicros: 40_000,
+          conservative: true,
+          accountingBasis: "authorized-conservative",
+        }),
+      );
+    }
+    const beforeAdmissionFailure = await readFile(admissionLedgerPath, "utf8");
+    expect(
+      await admissionLedger.registerManifest(calibration.phase),
+    ).toMatchObject({ ok: false, error: { code: "BUDGET_EXCEEDED" } });
+    expect(await readFile(admissionLedgerPath, "utf8")).toBe(
+      beforeAdmissionFailure,
+    );
+  }, 60_000);
 
   it("rejects invalid acknowledgement before dispatch, ledger, or record mutation", async () => {
     const root = await temporaryRoot();

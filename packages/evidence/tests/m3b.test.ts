@@ -1,18 +1,25 @@
+import { digestValue } from "@nicia-ai/lachesis";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import {
+  auditM3b4CalibrationCorpusDisjointness,
   auditM3bWilliamsSchedule,
   blindAuditM3bMaterialization,
   blindM3a1IntegrityAudit,
   calculateM3bPairedInterval,
   createDeterministicM3bOracle,
+  createGraphSelectedAdjacencyEvidenceSource,
+  createGraphSelectedFactsEvidenceSource,
+  createInMemoryGraphEvidenceSource,
   createM3bContractOutput,
+  createMatchedTextEvidenceSource,
   createMemoryM3bStore,
   evaluateM3bStatistics,
   M3B_CONTRASTS,
   M3B_ORACLE_MODELS,
   M3B_PREREGISTERED_CORPUS,
   M3B_REFERENCE_GRAPH,
+  M3B4_CALIBRATION_TASKS,
   type M3bAttemptProvenance,
   type M3bMaterializedPhase,
   type M3bOracle,
@@ -21,6 +28,7 @@ import {
   m3bOverallConclusionSchema,
   type M3bStatisticalObservation,
   materializeM3bPhase,
+  referenceEvidenceSelection,
   runM3bWithOracles,
   validateM3bMaterialization,
   validateM3bSemanticOutput,
@@ -152,6 +160,79 @@ describe("M3b offline execution infrastructure", () => {
     ).toHaveLength(100);
   });
 
+  it("audits a structurally fresh five-per-category calibration corpus", async () => {
+    expect(auditM3b4CalibrationCorpusDisjointness()).toMatchObject({
+      cases: 30,
+      reusedFixtureIds: 0,
+      reusedEntities: 0,
+      reusedInstructionWording: 0,
+      reusedFactWording: 0,
+      reusedAnswers: 0,
+      reusedFixtureStructures: 0,
+      passed: true,
+    });
+    expect(M3B4_CALIBRATION_TASKS).toHaveLength(30);
+    expect(
+      auditM3b4CalibrationCorpusDisjointness().categoryCounts.map(
+        (item) => item.count,
+      ),
+    ).toEqual([5, 5, 5, 5, 5, 5]);
+
+    const repeated = unwrap(
+      await materializeM3bPhase({
+        phase: "m3b-calibration",
+        sourceCommit: "793a033d963921823d5bdde1ead6bcb74238a439",
+      }),
+    );
+    expect(
+      repeated.cases.map((item) =>
+        item.neighborhoods.map(
+          (neighborhood) => neighborhood.neighborhoodDigest,
+        ),
+      ),
+    ).toEqual(
+      calibration.cases.map((item) =>
+        item.neighborhoods.map(
+          (neighborhood) => neighborhood.neighborhoodDigest,
+        ),
+      ),
+    );
+
+    const sources = [
+      unwrap(createMatchedTextEvidenceSource(M3B_REFERENCE_GRAPH)),
+      unwrap(createGraphSelectedFactsEvidenceSource(M3B_REFERENCE_GRAPH)),
+      unwrap(createGraphSelectedAdjacencyEvidenceSource(M3B_REFERENCE_GRAPH)),
+      unwrap(createInMemoryGraphEvidenceSource(M3B_REFERENCE_GRAPH)),
+    ];
+    const legacyNeighborhoodDigests = new Set<string>();
+    for (const task of M3B_PREREGISTERED_CORPUS.filter(
+      (candidate) => candidate.split === "development",
+    ))
+      for (const source of sources) {
+        const neighborhood = unwrap(await source.select(task.query));
+        legacyNeighborhoodDigests.add(
+          unwrap(await referenceEvidenceSelection(neighborhood))
+            .neighborhoodDigest,
+        );
+      }
+    expect(
+      calibration.cases
+        .flatMap((item) => item.neighborhoods)
+        .filter((item) =>
+          legacyNeighborhoodDigests.has(item.neighborhoodDigest),
+        ),
+    ).toEqual([]);
+
+    const heldoutDigest = unwrap(
+      await digestValue(
+        M3B_PREREGISTERED_CORPUS.filter((task) => task.split === "heldout"),
+      ),
+    );
+    expect(heldoutDigest).toBe(
+      "1d36022bd4443efc9da03120dd67a1da0a5c072c81a20e530807cc2832dd32a6",
+    );
+  });
+
   it("materializes exact offline probe, calibration, and held-out matrices", () => {
     expect(blindAuditM3bMaterialization(probe)).toMatchObject({
       cases: 6,
@@ -196,10 +277,10 @@ describe("M3b offline execution infrastructure", () => {
     expect(blindAuditM3bMaterialization(calibration)).toMatchObject({
       cases: 30,
       initialCalls: 240,
-      maximumSemanticRepairs: 240,
-      maximumWireRepairs: 240,
-      maximumTransportRetries: 720,
-      maximumCalls: 1_440,
+      maximumSemanticRepairs: 96,
+      maximumWireRepairs: 48,
+      maximumTransportRetries: 96,
+      maximumCalls: 480,
       frozenNeighborhoods: 120,
       passed: true,
     });

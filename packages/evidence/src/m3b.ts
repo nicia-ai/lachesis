@@ -40,7 +40,6 @@ import {
 import {
   loadM3bPhaseCases,
   M3B_CORPUS_PROTOCOL,
-  M3B_PREREGISTERED_CORPUS,
   M3B_REFERENCE_GRAPH,
 } from "./m3b-corpus.js";
 import {
@@ -295,6 +294,42 @@ export const M3B_TRANSPORT_RETRY_POLICY = Object.freeze({
   conditionalAnalysis: "secondary-only-when-both-paired-outputs-are-valid",
 });
 
+export type M3bAttemptType =
+  "initial" | "wire-repair" | "semantic-repair" | "transport-retry";
+
+export type M3bProviderAttemptQuota = Readonly<{
+  provider: "openai" | "anthropic";
+  initial: number;
+  wireRepair: number;
+  semanticRepair: number;
+  transportRetry: number;
+  total: number;
+}>;
+
+export const M3B4_CALIBRATION_PROVIDER_ATTEMPT_QUOTAS = Object.freeze({
+  id: "m3b4-calibration-provider-cohort-attempt-quotas",
+  version: "1",
+  providers: Object.freeze([
+    Object.freeze({
+      provider: "anthropic" as const,
+      initial: 120,
+      wireRepair: 24,
+      semanticRepair: 48,
+      transportRetry: 48,
+      total: 240,
+    }),
+    Object.freeze({
+      provider: "openai" as const,
+      initial: 120,
+      wireRepair: 24,
+      semanticRepair: 48,
+      transportRetry: 48,
+      total: 240,
+    }),
+  ]),
+  exhaustion: "calibration-incomplete-no-go-before-dispatch",
+});
+
 const requestRegistration = defineSchema({
   id: "m3b/oracle-request",
   version: "4",
@@ -463,6 +498,12 @@ export type M3bManifest = Readonly<{
   maximumCalls: number;
   semanticRepairCalls: number;
   wireRepairCalls: number;
+  attemptQuotas: Readonly<{
+    id: string;
+    version: string;
+    providers: ReadonlyArray<M3bProviderAttemptQuota>;
+    exhaustion: string;
+  }>;
   pool: Readonly<{
     id: "m3b-development" | "m3b-heldout";
     authorizedUsdMicros: number;
@@ -613,6 +654,56 @@ export async function materializeM3bPhase(
   if (!schedule.ok) return { ok: false, error: [schedule.error] };
   const initialCalls =
     cases.length * scheduledArms.length * providers.length * repetitions;
+  const initialCallsPerProvider = initialCalls / providers.length;
+  const attemptQuotas =
+    input.phase === "m3b-calibration"
+      ? M3B4_CALIBRATION_PROVIDER_ATTEMPT_QUOTAS
+      : Object.freeze({
+          id: "m3b4-phase-provider-cohort-attempt-quotas",
+          version: "1",
+          providers: Object.freeze(
+            providers
+              .map((provider) => {
+                const wireRepair = initialCallsPerProvider;
+                const semanticRepair = initialCallsPerProvider;
+                const transportRetry =
+                  (initialCallsPerProvider + wireRepair + semanticRepair) *
+                  M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt;
+                return Object.freeze({
+                  provider: provider.provider,
+                  initial: initialCallsPerProvider,
+                  wireRepair,
+                  semanticRepair,
+                  transportRetry,
+                  total:
+                    initialCallsPerProvider +
+                    wireRepair +
+                    semanticRepair +
+                    transportRetry,
+                });
+              })
+              .toSorted((left, right) =>
+                left.provider.localeCompare(right.provider),
+              ),
+          ),
+          exhaustion: "phase-incomplete-no-go-before-dispatch",
+        });
+  const wireRepairCalls = attemptQuotas.providers.reduce(
+    (total, provider) => total + provider.wireRepair,
+    0,
+  );
+  const semanticRepairCalls = attemptQuotas.providers.reduce(
+    (total, provider) => total + provider.semanticRepair,
+    0,
+  );
+  const maximumTransportRetries = attemptQuotas.providers.reduce(
+    (total, provider) => total + provider.transportRetry,
+    0,
+  );
+  const maximumCalls = attemptQuotas.providers.reduce(
+    (total, provider) => total + provider.total,
+    0,
+  );
   const body = {
     formatVersion: "1" as const,
     phase: input.phase,
@@ -633,20 +724,11 @@ export async function materializeM3bPhase(
     scheduledArms,
     repetitions,
     initialCalls,
-    semanticRepairCalls: initialCalls,
-    wireRepairCalls: initialCalls,
-    maximumTransportRetries:
-      initialCalls *
-      (1 +
-        M3B_TRANSPORT_RETRY_POLICY.semanticRepairCallsPerRecord +
-        M3B_TRANSPORT_RETRY_POLICY.wireRepairCallsPerRecord) *
-      M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt,
-    maximumCalls:
-      initialCalls *
-      (1 +
-        M3B_TRANSPORT_RETRY_POLICY.semanticRepairCallsPerRecord +
-        M3B_TRANSPORT_RETRY_POLICY.wireRepairCallsPerRecord) *
-      (1 + M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt),
+    semanticRepairCalls,
+    wireRepairCalls,
+    maximumTransportRetries,
+    maximumCalls,
+    attemptQuotas,
     pool: {
       id:
         input.phase === "m3b-heldout"
@@ -925,6 +1007,9 @@ export type M3bOracleIdentity = z.infer<typeof m3bOracleIdentitySchema>;
 export type M3bOracleDispatchContext = Readonly<{
   recordKey: string;
   attemptIndex: number;
+  invocation: "initial" | "wire-repair" | "semantic-repair";
+  transportRetryIndex: number;
+  attemptType: M3bAttemptType;
 }>;
 
 export const m3bExecutionBindingSchema = z
@@ -1541,9 +1626,14 @@ async function executeRecord(
             retryIndex += 1
           ) {
             const attemptIndex = attempts.length;
+            const attemptType: M3bAttemptType =
+              retryIndex > 0 ? "transport-retry" : invocation;
             const attempt = await input.oracle.generate(oracleRequest, {
               recordKey: dispatchRecordKey.value,
               attemptIndex,
+              invocation,
+              transportRetryIndex: retryIndex,
+              attemptType,
             });
             attempts.push(attempt);
             if (attempt.kind === "success") {
@@ -2065,7 +2155,7 @@ export function blindAuditM3bMaterialization(
 ): M3bBlindAuditCounts {
   const corpus = blindM3a1IntegrityAudit(
     M3B_REFERENCE_GRAPH,
-    M3B_PREREGISTERED_CORPUS,
+    materialized.cases.map((item) => item.task),
   );
   const schedule = auditM3bWilliamsSchedule(materialized.manifest.schedule);
   const sharedPlanIdentities = new Set(
@@ -2081,6 +2171,26 @@ export function blindAuditM3bMaterialization(
     materialized.manifest.scheduledArms.length *
     materialized.manifest.providers.length *
     materialized.manifest.repetitions;
+  const expectedWireRepairs =
+    materialized.manifest.attemptQuotas.providers.reduce(
+      (total, provider) => total + provider.wireRepair,
+      0,
+    );
+  const expectedSemanticRepairs =
+    materialized.manifest.attemptQuotas.providers.reduce(
+      (total, provider) => total + provider.semanticRepair,
+      0,
+    );
+  const expectedTransportRetries =
+    materialized.manifest.attemptQuotas.providers.reduce(
+      (total, provider) => total + provider.transportRetry,
+      0,
+    );
+  const expectedMaximumCalls =
+    materialized.manifest.attemptQuotas.providers.reduce(
+      (total, provider) => total + provider.total,
+      0,
+    );
   return {
     phase: materialized.manifest.phase,
     cases,
@@ -2097,16 +2207,19 @@ export function blindAuditM3bMaterialization(
     sharedPlanIdentities,
     liveExecutionAuthorized: false,
     passed:
-      corpus.passed &&
+      corpus.duplicateTaskIds === 0 &&
+      corpus.queryInstructionMismatches === 0 &&
+      corpus.answerBearingQueryLeaks === 0 &&
+      corpus.invalidGroundTruthReferences === 0 &&
       schedule.passed &&
       sharedPlanIdentities === 1 &&
       frozenNeighborhoods === cases * 4 &&
       materialized.manifest.initialCalls === expectedInitialCalls &&
-      materialized.manifest.semanticRepairCalls === expectedInitialCalls &&
-      materialized.manifest.wireRepairCalls === expectedInitialCalls &&
+      materialized.manifest.semanticRepairCalls === expectedSemanticRepairs &&
+      materialized.manifest.wireRepairCalls === expectedWireRepairs &&
       materialized.manifest.maximumTransportRetries ===
-        expectedInitialCalls * 3 &&
-      materialized.manifest.maximumCalls === expectedInitialCalls * 6 &&
+        expectedTransportRetries &&
+      materialized.manifest.maximumCalls === expectedMaximumCalls &&
       !materialized.manifest.pool.liveExecutionAuthorized,
   };
 }

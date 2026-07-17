@@ -9,6 +9,7 @@ import {
   parseJson,
   type Result,
 } from "@nicia-ai/lachesis";
+import type { M3bAttemptType } from "@nicia-ai/lachesis-evidence";
 import { z } from "zod";
 
 import type {
@@ -21,6 +22,12 @@ const accountingBasisSchema = z.enum([
   "provider-reported",
   "not-dispatched",
   "authorized-conservative",
+]);
+const attemptTypeSchema = z.enum([
+  "initial",
+  "wire-repair",
+  "semantic-repair",
+  "transport-retry",
 ]);
 const eventBodySchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("campaign-opened") }),
@@ -38,6 +45,7 @@ const eventBodySchema = z.discriminatedUnion("kind", [
     experimentDigest: digestSchema,
     budgetPoolId: z.enum(["m3b-development", "m3b-heldout"]),
     billingProvider: z.enum(["openai", "anthropic"]),
+    attemptType: attemptTypeSchema.optional(),
     maximumCostUsdMicros: z.number().int().positive(),
   }),
   z.strictObject({
@@ -97,6 +105,7 @@ export type M3b1BudgetReservation = Readonly<{
   recordKey: string;
   attemptIndex: number;
   billingProvider: "openai" | "anthropic";
+  attemptType: M3bAttemptType;
   maximumCostUsdMicros: number;
 }>;
 
@@ -386,7 +395,29 @@ async function reservationKey(
     recordKey: reservation.recordKey,
     attemptIndex: reservation.attemptIndex,
     billingProvider: reservation.billingProvider,
+    attemptType: reservation.attemptType,
   });
+}
+
+function quotaForAttempt(
+  manifest: M3b1PhaseManifest,
+  provider: "openai" | "anthropic",
+  attemptType: M3bAttemptType,
+): number | undefined {
+  const quota = manifest.attemptQuotas.providers.find(
+    (candidate) => candidate.provider === provider,
+  );
+  if (quota === undefined) return undefined;
+  switch (attemptType) {
+    case "initial":
+      return quota.initial;
+    case "wire-repair":
+      return quota.wireRepair;
+    case "semantic-repair":
+      return quota.semanticRepair;
+    case "transport-retry":
+      return quota.transportRetry;
+  }
 }
 
 export async function inspectM3b1Ledger(input: {
@@ -451,6 +482,29 @@ export async function openM3b1Ledger(input: {
               "M3b.1 storage namespace is already bound to another manifest.",
             ),
           };
+    const current = status(manifest.budgetPoolId);
+    const totalFits =
+      manifest.theoreticalCeiling.maximumCostUsdMicros <=
+      current.remainingUsdMicros;
+    const providersFit = manifest.theoreticalCeiling.providers.every(
+      (ceiling) => {
+        const remaining = current.providers.find(
+          (provider) => provider.billingProvider === ceiling.billingProvider,
+        );
+        return (
+          remaining !== undefined &&
+          ceiling.maximumCostUsdMicros <= remaining.remainingUsdMicros
+        );
+      },
+    );
+    if (!totalFits || !providersFit)
+      return {
+        ok: false,
+        error: diagnostic(
+          "BUDGET_EXCEEDED",
+          "The complete M3b.4 phase envelope does not fit the current campaign ledger before manifest registration.",
+        ),
+      };
     return update({
       kind: "manifest-registered",
       phaseManifestDigest: manifest.phaseManifestDigest,
@@ -478,6 +532,32 @@ export async function openM3b1Ledger(input: {
             if (!key.ok) return key;
             if (state.value.reservations.has(key.value))
               return { ok: true, value: "previous-attempt-accounted" };
+            const attemptQuota = quotaForAttempt(
+              manifest,
+              reservation.billingProvider,
+              reservation.attemptType,
+            );
+            const attemptsAlreadyReserved = [
+              ...state.value.reservations.values(),
+            ].filter(
+              (prior) =>
+                prior.reservation.phaseManifestDigest ===
+                  manifest.phaseManifestDigest &&
+                prior.reservation.billingProvider ===
+                  reservation.billingProvider &&
+                prior.reservation.attemptType === reservation.attemptType,
+            ).length;
+            if (
+              attemptQuota === undefined ||
+              attemptsAlreadyReserved >= attemptQuota
+            )
+              return {
+                ok: false,
+                error: diagnostic(
+                  "BUDGET_EXCEEDED",
+                  "M3b.4 provider cohort attempt quota is exhausted before dispatch.",
+                ),
+              };
             const current = status(manifest.budgetPoolId);
             const provider = current.providers.find(
               (candidate) =>
@@ -502,6 +582,7 @@ export async function openM3b1Ledger(input: {
               experimentDigest: reservation.experimentDigest,
               budgetPoolId: manifest.budgetPoolId,
               billingProvider: reservation.billingProvider,
+              attemptType: reservation.attemptType,
               maximumCostUsdMicros: reservation.maximumCostUsdMicros,
             });
             return appended.ok ? { ok: true, value: "reserved" } : appended;

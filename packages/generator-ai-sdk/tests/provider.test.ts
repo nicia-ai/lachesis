@@ -786,7 +786,13 @@ describe("AI SDK provider adapters", () => {
         fetch: interceptedFetch(anthropicRequests),
       },
     });
-    const context = { recordKey: "0".repeat(64), attemptIndex: 0 };
+    const context = {
+      recordKey: "0".repeat(64),
+      attemptIndex: 0,
+      invocation: "initial" as const,
+      transportRetryIndex: 0,
+      attemptType: "initial" as const,
+    };
 
     const openaiAttempt = await openai.generate(request, context);
     const anthropicAttempt = await anthropic.generate(request, context);
@@ -941,8 +947,18 @@ describe("AI SDK provider adapters", () => {
         ],
       },
     });
-    await openai.generate(repairRequest, { ...context, attemptIndex: 1 });
-    await anthropic.generate(repairRequest, { ...context, attemptIndex: 1 });
+    await openai.generate(repairRequest, {
+      ...context,
+      attemptIndex: 1,
+      invocation: "semantic-repair",
+      attemptType: "semantic-repair",
+    });
+    await anthropic.generate(repairRequest, {
+      ...context,
+      attemptIndex: 1,
+      invocation: "semantic-repair",
+      attemptType: "semantic-repair",
+    });
     expect(openaiRequests).toHaveLength(2);
     expect(anthropicRequests).toHaveLength(2);
     for (const providerRequest of [openaiRequests[1], anthropicRequests[1]]) {
@@ -979,10 +995,17 @@ describe("AI SDK provider adapters", () => {
       },
       semanticRepair: null,
     });
-    await openai.generate(wireRepairRequest, { ...context, attemptIndex: 2 });
+    await openai.generate(wireRepairRequest, {
+      ...context,
+      attemptIndex: 2,
+      invocation: "wire-repair",
+      attemptType: "wire-repair",
+    });
     await anthropic.generate(wireRepairRequest, {
       ...context,
       attemptIndex: 2,
+      invocation: "wire-repair",
+      attemptType: "wire-repair",
     });
     expect(openaiRequests).toHaveLength(3);
     expect(anthropicRequests).toHaveLength(3);
@@ -1132,6 +1155,9 @@ describe("AI SDK provider adapters", () => {
         await oracle.generate(request, {
           recordKey: "0".repeat(64),
           attemptIndex: 0,
+          invocation: "initial",
+          transportRetryIndex: 0,
+          attemptType: "initial",
         });
       }
       const nativeBody = z
@@ -1231,6 +1257,9 @@ describe("AI SDK provider adapters", () => {
     const attempt = await oracle.generate(request, {
       recordKey: "0".repeat(64),
       attemptIndex: 0,
+      invocation: "initial",
+      transportRetryIndex: 0,
+      attemptType: "initial",
     });
 
     expect(attempt).toMatchObject({
@@ -1325,6 +1354,9 @@ describe("AI SDK provider adapters", () => {
       await oracle.generate(request, {
         recordKey: "0".repeat(64),
         attemptIndex: 0,
+        invocation: "initial",
+        transportRetryIndex: 0,
+        attemptType: "initial",
       }),
     ).toMatchObject({
       kind: "success",
@@ -1369,6 +1401,9 @@ describe("AI SDK provider adapters", () => {
     const invalidAttempt = await invalidJsonOracle.generate(request, {
       recordKey: "0".repeat(64),
       attemptIndex: 1,
+      invocation: "initial",
+      transportRetryIndex: 1,
+      attemptType: "transport-retry",
     });
     expect(invalidAttempt).toMatchObject({
       kind: "failure",
