@@ -71,6 +71,7 @@ export type M3b1PreflightReport = Readonly<{
     credentials: boolean;
     acknowledgement: boolean;
     perRequestReservationsFit: boolean;
+    completePhaseReservationsFit: boolean;
   }>;
   liveExecutionPermitted: boolean;
 }>;
@@ -122,6 +123,24 @@ function reservationsFit(materialized: M3b1MaterializedPhase): boolean {
   });
 }
 
+function completePhaseReservationsFit(
+  materialized: M3b1MaterializedPhase,
+): boolean {
+  return (
+    materialized.phase.theoreticalCeiling.maximumCostUsdMicros <=
+      materialized.phase.operationalPool.maxCostUsdMicros &&
+    materialized.phase.theoreticalCeiling.providers.every((provider) => {
+      const cap = materialized.phase.operationalPool.providerCostCaps.find(
+        (candidate) => candidate.billingProvider === provider.billingProvider,
+      );
+      return (
+        cap !== undefined &&
+        provider.maximumCostUsdMicros <= cap.maxCostUsdMicros
+      );
+    })
+  );
+}
+
 export async function preflightM3b1(input: {
   readonly materialized: M3b1MaterializedPhase;
   readonly currentCommit: string;
@@ -149,6 +168,9 @@ export async function preflightM3b1(input: {
       input.acknowledgement,
     ),
     perRequestReservationsFit: reservationsFit(input.materialized),
+    completePhaseReservationsFit: completePhaseReservationsFit(
+      input.materialized,
+    ),
   };
   const liveExecutionPermitted =
     disposition === "live-capable" &&
@@ -607,7 +629,7 @@ export async function executeM3b1(input: {
     };
   const ledgerPath = join(
     input.storageRoot,
-    "m3b2",
+    "m3b4",
     input.materialized.campaign.campaignDigest,
     "ledger.ndjson",
   );

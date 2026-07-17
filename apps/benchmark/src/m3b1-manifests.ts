@@ -53,10 +53,10 @@ const poolSchema = z
 export const m3b1CampaignManifestSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
-    campaignId: z.literal("lachesis-m3b2-live-graph-substrate"),
-    milestone: z.literal("m3b.2"),
-    maximumOperationalCostUsdMicros: z.literal(70_000_000),
-    budgetPools: z.array(poolSchema).length(2).readonly(),
+    campaignId: z.literal("lachesis-m3b4-wire-forensics-development"),
+    milestone: z.literal("m3b.4"),
+    maximumOperationalCostUsdMicros: z.literal(30_000_000),
+    budgetPools: z.array(poolSchema).length(1).readonly(),
     authorizationPolicy: z
       .strictObject({
         theoreticalPhaseCeilings: z.literal("disclosed-not-authorized"),
@@ -123,7 +123,7 @@ export const m3b1PhaseManifestSchema = z
     status: z.literal("unexecuted-live-capable"),
     phase: phaseSchema,
     sourceCommit: z.string().regex(/^[a-f0-9]{40}$/u),
-    campaignId: z.literal("lachesis-m3b2-live-graph-substrate"),
+    campaignId: z.literal("lachesis-m3b4-wire-forensics-development"),
     campaignDigest: digestSchema,
     budgetPoolId: z.enum(["m3b-development", "m3b-heldout"]),
     operationalPool: poolSchema,
@@ -241,30 +241,19 @@ export async function createM3b1CampaignManifest(): Promise<
 > {
   const body = {
     formatVersion: "1" as const,
-    campaignId: "lachesis-m3b2-live-graph-substrate" as const,
-    milestone: "m3b.2" as const,
-    maximumOperationalCostUsdMicros: 70_000_000 as const,
+    campaignId: "lachesis-m3b4-wire-forensics-development" as const,
+    milestone: "m3b.4" as const,
+    maximumOperationalCostUsdMicros: 30_000_000 as const,
     budgetPools: [
       {
         id: "m3b-development" as const,
-        maxCostUsdMicros: 10_000_000,
+        maxCostUsdMicros: 30_000_000,
         providerCostCaps: [
           {
             billingProvider: "anthropic" as const,
-            maxCostUsdMicros: 4_000_000,
+            maxCostUsdMicros: 13_000_000,
           },
-          { billingProvider: "openai" as const, maxCostUsdMicros: 6_000_000 },
-        ],
-      },
-      {
-        id: "m3b-heldout" as const,
-        maxCostUsdMicros: 60_000_000,
-        providerCostCaps: [
-          {
-            billingProvider: "anthropic" as const,
-            maxCostUsdMicros: 25_000_000,
-          },
-          { billingProvider: "openai" as const, maxCostUsdMicros: 35_000_000 },
+          { billingProvider: "openai" as const, maxCostUsdMicros: 17_000_000 },
         ],
       },
     ],
@@ -473,7 +462,12 @@ export async function materializeM3b1Phase(input: {
     return {
       ok: false,
       error: [
-        diagnostic("INVALID_WIRE_SCHEMA", "M3b.1 operational pool is missing."),
+        diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          input.phase === "m3b-heldout"
+            ? "The M3b.4 development campaign carries no held-out authority."
+            : "M3b.4 operational pool is missing.",
+        ),
       ],
     };
   for (const provider of ceiling.value.providers) {

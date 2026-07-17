@@ -87,8 +87,10 @@ complete matched coverage, and zero authorization or identity violations.
 First-attempt, wire-repaired, semantic-repaired, and final outcomes remain
 separate.
 
-The inherited M3b campaign remains the cumulative authority envelope; a new
-milestone name must not reset its ledger history. Materialization alone conveys
-zero spend authority. Calibration may receive a new identity only after a
-separately preregistered and authorized stress probe passes. Held-out and
-TypeGraph remain blocked.
+M3b.4 uses a fresh development-only campaign capped at `30,000,000 µUSD`, with
+`17,000,000 µUSD` available to OpenAI and `13,000,000 µUSD` to Anthropic. The
+M3b.3 ledger remains an immutable historical binding rather than an authority
+source for M3b.4. Materialization alone conveys zero spend authority.
+Calibration may receive a new identity only after a separately preregistered and
+authorized stress probe passes. The campaign contains no held-out pool; held-out
+and TypeGraph remain blocked.

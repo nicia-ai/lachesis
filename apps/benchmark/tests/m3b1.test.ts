@@ -229,22 +229,35 @@ describe("M3b.1 live-binding substrate", () => {
         sourceCommit: SOURCE_COMMIT,
       }),
     );
-    const heldout = unwrap(
-      await materializeM3b1Phase({
-        phase: "m3b-heldout",
-        sourceCommit: SOURCE_COMMIT,
-      }),
-    );
+    const heldout = await materializeM3b1Phase({
+      phase: "m3b-heldout",
+      sourceCommit: SOURCE_COMMIT,
+    });
 
     expect(await validateM3b1Materialization(probe)).toEqual({
       ok: true,
       value: undefined,
     });
-    expect(probe.campaign.campaignDigest).toBe(
+    expect(probe.campaign).toMatchObject({
+      campaignId: "lachesis-m3b4-wire-forensics-development",
+      milestone: "m3b.4",
+      maximumOperationalCostUsdMicros: 30_000_000,
+      budgetPools: [
+        {
+          id: "m3b-development",
+          maxCostUsdMicros: 30_000_000,
+          providerCostCaps: [
+            { billingProvider: "anthropic", maxCostUsdMicros: 13_000_000 },
+            { billingProvider: "openai", maxCostUsdMicros: 17_000_000 },
+          ],
+        },
+      ],
+    });
+    expect(probe.campaign.campaignDigest).not.toBe(
       "6e5cc9dcb80b9c1c82ef005987f30bf560f33d2c1400cb5de9ca2460c755369a",
     );
     expect(
-      [probe, stress, calibration, heldout].map((item) => ({
+      [probe, stress, calibration].map((item) => ({
         phase: item.phase.phase,
         initialCalls: item.phase.initialCalls,
         retries: item.phase.maximumTransportRetries,
@@ -259,7 +272,7 @@ describe("M3b.1 live-binding substrate", () => {
         retries: 144,
         maximumCalls: 288,
         theoretical: 13_680_000,
-        operational: 10_000_000,
+        operational: 30_000_000,
       },
       {
         phase: "m3b-wire-stress-probe",
@@ -267,7 +280,7 @@ describe("M3b.1 live-binding substrate", () => {
         retries: 288,
         maximumCalls: 576,
         theoretical: 27_360_000,
-        operational: 10_000_000,
+        operational: 30_000_000,
       },
       {
         phase: "m3b-calibration",
@@ -275,17 +288,19 @@ describe("M3b.1 live-binding substrate", () => {
         retries: 720,
         maximumCalls: 1_440,
         theoretical: 68_400_000,
-        operational: 10_000_000,
-      },
-      {
-        phase: "m3b-heldout",
-        initialCalls: 2_560,
-        retries: 7_680,
-        maximumCalls: 15_360,
-        theoretical: 729_600_000,
-        operational: 60_000_000,
+        operational: 30_000_000,
       },
     ]);
+    expect(heldout).toMatchObject({
+      ok: false,
+      error: [
+        {
+          code: "INVALID_WIRE_SCHEMA",
+          message:
+            "The M3b.4 development campaign carries no held-out authority.",
+        },
+      ],
+    });
     expect(probe.phase.theoreticalCeiling.providers).toEqual([
       {
         billingProvider: "anthropic",
@@ -343,20 +358,30 @@ describe("M3b.1 live-binding substrate", () => {
     expect(
       M3B_OFFLINE_DESIGN_IDENTITIES.every(
         (identity) =>
-          ![probe, stress, calibration, heldout].some(
+          ![probe, stress, calibration].some(
             (item) => item.phase.experimentDigest === identity.experimentDigest,
           ),
       ),
     ).toBe(true);
-    const heldoutPreflight = await preflightM3b1({
-      materialized: heldout,
+    const stressPreflight = await preflightM3b1({
+      materialized: stress,
       currentCommit: SOURCE_COMMIT,
       cleanWorktree: true,
-      credentials: { OPENAI_API_KEY: true, ANTHROPIC_API_KEY: true },
-      acknowledgement: acknowledgement(heldout),
+      credentials: { OPENAI_API_KEY: false, ANTHROPIC_API_KEY: false },
     });
-    expect(heldoutPreflight.executionDisposition).toBe("blocked-unexecuted");
-    expect(heldoutPreflight.liveExecutionPermitted).toBe(false);
+    expect(stressPreflight.checks).toMatchObject({
+      perRequestReservationsFit: true,
+      completePhaseReservationsFit: true,
+    });
+    const calibrationPreflight = await preflightM3b1({
+      materialized: calibration,
+      currentCommit: SOURCE_COMMIT,
+      cleanWorktree: true,
+      credentials: { OPENAI_API_KEY: false, ANTHROPIC_API_KEY: false },
+    });
+    expect(calibrationPreflight.checks.completePhaseReservationsFit).toBe(
+      false,
+    );
     expect(
       await validateM3b1Materialization({
         ...probe,
@@ -392,7 +417,7 @@ describe("M3b.1 live-binding substrate", () => {
       missingCredentialNames: ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"],
       liveExecutionPermitted: false,
     });
-    await expect(stat(join(root, "m3b2"))).rejects.toMatchObject({
+    await expect(stat(join(root, "m3b4"))).rejects.toMatchObject({
       code: "ENOENT",
     });
   });
@@ -487,15 +512,15 @@ describe("M3b.1 live-binding substrate", () => {
     expect(first.budget.providers).toEqual([
       {
         billingProvider: "anthropic",
-        maximumUsdMicros: 4_000_000,
+        maximumUsdMicros: 13_000_000,
         consumedUsdMicros: 960_240,
-        remainingUsdMicros: 3_039_760,
+        remainingUsdMicros: 12_039_760,
       },
       {
         billingProvider: "openai",
-        maximumUsdMicros: 6_000_000,
+        maximumUsdMicros: 17_000_000,
         consumedUsdMicros: 1_320_240,
-        remainingUsdMicros: 4_679_760,
+        remainingUsdMicros: 15_679_760,
       },
     ]);
     const callsBeforeResume = openaiRequests.length + anthropicRequests.length;
@@ -524,7 +549,7 @@ describe("M3b.1 live-binding substrate", () => {
 
     const ledgerPath = join(
       root,
-      "m3b2",
+      "m3b4",
       materialized.campaign.campaignDigest,
       "ledger.ndjson",
     );
@@ -564,7 +589,7 @@ describe("M3b.1 live-binding substrate", () => {
       throw new Error("The scheduled provider has no ceiling.");
     const ledgerPath = join(
       root,
-      "m3b2",
+      "m3b4",
       materialized.campaign.campaignDigest,
       "ledger.ndjson",
     );
@@ -720,7 +745,7 @@ describe("M3b.1 live-binding substrate", () => {
 
     const ledgerPath = join(
       root,
-      "m3b2",
+      "m3b4",
       materialized.campaign.campaignDigest,
       "ledger.ndjson",
     );
@@ -837,7 +862,7 @@ describe("M3b.1 live-binding substrate", () => {
       error: { code: "BUDGET_EXCEEDED" },
     });
     expect(requests).toEqual([]);
-    await expect(stat(join(root, "m3b2"))).rejects.toMatchObject({
+    await expect(stat(join(root, "m3b4"))).rejects.toMatchObject({
       code: "ENOENT",
     });
   });
