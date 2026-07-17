@@ -30,15 +30,15 @@ identity, for 60 total, without changing the frozen M3a.1 constants.
 All generated M3b manifests remain unauthorized with zero operational pool
 allowance. No provider adapter or TypeGraph dependency is present.
 
-M3b.2 keeps this package provider-neutral while using typed answer values,
-explicit insufficient-evidence outcomes, and canonical visible-path IDs. Wire
-validation is separate from domain validation, and domain-invalid outputs retain
-their attempt usage and staged sanitized diagnostics. The common answer/citation
-endpoint remains separate from relationship-citation and path-utilization
-outcomes. Explicit conclusion objects encode direction, discordance, Holm
-multiplicity, non-inferiority, independent provider/repetition passage, and
-zero-safety requirements.
+M3b.3 keeps this package provider-neutral while binding answer intent into a
+public executable contract. Typed outputs name supporting facts; deterministic
+validation derives permissible values from visible facts, verifies their
+citations, and enforces the exact sufficiency/abstention rule. One bounded
+semantic repair receives only public obligations, the previous output,
+deterministic diagnostics, and the same arm-visible evidence. First-attempt and
+final repaired outcomes remain separate.
 
 See [the M3a design](../../docs/m3a-graph-native-decomposition.md) and the
 [M3b offline execution protocol](../../docs/m3b-offline-execution.md), and the
-[M3b.2 correction](../../docs/m3b2-protocol-correction.md).
+[M3b.2 correction](../../docs/m3b2-protocol-correction.md), and the
+[M3b.3 semantic obligations](../../docs/m3b3-semantic-obligations.md).

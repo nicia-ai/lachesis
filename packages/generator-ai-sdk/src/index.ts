@@ -38,6 +38,7 @@ export const AI_SDK_ADAPTER_VERSION = `lachesis-ai-sdk-adapter/4;ai-sdk/${AI_SDK
 export const M2_CODEMODE_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};restricted-capability-typescript/3`;
 export const M3B1_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-evidence-oracle/1`;
 export const M3B2_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-typed-evidence-oracle/2`;
+export const M3B3_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-semantic-obligation-oracle/3`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -141,6 +142,7 @@ export const M3B1_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
   ANTHROPIC_DIRECT_PRICING,
 ]);
 export const M3B2_PRICING_ENTRIES = M3B1_PRICING_ENTRIES;
+export const M3B3_PRICING_ENTRIES = M3B1_PRICING_ENTRIES;
 
 export function createM3b1PricingSnapshot(): ReturnType<
   typeof createPricingSnapshot
@@ -152,11 +154,14 @@ export function createM3b1PricingSnapshot(): ReturnType<
 }
 
 export const createM3b2PricingSnapshot = createM3b1PricingSnapshot;
+export const createM3b3PricingSnapshot = createM3b1PricingSnapshot;
 
 export const M3B1_OUTPUT_SCHEMA_VERSION =
   "m3b-provider-portable-answer-citation-path/1";
 export const M3B2_OUTPUT_SCHEMA_VERSION =
   "m3b-provider-portable-typed-answer-reference/2";
+export const M3B3_OUTPUT_SCHEMA_VERSION =
+  "m3b-provider-portable-semantic-obligation-answer/3";
 function deepFreezeValue(value: unknown): void {
   if (value === null || typeof value !== "object") return;
   for (const child of Object.values(value)) deepFreezeValue(child);
@@ -233,6 +238,46 @@ const m3b2OutputJsonSchema: ProviderJsonSchema = {
 };
 deepFreezeValue(m3b2OutputJsonSchema);
 export const M3B2_OUTPUT_JSON_SCHEMA = m3b2OutputJsonSchema;
+
+const m3b3OutputJsonSchema: ProviderJsonSchema = {
+  type: "object",
+  properties: {
+    outcome: {
+      type: "string",
+      enum: ["answered", "insufficient-evidence"],
+    },
+    answerValues: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 128,
+    },
+    supportingFactIds: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 64,
+    },
+    citationIds: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 128,
+    },
+    pathIds: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 256,
+    },
+  },
+  required: [
+    "outcome",
+    "answerValues",
+    "supportingFactIds",
+    "citationIds",
+    "pathIds",
+  ],
+  additionalProperties: false,
+};
+deepFreezeValue(m3b3OutputJsonSchema);
+export const M3B3_OUTPUT_JSON_SCHEMA = m3b3OutputJsonSchema;
 
 export const M1B_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
   OPENAI_PRICING,
@@ -1042,6 +1087,11 @@ function m3bOracleIdentity(
   });
 }
 
+export const M3B3_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
+  Object.freeze([
+    m3bOracleIdentity("openai", M3B3_PROVIDER_ADAPTER_VERSION),
+    m3bOracleIdentity("anthropic", M3B3_PROVIDER_ADAPTER_VERSION),
+  ]);
 export const M3B2_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
   Object.freeze([
     m3bOracleIdentity("openai", M3B2_PROVIDER_ADAPTER_VERSION),
@@ -1057,8 +1107,9 @@ function renderM3bOracleRequest(request: M3bOracleRequest): string {
   return JSON.stringify({
     protocol: M3B_ORACLE_PROMPT,
     instruction: request.instruction,
-    answerShape: request.answerShape,
+    answerContract: request.answerContract,
     evidence: request.evidence,
+    semanticRepair: request.semanticRepair,
   });
 }
 
@@ -1242,7 +1293,7 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
     identity: input.identity,
     async generate(request) {
       const portable = validatePortableStructuredOutputSchema(
-        M3B2_OUTPUT_JSON_SCHEMA,
+        M3B3_OUTPUT_JSON_SCHEMA,
       );
       if (!portable.ok)
         return {
@@ -1272,7 +1323,7 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
           name: "m3b_evidence_answer",
           description:
             "A typed answer or insufficient-evidence outcome with citation and canonical-path references.",
-          schema: sdk.jsonSchema(M3B2_OUTPUT_JSON_SCHEMA, {
+          schema: sdk.jsonSchema(M3B3_OUTPUT_JSON_SCHEMA, {
             validate: (value: unknown) => {
               const parsed = m3bOracleOutputSchema.safeParse(value);
               return parsed.success
@@ -1431,7 +1482,7 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
 export function createOpenAiM3bOracle(
   provider?: OpenAiProviderSettings,
 ): M3bOracle {
-  const identity = m3bOracleIdentity("openai", M3B2_PROVIDER_ADAPTER_VERSION);
+  const identity = m3bOracleIdentity("openai", M3B3_PROVIDER_ADAPTER_VERSION);
   return createM3bAiSdkOracle({
     identity,
     pricing: OPENAI_PRICING,
@@ -1462,7 +1513,7 @@ export function createAnthropicM3bOracle(
 ): M3bOracle {
   const identity = m3bOracleIdentity(
     "anthropic",
-    M3B2_PROVIDER_ADAPTER_VERSION,
+    M3B3_PROVIDER_ADAPTER_VERSION,
   );
   return createM3bAiSdkOracle({
     identity,

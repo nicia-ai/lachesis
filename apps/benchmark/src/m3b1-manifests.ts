@@ -5,6 +5,7 @@ import {
   type Result,
 } from "@nicia-ai/lachesis";
 import {
+  M3B_TRANSPORT_RETRY_POLICY,
   type M3bMaterializedPhase,
   type M3bPhase,
   materializeM3bPhase,
@@ -19,10 +20,10 @@ import {
 import {
   AI_SDK_VERSION,
   ANTHROPIC_AI_SDK_PROVIDER_VERSION,
-  createM3b2PricingSnapshot,
-  M3B2_ORACLE_IDENTITIES,
-  M3B2_OUTPUT_JSON_SCHEMA,
-  M3B2_OUTPUT_SCHEMA_VERSION,
+  createM3b3PricingSnapshot,
+  M3B3_ORACLE_IDENTITIES,
+  M3B3_OUTPUT_JSON_SCHEMA,
+  M3B3_OUTPUT_SCHEMA_VERSION,
   OPENAI_AI_SDK_PROVIDER_VERSION,
 } from "@nicia-ai/lachesis-generator-ai-sdk";
 import { z } from "zod";
@@ -83,7 +84,7 @@ const transportBindingSchema = z
     adapterVersion: z.string().min(1),
     route: z.enum(["openai-responses", "anthropic-messages"]),
     structuredOutput: z.enum(["json-schema", "json-tool"]),
-    outputSchemaVersion: z.literal(M3B2_OUTPUT_SCHEMA_VERSION),
+    outputSchemaVersion: z.literal(M3B3_OUTPUT_SCHEMA_VERSION),
     outputSchemaDigest: digestSchema,
     transportDigest: digestSchema,
     pricingEntryId: z.string().min(1),
@@ -116,7 +117,7 @@ const theoreticalCeilingSchema = z
 export const m3b1PhaseManifestSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
-    milestone: z.literal("m3b.2"),
+    milestone: z.literal("m3b.3"),
     status: z.literal("unexecuted-live-capable"),
     phase: phaseSchema,
     sourceCommit: z.string().regex(/^[a-f0-9]{40}$/u),
@@ -136,7 +137,7 @@ export const m3b1PhaseManifestSchema = z
     initialCalls: z.number().int().positive(),
     maximumTransportRetries: z.number().int().nonnegative(),
     maximumCalls: z.number().int().positive(),
-    semanticRepairCalls: z.literal(0),
+    semanticRepairCalls: z.number().int().nonnegative(),
     failurePolicy: z
       .strictObject({
         sdkRetries: z.literal(0),
@@ -151,7 +152,7 @@ export const m3b1PhaseManifestSchema = z
         unknownUsageSettlement: z.literal(
           "full-conservative-charge-per-dispatched-attempt",
         ),
-        semanticRepairs: z.literal(0),
+        semanticRepairsPerRecord: z.literal(1),
       })
       .readonly(),
     executionPolicy: z.literal("exact-controller-authorization-required"),
@@ -197,6 +198,21 @@ export const M3B_OFFLINE_DESIGN_IDENTITIES = Object.freeze([
   Object.freeze({
     experimentDigest:
       "9feb01a05bdae10ba6865cee4e4f6e0cc561689279f87404afc76b8bd7064cf0",
+    disposition: "superseded-unexecuted" as const,
+  }),
+  Object.freeze({
+    experimentDigest:
+      "5d0bbe9a8483503739ba4b9f6f438300fea821e75310be22c4310106d45cdd8f",
+    disposition: "complete-semantic-gate-fail" as const,
+  }),
+  Object.freeze({
+    experimentDigest:
+      "27e5f911ef46e67d1ba017ccc7f481492a097c84579f1a7d32b819cae3defa0f",
+    disposition: "superseded-unexecuted" as const,
+  }),
+  Object.freeze({
+    experimentDigest:
+      "32fef0c2365a8f6a7af96030d10720b67d3665a570a15a04c2a39824922dbfaa",
     disposition: "superseded-unexecuted" as const,
   }),
 ]);
@@ -282,7 +298,10 @@ function theoreticalCeiling(
         (scheduled) => scheduled.provider === identity.provider,
       ).length *
       4 *
-      2;
+      (1 +
+        substrate.manifest.semanticRepairCalls /
+          substrate.manifest.initialCalls) *
+      (1 + M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt);
     const perCall = calculateMaximumCostUsdMicros(
       entry,
       identity.settings.maxInputTokens,
@@ -334,13 +353,13 @@ async function providerBindings(
   Result<ReadonlyArray<z.infer<typeof transportBindingSchema>>, Diagnostic>
 > {
   const portable = validatePortableStructuredOutputSchema(
-    M3B2_OUTPUT_JSON_SCHEMA,
+    M3B3_OUTPUT_JSON_SCHEMA,
   );
   if (!portable.ok) return portable;
-  const outputSchemaDigest = await digestValue(M3B2_OUTPUT_JSON_SCHEMA);
+  const outputSchemaDigest = await digestValue(M3B3_OUTPUT_JSON_SCHEMA);
   if (!outputSchemaDigest.ok) return outputSchemaDigest;
   const bindings: Array<z.infer<typeof transportBindingSchema>> = [];
-  for (const identity of M3B2_ORACLE_IDENTITIES.toSorted((left, right) =>
+  for (const identity of M3B3_ORACLE_IDENTITIES.toSorted((left, right) =>
     left.provider.localeCompare(right.provider),
   )) {
     const pricingEntry = pricingFor(pricing, identity.provider);
@@ -384,7 +403,7 @@ async function providerBindings(
           ? ("openai-responses" as const)
           : ("anthropic-messages" as const),
       structuredOutput: identity.settings.structuredOutput,
-      outputSchemaVersion: M3B2_OUTPUT_SCHEMA_VERSION,
+      outputSchemaVersion: M3B3_OUTPUT_SCHEMA_VERSION,
       outputSchemaDigest: outputSchemaDigest.value,
       pricingEntryId: pricingEntry.id,
       pricingEntryDigest: pricingEntryDigest.value,
@@ -409,10 +428,10 @@ export async function materializeM3b1Phase(input: {
   if (!campaign.ok) return { ok: false, error: [campaign.error] };
   const substrate = await materializeM3bPhase({
     ...input,
-    providers: M3B2_ORACLE_IDENTITIES,
+    providers: M3B3_ORACLE_IDENTITIES,
   });
   if (!substrate.ok) return substrate;
-  const pricing = await createM3b2PricingSnapshot();
+  const pricing = await createM3b3PricingSnapshot();
   if (!pricing.ok) return pricing;
   const bindings = await providerBindings(pricing.value);
   if (!bindings.ok) return { ok: false, error: [bindings.error] };
@@ -454,7 +473,7 @@ export async function materializeM3b1Phase(input: {
       };
   }
   const experimentBody = {
-    milestone: "m3b.2" as const,
+    milestone: "m3b.3" as const,
     phase: input.phase,
     sourceCommit: input.sourceCommit,
     campaignDigest: campaign.value.campaignDigest,
@@ -475,7 +494,7 @@ export async function materializeM3b1Phase(input: {
     initialCalls: substrate.value.manifest.initialCalls,
     maximumTransportRetries: substrate.value.manifest.maximumTransportRetries,
     maximumCalls: substrate.value.manifest.maximumCalls,
-    semanticRepairCalls: 0 as const,
+    semanticRepairCalls: substrate.value.manifest.semanticRepairCalls,
     failurePolicy: {
       sdkRetries: 0 as const,
       controllerRetriesPerRecord: 1 as const,
@@ -486,7 +505,7 @@ export async function materializeM3b1Phase(input: {
       ],
       unknownUsageSettlement:
         "full-conservative-charge-per-dispatched-attempt" as const,
-      semanticRepairs: 0 as const,
+      semanticRepairsPerRecord: 1 as const,
     },
     executionPolicy: "exact-controller-authorization-required" as const,
   };
@@ -499,7 +518,7 @@ export async function materializeM3b1Phase(input: {
     campaignId: campaign.value.campaignId,
     ...experimentBody,
     experimentDigest: experimentDigest.value,
-    storageNamespace: `m3b2/${input.phase}/experiments/${experimentDigest.value}`,
+    storageNamespace: `m3b3/${input.phase}/experiments/${experimentDigest.value}`,
   };
   const phaseManifestDigest = await digestValue(manifestBody);
   return phaseManifestDigest.ok

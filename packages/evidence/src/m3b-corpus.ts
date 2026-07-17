@@ -42,7 +42,19 @@ function extraNegativeControl(index: number): Readonly<{
         maxSerializedBytes: 12_000,
         maxSerializedTokenUpperBound: 12_000,
       },
-      expectedAnswer: owner,
+      answerContract: {
+        role: "owner",
+        cardinality: 1,
+        ordering: "scalar",
+        anchorSubject: project,
+        derivation: "single-terminal-fact",
+        requiredFactPredicates: ["owner"],
+        answerSource: "terminal-object",
+        minimumSupportingFacts: 1,
+        sufficiencyRule:
+          "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
+      },
+      expectedAnswerValues: [owner],
       protectedAnswerTerms: [owner],
       expectedFactIds: [factId],
       expectedCitationIds: [citationId],
@@ -109,7 +121,7 @@ export const M3B_CORPUS_PROTOCOL = Object.freeze({
   heldoutNegativeControls: 60,
   developmentInitialCalls: 240,
   heldoutInitialCalls: 2_560,
-  semanticRepairCalls: 0,
+  semanticRepairCallsPerRecord: 1,
   liveInferenceAuthorized: false,
   typeGraphIntegrated: false,
 });
@@ -118,16 +130,13 @@ export function loadM3bPhaseCases(
   phase: "m3b-protocol-probe" | "m3b-calibration" | "m3b-heldout",
 ): ReadonlyArray<M3aTask> {
   if (phase === "m3b-protocol-probe") {
-    const structural = M3B_PREREGISTERED_CORPUS.find(
-      (task) => task.split === "development" && task.category === "multi-hop",
+    return M3B_PREREGISTERED_CORPUS.filter(
+      (task) => task.split === "development",
+    ).filter(
+      (task, index, tasks) =>
+        tasks.findIndex((candidate) => candidate.category === task.category) ===
+        index,
     );
-    const negative = M3B_PREREGISTERED_CORPUS.find(
-      (task) =>
-        task.split === "development" && task.category === "negative-control",
-    );
-    return structural === undefined || negative === undefined
-      ? []
-      : [structural, negative];
   }
   const split = phase === "m3b-calibration" ? "development" : "heldout";
   return M3B_PREREGISTERED_CORPUS.filter((task) => task.split === split);

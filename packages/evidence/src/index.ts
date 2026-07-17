@@ -53,6 +53,8 @@ export {
   m3a1SplitSchema,
   type M3aTask,
   m3aTaskSchema,
+  type M3bAnswerContract,
+  m3bAnswerContractSchema,
 } from "./corpus.js";
 export { M3A1_FACTORIAL_ARMS, M3A1_PROSPECTIVE_ANALYSIS } from "./design.js";
 export {
@@ -65,6 +67,7 @@ export {
 export {
   blindAuditM3bMaterialization,
   createDeterministicM3bOracle,
+  createM3bContractOutput,
   createM3bSharedPlan,
   createMemoryM3bStore,
   type DeterministicM3bOracle,
@@ -73,11 +76,11 @@ export {
   M3B_PROTOCOL_PROBE_GATE,
   M3B_SCORER_PROTOCOL,
   M3B_TRANSPORT_RETRY_POLICY,
-  type M3bAnswerShape,
-  m3bAnswerShapeSchema,
   type M3bAttemptProvenance,
   m3bAttemptProvenanceSchema,
   type M3bBlindAuditCounts,
+  type M3bDiagnosticIssue,
+  m3bDiagnosticIssueSchema,
   type M3bExecutionBinding,
   m3bExecutionBindingSchema,
   type M3bFrozenCase,

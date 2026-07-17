@@ -154,7 +154,8 @@ It returns no case IDs, prompts, answers, contexts, or digests.
 This document describes the substrate frozen before live binding. M3b.1 later
 reached a 16-record provider probe and closed as a protocol failure; it did not
 reach calibration or held-out inference. The identity-changing
-[M3b.2 correction](./m3b2-protocol-correction.md) is the current protocol.
+[M3b.2](./m3b2-protocol-correction.md) is frozen as a semantic-gate failure.
+[M3b.3](./m3b3-semantic-obligations.md) is the current offline-only protocol.
 
 Before any fresh provider call:
 

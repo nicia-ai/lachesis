@@ -51,11 +51,12 @@ export type M3b1PreflightReport = Readonly<{
     | "live-capable"
     | "report-only-offline-unbound"
     | "complete-protocol-fail"
+    | "complete-semantic-gate-fail"
     | "superseded-unexecuted";
   initialCalls: number;
   maximumTransportRetries: number;
   maximumCalls: number;
-  semanticRepairCalls: 0;
+  semanticRepairCalls: number;
   theoreticalCeilingUsdMicros: number;
   operationalPoolUsdMicros: number;
   missingCredentialNames: ReadonlyArray<"OPENAI_API_KEY" | "ANTHROPIC_API_KEY">;
@@ -153,7 +154,7 @@ export async function preflightM3b1(input: {
     initialCalls: input.materialized.phase.initialCalls,
     maximumTransportRetries: input.materialized.phase.maximumTransportRetries,
     maximumCalls: input.materialized.phase.maximumCalls,
-    semanticRepairCalls: 0,
+    semanticRepairCalls: input.materialized.phase.semanticRepairCalls,
     theoreticalCeilingUsdMicros:
       input.materialized.phase.theoreticalCeiling.maximumCostUsdMicros,
     operationalPoolUsdMicros:
@@ -316,6 +317,7 @@ export type M3b1ExecutionReport = Readonly<{
       provider: string;
       attempts: number;
       retries: number;
+      semanticRepairs: number;
       inputTokens: number;
       outputTokens: number;
       latencyMs: number;
@@ -328,7 +330,9 @@ export type M3b1ExecutionReport = Readonly<{
     nonOpaqueOutcomes: number;
     durableResponseUsageClassifications: number;
     correctTypedOutcomes: number;
-    graphFactsProvidersPassed: number;
+    firstAttemptContractCorrectOutcomes: number;
+    repairedOutcomes: number;
+    providerCategoryCoverage: number;
     unauthorizedOrIdentityMismatchedCalls: 0;
     passed: boolean;
   }>;
@@ -345,10 +349,15 @@ function executionReport(
         (record) => record.provider === binding.provider,
       );
       const attempts = records.flatMap((record) => record.attempts);
+      const semanticRepairs = records.reduce(
+        (total, record) => total + record.semanticRepairCalls,
+        0,
+      );
       return {
         provider: binding.provider,
         attempts: attempts.length,
-        retries: attempts.length - records.length,
+        retries: attempts.length - records.length - semanticRepairs,
+        semanticRepairs,
         inputTokens: attempts.reduce(
           (total, attempt) => total + (attempt.usage?.inputTokens ?? 0),
           0,
@@ -392,31 +401,36 @@ function executionReport(
   const correctTypedOutcomes = run.records.filter(
     (record) => record.endToEndSuccess,
   ).length;
-  const graphFactsProvidersPassed = materialized.phase.providerBindings.filter(
-    (binding) => {
-      const records = run.records.filter(
-        (record) =>
-          record.provider === binding.provider && record.arm === "graph-facts",
-      );
-      return (
-        records.length > 0 && records.every((record) => record.endToEndSuccess)
-      );
-    },
+  const firstAttemptContractCorrectOutcomes = run.records.filter(
+    (record) => record.firstAttemptSemanticValidationPassed,
   ).length;
+  const repairedOutcomes = run.records.filter(
+    (record) => record.semanticRepairSucceeded === true,
+  ).length;
+  const providerCategoryCoverage = new Set(
+    run.records.flatMap((record) => {
+      const category = materialized.substrate.cases.find(
+        (candidate) => candidate.task.id === record.caseId,
+      )?.task.category;
+      return category === undefined ? [] : [`${record.provider}:${category}`];
+    }),
+  ).size;
   const protocolProbeGate = {
     applicable,
     nonOpaqueOutcomes,
     durableResponseUsageClassifications,
     correctTypedOutcomes,
-    graphFactsProvidersPassed,
+    firstAttemptContractCorrectOutcomes,
+    repairedOutcomes,
+    providerCategoryCoverage,
     unauthorizedOrIdentityMismatchedCalls: 0 as const,
     passed:
       applicable &&
-      run.records.length === 16 &&
-      nonOpaqueOutcomes === 16 &&
-      durableResponseUsageClassifications === 16 &&
-      correctTypedOutcomes === 16 &&
-      graphFactsProvidersPassed === 2,
+      run.records.length === 48 &&
+      nonOpaqueOutcomes === 48 &&
+      durableResponseUsageClassifications === 48 &&
+      correctTypedOutcomes === 48 &&
+      providerCategoryCoverage === 12,
   };
   return {
     experimentDigest: materialized.phase.experimentDigest,

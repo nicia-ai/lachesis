@@ -61,7 +61,7 @@ offline shared-plan execution infrastructure.
 - Offline M3b matched execution infrastructure with one shared compiled plan,
   arm-blinded oracle requests, digest-bound Williams scheduling, symmetric
   transport retries, safe resume, and contrast-specific paired statistics.
-- M3b.2 live-binding infrastructure with typed answer/abstention values,
+- M3b.3 live-binding infrastructure with typed executable answer obligations,
   canonical path references, staged diagnostics, direct Responses/Messages
   transports, conservative attempt-level accounting, an append-only ledger, and
   durable content-addressed resume.
@@ -123,8 +123,9 @@ comparison boundary, and the
 four-arm substrate benchmark and M3b kill gates, and the
 [M3b offline protocol](docs/m3b-offline-execution.md) for the unexecuted matched
 study substrate, [M3b.1 live binding](docs/m3b1-live-binding.md) for the frozen
-failed probe, and the [M3b.2 correction](docs/m3b2-protocol-correction.md) for
-the current offline-frozen provider and scoring protocol.
+failed probe, the [M3b.2 correction](docs/m3b2-protocol-correction.md), and the
+[M3b.3 semantic-obligation correction](docs/m3b3-semantic-obligations.md) for
+the current offline-only provider and scoring protocol.
 
 ## Validation
 
@@ -146,8 +147,9 @@ SQL/Drizzle, persistent knowledge-graph storage, model-facing graph-native
 traversal, joins, `boundedExplore`, optimizer rewrites, durable/distributed
 scheduling, general adaptive loops, package publication, and deployment. M3b.1
 is closed as a protocol failure; its calibration and held-out identities were
-never executed. Fresh M3b.2 identities have no spend authority until external
-preregistration and a separate exact phase acknowledgement.
+never executed. M3b.2 is frozen as a semantic-gate failure. Fresh M3b.3
+identities have no spend authority until external preregistration and a separate
+exact phase acknowledgement.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

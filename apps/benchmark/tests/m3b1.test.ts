@@ -13,13 +13,13 @@ import { join } from "node:path";
 
 import { digestValue } from "@nicia-ai/lachesis";
 import {
-  M3B_PREREGISTERED_CORPUS,
+  createM3bContractOutput,
   type M3bAttemptProvenance,
   type M3bOracle,
   type M3bOracleAttempt,
   type M3bOracleRequest,
 } from "@nicia-ai/lachesis-evidence";
-import { M3B2_ORACLE_IDENTITIES } from "@nicia-ai/lachesis-generator-ai-sdk";
+import { M3B3_ORACLE_IDENTITIES } from "@nicia-ai/lachesis-generator-ai-sdk";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -63,25 +63,9 @@ afterEach(async () => {
 });
 
 function semanticOutput(request: M3bOracleRequest): M3bOracleAttempt {
-  const task = M3B_PREREGISTERED_CORPUS.find(
-    (candidate) => candidate.instruction === request.instruction,
-  );
   return {
     kind: "success",
-    output: {
-      outcome: request.evidence.facts.some(
-        (fact) => fact.object === task?.expectedAnswer,
-      )
-        ? "answered"
-        : "insufficient-evidence",
-      answerValues: request.evidence.facts.some(
-        (fact) => fact.object === task?.expectedAnswer,
-      )
-        ? [task?.expectedAnswer ?? "unknown"]
-        : [],
-      citationIds: request.evidence.citations.map((citation) => citation.id),
-      pathIds: request.evidence.paths.map((path) => path.id),
-    },
+    output: createM3bContractOutput(request),
     usage: {
       inputTokens: 100,
       outputTokens: 20,
@@ -117,7 +101,7 @@ function retryingOracle(
   provider: "openai" | "anthropic",
   requests: Array<M3bOracleRequest>,
 ): M3bOracle {
-  const identity = M3B2_ORACLE_IDENTITIES.find(
+  const identity = M3B3_ORACLE_IDENTITIES.find(
     (candidate) => candidate.provider === provider,
   );
   if (identity === undefined) throw new Error(`Missing ${provider} identity.`);
@@ -145,7 +129,7 @@ function terminalFailureOracle(
   provider: "openai" | "anthropic",
   requests: Array<M3bOracleRequest>,
 ): M3bOracle {
-  const identity = M3B2_ORACLE_IDENTITIES.find(
+  const identity = M3B3_ORACLE_IDENTITIES.find(
     (candidate) => candidate.provider === provider,
   );
   if (identity === undefined) throw new Error(`Missing ${provider} identity.`);
@@ -217,6 +201,9 @@ describe("M3b.1 live-binding substrate", () => {
       ok: true,
       value: undefined,
     });
+    expect(probe.campaign.campaignDigest).toBe(
+      "6e5cc9dcb80b9c1c82ef005987f30bf560f33d2c1400cb5de9ca2460c755369a",
+    );
     expect(
       [probe, calibration, heldout].map((item) => ({
         phase: item.phase.phase,
@@ -229,45 +216,45 @@ describe("M3b.1 live-binding substrate", () => {
     ).toEqual([
       {
         phase: "m3b-protocol-probe",
-        initialCalls: 16,
-        retries: 16,
-        maximumCalls: 32,
-        theoretical: 1_520_000,
+        initialCalls: 48,
+        retries: 96,
+        maximumCalls: 192,
+        theoretical: 9_120_000,
         operational: 10_000_000,
       },
       {
         phase: "m3b-calibration",
         initialCalls: 240,
-        retries: 240,
-        maximumCalls: 480,
-        theoretical: 22_800_000,
+        retries: 480,
+        maximumCalls: 960,
+        theoretical: 45_600_000,
         operational: 10_000_000,
       },
       {
         phase: "m3b-heldout",
         initialCalls: 2_560,
-        retries: 2_560,
-        maximumCalls: 5_120,
-        theoretical: 243_200_000,
+        retries: 5_120,
+        maximumCalls: 10_240,
+        theoretical: 486_400_000,
         operational: 60_000_000,
       },
     ]);
     expect(probe.phase.theoreticalCeiling.providers).toEqual([
       {
         billingProvider: "anthropic",
-        maximumCalls: 16,
-        maximumInputTokens: 128_000,
-        maximumOutputTokens: 32_000,
-        maximumTotalTokens: 160_000,
-        maximumCostUsdMicros: 640_000,
+        maximumCalls: 96,
+        maximumInputTokens: 768_000,
+        maximumOutputTokens: 192_000,
+        maximumTotalTokens: 960_000,
+        maximumCostUsdMicros: 3_840_000,
       },
       {
         billingProvider: "openai",
-        maximumCalls: 16,
-        maximumInputTokens: 128_000,
-        maximumOutputTokens: 32_000,
-        maximumTotalTokens: 160_000,
-        maximumCostUsdMicros: 880_000,
+        maximumCalls: 96,
+        maximumInputTokens: 768_000,
+        maximumOutputTokens: 192_000,
+        maximumTotalTokens: 960_000,
+        maximumCostUsdMicros: 5_280_000,
       },
     ]);
     expect(
@@ -285,7 +272,19 @@ describe("M3b.1 live-binding substrate", () => {
       ),
     ).toBe("complete-protocol-fail");
     expect(
-      M3B_OFFLINE_DESIGN_IDENTITIES.slice(4).every(
+      M3B_OFFLINE_DESIGN_IDENTITIES.slice(4, 6).every(
+        (identity) =>
+          m3bExecutionDisposition(identity.experimentDigest) ===
+          "superseded-unexecuted",
+      ),
+    ).toBe(true);
+    expect(
+      m3bExecutionDisposition(
+        M3B_OFFLINE_DESIGN_IDENTITIES[6]?.experimentDigest ?? "",
+      ),
+    ).toBe("complete-semantic-gate-fail");
+    expect(
+      M3B_OFFLINE_DESIGN_IDENTITIES.slice(7).every(
         (identity) =>
           m3bExecutionDisposition(identity.experimentDigest) ===
           "superseded-unexecuted",
@@ -406,9 +405,9 @@ describe("M3b.1 live-binding substrate", () => {
     );
 
     expect(first.run).toMatchObject({
-      dispatched: 16,
+      dispatched: 48,
       resumed: 0,
-      transportRetries: 16,
+      transportRetries: 48,
     });
     expect(
       first.run.records.every(
@@ -422,22 +421,22 @@ describe("M3b.1 live-binding substrate", () => {
       ),
     ).toBe(true);
     expect(first.budget).toMatchObject({
-      consumedUsdMicros: 760_160,
-      observedProviderBillingUsdMicros: 160,
-      authorizedConservativeUsdMicros: 760_000,
+      consumedUsdMicros: 2_280_480,
+      observedProviderBillingUsdMicros: 480,
+      authorizedConservativeUsdMicros: 2_280_000,
     });
     expect(first.budget.providers).toEqual([
       {
         billingProvider: "anthropic",
         maximumUsdMicros: 4_000_000,
-        consumedUsdMicros: 320_080,
-        remainingUsdMicros: 3_679_920,
+        consumedUsdMicros: 960_240,
+        remainingUsdMicros: 3_039_760,
       },
       {
         billingProvider: "openai",
         maximumUsdMicros: 6_000_000,
-        consumedUsdMicros: 440_080,
-        remainingUsdMicros: 5_559_920,
+        consumedUsdMicros: 1_320_240,
+        remainingUsdMicros: 4_679_760,
       },
     ]);
     const callsBeforeResume = openaiRequests.length + anthropicRequests.length;
@@ -458,7 +457,7 @@ describe("M3b.1 live-binding substrate", () => {
         ],
       }),
     );
-    expect(resumed.run).toMatchObject({ dispatched: 0, resumed: 16 });
+    expect(resumed.run).toMatchObject({ dispatched: 0, resumed: 48 });
     expect(openaiRequests.length + anthropicRequests.length).toBe(
       callsBeforeResume,
     );
@@ -585,10 +584,10 @@ describe("M3b.1 live-binding substrate", () => {
     );
 
     expect(result.run).toMatchObject({
-      dispatched: 16,
-      transportRetries: 16,
+      dispatched: 48,
+      transportRetries: 48,
     });
-    expect(requests).toHaveLength(31);
+    expect(requests).toHaveLength(95);
     expect(
       result.run.records.some(
         (record) =>
@@ -626,11 +625,11 @@ describe("M3b.1 live-binding substrate", () => {
       }),
     );
 
-    expect(requests).toHaveLength(16);
+    expect(requests).toHaveLength(48);
     expect(result.run.transportRetries).toBe(0);
     expect(result.budget).toMatchObject({
-      consumedUsdMicros: 56,
-      observedProviderBillingUsdMicros: 56,
+      consumedUsdMicros: 168,
+      observedProviderBillingUsdMicros: 168,
       authorizedConservativeUsdMicros: 0,
     });
     const firstRecord = result.run.records[0];

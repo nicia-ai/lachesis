@@ -7,6 +7,7 @@ import {
   semanticObligationSchema,
 } from "@nicia-ai/lachesis";
 import {
+  M3B_PREREGISTERED_CORPUS,
   M3B_REFERENCE_GRAPH,
   m3bOracleOutputSchema,
   m3bOracleRequestSchema,
@@ -48,8 +49,8 @@ import {
   M1B_PILOT_CAPS,
   M1B_PRICING_ENTRIES,
   M1B_REPETITIONS,
-  M3B2_ORACLE_IDENTITIES,
-  M3B2_OUTPUT_JSON_SCHEMA,
+  M3B3_ORACLE_IDENTITIES,
+  M3B3_OUTPUT_JSON_SCHEMA,
 } from "../src/index.js";
 
 function unwrap<T, E>(result: Result<T, E>): T {
@@ -675,14 +676,24 @@ describe("AI SDK provider adapters", () => {
   it("serializes arm-blinded M3b requests through both real provider routes without network", async () => {
     const openaiRequests: Array<CapturedFetchRequest> = [];
     const anthropicRequests: Array<CapturedFetchRequest> = [];
+    const task = required(
+      M3B_PREREGISTERED_CORPUS.find(
+        (candidate) =>
+          candidate.split === "development" &&
+          candidate.category === "negative-control",
+      ),
+      "Missing M3b transport task.",
+    );
     const fact = required(
-      M3B_REFERENCE_GRAPH.facts[0],
+      M3B_REFERENCE_GRAPH.facts.find(
+        (candidate) => candidate.id === task.expectedFactIds[0],
+      ),
       "Missing M3b transport fact.",
     );
     const citationIds = new Set(fact.citationIds);
     const request = m3bOracleRequestSchema.parse({
       instruction: "Answer this public evidence question.",
-      answerShape: { kind: "scalar" },
+      answerContract: task.answerContract,
       evidence: {
         facts: [fact],
         citations: M3B_REFERENCE_GRAPH.citations.filter((citation) =>
@@ -691,6 +702,7 @@ describe("AI SDK provider adapters", () => {
         edges: [],
         paths: [],
       },
+      semanticRepair: null,
     });
     const openai = createOpenAiM3bOracle({
       apiKey: "offline-dummy",
@@ -749,10 +761,10 @@ describe("AI SDK provider adapters", () => {
     expect(openaiRequests).toHaveLength(1);
     expect(anthropicRequests).toHaveLength(1);
     expect(openai.identity).toEqual(
-      M3B2_ORACLE_IDENTITIES.find((identity) => identity.provider === "openai"),
+      M3B3_ORACLE_IDENTITIES.find((identity) => identity.provider === "openai"),
     );
     expect(anthropic.identity).toEqual(
-      M3B2_ORACLE_IDENTITIES.find(
+      M3B3_ORACLE_IDENTITIES.find(
         (identity) => identity.provider === "anthropic",
       ),
     );
@@ -783,7 +795,7 @@ describe("AI SDK provider adapters", () => {
     expect(openaiBody.tools).toBeUndefined();
     expectPortableSchema(openaiBody.text.format.schema);
     expect(unwrap(canonicalizeJson(openaiBody.text.format.schema))).toBe(
-      unwrap(canonicalizeJson(M3B2_OUTPUT_JSON_SCHEMA)),
+      unwrap(canonicalizeJson(M3B3_OUTPUT_JSON_SCHEMA)),
     );
 
     const anthropicRequest = required(
@@ -821,15 +833,17 @@ describe("AI SDK provider adapters", () => {
     });
     expectPortableSchema(anthropicBody.tools[0]?.input_schema);
     expect(unwrap(canonicalizeJson(anthropicBody.tools[0]?.input_schema))).toBe(
-      unwrap(canonicalizeJson(M3B2_OUTPUT_JSON_SCHEMA)),
+      unwrap(canonicalizeJson(M3B3_OUTPUT_JSON_SCHEMA)),
     );
 
     for (const providerRequest of [openaiRequest, anthropicRequest]) {
       const serialized = JSON.stringify(providerRequest.body);
       const visibleText = stringLeaves(providerRequest.body).join("\n");
       expect(serialized).toContain(request.instruction);
-      expect(visibleText).toContain('"kind":"scalar"');
+      expect(visibleText).toContain('"role":"owner"');
+      expect(visibleText).toContain("complete visible derivation");
       expect(serialized).toContain("insufficient-evidence");
+      expect(serialized).toContain("supportingFactIds");
       expect(serialized).toContain("pathIds");
       expect(serialized).not.toMatch(
         /lexical-facts|graph-facts|graph-adjacency|graph-typed|in-memory-reference-graph|matched-text/u,
@@ -837,10 +851,50 @@ describe("AI SDK provider adapters", () => {
       expect(serialized).not.toContain(context.recordKey);
       expect(serialized).not.toContain("attemptIndex");
     }
+
+    const repairRequest = m3bOracleRequestSchema.parse({
+      ...request,
+      semanticRepair: {
+        previousOutput: {
+          outcome: "answered",
+          answerValues: ["wrong-role-value"],
+          supportingFactIds: [fact.id],
+          citationIds: fact.citationIds,
+          pathIds: [],
+        },
+        obligationIssues: [
+          {
+            code: "answer-values-not-derived-from-supporting-facts",
+            path: ["answerValues"],
+          },
+        ],
+      },
+    });
+    await openai.generate(repairRequest, { ...context, attemptIndex: 1 });
+    await anthropic.generate(repairRequest, { ...context, attemptIndex: 1 });
+    expect(openaiRequests).toHaveLength(2);
+    expect(anthropicRequests).toHaveLength(2);
+    for (const providerRequest of [openaiRequests[1], anthropicRequests[1]]) {
+      const requestBody = required(
+        providerRequest,
+        "Missing M3b semantic-repair request.",
+      ).body;
+      const serialized = JSON.stringify(requestBody);
+      const visibleText = stringLeaves(requestBody).join("\n");
+      expect(visibleText).toContain('"role":"owner"');
+      expect(visibleText).toContain("semanticRepair");
+      expect(visibleText).toContain("previousOutput");
+      expect(visibleText).toContain(
+        "answer-values-not-derived-from-supporting-facts",
+      );
+      expect(serialized).not.toMatch(
+        /lexical-facts|graph-facts|graph-adjacency|graph-typed|implementation/u,
+      );
+    }
   });
 
   it("keeps the provider schema equivalent to the wire validator while deferring domain rules", () => {
-    const providerValidator = z.fromJSONSchema(M3B2_OUTPUT_JSON_SCHEMA);
+    const providerValidator = z.fromJSONSchema(M3B3_OUTPUT_JSON_SCHEMA);
     const identifier = fc
       .tuple(
         fc.constantFrom(...Array.from("abcdefghijklmnopqrstuvwxyz0123456789")),
@@ -857,6 +911,7 @@ describe("AI SDK provider adapters", () => {
       answerValues: fc.array(fc.string({ minLength: 1, maxLength: 32 }), {
         maxLength: 8,
       }),
+      supportingFactIds: fc.array(identifier, { maxLength: 8 }),
       citationIds: fc.array(identifier, { maxLength: 8 }),
       pathIds: fc.array(identifier, { maxLength: 8 }),
     });
@@ -878,12 +933,25 @@ describe("AI SDK provider adapters", () => {
 
     const request = m3bOracleRequestSchema.parse({
       instruction: "Use visible evidence.",
-      answerShape: { kind: "scalar" },
+      answerContract: {
+        role: "owner",
+        cardinality: 1,
+        ordering: "scalar",
+        anchorSubject: "project",
+        derivation: "single-terminal-fact",
+        requiredFactPredicates: ["owner"],
+        answerSource: "terminal-object",
+        minimumSupportingFacts: 1,
+        sufficiencyRule:
+          "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
+      },
       evidence: { facts: [], citations: [], edges: [], paths: [] },
+      semanticRepair: null,
     });
     const wireValidButDomainInvalid = m3bOracleOutputSchema.parse({
       outcome: "answered",
       answerValues: [],
+      supportingFactIds: ["missing", "missing"],
       citationIds: ["missing", "missing"],
       pathIds: ["path-999"],
     });
@@ -891,12 +959,18 @@ describe("AI SDK provider adapters", () => {
       validateM3bSemanticOutput(request, wireValidButDomainInvalid).map(
         (issue) => issue.code,
       ),
-    ).toEqual([
-      "duplicate-reference",
-      "unknown-citation-reference",
-      "unknown-path-reference",
-      "answer-shape-mismatch",
-    ]);
+    ).toEqual(
+      expect.arrayContaining([
+        "duplicate-reference",
+        "unknown-citation-reference",
+        "unknown-path-reference",
+        "unknown-supporting-fact-reference",
+        "answer-cardinality-mismatch",
+        "answered-without-complete-visible-derivation",
+        "supporting-facts-do-not-form-required-derivation",
+        "answer-values-not-derived-from-supporting-facts",
+      ]),
+    );
   });
 
   it("serializes the restricted CodeMode schema through both real provider routes without network", async () => {

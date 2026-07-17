@@ -26,7 +26,11 @@ import {
   evidenceSourceIdentitySchema,
   selectEvidence,
 } from "./contract.js";
-import type { M3aTask } from "./corpus.js";
+import {
+  type M3aTask,
+  type M3bAnswerContract,
+  m3bAnswerContractSchema,
+} from "./corpus.js";
 import {
   createGraphSelectedAdjacencyEvidenceSource,
   createGraphSelectedFactsEvidenceSource,
@@ -60,12 +64,15 @@ export type M3bPhase = "m3b-protocol-probe" | "m3b-calibration" | "m3b-heldout";
 const m3bIdentifierSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]*$/);
 const digestSchema = z.string().regex(/^[a-f0-9]{64}$/u);
 
-export const m3bAnswerShapeSchema = z.discriminatedUnion("kind", [
-  z.strictObject({ kind: z.literal("scalar") }).readonly(),
-  z.strictObject({ kind: z.literal("ordered-values") }).readonly(),
-  z.strictObject({ kind: z.literal("unordered-values") }).readonly(),
-]);
-export type M3bAnswerShape = z.infer<typeof m3bAnswerShapeSchema>;
+export const m3bDiagnosticIssueSchema = z
+  .strictObject({
+    code: z.string().min(1).max(128),
+    path: z
+      .array(z.union([z.string(), z.number().int().nonnegative()]))
+      .readonly(),
+  })
+  .readonly();
+export type M3bDiagnosticIssue = z.infer<typeof m3bDiagnosticIssueSchema>;
 
 export const m3bVisiblePathSchema = z
   .strictObject({
@@ -93,16 +100,29 @@ export const m3bOracleOutputSchema = z
   .strictObject({
     outcome: z.enum(["answered", "insufficient-evidence"]),
     answerValues: z.array(z.string().min(1)).max(128).readonly(),
+    supportingFactIds: z.array(z.string().min(1)).max(64).readonly(),
     citationIds: z.array(z.string().min(1)).max(128).readonly(),
     pathIds: z.array(z.string().min(1)).max(256).readonly(),
+  })
+  .readonly();
+
+const m3bSemanticRepairSchema = z
+  .strictObject({
+    previousOutput: m3bOracleOutputSchema,
+    obligationIssues: z
+      .array(m3bDiagnosticIssueSchema)
+      .min(1)
+      .max(64)
+      .readonly(),
   })
   .readonly();
 
 export const m3bOracleRequestSchema = z
   .strictObject({
     instruction: z.string().min(1).max(4_000),
-    answerShape: m3bAnswerShapeSchema,
+    answerContract: m3bAnswerContractSchema,
     evidence: m3bOracleEvidenceSchema,
+    semanticRepair: m3bSemanticRepairSchema.nullable(),
   })
   .readonly();
 
@@ -111,36 +131,42 @@ export type M3bOracleRequest = z.infer<typeof m3bOracleRequestSchema>;
 
 export const M3B_ORACLE_PROMPT = Object.freeze({
   id: "lachesis-m3b-arm-blinded-evidence-oracle",
-  version: "2",
+  version: "3",
   text: [
     "Use only the supplied normalized evidence context to address the public instruction.",
-    "Return one strict JSON object with outcome, answerValues, citationIds, and pathIds.",
-    "For answered, encode only typed answer values matching answerShape; do not put prose in answerValues.",
-    "For insufficient-evidence, return an empty answerValues array.",
+    "Treat answerContract as an executable obligation, not a formatting hint.",
+    "Return one strict JSON object with outcome, answerValues, supportingFactIds, citationIds, and pathIds.",
+    "Use answered only when the visible supporting facts form a complete derivation satisfying answerContract.",
+    "For answered, copy the contract-derived typed values into answerValues and the exact visible derivation facts into supportingFactIds.",
+    "Use insufficient-evidence exactly when no complete visible derivation satisfies answerContract; then answerValues and supportingFactIds must both be empty.",
+    "Citations must cover every supporting fact. Intermediate entities cannot fill a terminal answer role.",
+    "When semanticRepair is non-null, correct only the listed deterministic obligation issues using the same public contract and visible evidence.",
     "Every citationId and pathId must be copied from the supplied context. Never reconstruct a path.",
     "The evidence source and experimental arm are deliberately undisclosed.",
   ].join("\n"),
 });
 
 export const M3B_SCORER_PROTOCOL = Object.freeze({
-  id: "m3b-common-typed-answer-citation-scorer",
-  version: "2",
+  id: "m3b-common-semantic-obligation-answer-citation-scorer",
+  version: "3",
   commonPrimaryEndpoint:
-    "typed-outcome-correct-and-required-visible-fact-citations-present",
+    "contract-derived-typed-outcome-and-supporting-fact-citations-present",
   insufficientEvidenceRule:
-    "required-answer-citations-not-all-visible-in-the-frozen-context",
+    "no-complete-visible-derivation-satisfies-the-public-answer-contract",
   pathEndpoint: "separate-canonical-path-reference-utilization",
   proseScoring: false,
+  semanticRepair: "one-bounded-public-obligation-repair",
 });
 
 export const M3B_PROTOCOL_PROBE_GATE = Object.freeze({
-  id: "m3b-typed-output-protocol-probe-gate",
-  version: "2",
-  requiredRecords: 16,
-  requiredNonOpaqueOutcomes: 16,
-  requiredDurableResponseUsageClassifications: 16,
-  requireCorrectTypedOutcomeRelativeToVisibleEvidence: true,
-  requireGraphFactsPassFromBothProviders: true,
+  id: "m3b-semantic-obligation-protocol-probe-gate",
+  version: "3",
+  requiredRecords: 48,
+  requiredNonOpaqueOutcomes: 48,
+  requiredDurableResponseUsageClassifications: 48,
+  requiredFinalContractCorrectOutcomes: 48,
+  requiredCategories: 6,
+  requiredProviders: 2,
   maximumUnauthorizedOrIdentityMismatchedCalls: 0,
 });
 
@@ -148,7 +174,7 @@ export const M3B_ORACLE_MODELS = Object.freeze([
   Object.freeze({
     provider: "openai",
     model: "gpt-5.6-terra",
-    adapterVersion: "m3b-offline-unbound/2",
+    adapterVersion: "m3b-offline-unbound/3",
     settings: Object.freeze({
       temperature: 0,
       reasoning: "low",
@@ -161,7 +187,7 @@ export const M3B_ORACLE_MODELS = Object.freeze([
   Object.freeze({
     provider: "anthropic",
     model: "claude-sonnet-5",
-    adapterVersion: "m3b-offline-unbound/2",
+    adapterVersion: "m3b-offline-unbound/3",
     settings: Object.freeze({
       temperature: 0,
       reasoning: "adaptive-low",
@@ -175,7 +201,7 @@ export const M3B_ORACLE_MODELS = Object.freeze([
 
 export const M3B_TRANSPORT_RETRY_POLICY = Object.freeze({
   id: "m3b-symmetric-controller-transport-retry",
-  version: "2",
+  version: "3",
   maximumRetriesAfterInitialAttempt: 1,
   retryableCodes: Object.freeze([
     "provider-overload",
@@ -184,30 +210,30 @@ export const M3B_TRANSPORT_RETRY_POLICY = Object.freeze({
   ]),
   retryPlacement: "within-the-scheduled-arm-slot-before-the-next-arm",
   sdkRetries: 0,
-  semanticRepairCalls: 0,
+  semanticRepairCallsPerRecord: 1,
   terminalFailureEstimand: "failure-in-primary-end-to-end",
   conditionalAnalysis: "secondary-only-when-both-paired-outputs-are-valid",
 });
 
 const requestRegistration = defineSchema({
   id: "m3b/oracle-request",
-  version: "2",
+  version: "3",
   description:
-    "Arm-blinded public instruction and normalized evidence context.",
+    "Arm-blinded instruction, executable answer contract, and normalized evidence context.",
   validator: m3bOracleRequestSchema,
 });
 
 const outputRegistration = defineSchema({
   id: "m3b/oracle-output",
-  version: "2",
+  version: "3",
   description:
-    "Typed answer outcome with citation and canonical-path references.",
+    "Typed answer outcome with supporting facts, citations, and canonical paths.",
   validator: m3bOracleOutputSchema,
 });
 
 const oracleEffect = defineEffect({
   id: "m3b/oracle",
-  version: "2",
+  version: "3",
   description: "Invokes the capability-scoped, arm-blinded evidence oracle.",
   input: requestRegistration,
   output: outputRegistration,
@@ -219,27 +245,27 @@ const oracleEffect = defineEffect({
 });
 
 const catalogResult = createCatalog({
-  identity: { id: "m3b/oracle-catalog", version: "2" },
+  identity: { id: "m3b/oracle-catalog", version: "3" },
   schemas: [requestRegistration.runtime, outputRegistration.runtime],
   operations: [oracleEffect],
 });
 
 const M3B_SHARED_PLAN_JSON = JSON.stringify({
   formatVersion: "1",
-  catalog: { id: "m3b/oracle-catalog", version: "2" },
+  catalog: { id: "m3b/oracle-catalog", version: "3" },
   root: "answer",
   nodes: [
     {
       id: "request",
       op: "input",
       inputKey: "request",
-      schema: { id: "m3b/oracle-request", version: "2" },
+      schema: { id: "m3b/oracle-request", version: "3" },
     },
     {
       id: "answer",
       op: "effect",
       source: "request",
-      effect: { id: "m3b/oracle", version: "2" },
+      effect: { id: "m3b/oracle", version: "3" },
     },
   ],
   budget: {
@@ -330,7 +356,7 @@ type FrozenNeighborhood = Readonly<{
 
 export type M3bFrozenCase = Readonly<{
   task: M3aTask;
-  answerShape: z.infer<typeof m3bAnswerShapeSchema>;
+  answerContract: M3bAnswerContract;
   caseDigest: string;
   oraclePromptDigest: string;
   neighborhoods: ReadonlyArray<FrozenNeighborhood>;
@@ -354,7 +380,7 @@ export type M3bManifest = Readonly<{
   initialCalls: number;
   maximumTransportRetries: number;
   maximumCalls: number;
-  semanticRepairCalls: 0;
+  semanticRepairCalls: number;
   pool: Readonly<{
     id: "m3b-development" | "m3b-heldout";
     authorizedUsdMicros: number;
@@ -409,12 +435,12 @@ async function freezeCase(
   sources: ReadonlyMap<M3bArm, EvidenceSource>,
   sharedPlan: M3bSharedPlan,
 ): Promise<Result<M3bFrozenCase, Diagnostic>> {
-  const answerShape = m3bAnswerShapeSchema.parse({ kind: "scalar" });
-  const caseDigest = await digestValue({ task, answerShape });
+  const answerContract = task.answerContract;
+  const caseDigest = await digestValue({ task, answerContract });
   const oraclePromptDigest = await digestValue({
     prompt: M3B_ORACLE_PROMPT,
     instruction: task.instruction,
-    answerShape,
+    answerContract,
     outputSchemaDigest: sharedPlan.outputSchemaDigest,
     planHash: sharedPlan.planHash,
   });
@@ -455,7 +481,7 @@ async function freezeCase(
     ok: true,
     value: {
       task,
-      answerShape,
+      answerContract,
       caseDigest: caseDigest.value,
       oraclePromptDigest: oraclePromptDigest.value,
       neighborhoods,
@@ -508,13 +534,15 @@ export async function materializeM3bPhase(
     providers,
     repetitions,
     initialCalls,
+    semanticRepairCalls: initialCalls,
     maximumTransportRetries:
       initialCalls *
+      (1 + M3B_TRANSPORT_RETRY_POLICY.semanticRepairCallsPerRecord) *
       M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt,
     maximumCalls:
       initialCalls *
+      (1 + M3B_TRANSPORT_RETRY_POLICY.semanticRepairCallsPerRecord) *
       (1 + M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt),
-    semanticRepairCalls: 0 as const,
     pool: {
       id:
         input.phase === "m3b-heldout"
@@ -619,7 +647,7 @@ export async function validateM3bMaterialization(
     );
     const caseDigest = await digestValue({
       task: frozen.task,
-      answerShape: frozen.answerShape,
+      answerContract: frozen.answerContract,
     });
     if (
       reference === undefined ||
@@ -684,15 +712,6 @@ export const m3bOracleUsageSchema = z
   })
   .readonly();
 export type M3bOracleUsage = z.infer<typeof m3bOracleUsageSchema>;
-
-export const m3bDiagnosticIssueSchema = z
-  .strictObject({
-    code: z.string().min(1).max(128),
-    path: z
-      .array(z.union([z.string(), z.number().int().nonnegative()]))
-      .readonly(),
-  })
-  .readonly();
 
 export const m3bAttemptProvenanceSchema = z
   .strictObject({
@@ -811,18 +830,9 @@ export function createDeterministicM3bOracle(
     requests: () => [...requests],
     generate: (request) => {
       requests.push(request);
-      const finalFact = request.evidence.facts.at(-1);
-      const answered = finalFact !== undefined;
       return Promise.resolve({
         kind: "success",
-        output: {
-          outcome: answered ? "answered" : "insufficient-evidence",
-          answerValues: finalFact === undefined ? [] : [finalFact.object],
-          citationIds: request.evidence.citations.map(
-            (citation) => citation.id,
-          ),
-          pathIds: request.evidence.paths.map((path) => path.id),
-        },
+        output: createM3bContractOutput(request),
         usage: {
           inputTokens: 100,
           outputTokens: 20,
@@ -871,7 +881,16 @@ export const m3bRecordSchema = z
     oraclePromptDigest: digestSchema,
     outputSchemaDigest: digestSchema,
     executionBinding: m3bExecutionBindingSchema.nullable(),
-    attempts: z.array(m3bOracleAttemptSchema).min(1).max(2).readonly(),
+    attempts: z.array(m3bOracleAttemptSchema).min(1).max(4).readonly(),
+    firstAttemptOutput: m3bOracleOutputSchema.nullable(),
+    firstAttemptSemanticValidationPassed: z.boolean(),
+    firstAttemptSemanticIssues: z
+      .array(m3bDiagnosticIssueSchema)
+      .max(64)
+      .readonly(),
+    firstAttemptEndToEndSuccess: z.boolean(),
+    firstAttemptConditionalSemanticSuccess: z.boolean().nullable(),
+    firstAttemptPathUtilizationSuccess: z.boolean(),
     terminalFailure: m3bOracleFailureCodeSchema.nullable(),
     validOutput: z.boolean(),
     output: m3bOracleOutputSchema.nullable(),
@@ -887,7 +906,8 @@ export const m3bRecordSchema = z
     pathUtilizationSuccess: z.boolean(),
     endToEndSuccess: z.boolean(),
     conditionalSemanticSuccess: z.boolean().nullable(),
-    semanticRepairCalls: z.literal(0),
+    semanticRepairCalls: z.union([z.literal(0), z.literal(1)]),
+    semanticRepairSucceeded: z.boolean().nullable(),
     digest: digestSchema,
   })
   .readonly();
@@ -943,29 +963,215 @@ function visibleEvidence(
 function duplicateIssue(
   values: ReadonlyArray<string>,
   path: string,
-): ReadonlyArray<z.infer<typeof m3bDiagnosticIssueSchema>> {
+): ReadonlyArray<M3bDiagnosticIssue> {
   return new Set(values).size === values.length
     ? []
     : [{ code: "duplicate-reference", path: [path] }];
+}
+
+type M3bVisibleDerivation = Readonly<{
+  answerValues: ReadonlyArray<string>;
+  supportingFactIds: ReadonlyArray<string>;
+}>;
+
+function pairwise<T>(values: ReadonlyArray<T>): ReadonlyArray<readonly [T, T]> {
+  return values.flatMap((left, leftIndex) =>
+    values.slice(leftIndex + 1).map((right) => [left, right] as const),
+  );
+}
+
+function temporalKey(
+  fact: z.infer<typeof evidenceFactSchema>,
+  field: "validFrom" | "recordedFrom",
+): string {
+  return fact[field] ?? fact.recordedFrom;
+}
+
+function visibleDerivations(
+  request: M3bOracleRequest,
+): ReadonlyArray<M3bVisibleDerivation> {
+  const facts = request.evidence.facts;
+  const contract = request.answerContract;
+  switch (contract.role) {
+    case "headquarters-city": {
+      const employers = facts.filter(
+        (fact) =>
+          fact.subject === contract.anchorSubject &&
+          fact.predicate === contract.requiredFactPredicates[0],
+      );
+      return employers.flatMap((employer) =>
+        facts
+          .filter(
+            (fact) =>
+              fact.subject === employer.object &&
+              fact.predicate === contract.requiredFactPredicates[1],
+          )
+          .map((headquarters) => ({
+            answerValues: [headquarters.object],
+            supportingFactIds: [employer.id, headquarters.id],
+          })),
+      );
+    }
+    case "release-status-change": {
+      const statusFacts = facts
+        .filter(
+          (fact) =>
+            fact.subject === contract.anchorSubject &&
+            fact.predicate === contract.requiredFactPredicates[0],
+        )
+        .toSorted((left, right) =>
+          temporalKey(left, "validFrom").localeCompare(
+            temporalKey(right, "validFrom"),
+          ),
+        );
+      return pairwise(statusFacts).map(([oldStatus, newStatus]) => ({
+        answerValues: [oldStatus.object, newStatus.object],
+        supportingFactIds: [oldStatus.id, newStatus.id],
+      }));
+    }
+    case "conflicting-readings": {
+      const readings = facts.filter(
+        (fact) =>
+          fact.subject === contract.anchorSubject &&
+          fact.predicate === contract.requiredFactPredicates[0],
+      );
+      return pairwise(readings)
+        .filter(([left, right]) => left.object !== right.object)
+        .map(([left, right]) => ({
+          answerValues: [left.object, right.object].toSorted(),
+          supportingFactIds: [left.id, right.id],
+        }));
+    }
+    case "independent-verifier": {
+      const arrivals = facts.filter(
+        (fact) =>
+          fact.subject === contract.anchorSubject &&
+          fact.predicate === contract.requiredFactPredicates[0],
+      );
+      const receipts = facts.filter(
+        (fact) => fact.predicate === contract.requiredFactPredicates[1],
+      );
+      return arrivals.flatMap((arrival) =>
+        receipts.map((receipt) => ({
+          answerValues: [receipt.subject],
+          supportingFactIds: [arrival.id, receipt.id],
+        })),
+      );
+    }
+    case "retracted-rule-change": {
+      const rules = facts
+        .filter(
+          (fact) =>
+            fact.subject === contract.anchorSubject &&
+            fact.predicate === contract.requiredFactPredicates[0],
+        )
+        .toSorted((left, right) =>
+          temporalKey(left, "recordedFrom").localeCompare(
+            temporalKey(right, "recordedFrom"),
+          ),
+        );
+      const notices = facts.filter(
+        (fact) =>
+          fact.subject === contract.anchorSubject &&
+          fact.predicate === contract.requiredFactPredicates[1],
+      );
+      return pairwise(rules).flatMap(([oldRule, newRule]) =>
+        notices.map((notice) => ({
+          answerValues: [oldRule.object, newRule.object],
+          supportingFactIds: [oldRule.id, notice.id, newRule.id],
+        })),
+      );
+    }
+    case "owner":
+      return facts
+        .filter(
+          (fact) =>
+            fact.subject === contract.anchorSubject &&
+            fact.predicate === contract.requiredFactPredicates[0],
+        )
+        .map((fact) => ({
+          answerValues: [fact.object],
+          supportingFactIds: [fact.id],
+        }));
+  }
+}
+
+/** Deterministic public-contract witness used only by offline audits and tests. */
+export function createM3bContractOutput(
+  request: M3bOracleRequest,
+): M3bOracleOutput {
+  const derivation = visibleDerivations(request)[0];
+  if (derivation === undefined)
+    return {
+      outcome: "insufficient-evidence",
+      answerValues: [],
+      supportingFactIds: [],
+      citationIds: [],
+      pathIds: [],
+    };
+  const supportingFacts = new Set(derivation.supportingFactIds);
+  return {
+    outcome: "answered",
+    answerValues: derivation.answerValues,
+    supportingFactIds: derivation.supportingFactIds,
+    citationIds: [
+      ...new Set(
+        request.evidence.facts
+          .filter((fact) => supportingFacts.has(fact.id))
+          .flatMap((fact) => fact.citationIds),
+      ),
+    ],
+    pathIds: request.evidence.paths.map((path) => path.id),
+  };
+}
+
+function valuesEqual(
+  left: ReadonlyArray<string>,
+  right: ReadonlyArray<string>,
+  unordered: boolean,
+): boolean {
+  const comparableLeft = unordered ? left.toSorted() : left;
+  const comparableRight = unordered ? right.toSorted() : right;
+  return (
+    comparableLeft.length === comparableRight.length &&
+    comparableLeft.every((value, index) => value === comparableRight[index])
+  );
+}
+
+function sameMembers(
+  left: ReadonlyArray<string>,
+  right: ReadonlyArray<string>,
+): boolean {
+  return valuesEqual(left, right, true);
 }
 
 /** Domain validation runs only after the provider envelope and usage exist. */
 export function validateM3bSemanticOutput(
   request: M3bOracleRequest,
   output: M3bOracleOutput,
-): ReadonlyArray<z.infer<typeof m3bDiagnosticIssueSchema>> {
-  const issues: Array<z.infer<typeof m3bDiagnosticIssueSchema>> = [
+): ReadonlyArray<M3bDiagnosticIssue> {
+  const issues: Array<M3bDiagnosticIssue> = [
     ...duplicateIssue(output.citationIds, "citationIds"),
     ...duplicateIssue(output.pathIds, "pathIds"),
+    ...duplicateIssue(output.supportingFactIds, "supportingFactIds"),
   ];
   const visibleCitations = new Set(
     request.evidence.citations.map((citation) => citation.id),
   );
   const visiblePaths = new Set(request.evidence.paths.map((path) => path.id));
+  const visibleFacts = new Map(
+    request.evidence.facts.map((fact) => [fact.id, fact]),
+  );
+  const derivations = visibleDerivations(request);
   if (output.citationIds.some((id) => !visibleCitations.has(id)))
     issues.push({ code: "unknown-citation-reference", path: ["citationIds"] });
   if (output.pathIds.some((id) => !visiblePaths.has(id)))
     issues.push({ code: "unknown-path-reference", path: ["pathIds"] });
+  if (output.supportingFactIds.some((id) => !visibleFacts.has(id)))
+    issues.push({
+      code: "unknown-supporting-fact-reference",
+      path: ["supportingFactIds"],
+    });
   if (
     output.outcome === "insufficient-evidence" &&
     output.answerValues.length !== 0
@@ -974,18 +1180,69 @@ export function validateM3bSemanticOutput(
       code: "abstention-has-answer-values",
       path: ["answerValues"],
     });
+  if (
+    output.outcome === "insufficient-evidence" &&
+    output.supportingFactIds.length !== 0
+  )
+    issues.push({
+      code: "abstention-has-supporting-facts",
+      path: ["supportingFactIds"],
+    });
+  if (output.outcome === "insufficient-evidence" && derivations.length > 0)
+    issues.push({
+      code: "abstention-when-complete-derivation-visible",
+      path: ["outcome"],
+    });
   if (output.outcome === "answered") {
-    const cardinalityValid =
-      request.answerShape.kind === "scalar"
-        ? output.answerValues.length === 1
-        : output.answerValues.length > 0;
-    if (!cardinalityValid)
-      issues.push({ code: "answer-shape-mismatch", path: ["answerValues"] });
+    if (output.answerValues.length !== request.answerContract.cardinality)
+      issues.push({
+        code: "answer-cardinality-mismatch",
+        path: ["answerValues"],
+      });
     if (
-      request.answerShape.kind === "unordered-values" &&
+      request.answerContract.ordering === "unordered" &&
       new Set(output.answerValues).size !== output.answerValues.length
     )
       issues.push({ code: "duplicate-answer-value", path: ["answerValues"] });
+    if (derivations.length === 0)
+      issues.push({
+        code: "answered-without-complete-visible-derivation",
+        path: ["outcome"],
+      });
+    const matchingSupport = derivations.filter((derivation) =>
+      sameMembers(derivation.supportingFactIds, output.supportingFactIds),
+    );
+    if (matchingSupport.length === 0)
+      issues.push({
+        code: "supporting-facts-do-not-form-required-derivation",
+        path: ["supportingFactIds"],
+      });
+    if (
+      !matchingSupport.some((derivation) =>
+        valuesEqual(
+          derivation.answerValues,
+          output.answerValues,
+          request.answerContract.ordering === "unordered",
+        ),
+      )
+    )
+      issues.push({
+        code: "answer-values-not-derived-from-supporting-facts",
+        path: ["answerValues"],
+      });
+    const uncitedSupportingFact = output.supportingFactIds.some((factId) => {
+      const fact = visibleFacts.get(factId);
+      return (
+        fact?.citationIds.some(
+          (citationId) => !output.citationIds.includes(citationId),
+        ) === true
+      );
+    });
+    if (uncitedSupportingFact)
+      issues.push({
+        code: "supporting-fact-citation-missing",
+        path: ["citationIds"],
+      });
   }
   return issues;
 }
@@ -1078,8 +1335,9 @@ function modelVisibleRequest(
 ): M3bOracleRequest {
   return m3bOracleRequestSchema.parse({
     instruction: frozen.task.instruction,
-    answerShape: frozen.answerShape,
+    answerContract: frozen.answerContract,
     evidence: visibleEvidence(neighborhood.neighborhood.context),
+    semanticRepair: null,
   });
 }
 
@@ -1122,58 +1380,89 @@ async function executeRecord(
   if (!dispatchRecordKey.ok) return dispatchRecordKey;
   const attempts: Array<M3bOracleAttempt> = [];
   let terminalFailure: M3bOracleFailureCode | null = null;
-  const execution = await executePlan(
-    input.materialized.sharedPlan.executable,
-    {
-      inputs: new Map([["request", request]]),
-      effectHandler: async () => {
-        for (
-          let attemptIndex = 0;
-          attemptIndex <=
-          M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt;
-          attemptIndex += 1
-        ) {
-          const attempt = await input.oracle.generate(request, {
-            recordKey: dispatchRecordKey.value,
-            attemptIndex,
-          });
-          attempts.push(attempt);
-          if (attempt.kind === "success") {
-            terminalFailure = null;
-            return ok({
-              value: attempt.output,
-              replayResultId: `${input.entry.unitDigest}:${input.arm}:${attemptIndex}`,
-              usage: {
-                tokens: attempt.usage.outputTokens,
-                wallClockMs: attempt.usage.latencyMs,
-              },
+  const invoke = async (
+    oracleRequest: M3bOracleRequest,
+    invocation: "initial" | "semantic-repair",
+  ): Promise<M3bOracleOutput | null> => {
+    const execution = await executePlan(
+      input.materialized.sharedPlan.executable,
+      {
+        inputs: new Map([["request", oracleRequest]]),
+        effectHandler: async () => {
+          for (
+            let retryIndex = 0;
+            retryIndex <=
+            M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt;
+            retryIndex += 1
+          ) {
+            const attemptIndex = attempts.length;
+            const attempt = await input.oracle.generate(oracleRequest, {
+              recordKey: dispatchRecordKey.value,
+              attemptIndex,
             });
+            attempts.push(attempt);
+            if (attempt.kind === "success") {
+              terminalFailure = null;
+              return ok({
+                value: attempt.output,
+                replayResultId: `${input.entry.unitDigest}:${input.arm}:${invocation}:${retryIndex}`,
+                usage: {
+                  tokens: attempt.usage.outputTokens,
+                  wallClockMs: attempt.usage.latencyMs,
+                },
+              });
+            }
+            terminalFailure = attempt.code;
+            if (!retryable(attempt.code)) break;
           }
-          terminalFailure = attempt.code;
-          if (!retryable(attempt.code)) break;
-        }
-        return {
-          ok: false,
-          error: diagnostic(
-            "INTERNAL_INVARIANT_VIOLATION",
-            "The M3b oracle reached a terminal transport failure.",
-          ),
-        };
+          return {
+            ok: false,
+            error: diagnostic(
+              "INTERNAL_INVARIANT_VIOLATION",
+              "The M3b oracle reached a terminal transport failure.",
+            ),
+          };
+        },
+        clock: { now: () => "2026-01-01T00:00:00.000Z" },
+        runIdProvider: {
+          next: () => `${input.entry.unitDigest}:${input.arm}:${invocation}`,
+        },
       },
-      clock: { now: () => "2026-01-01T00:00:00.000Z" },
-      runIdProvider: {
-        next: () => `${input.entry.unitDigest}:${input.arm}`,
+    );
+    const parsed = execution.ok
+      ? m3bOracleOutputSchema.safeParse(execution.value.output)
+      : { success: false as const };
+    return parsed.success ? parsed.data : null;
+  };
+
+  const firstAttemptOutput = await invoke(request, "initial");
+  const firstAttemptSemanticIssues =
+    firstAttemptOutput === null
+      ? []
+      : validateM3bSemanticOutput(request, firstAttemptOutput);
+  const firstAttemptSemanticValidationPassed =
+    firstAttemptOutput !== null && firstAttemptSemanticIssues.length === 0;
+  let semanticRepairCalls: 0 | 1 = 0;
+  let semanticRepairSucceeded: boolean | null = null;
+  let finalRequest = request;
+  let output = firstAttemptOutput;
+  if (firstAttemptOutput !== null && firstAttemptSemanticIssues.length > 0) {
+    semanticRepairCalls = 1;
+    finalRequest = m3bOracleRequestSchema.parse({
+      ...request,
+      semanticRepair: {
+        previousOutput: firstAttemptOutput,
+        obligationIssues: firstAttemptSemanticIssues,
       },
-    },
-  );
-  const parsedOutput = execution.ok
-    ? m3bOracleOutputSchema.safeParse(execution.value.output)
-    : { success: false as const };
-  const output = parsedOutput.success ? parsedOutput.data : null;
+    });
+    output = await invoke(finalRequest, "semantic-repair");
+  }
   const semanticIssues =
-    output === null ? [] : validateM3bSemanticOutput(request, output);
+    output === null ? [] : validateM3bSemanticOutput(finalRequest, output);
   const semanticValidationPassed =
     output !== null && semanticIssues.length === 0;
+  if (semanticRepairCalls === 1)
+    semanticRepairSucceeded = semanticValidationPassed;
   const successfulAttempt = attempts.findLast(
     (attempt) => attempt.kind === "success",
   );
@@ -1201,24 +1490,50 @@ async function executeRecord(
     request.evidence.citations.map((citation) => citation.id),
   );
   const expectedCitationIds = new Set(frozen.task.expectedCitationIds);
-  const expectedOutcome = [...expectedCitationIds].every((id) =>
-    visibleCitationIds.has(id),
-  )
-    ? ("answered" as const)
-    : ("insufficient-evidence" as const);
-  const citationsCorrect =
-    semanticValidationPassed &&
-    output.citationIds.every((id) => visibleCitationIds.has(id)) &&
+  const expectedOutcome =
+    visibleDerivations(request).length > 0
+      ? ("answered" as const)
+      : ("insufficient-evidence" as const);
+  const citationsMatch = (
+    candidate: M3bOracleOutput | null,
+    semanticValid: boolean,
+  ): boolean =>
+    semanticValid &&
+    candidate !== null &&
+    candidate.citationIds.every((id) => visibleCitationIds.has(id)) &&
     (expectedOutcome === "insufficient-evidence" ||
-      [...expectedCitationIds].every((id) => output.citationIds.includes(id)));
+      [...expectedCitationIds].every((id) =>
+        candidate.citationIds.includes(id),
+      ));
+  const typedAnswerMatches = (
+    candidate: M3bOracleOutput | null,
+    semanticValid: boolean,
+  ): boolean =>
+    semanticValid &&
+    candidate !== null &&
+    candidate.outcome === expectedOutcome &&
+    (expectedOutcome === "insufficient-evidence"
+      ? candidate.answerValues.length === 0
+      : valuesEqual(
+          candidate.answerValues,
+          frozen.task.expectedAnswerValues,
+          frozen.answerContract.ordering === "unordered",
+        ));
+  const citationsCorrect = citationsMatch(output, semanticValidationPassed);
   const expectedVisibleRelationshipCitationIds =
     frozen.task.expectedEdgeCitationIds.filter((citationId) =>
       visibleCitationIds.has(citationId),
     );
   const relationshipCitationsCorrect =
     semanticValidationPassed &&
+    output !== null &&
     expectedVisibleRelationshipCitationIds.every((citationId) =>
       output.citationIds.includes(citationId),
+    );
+  const firstAttemptRelationshipCitationsCorrect =
+    firstAttemptSemanticValidationPassed &&
+    expectedVisibleRelationshipCitationIds.every((citationId) =>
+      firstAttemptOutput.citationIds.includes(citationId),
     );
   const pathIdsByKey = new Map(
     neighborhood.neighborhood.context.paths.map((path, index) => [
@@ -1233,15 +1548,38 @@ async function executeRecord(
   });
   const pathsCorrect =
     semanticValidationPassed &&
+    output !== null &&
     output.pathIds.every((id) => visiblePathIds.has(id)) &&
     expectedVisiblePathIds.every((id) => output.pathIds.includes(id));
-  const answerCorrect =
-    semanticValidationPassed &&
-    output.outcome === expectedOutcome &&
-    (expectedOutcome === "insufficient-evidence"
-      ? output.answerValues.length === 0
-      : output.answerValues.length === 1 &&
-        output.answerValues[0] === frozen.task.expectedAnswer);
+  const firstAttemptPathsCorrect =
+    firstAttemptSemanticValidationPassed &&
+    firstAttemptOutput.pathIds.every((id) => visiblePathIds.has(id)) &&
+    expectedVisiblePathIds.every((id) =>
+      firstAttemptOutput.pathIds.includes(id),
+    );
+  const answerCorrect = typedAnswerMatches(output, semanticValidationPassed);
+  const firstAttemptAnswerCorrect = typedAnswerMatches(
+    firstAttemptOutput,
+    firstAttemptSemanticValidationPassed,
+  );
+  const firstAttemptCitationsCorrect = citationsMatch(
+    firstAttemptOutput,
+    firstAttemptSemanticValidationPassed,
+  );
+  const firstAttemptEndToEndSuccess =
+    firstAttemptSemanticValidationPassed &&
+    firstAttemptAnswerCorrect &&
+    firstAttemptCitationsCorrect;
+  const firstAttemptConditionalSemanticSuccess =
+    firstAttemptOutput === null || !firstAttemptSemanticValidationPassed
+      ? null
+      : firstAttemptAnswerCorrect && firstAttemptCitationsCorrect;
+  const firstAttemptPathUtilized =
+    (firstAttemptOutput?.pathIds.length ?? 0) > 0;
+  const firstAttemptPathUtilizationSuccess =
+    firstAttemptPathUtilized &&
+    firstAttemptPathsCorrect &&
+    firstAttemptRelationshipCitationsCorrect;
   const pathUtilized = (output?.pathIds.length ?? 0) > 0;
   const pathUtilizationSuccess =
     pathUtilized && pathsCorrect && relationshipCitationsCorrect;
@@ -1272,6 +1610,12 @@ async function executeRecord(
     outputSchemaDigest: input.materialized.sharedPlan.outputSchemaDigest,
     executionBinding: input.executionBinding,
     attempts,
+    firstAttemptOutput,
+    firstAttemptSemanticValidationPassed,
+    firstAttemptSemanticIssues,
+    firstAttemptEndToEndSuccess,
+    firstAttemptConditionalSemanticSuccess,
+    firstAttemptPathUtilizationSuccess,
     terminalFailure,
     validOutput: output !== null,
     output,
@@ -1290,7 +1634,8 @@ async function executeRecord(
       output === null || !semanticValidationPassed
         ? null
         : answerCorrect && citationsCorrect,
-    semanticRepairCalls: 0 as const,
+    semanticRepairCalls,
+    semanticRepairSucceeded,
   };
   const digest = await digestValue(body);
   return digest.ok
@@ -1303,6 +1648,7 @@ export type M3bRunResult = Readonly<{
   dispatched: number;
   resumed: number;
   transportRetries: number;
+  semanticRepairs: number;
   statistics: M3bStatisticalReport;
 }>;
 
@@ -1441,10 +1787,11 @@ export async function runM3bWithOracles(
         relationshipEncodingExpected:
           task?.relationshipEncodingExpected ?? false,
         negativeControl: task?.category === "negative-control",
-        validOutput: record.validOutput,
-        endToEndSuccess: record.endToEndSuccess,
-        conditionalSemanticSuccess: record.conditionalSemanticSuccess,
-        pathUtilizationSuccess: record.pathUtilizationSuccess,
+        validOutput: record.firstAttemptOutput !== null,
+        endToEndSuccess: record.firstAttemptEndToEndSuccess,
+        conditionalSemanticSuccess:
+          record.firstAttemptConditionalSemanticSuccess,
+        pathUtilizationSuccess: record.firstAttemptPathUtilizationSuccess,
         safetyViolation: record.attempts.some(
           (attempt) =>
             attempt.kind === "failure" &&
@@ -1471,8 +1818,14 @@ export async function runM3bWithOracles(
       records,
       dispatched,
       resumed,
+      semanticRepairs: records.reduce(
+        (total, record) => total + record.semanticRepairCalls,
+        0,
+      ),
       transportRetries: records.reduce(
-        (total, record) => total + Math.max(0, record.attempts.length - 1),
+        (total, record) =>
+          total +
+          Math.max(0, record.attempts.length - 1 - record.semanticRepairCalls),
         0,
       ),
       statistics: evaluateM3bStatistics(observations, expectedStrata),
@@ -1484,6 +1837,7 @@ export type M3bBlindAuditCounts = Readonly<{
   phase: M3bPhase;
   cases: number;
   initialCalls: number;
+  maximumSemanticRepairs: number;
   maximumTransportRetries: number;
   maximumCalls: number;
   frozenNeighborhoods: number;
@@ -1521,6 +1875,7 @@ export function blindAuditM3bMaterialization(
     phase: materialized.manifest.phase,
     cases,
     initialCalls: materialized.manifest.initialCalls,
+    maximumSemanticRepairs: materialized.manifest.semanticRepairCalls,
     maximumTransportRetries: materialized.manifest.maximumTransportRetries,
     maximumCalls: materialized.manifest.maximumCalls,
     frozenNeighborhoods,
@@ -1536,6 +1891,10 @@ export function blindAuditM3bMaterialization(
       sharedPlanIdentities === 1 &&
       frozenNeighborhoods === cases * 4 &&
       materialized.manifest.initialCalls === expectedInitialCalls &&
+      materialized.manifest.semanticRepairCalls === expectedInitialCalls &&
+      materialized.manifest.maximumTransportRetries ===
+        expectedInitialCalls * 2 &&
+      materialized.manifest.maximumCalls === expectedInitialCalls * 4 &&
       !materialized.manifest.pool.liveExecutionAuthorized,
   };
 }

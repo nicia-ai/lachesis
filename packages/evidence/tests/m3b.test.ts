@@ -6,6 +6,7 @@ import {
   blindM3a1IntegrityAudit,
   calculateM3bPairedInterval,
   createDeterministicM3bOracle,
+  createM3bContractOutput,
   createMemoryM3bStore,
   evaluateM3bStatistics,
   M3B_CONTRASTS,
@@ -22,6 +23,7 @@ import {
   materializeM3bPhase,
   runM3bWithOracles,
   validateM3bMaterialization,
+  validateM3bSemanticOutput,
 } from "../src/index.js";
 
 function provenance(
@@ -54,15 +56,9 @@ function unwrap<T>(
 }
 
 function successfulOutput(request: M3bOracleRequest): M3bOracleAttempt {
-  const finalFact = request.evidence.facts.at(-1);
   return {
     kind: "success",
-    output: {
-      outcome: finalFact === undefined ? "insufficient-evidence" : "answered",
-      answerValues: finalFact === undefined ? [] : [finalFact.object],
-      citationIds: request.evidence.citations.map((citation) => citation.id),
-      pathIds: request.evidence.paths.map((path) => path.id),
-    },
+    output: createM3bContractOutput(request),
     usage: {
       inputTokens: 100,
       outputTokens: 20,
@@ -151,11 +147,12 @@ describe("M3b offline execution infrastructure", () => {
 
   it("materializes exact offline probe, calibration, and held-out matrices", () => {
     expect(blindAuditM3bMaterialization(probe)).toMatchObject({
-      cases: 2,
-      initialCalls: 16,
-      maximumTransportRetries: 16,
-      maximumCalls: 32,
-      frozenNeighborhoods: 8,
+      cases: 6,
+      initialCalls: 48,
+      maximumSemanticRepairs: 48,
+      maximumTransportRetries: 96,
+      maximumCalls: 192,
+      frozenNeighborhoods: 24,
       sharedPlanIdentities: 1,
       liveExecutionAuthorized: false,
       passed: true,
@@ -163,16 +160,18 @@ describe("M3b offline execution infrastructure", () => {
     expect(blindAuditM3bMaterialization(calibration)).toMatchObject({
       cases: 30,
       initialCalls: 240,
-      maximumTransportRetries: 240,
-      maximumCalls: 480,
+      maximumSemanticRepairs: 240,
+      maximumTransportRetries: 480,
+      maximumCalls: 960,
       frozenNeighborhoods: 120,
       passed: true,
     });
     expect(blindAuditM3bMaterialization(heldout)).toMatchObject({
       cases: 160,
       initialCalls: 2_560,
-      maximumTransportRetries: 2_560,
-      maximumCalls: 5_120,
+      maximumSemanticRepairs: 2_560,
+      maximumTransportRetries: 5_120,
+      maximumCalls: 10_240,
       frozenNeighborhoods: 640,
       passed: true,
     });
@@ -224,9 +223,10 @@ describe("M3b offline execution infrastructure", () => {
     );
 
     expect(first).toMatchObject({
-      dispatched: 16,
+      dispatched: 48,
       resumed: 0,
       transportRetries: 0,
+      semanticRepairs: 0,
     });
     expect(new Set(first.records.map((record) => record.planHash)).size).toBe(
       1,
@@ -260,13 +260,20 @@ describe("M3b offline execution infrastructure", () => {
       ).toBe(4);
     }
     expect(first.records.map((record) => record.semanticRepairCalls)).toEqual(
-      Array.from({ length: 16 }, () => 0),
+      Array.from({ length: 48 }, () => 0),
     );
+    expect(
+      first.records.every(
+        (record) =>
+          record.firstAttemptEndToEndSuccess && record.endToEndSuccess,
+      ),
+    ).toBe(true);
     for (const request of [...openAi.requests(), ...anthropic.requests()]) {
       expect(Object.keys(request)).toEqual([
         "instruction",
-        "answerShape",
+        "answerContract",
         "evidence",
+        "semanticRepair",
       ]);
       expect(JSON.stringify(request)).not.toMatch(
         /lexical-facts|graph-facts|graph-adjacency|graph-typed|implementation/,
@@ -278,10 +285,108 @@ describe("M3b offline execution infrastructure", () => {
     const resumed = unwrap(
       await runM3bWithOracles({ materialized: probe, oracles, store }),
     );
-    expect(resumed).toMatchObject({ dispatched: 0, resumed: 16 });
+    expect(resumed).toMatchObject({ dispatched: 0, resumed: 48 });
     expect(openAi.requests().length + anthropic.requests().length).toBe(
       callsBeforeResume,
     );
+  });
+
+  it("rejects an intermediate semantic role and repairs from public obligations only", async () => {
+    const requests: Array<M3bOracleRequest> = [];
+    const obligationOracle = (modelIndex: 0 | 1): M3bOracle =>
+      recordedOracle({
+        modelIndex,
+        requests,
+        generate: (request) => {
+          if (
+            request.answerContract.role !== "headquarters-city" ||
+            request.semanticRepair !== null
+          )
+            return successfulOutput(request);
+          const employer = request.evidence.facts.find(
+            (fact) => fact.predicate === "employer",
+          );
+          return {
+            kind: "success",
+            output: {
+              outcome: "answered",
+              answerValues: [employer?.object ?? "intermediate-employer"],
+              supportingFactIds: employer === undefined ? [] : [employer.id],
+              citationIds: employer?.citationIds ?? [],
+              pathIds: [],
+            },
+            usage: {
+              inputTokens: 90,
+              outputTokens: 18,
+              costUsdMicros: 9,
+              latencyMs: 4,
+            },
+            provenance: provenance("accepted-wire-envelope", true),
+          };
+        },
+      });
+    const result = unwrap(
+      await runM3bWithOracles({
+        materialized: probe,
+        oracles: [obligationOracle(0), obligationOracle(1)],
+        store: createMemoryM3bStore(),
+      }),
+    );
+    const repaired = result.records.filter(
+      (record) => record.semanticRepairCalls === 1,
+    );
+
+    expect(repaired).toHaveLength(8);
+    expect(
+      repaired.every(
+        (record) =>
+          !record.firstAttemptSemanticValidationPassed &&
+          !record.firstAttemptEndToEndSuccess &&
+          record.semanticRepairSucceeded === true &&
+          record.endToEndSuccess,
+      ),
+    ).toBe(true);
+    expect(result.semanticRepairs).toBe(8);
+    const repairRequests = requests.filter(
+      (request) => request.semanticRepair !== null,
+    );
+    expect(repairRequests).toHaveLength(8);
+    for (const request of repairRequests) {
+      const serialized = JSON.stringify(request);
+      const benchmarkCase = probe.cases.find(
+        (candidate) => candidate.task.instruction === request.instruction,
+      );
+      expect(benchmarkCase).toBeDefined();
+      expect(serialized).not.toMatch(
+        /expectedAnswerValues|expectedCitationIds|semanticScore|lexical-facts|graph-facts|graph-adjacency|graph-typed/u,
+      );
+      for (const hiddenValue of benchmarkCase?.task.expectedAnswerValues ??
+        []) {
+        const visible = request.evidence.facts.some(
+          (fact) => fact.subject === hiddenValue || fact.object === hiddenValue,
+        );
+        expect(visible || !serialized.includes(hiddenValue)).toBe(true);
+      }
+      expect(
+        request.semanticRepair?.obligationIssues.map((issue) => issue.code),
+      ).toEqual(
+        expect.arrayContaining([
+          "supporting-facts-do-not-form-required-derivation",
+          "answer-values-not-derived-from-supporting-facts",
+        ]),
+      );
+    }
+
+    const example = repairRequests[0];
+    if (example === undefined)
+      throw new Error("Missing repair request fixture.");
+    expect(
+      validateM3bSemanticOutput(
+        { ...example, semanticRepair: null },
+        example.semanticRepair?.previousOutput ??
+          createM3bContractOutput(example),
+      ).map((issue) => issue.code),
+    ).toContain("answer-values-not-derived-from-supporting-facts");
   });
 
   it("retries transport failures symmetrically inside each scheduled slot", async () => {
@@ -316,8 +421,8 @@ describe("M3b offline execution infrastructure", () => {
       }),
     );
 
-    expect(result.dispatched).toBe(16);
-    expect(result.transportRetries).toBe(16);
+    expect(result.dispatched).toBe(48);
+    expect(result.transportRetries).toBe(48);
     expect(result.records.every((record) => record.attempts.length === 2)).toBe(
       true,
     );
@@ -327,12 +432,6 @@ describe("M3b offline execution infrastructure", () => {
   });
 
   it("keeps missing evidence in the primary estimand while scoring arm-visible paths", async () => {
-    const answers = new Map(
-      M3B_PREREGISTERED_CORPUS.map((task) => [
-        task.instruction,
-        task.expectedAnswer,
-      ]),
-    );
     const requests: Array<M3bOracleRequest> = [];
     const semanticOracle = (modelIndex: 0 | 1): M3bOracle =>
       recordedOracle({
@@ -340,22 +439,7 @@ describe("M3b offline execution infrastructure", () => {
         requests,
         generate: (request) => ({
           kind: "success",
-          output: {
-            outcome: request.evidence.facts.some(
-              (fact) => fact.object === answers.get(request.instruction),
-            )
-              ? "answered"
-              : "insufficient-evidence",
-            answerValues: request.evidence.facts.some(
-              (fact) => fact.object === answers.get(request.instruction),
-            )
-              ? [answers.get(request.instruction) ?? "unknown"]
-              : [],
-            citationIds: request.evidence.citations.map(
-              (citation) => citation.id,
-            ),
-            pathIds: request.evidence.paths.map((path) => path.id),
-          },
+          output: createM3bContractOutput(request),
           usage: {
             inputTokens: 100,
             outputTokens: 20,
@@ -414,7 +498,7 @@ describe("M3b offline execution infrastructure", () => {
       (record) => record.provider === "openai",
     );
 
-    expect(failed).toHaveLength(8);
+    expect(failed).toHaveLength(24);
     expect(failed.every((record) => !record.endToEndSuccess)).toBe(true);
     expect(
       failed.every((record) => record.conditionalSemanticSuccess === null),
@@ -433,6 +517,7 @@ describe("M3b offline execution infrastructure", () => {
           output: {
             outcome: "answered",
             answerValues: [],
+            supportingFactIds: ["missing-fact"],
             citationIds: ["missing-citation"],
             pathIds: ["missing-path"],
           },
@@ -454,7 +539,7 @@ describe("M3b offline execution infrastructure", () => {
     );
 
     expect(result.transportRetries).toBe(0);
-    expect(result.records).toHaveLength(16);
+    expect(result.records).toHaveLength(48);
     expect(
       result.records.every(
         (record) =>
@@ -464,7 +549,10 @@ describe("M3b offline execution infrastructure", () => {
           record.attempts[0]?.kind === "success" &&
           record.attempts[0].usage.costUsdMicros === 19 &&
           record.attempts[0].provenance.category === "accepted-wire-envelope" &&
-          record.semanticIssues.length > 0,
+          record.semanticIssues.length > 0 &&
+          record.semanticRepairCalls === 1 &&
+          record.semanticRepairSucceeded === false &&
+          record.attempts.length === 2,
       ),
     ).toBe(true);
   });
@@ -588,7 +676,8 @@ describe("M3b offline execution infrastructure", () => {
       (task) => task.split === "heldout",
     );
     if (first === undefined) throw new Error("Missing M3b held-out fixture.");
-    expect(manifestText).not.toContain(first.expectedAnswer);
+    for (const value of first.expectedAnswerValues)
+      expect(manifestText).not.toContain(value);
     for (const factId of first.expectedFactIds)
       expect(manifestText).not.toContain(factId);
 
@@ -596,6 +685,7 @@ describe("M3b offline execution infrastructure", () => {
       "phase",
       "cases",
       "initialCalls",
+      "maximumSemanticRepairs",
       "maximumTransportRetries",
       "maximumCalls",
       "frozenNeighborhoods",

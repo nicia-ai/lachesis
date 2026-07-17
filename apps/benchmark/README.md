@@ -99,4 +99,9 @@ typed answer/abstention values, canonical visible-path references, equivalent
 provider/wire schemas, and staged durable diagnostics. No M3b.2 phase is
 authorized by materialization alone. See the historical
 [M3b.1 protocol](../../docs/m3b1-live-binding.md) and the
-[M3b.2 correction](../../docs/m3b2-protocol-correction.md).
+[M3b.2 correction](../../docs/m3b2-protocol-correction.md). M3b.2 is now frozen
+as `complete-semantic-gate-fail`. M3b.3 adds public executable answer
+obligations, independently reported bounded semantic repair, and a 48-record
+six-category probe. It retains the same append-only campaign ledger and uses a
+new content-addressed `m3b3/` record namespace. No M3b.3 phase is authorized by
+materialization. See [M3b.3](../../docs/m3b3-semantic-obligations.md).

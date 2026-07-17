@@ -1,7 +1,7 @@
 # M3b.2: typed answer and diagnostic protocol correction
 
-Status: implemented offline. No M3b.2 provider call is authorized by this
-document or by materialization.
+Status: historical `complete-semantic-gate-fail`. The executed probe, ledger,
+report, and preregistration artifacts are immutable and must not be rerun.
 
 M3b.2 is a deterministic protocol correction made after the M3b.1 protocol probe
 and before calibration or held-out access. It leaves the four evidence arms,
@@ -57,11 +57,13 @@ The M3b.1 probe `a104cd5c...` is `complete-protocol-fail`. M3b.1 calibration
 preflight rejects all three identities before credentials, reservations, ledger
 mutation, or dispatch.
 
-Fresh M3b.2 identities bind the new prompt, typed output schema, scorer,
-provider adapter, transport, source commit, and a separate content-addressed
-storage namespace. After external preregistration, the only next live gate is a
-fresh 16-record probe with at most one symmetric transport retry per record. The
-probe must produce 16 non-opaque, durably classified outcomes, correct typed
-answers or abstentions relative to visible evidence, passing results from both
-providers on the prior graph-facts failure shape, and zero unauthorized calls or
-identity mismatches. It does not authorize calibration or held-out inference.
+The M3b.2 probe completed 16 durable, non-opaque outputs but passed only 15/16
+typed semantic outcomes. A lexical multi-hop response returned the visible
+employer as the answer when the requested headquarters city was not visible.
+Because M3b.2 exposed only a generic scalar shape, domain validation could not
+reject that intermediate semantic role. Calibration and held-out identities are
+`superseded-unexecuted`.
+
+[M3b.3](./m3b3-semantic-obligations.md) replaces generic answer shapes with
+public executable answer obligations and one bounded semantic repair. It
+requires a fresh preregistration and exact authorization before any live call.

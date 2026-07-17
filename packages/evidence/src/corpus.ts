@@ -18,6 +18,108 @@ export const m3a1CategorySchema = z.enum([
   "negative-control",
 ]);
 
+const sufficiencyRuleSchema = z.literal(
+  "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
+);
+
+export const m3bAnswerContractSchema = z.discriminatedUnion("role", [
+  z
+    .strictObject({
+      role: z.literal("headquarters-city"),
+      cardinality: z.literal(1),
+      ordering: z.literal("scalar"),
+      anchorSubject: z.string().min(1),
+      derivation: z.literal("object-to-subject-chain"),
+      requiredFactPredicates: z.tuple([
+        z.literal("employer"),
+        z.literal("headquarters"),
+      ]),
+      answerSource: z.literal("terminal-object"),
+      minimumSupportingFacts: z.literal(2),
+      sufficiencyRule: sufficiencyRuleSchema,
+    })
+    .readonly(),
+  z
+    .strictObject({
+      role: z.literal("release-status-change"),
+      cardinality: z.literal(2),
+      ordering: z.literal("ordered"),
+      anchorSubject: z.string().min(1),
+      derivation: z.literal("same-subject-valid-time-sequence"),
+      requiredFactPredicates: z.tuple([
+        z.literal("release-status"),
+        z.literal("release-status"),
+      ]),
+      answerSource: z.literal("ordered-objects"),
+      minimumSupportingFacts: z.literal(2),
+      sufficiencyRule: sufficiencyRuleSchema,
+    })
+    .readonly(),
+  z
+    .strictObject({
+      role: z.literal("conflicting-readings"),
+      cardinality: z.literal(2),
+      ordering: z.literal("unordered"),
+      anchorSubject: z.string().min(1),
+      derivation: z.literal("same-subject-distinct-values"),
+      requiredFactPredicates: z.tuple([
+        z.literal("reading"),
+        z.literal("reading"),
+      ]),
+      answerSource: z.literal("unordered-objects"),
+      minimumSupportingFacts: z.literal(2),
+      sufficiencyRule: sufficiencyRuleSchema,
+    })
+    .readonly(),
+  z
+    .strictObject({
+      role: z.literal("independent-verifier"),
+      cardinality: z.literal(1),
+      ordering: z.literal("scalar"),
+      anchorSubject: z.string().min(1),
+      derivation: z.literal("arrival-plus-signed-receipt"),
+      requiredFactPredicates: z.tuple([
+        z.literal("arrival"),
+        z.literal("signed"),
+      ]),
+      answerSource: z.literal("terminal-subject"),
+      minimumSupportingFacts: z.literal(2),
+      sufficiencyRule: sufficiencyRuleSchema,
+    })
+    .readonly(),
+  z
+    .strictObject({
+      role: z.literal("retracted-rule-change"),
+      cardinality: z.literal(2),
+      ordering: z.literal("ordered"),
+      anchorSubject: z.string().min(1),
+      derivation: z.literal("same-subject-recorded-retraction-sequence"),
+      requiredFactPredicates: z.tuple([
+        z.literal("rule"),
+        z.literal("retraction"),
+        z.literal("rule"),
+      ]),
+      answerSource: z.literal("ordered-rule-objects"),
+      minimumSupportingFacts: z.literal(3),
+      sufficiencyRule: sufficiencyRuleSchema,
+    })
+    .readonly(),
+  z
+    .strictObject({
+      role: z.literal("owner"),
+      cardinality: z.literal(1),
+      ordering: z.literal("scalar"),
+      anchorSubject: z.string().min(1),
+      derivation: z.literal("single-terminal-fact"),
+      requiredFactPredicates: z.tuple([z.literal("owner")]),
+      answerSource: z.literal("terminal-object"),
+      minimumSupportingFacts: z.literal(1),
+      sufficiencyRule: sufficiencyRuleSchema,
+    })
+    .readonly(),
+]);
+export type M3bAnswerContract = z.infer<typeof m3bAnswerContractSchema>;
+
 export const m3aTaskSchema = z
   .strictObject({
     id: z.string().regex(/^m3a1-[a-z0-9-]+$/),
@@ -25,7 +127,8 @@ export const m3aTaskSchema = z
     category: m3a1CategorySchema,
     instruction: z.string().min(1),
     query: evidenceQuerySchema,
-    expectedAnswer: z.string().min(1),
+    answerContract: m3bAnswerContractSchema,
+    expectedAnswerValues: z.array(z.string().min(1)).min(1).max(2).readonly(),
     protectedAnswerTerms: z.array(z.string().min(1)).min(1).readonly(),
     expectedFactIds: z.array(z.string().min(1)).min(1).readonly(),
     expectedCitationIds: z.array(z.string().min(1)).min(1).readonly(),
@@ -246,7 +349,19 @@ function multiHopFixture(split: M3a1Split, index: number): FixturePart {
       category: "multi-hop",
       instruction,
       query: query(prefix, instruction, 2),
-      expectedAnswer: city,
+      answerContract: {
+        role: "headquarters-city",
+        cardinality: 1,
+        ordering: "scalar",
+        anchorSubject: person,
+        derivation: "object-to-subject-chain",
+        requiredFactPredicates: ["employer", "headquarters"],
+        answerSource: "terminal-object",
+        minimumSupportingFacts: 2,
+        sufficiencyRule:
+          "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
+      },
+      expectedAnswerValues: [city],
       protectedAnswerTerms: [city, organization],
       expectedFactIds: [anchor, target],
       expectedCitationIds: [anchorCitation, targetCitation],
@@ -314,7 +429,19 @@ function temporalFixture(split: M3a1Split, index: number): FixturePart {
       category: "temporal",
       instruction,
       query: query(prefix, instruction, 2),
-      expectedAnswer: `${oldStatus} then ${newStatus}`,
+      answerContract: {
+        role: "release-status-change",
+        cardinality: 2,
+        ordering: "ordered",
+        anchorSubject: project,
+        derivation: "same-subject-valid-time-sequence",
+        requiredFactPredicates: ["release-status", "release-status"],
+        answerSource: "ordered-objects",
+        minimumSupportingFacts: 2,
+        sufficiencyRule:
+          "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
+      },
+      expectedAnswerValues: [oldStatus, newStatus],
       protectedAnswerTerms: [oldStatus, newStatus],
       expectedFactIds: [oldFact, newFact],
       expectedCitationIds: [oldCitation, newCitation],
@@ -388,7 +515,19 @@ function contradictionFixture(split: M3a1Split, index: number): FixturePart {
       category: "contradiction",
       instruction,
       query: query(prefix, instruction, 2),
-      expectedAnswer: `${firstReading} conflicts with ${secondReading}`,
+      answerContract: {
+        role: "conflicting-readings",
+        cardinality: 2,
+        ordering: "unordered",
+        anchorSubject: sensor,
+        derivation: "same-subject-distinct-values",
+        requiredFactPredicates: ["reading", "reading"],
+        answerSource: "unordered-objects",
+        minimumSupportingFacts: 2,
+        sufficiencyRule:
+          "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
+      },
+      expectedAnswerValues: [firstReading, secondReading],
       protectedAnswerTerms: [firstReading, secondReading],
       expectedFactIds: [firstFact, secondFact],
       expectedCitationIds: [firstCitation, secondCitation],
@@ -460,7 +599,19 @@ function provenanceFixture(split: M3a1Split, index: number): FixturePart {
       category: "provenance",
       instruction,
       query: query(prefix, instruction, 2),
-      expectedAnswer: verifier,
+      answerContract: {
+        role: "independent-verifier",
+        cardinality: 1,
+        ordering: "scalar",
+        anchorSubject: shipment,
+        derivation: "arrival-plus-signed-receipt",
+        requiredFactPredicates: ["arrival", "signed"],
+        answerSource: "terminal-subject",
+        minimumSupportingFacts: 2,
+        sufficiencyRule:
+          "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
+      },
+      expectedAnswerValues: [verifier],
       protectedAnswerTerms: [verifier],
       expectedFactIds: [dispatchFact, verifierFact],
       expectedCitationIds: [dispatchCitation, verifierCitation],
@@ -537,7 +688,19 @@ function retractionFixture(split: M3a1Split, index: number): FixturePart {
       category: "retraction",
       instruction,
       query: query(prefix, instruction, 3),
-      expectedAnswer: `${oldRule} was replaced by ${newRule}`,
+      answerContract: {
+        role: "retracted-rule-change",
+        cardinality: 2,
+        ordering: "ordered",
+        anchorSubject: policy,
+        derivation: "same-subject-recorded-retraction-sequence",
+        requiredFactPredicates: ["rule", "retraction", "rule"],
+        answerSource: "ordered-rule-objects",
+        minimumSupportingFacts: 3,
+        sufficiencyRule:
+          "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
+      },
+      expectedAnswerValues: [oldRule, newRule],
       protectedAnswerTerms: [oldRule, newRule],
       expectedFactIds: [oldFact, noticeFact, newFact],
       expectedCitationIds: [oldCitation, noticeCitation, newCitation],
@@ -627,7 +790,19 @@ function negativeControlFixture(split: M3a1Split, index: number): FixturePart {
       category: "negative-control",
       instruction,
       query: query(prefix, instruction, 1),
-      expectedAnswer: owner,
+      answerContract: {
+        role: "owner",
+        cardinality: 1,
+        ordering: "scalar",
+        anchorSubject: project,
+        derivation: "single-terminal-fact",
+        requiredFactPredicates: ["owner"],
+        answerSource: "terminal-object",
+        minimumSupportingFacts: 1,
+        sufficiencyRule:
+          "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
+      },
+      expectedAnswerValues: [owner],
       protectedAnswerTerms: [owner],
       expectedFactIds: [targetFact],
       expectedCitationIds: [targetCitation],

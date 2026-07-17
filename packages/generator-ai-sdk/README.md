@@ -58,3 +58,9 @@ validator is equivalent to the provider schema, while semantic validation runs
 after durable response and usage classification. Real-package intercepted-fetch
 tests prove arm and evidence-source implementation identities are absent from
 outgoing requests.
+
+M3b.3 versions those adapters and their portable schema again. Requests expose
+the public executable answer contract and optional bounded semantic-repair
+diagnostics; outputs add `supportingFactIds`. Intercepted-fetch tests cover both
+initial and repair serialization on both provider routes while proving source
+and arm identity remain absent.
