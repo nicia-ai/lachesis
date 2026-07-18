@@ -64,6 +64,9 @@ ablation, and the completed M3 factorial evidence-substrate study.
   canonical path references, staged diagnostics, direct Responses/Messages
   transports, conservative attempt-level accounting, an append-only ledger, and
   durable content-addressed resume.
+- An offline M4 evidence compiler with a content-addressed provider/task policy,
+  arm-blinded selected contexts, graph-facts controls, and deterministic
+  provenance reconstruction from answer values plus supporting fact IDs.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -129,6 +132,9 @@ the frozen calibration failure,
 and the historical [M3b.5 held-out freeze](docs/m3b5-heldout-preparation.md).
 M3b.5 and M3 are closed as `complete-formal-fail`; see the immutable
 [M3 results](docs/m3-results.md) for the formal conclusions and claim boundary.
+The offline [M4a/M4b evidence compiler](docs/m4a-evidence-compiler.md) treats
+all M3 results as development evidence and creates no campaign or held-out
+identity.
 
 ## Validation
 
@@ -159,9 +165,11 @@ negative-control and safety gates passed, but every universal structural-
 superiority conclusion failed under the frozen provider-by-repetition rule. M3
 is complete and may not be rerun or reinterpreted under relaxed gates.
 
-M4 is only a proposed provider-aware evidence-view compiler and confirmatory
-benchmark. It has not been implemented, materialized, preregistered, or
-authorized. TypeGraph remains absent from the evaluated model-quality claims.
+M4a/M4b now provide only an offline deterministic vertical slice. The project
+still has no M4 live controller, fresh confirmatory corpus, campaign,
+materialization, preregistration, or inference authorization. M4c TypeGraph
+parity and M4d confirmation remain proposed and TypeGraph remains absent from
+all evaluated model-quality claims.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

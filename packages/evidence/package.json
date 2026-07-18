@@ -27,7 +27,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "smoke": "node --input-type=module -e \"const api = await import('@nicia-ai/lachesis-evidence'); if (typeof api.createInMemoryGraphEvidenceSource !== 'function' || typeof api.createGraphSelectedFactsEvidenceSource !== 'function' || typeof api.createGraphSelectedAdjacencyEvidenceSource !== 'function' || typeof api.createMatchedTextEvidenceSource !== 'function' || typeof api.blindM3a1IntegrityAudit !== 'function' || typeof api.auditM3aOfflineDesign !== 'function' || typeof api.materializeM3bPhase !== 'function' || typeof api.createDeterministicM3bOracle !== 'function') process.exit(1);\"",
+    "smoke": "node --input-type=module -e \"const api = await import('@nicia-ai/lachesis-evidence'); if (typeof api.createInMemoryGraphEvidenceSource !== 'function' || typeof api.createGraphSelectedFactsEvidenceSource !== 'function' || typeof api.createGraphSelectedAdjacencyEvidenceSource !== 'function' || typeof api.createMatchedTextEvidenceSource !== 'function' || typeof api.blindM3a1IntegrityAudit !== 'function' || typeof api.auditM3aOfflineDesign !== 'function' || typeof api.materializeM3bPhase !== 'function' || typeof api.createDeterministicM3bOracle !== 'function' || typeof api.compileM4EvidenceView !== 'function' || typeof api.reconstructM4Provenance !== 'function') process.exit(1);\"",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
