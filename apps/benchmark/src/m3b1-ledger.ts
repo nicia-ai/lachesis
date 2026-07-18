@@ -502,7 +502,7 @@ export async function openM3b1Ledger(input: {
         ok: false,
         error: diagnostic(
           "BUDGET_EXCEEDED",
-          "The complete M3b.4 phase envelope does not fit the current campaign ledger before manifest registration.",
+          "The complete M3b phase envelope does not fit the current campaign ledger before manifest registration.",
         ),
       };
     return update({
@@ -555,7 +555,7 @@ export async function openM3b1Ledger(input: {
                 ok: false,
                 error: diagnostic(
                   "BUDGET_EXCEEDED",
-                  "M3b.4 provider cohort attempt quota is exhausted before dispatch.",
+                  "M3b provider cohort attempt quota is exhausted before dispatch.",
                 ),
               };
             const current = status(manifest.budgetPoolId);

@@ -127,8 +127,9 @@ failed probe, the [M3b.2 correction](docs/m3b2-protocol-correction.md), and the
 [M3b.3 semantic-obligation correction](docs/m3b3-semantic-obligations.md) for
 the frozen calibration failure. The current offline milestone is
 [M3b.4 structured-output forensics](docs/m3b4-structured-output-forensics.md),
-which adds staged decoding, bounded raw-output artifacts, one wire repair, and a
-fresh matched stress-probe design.
+which closed with a passing stress probe and calibration, and the offline-only
+[M3b.5 held-out preparation](docs/m3b5-heldout-preparation.md), which freezes a
+strictly disjoint corpus and a fresh held-out authority envelope.
 
 ## Validation
 
@@ -152,10 +153,10 @@ scheduling, general adaptive loops, package publication, and deployment. M3b.1
 is closed as a protocol failure; its calibration and held-out identities were
 never executed. M3b.2 is frozen as a semantic-gate failure. M3b.3 passed its
 probe and is frozen as an immutable calibration failure; held-out was not
-authorized. M3b.4's stress probe passed and is immutable. Its fresh 30-case
-calibration corpus and provider-cohort attempt envelope are offline-only and
-have no spend authority until external preregistration and a separate exact
-calibration acknowledgement.
+authorized. M3b.4's stress probe and calibration are complete and immutable;
+calibration achieved 236/240 first-attempt success and 240/240 final
+reliability. M3b.5 prepares a strictly disjoint held-out identity offline.
+Materialization and preregistration do not authorize held-out inference.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

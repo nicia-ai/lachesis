@@ -52,9 +52,12 @@ const poolSchema = z
 export const m3b1CampaignManifestSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
-    campaignId: z.literal("lachesis-m3b4-wire-forensics-development"),
-    milestone: z.literal("m3b.4"),
-    maximumOperationalCostUsdMicros: z.literal(30_000_000),
+    campaignId: z.enum([
+      "lachesis-m3b4-wire-forensics-development",
+      "lachesis-m3b5-heldout",
+    ]),
+    milestone: z.enum(["m3b.4", "m3b.5"]),
+    maximumOperationalCostUsdMicros: z.number().int().positive(),
     budgetPools: z.array(poolSchema).length(1).readonly(),
     authorizationPolicy: z
       .strictObject({
@@ -66,6 +69,38 @@ export const m3b1CampaignManifestSchema = z
       })
       .readonly(),
     campaignDigest: digestSchema,
+  })
+  .superRefine((value, context) => {
+    const pool = value.budgetPools[0];
+    const providers = pool?.providerCostCaps;
+    const anthropic = providers?.find(
+      (provider) => provider.billingProvider === "anthropic",
+    );
+    const openai = providers?.find(
+      (provider) => provider.billingProvider === "openai",
+    );
+    const development =
+      value.campaignId === "lachesis-m3b4-wire-forensics-development" &&
+      value.milestone === "m3b.4" &&
+      value.maximumOperationalCostUsdMicros === 30_000_000 &&
+      pool?.id === "m3b-development" &&
+      pool.maxCostUsdMicros === 30_000_000 &&
+      anthropic?.maxCostUsdMicros === 13_000_000 &&
+      openai?.maxCostUsdMicros === 17_000_000;
+    const heldout =
+      value.campaignId === "lachesis-m3b5-heldout" &&
+      value.milestone === "m3b.5" &&
+      value.maximumOperationalCostUsdMicros === 150_000_000 &&
+      pool?.id === "m3b-heldout" &&
+      pool.maxCostUsdMicros === 150_000_000 &&
+      anthropic?.maxCostUsdMicros === 64_000_000 &&
+      openai?.maxCostUsdMicros === 86_000_000;
+    if (!development && !heldout)
+      context.addIssue({
+        code: "custom",
+        message:
+          "M3b campaign identity, milestone, pool, and provider caps must match one frozen authority envelope.",
+      });
   })
   .readonly();
 export type M3b1CampaignManifest = z.infer<typeof m3b1CampaignManifestSchema>;
@@ -152,11 +187,14 @@ const attemptQuotasSchema = z
 export const m3b1PhaseManifestSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
-    milestone: z.literal("m3b.4"),
+    milestone: z.enum(["m3b.4", "m3b.5"]),
     status: z.literal("unexecuted-live-capable"),
     phase: phaseSchema,
     sourceCommit: z.string().regex(/^[a-f0-9]{40}$/u),
-    campaignId: z.literal("lachesis-m3b4-wire-forensics-development"),
+    campaignId: z.enum([
+      "lachesis-m3b4-wire-forensics-development",
+      "lachesis-m3b5-heldout",
+    ]),
     campaignDigest: digestSchema,
     budgetPoolId: z.enum(["m3b-development", "m3b-heldout"]),
     operationalPool: poolSchema,
@@ -205,6 +243,23 @@ export const m3b1PhaseManifestSchema = z
     phaseManifestDigest: digestSchema,
   })
   .superRefine((value, context) => {
+    const heldoutIdentity =
+      value.phase === "m3b-heldout" &&
+      value.milestone === "m3b.5" &&
+      value.campaignId === "lachesis-m3b5-heldout" &&
+      value.budgetPoolId === "m3b-heldout";
+    const developmentIdentity =
+      value.phase !== "m3b-heldout" &&
+      value.milestone === "m3b.4" &&
+      value.campaignId === "lachesis-m3b4-wire-forensics-development" &&
+      value.budgetPoolId === "m3b-development";
+    if (!heldoutIdentity && !developmentIdentity)
+      context.addIssue({
+        code: "custom",
+        message:
+          "M3b phase must use its frozen development or held-out campaign identity.",
+        path: ["campaignId"],
+      });
     const providers = value.attemptQuotas.providers;
     const quotaProviders = providers.map((provider) => provider.provider);
     const sums = {
@@ -249,7 +304,7 @@ export const m3b1PhaseManifestSchema = z
       context.addIssue({
         code: "custom",
         message:
-          "M3b.4 provider quotas must be sorted and reconcile with every phase and pricing ceiling count.",
+          "M3b provider quotas must be sorted and reconcile with every phase and pricing ceiling count.",
         path: ["attemptQuotas"],
       });
   })
@@ -316,36 +371,69 @@ export const M3B_OFFLINE_DESIGN_IDENTITIES = Object.freeze([
   Object.freeze({
     experimentDigest:
       "d36ddbd031df4194b9be0f3b1b13ef169cca4028e4fe58b7afab6676c27e7ce5",
-    disposition: "blocked-unexecuted" as const,
+    disposition: "superseded-unexecuted" as const,
   }),
   Object.freeze({
     experimentDigest:
       "0eea0fc23ae1992acb96f0ef92e65a199bb654d06b71c5bc358292c3187d7359",
     disposition: "complete-protocol-pass" as const,
   }),
+  Object.freeze({
+    experimentDigest:
+      "c7beee09333f7a99a18d13a93108ae6f5d2ad62b7746683b64f0732d3129b576",
+    disposition: "complete-calibration-pass" as const,
+  }),
 ]);
 
-export async function createM3b1CampaignManifest(): Promise<
-  Result<M3b1CampaignManifest, Diagnostic>
-> {
+export async function createM3b1CampaignManifest(
+  kind: "development" | "heldout" = "development",
+): Promise<Result<M3b1CampaignManifest, Diagnostic>> {
+  const authority =
+    kind === "heldout"
+      ? {
+          campaignId: "lachesis-m3b5-heldout" as const,
+          milestone: "m3b.5" as const,
+          maximumOperationalCostUsdMicros: 150_000_000,
+          pool: {
+            id: "m3b-heldout" as const,
+            maxCostUsdMicros: 150_000_000,
+            providerCostCaps: [
+              {
+                billingProvider: "anthropic" as const,
+                maxCostUsdMicros: 64_000_000,
+              },
+              {
+                billingProvider: "openai" as const,
+                maxCostUsdMicros: 86_000_000,
+              },
+            ],
+          },
+        }
+      : {
+          campaignId: "lachesis-m3b4-wire-forensics-development" as const,
+          milestone: "m3b.4" as const,
+          maximumOperationalCostUsdMicros: 30_000_000,
+          pool: {
+            id: "m3b-development" as const,
+            maxCostUsdMicros: 30_000_000,
+            providerCostCaps: [
+              {
+                billingProvider: "anthropic" as const,
+                maxCostUsdMicros: 13_000_000,
+              },
+              {
+                billingProvider: "openai" as const,
+                maxCostUsdMicros: 17_000_000,
+              },
+            ],
+          },
+        };
   const body = {
     formatVersion: "1" as const,
-    campaignId: "lachesis-m3b4-wire-forensics-development" as const,
-    milestone: "m3b.4" as const,
-    maximumOperationalCostUsdMicros: 30_000_000 as const,
-    budgetPools: [
-      {
-        id: "m3b-development" as const,
-        maxCostUsdMicros: 30_000_000,
-        providerCostCaps: [
-          {
-            billingProvider: "anthropic" as const,
-            maxCostUsdMicros: 13_000_000,
-          },
-          { billingProvider: "openai" as const, maxCostUsdMicros: 17_000_000 },
-        ],
-      },
-    ],
+    campaignId: authority.campaignId,
+    milestone: authority.milestone,
+    maximumOperationalCostUsdMicros: authority.maximumOperationalCostUsdMicros,
+    budgetPools: [authority.pool],
     authorizationPolicy: {
       theoreticalPhaseCeilings: "disclosed-not-authorized" as const,
       requestReservation: "complete-worst-case-before-dispatch" as const,
@@ -523,7 +611,9 @@ export async function materializeM3b1Phase(input: {
   readonly phase: M3bPhase;
   readonly sourceCommit: string;
 }): Promise<Result<M3b1MaterializedPhase, ReadonlyArray<Diagnostic>>> {
-  const campaign = await createM3b1CampaignManifest();
+  const campaign = await createM3b1CampaignManifest(
+    input.phase === "m3b-heldout" ? "heldout" : "development",
+  );
   if (!campaign.ok) return { ok: false, error: [campaign.error] };
   const substrate = await materializeM3bPhase({
     ...input,
@@ -541,10 +631,14 @@ export async function materializeM3b1Phase(input: {
   );
   if (!anthropicTransportComparisonDigest.ok)
     return { ok: false, error: [anthropicTransportComparisonDigest.error] };
-  const budgetPoolId =
-    input.phase === "m3b-heldout"
-      ? ("m3b-heldout" as const)
-      : ("m3b-development" as const);
+  const budgetPoolId = campaign.value.budgetPools[0]?.id;
+  if (budgetPoolId === undefined)
+    return {
+      ok: false,
+      error: [
+        diagnostic("INVALID_WIRE_SCHEMA", "M3b operational pool is missing."),
+      ],
+    };
   const operationalPool = campaign.value.budgetPools.find(
     (pool) => pool.id === budgetPoolId,
   );
@@ -552,12 +646,7 @@ export async function materializeM3b1Phase(input: {
     return {
       ok: false,
       error: [
-        diagnostic(
-          "INVALID_WIRE_SCHEMA",
-          input.phase === "m3b-heldout"
-            ? "The M3b.4 development campaign carries no held-out authority."
-            : "M3b.4 operational pool is missing.",
-        ),
+        diagnostic("INVALID_WIRE_SCHEMA", "M3b operational pool is missing."),
       ],
     };
   for (const provider of ceiling.value.providers) {
@@ -582,7 +671,7 @@ export async function materializeM3b1Phase(input: {
       };
   }
   const experimentBody = {
-    milestone: "m3b.4" as const,
+    milestone: campaign.value.milestone,
     phase: input.phase,
     sourceCommit: input.sourceCommit,
     campaignDigest: campaign.value.campaignDigest,
@@ -635,7 +724,7 @@ export async function materializeM3b1Phase(input: {
     campaignId: campaign.value.campaignId,
     ...experimentBody,
     experimentDigest: experimentDigest.value,
-    storageNamespace: `m3b4/${input.phase}/experiments/${experimentDigest.value}`,
+    storageNamespace: `${input.phase === "m3b-heldout" ? "m3b5" : "m3b4"}/${input.phase}/experiments/${experimentDigest.value}`,
   };
   const phaseManifestDigest = await digestValue(manifestBody);
   return phaseManifestDigest.ok

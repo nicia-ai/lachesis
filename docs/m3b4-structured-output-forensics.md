@@ -1,9 +1,10 @@
 # M3b.4: structured-output forensics and bounded wire recovery
 
-Status: the stress probe is complete and passed its frozen protocol gate. The
-calibration correction below is implemented and verified offline. This document
-does not authorize calibration, held-out inference, or creation of a new budget
-pool.
+Status: the stress probe and calibration are complete and immutable. Calibration
+recorded 236/240 first-attempt success, three wire repairs, two semantic
+repairs, and 240/240 final reliability. Its Anthropic retraction-stratum
+failures remain unchanged historical observations. This document does not
+authorize held-out inference or creation of a new budget pool.
 
 M3b.3 is frozen as an immutable calibration failure. Its probe passed, but four
 Anthropic `graph-adjacency` calibration records completed at the provider and
@@ -122,9 +123,11 @@ At frozen pricing, the 480-attempt ceiling is `22,800,000 µUSD`:
 `13,200,000 µUSD` for OpenAI and `9,600,000 µUSD` for Anthropic. This is a
 resource limit, not permission to spend.
 
-Calibration uses a fresh 30-case development corpus with five cases in each of
+Calibration used a fresh 30-case development corpus with five cases in each of
 the six categories. Offline audits require no reused fixture identity, entity,
 normalized instruction wording, answer, fixture structure, or frozen
 neighborhood from the earlier development corpus; zero answer-bearing query
 leakage; valid ground-truth references; deterministic selection; and all four
-factorial arms for every case. The frozen held-out corpus is unchanged.
+factorial arms for every case. The superseded held-out candidate was never
+executed. A strictly disjoint replacement and fresh held-out campaign are
+defined by [M3b.5 held-out preparation](m3b5-heldout-preparation.md).

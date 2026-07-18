@@ -79,6 +79,7 @@ export {
   M3B_TRANSPORT_RETRY_POLICY,
   M3B_WIRE_STRESS_PROBE_GATE,
   M3B4_CALIBRATION_PROVIDER_ATTEMPT_QUOTAS,
+  M3B5_HELDOUT_PROVIDER_ATTEMPT_QUOTAS,
   type M3bAttemptProvenance,
   m3bAttemptProvenanceSchema,
   type M3bAttemptType,
@@ -122,11 +123,13 @@ export {
 } from "./m3b.js";
 export {
   auditM3b4CalibrationCorpusDisjointness,
+  auditM3b5HeldoutCorpusDisjointness,
   loadM3bPhaseCases,
   M3B_CORPUS_PROTOCOL,
   M3B_PREREGISTERED_CORPUS,
   M3B_REFERENCE_GRAPH,
   type M3b4CalibrationCorpusAudit,
+  type M3b5HeldoutCorpusAudit,
 } from "./m3b-corpus.js";
 export {
   auditM3bWilliamsSchedule,

@@ -230,10 +230,12 @@ describe("M3b.1 live-binding substrate", () => {
         sourceCommit: SOURCE_COMMIT,
       }),
     );
-    const heldout = await materializeM3b1Phase({
-      phase: "m3b-heldout",
-      sourceCommit: SOURCE_COMMIT,
-    });
+    const heldout = unwrap(
+      await materializeM3b1Phase({
+        phase: "m3b-heldout",
+        sourceCommit: SOURCE_COMMIT,
+      }),
+    );
 
     expect(await validateM3b1Materialization(probe)).toEqual({
       ok: true,
@@ -292,15 +294,70 @@ describe("M3b.1 live-binding substrate", () => {
         operational: 30_000_000,
       },
     ]);
-    expect(heldout).toMatchObject({
-      ok: false,
-      error: [
+    expect(await validateM3b1Materialization(heldout)).toEqual({
+      ok: true,
+      value: undefined,
+    });
+    expect(heldout.campaign).toMatchObject({
+      campaignId: "lachesis-m3b5-heldout",
+      milestone: "m3b.5",
+      maximumOperationalCostUsdMicros: 150_000_000,
+      budgetPools: [
         {
-          code: "INVALID_WIRE_SCHEMA",
-          message:
-            "The M3b.4 development campaign carries no held-out authority.",
+          id: "m3b-heldout",
+          maxCostUsdMicros: 150_000_000,
+          providerCostCaps: [
+            { billingProvider: "anthropic", maxCostUsdMicros: 64_000_000 },
+            { billingProvider: "openai", maxCostUsdMicros: 86_000_000 },
+          ],
         },
       ],
+    });
+    expect(heldout.phase).toMatchObject({
+      milestone: "m3b.5",
+      budgetPoolId: "m3b-heldout",
+      initialCalls: 2_560,
+      wireRepairCalls: 128,
+      semanticRepairCalls: 256,
+      maximumTransportRetries: 128,
+      maximumCalls: 3_072,
+      theoreticalCeiling: {
+        maximumCalls: 3_072,
+        maximumCostUsdMicros: 145_920_000,
+        providers: [
+          {
+            billingProvider: "anthropic",
+            maximumCalls: 1_536,
+            maximumCostUsdMicros: 61_440_000,
+          },
+          {
+            billingProvider: "openai",
+            maximumCalls: 1_536,
+            maximumCostUsdMicros: 84_480_000,
+          },
+        ],
+      },
+      attemptQuotas: {
+        exhaustion: "heldout-incomplete-formal-failure-before-dispatch",
+        providers: [
+          {
+            provider: "anthropic",
+            initial: 1_280,
+            wireRepair: 64,
+            semanticRepair: 128,
+            transportRetry: 64,
+            total: 1_536,
+          },
+          {
+            provider: "openai",
+            initial: 1_280,
+            wireRepair: 64,
+            semanticRepair: 128,
+            transportRetry: 64,
+            total: 1_536,
+          },
+        ],
+      },
     });
     expect(probe.phase.theoreticalCeiling.providers).toEqual([
       {
@@ -388,11 +445,22 @@ describe("M3b.1 live-binding substrate", () => {
         return (
           disposition === "superseded-unexecuted" ||
           disposition === "complete-calibration-fail" ||
+          disposition === "complete-calibration-pass" ||
           disposition === "complete-protocol-pass" ||
           disposition === "blocked-unexecuted"
         );
       }),
     ).toBe(true);
+    expect(
+      m3bExecutionDisposition(
+        "d36ddbd031df4194b9be0f3b1b13ef169cca4028e4fe58b7afab6676c27e7ce5",
+      ),
+    ).toBe("superseded-unexecuted");
+    expect(
+      m3bExecutionDisposition(
+        "c7beee09333f7a99a18d13a93108ae6f5d2ad62b7746683b64f0732d3129b576",
+      ),
+    ).toBe("complete-calibration-pass");
     expect(
       M3B_OFFLINE_DESIGN_IDENTITIES.every(
         (identity) =>
@@ -418,6 +486,23 @@ describe("M3b.1 live-binding substrate", () => {
       credentials: { OPENAI_API_KEY: false, ANTHROPIC_API_KEY: false },
     });
     expect(calibrationPreflight.checks.completePhaseReservationsFit).toBe(true);
+    const heldoutPreflight = await preflightM3b1({
+      materialized: heldout,
+      currentCommit: SOURCE_COMMIT,
+      cleanWorktree: true,
+      credentials: { OPENAI_API_KEY: false, ANTHROPIC_API_KEY: false },
+    });
+    expect(heldoutPreflight).toMatchObject({
+      valid: true,
+      executionDisposition: "live-capable",
+      checks: {
+        credentials: false,
+        acknowledgement: false,
+        perRequestReservationsFit: true,
+        completePhaseReservationsFit: true,
+      },
+      liveExecutionPermitted: false,
+    });
     expect(
       await validateM3b1Materialization({
         ...probe,

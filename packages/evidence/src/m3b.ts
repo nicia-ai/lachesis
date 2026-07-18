@@ -330,6 +330,30 @@ export const M3B4_CALIBRATION_PROVIDER_ATTEMPT_QUOTAS = Object.freeze({
   exhaustion: "calibration-incomplete-no-go-before-dispatch",
 });
 
+export const M3B5_HELDOUT_PROVIDER_ATTEMPT_QUOTAS = Object.freeze({
+  id: "m3b5-heldout-provider-cohort-attempt-quotas",
+  version: "1",
+  providers: Object.freeze([
+    Object.freeze({
+      provider: "anthropic" as const,
+      initial: 1_280,
+      wireRepair: 64,
+      semanticRepair: 128,
+      transportRetry: 64,
+      total: 1_536,
+    }),
+    Object.freeze({
+      provider: "openai" as const,
+      initial: 1_280,
+      wireRepair: 64,
+      semanticRepair: 128,
+      transportRetry: 64,
+      total: 1_536,
+    }),
+  ]),
+  exhaustion: "heldout-incomplete-formal-failure-before-dispatch",
+});
+
 const requestRegistration = defineSchema({
   id: "m3b/oracle-request",
   version: "4",
@@ -613,7 +637,12 @@ async function freezeCase(
   };
 }
 
-export async function materializeM3bPhase(
+const materializationCache = new Map<
+  string,
+  Promise<Result<M3bMaterializedPhase, ReadonlyArray<Diagnostic>>>
+>();
+
+async function materializeM3bPhaseUncached(
   input: Readonly<{
     phase: M3bPhase;
     sourceCommit: string;
@@ -658,36 +687,38 @@ export async function materializeM3bPhase(
   const attemptQuotas =
     input.phase === "m3b-calibration"
       ? M3B4_CALIBRATION_PROVIDER_ATTEMPT_QUOTAS
-      : Object.freeze({
-          id: "m3b4-phase-provider-cohort-attempt-quotas",
-          version: "1",
-          providers: Object.freeze(
-            providers
-              .map((provider) => {
-                const wireRepair = initialCallsPerProvider;
-                const semanticRepair = initialCallsPerProvider;
-                const transportRetry =
-                  (initialCallsPerProvider + wireRepair + semanticRepair) *
-                  M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt;
-                return Object.freeze({
-                  provider: provider.provider,
-                  initial: initialCallsPerProvider,
-                  wireRepair,
-                  semanticRepair,
-                  transportRetry,
-                  total:
-                    initialCallsPerProvider +
-                    wireRepair +
-                    semanticRepair +
+      : input.phase === "m3b-heldout"
+        ? M3B5_HELDOUT_PROVIDER_ATTEMPT_QUOTAS
+        : Object.freeze({
+            id: "m3b4-phase-provider-cohort-attempt-quotas",
+            version: "1",
+            providers: Object.freeze(
+              providers
+                .map((provider) => {
+                  const wireRepair = initialCallsPerProvider;
+                  const semanticRepair = initialCallsPerProvider;
+                  const transportRetry =
+                    (initialCallsPerProvider + wireRepair + semanticRepair) *
+                    M3B_TRANSPORT_RETRY_POLICY.maximumRetriesAfterInitialAttempt;
+                  return Object.freeze({
+                    provider: provider.provider,
+                    initial: initialCallsPerProvider,
+                    wireRepair,
+                    semanticRepair,
                     transportRetry,
-                });
-              })
-              .toSorted((left, right) =>
-                left.provider.localeCompare(right.provider),
-              ),
-          ),
-          exhaustion: "phase-incomplete-no-go-before-dispatch",
-        });
+                    total:
+                      initialCallsPerProvider +
+                      wireRepair +
+                      semanticRepair +
+                      transportRetry,
+                  });
+                })
+                .toSorted((left, right) =>
+                  left.provider.localeCompare(right.provider),
+                ),
+            ),
+            exhaustion: "phase-incomplete-no-go-before-dispatch",
+          });
   const wireRepairCalls = attemptQuotas.providers.reduce(
     (total, provider) => total + provider.wireRepair,
     0,
@@ -765,6 +796,25 @@ export async function materializeM3bPhase(
         },
       }
     : { ok: false, error: [experimentDigest.error] };
+}
+
+export function materializeM3bPhase(
+  input: Readonly<{
+    phase: M3bPhase;
+    sourceCommit: string;
+    providers?: ReadonlyArray<M3bOracleIdentity> | undefined;
+  }>,
+): Promise<Result<M3bMaterializedPhase, ReadonlyArray<Diagnostic>>> {
+  const key = JSON.stringify({
+    phase: input.phase,
+    sourceCommit: input.sourceCommit,
+    providers: input.providers ?? M3B_ORACLE_MODELS,
+  });
+  const cached = materializationCache.get(key);
+  if (cached !== undefined) return cached;
+  const materialized = materializeM3bPhaseUncached(input);
+  materializationCache.set(key, materialized);
+  return materialized;
 }
 
 export async function validateM3bMaterialization(

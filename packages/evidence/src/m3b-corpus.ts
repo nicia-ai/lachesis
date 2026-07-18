@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import type { EvidenceCitation, EvidenceFact } from "./contract.js";
+import { auditM3aOfflineDesign, type M3a1Sources } from "./audit.js";
+import {
+  type EvidenceCitation,
+  type EvidenceFact,
+  referenceEvidenceSelection,
+} from "./contract.js";
 import {
   M3A1_PREREGISTERED_CORPUS,
   M3A1_REFERENCE_GRAPH,
@@ -8,11 +13,18 @@ import {
   type M3aTask,
   m3aTaskSchema,
 } from "./corpus.js";
-import { evidenceGraphSchema } from "./graph.js";
+import {
+  createGraphSelectedAdjacencyEvidenceSource,
+  createGraphSelectedFactsEvidenceSource,
+  createInMemoryGraphEvidenceSource,
+  evidenceGraphSchema,
+} from "./graph.js";
 import {
   M3B4_CALIBRATION_GRAPH_ADDITIONS,
   M3B4_CALIBRATION_TASKS,
 } from "./m3b4-calibration-corpus.js";
+import { createM3b5HeldoutCorpus } from "./m3b5-heldout-corpus.js";
+import { createMatchedTextEvidenceSource } from "./text.js";
 
 const RECORDED_FROM = "2025-01-01T00:00:00.000Z";
 const CURRENT_AT = "2026-07-01T00:00:00.000Z";
@@ -94,10 +106,10 @@ const addedNegativeControls = Array.from({ length: 20 }, (_, offset) =>
   extraNegativeControl(offset + 40),
 );
 
-export const M3B_REFERENCE_GRAPH = evidenceGraphSchema.parse({
+const inspectedReferenceGraph = evidenceGraphSchema.parse({
   ...M3A1_REFERENCE_GRAPH,
-  id: "m3b-reference-evidence",
-  version: "2",
+  id: "m3b4-inspected-reference-evidence",
+  version: "1",
   citations: [
     ...M3A1_REFERENCE_GRAPH.citations,
     ...addedNegativeControls.map((item) => item.citation),
@@ -114,7 +126,7 @@ export const M3B_REFERENCE_GRAPH = evidenceGraphSchema.parse({
   ],
 });
 
-export const M3B_PREREGISTERED_CORPUS: ReadonlyArray<M3aTask> = z
+const inspectedCorpus: ReadonlyArray<M3aTask> = z
   .array(m3aTaskSchema)
   .readonly()
   .parse([
@@ -122,9 +134,47 @@ export const M3B_PREREGISTERED_CORPUS: ReadonlyArray<M3aTask> = z
     ...addedNegativeControls.map((item) => item.task),
   ]);
 
+const m3b5Heldout = createM3b5HeldoutCorpus({
+  graph: inspectedReferenceGraph,
+  tasks: inspectedCorpus.filter((task) => task.split === "heldout"),
+});
+
+export const M3B_REFERENCE_GRAPH = evidenceGraphSchema.parse({
+  ...inspectedReferenceGraph,
+  id: "m3b5-reference-evidence",
+  version: "1",
+  citations: [
+    ...inspectedReferenceGraph.citations.filter(
+      (citation) => !m3b5Heldout.replacedCitationIds.has(citation.id),
+    ),
+    ...m3b5Heldout.citations,
+  ],
+  facts: [
+    ...inspectedReferenceGraph.facts.filter(
+      (fact) => !m3b5Heldout.replacedFactIds.has(fact.id),
+    ),
+    ...m3b5Heldout.facts,
+  ],
+  edges: [
+    ...inspectedReferenceGraph.edges.filter(
+      (edge) => !m3b5Heldout.replacedEdgeIds.has(edge.id),
+    ),
+    ...m3b5Heldout.edges,
+  ],
+});
+
+export const M3B_PREREGISTERED_CORPUS: ReadonlyArray<M3aTask> = z
+  .array(m3aTaskSchema)
+  .length(190)
+  .readonly()
+  .parse([
+    ...inspectedCorpus.filter((task) => task.split === "development"),
+    ...m3b5Heldout.tasks,
+  ]);
+
 export const M3B_CORPUS_PROTOCOL = Object.freeze({
-  id: "lachesis-m3b-factorial-evidence-live-corpus",
-  version: "3",
+  id: "lachesis-m3b5-strict-disjoint-heldout-corpus",
+  version: "1",
   developmentCases: 30,
   heldoutCases: 160,
   heldoutRetrievalContrastCases: 60,
@@ -191,18 +241,26 @@ function fixturePrefix(task: M3aTask): string {
   return task.id.replace(/^m3a1-/, "");
 }
 
-function fixtureFacts(task: M3aTask): typeof M3B_REFERENCE_GRAPH.facts {
+function fixtureFactsFrom(
+  graph: z.infer<typeof evidenceGraphSchema>,
+  task: M3aTask,
+): typeof M3B_REFERENCE_GRAPH.facts {
   const prefix = fixturePrefix(task);
-  return M3B_REFERENCE_GRAPH.facts.filter((fact) => fact.id.includes(prefix));
+  return graph.facts.filter((fact) => fact.id.includes(prefix));
 }
 
-function fixtureStructure(task: M3aTask): string {
+function fixtureFacts(task: M3aTask): typeof M3B_REFERENCE_GRAPH.facts {
+  return fixtureFactsFrom(M3B_REFERENCE_GRAPH, task);
+}
+
+function fixtureStructureFrom(
+  graph: z.infer<typeof evidenceGraphSchema>,
+  task: M3aTask,
+): string {
   const prefix = fixturePrefix(task);
-  const facts = fixtureFacts(task);
-  const edges = M3B_REFERENCE_GRAPH.edges.filter((edge) =>
-    edge.id.includes(prefix),
-  );
-  const citations = M3B_REFERENCE_GRAPH.citations.filter((citation) =>
+  const facts = fixtureFactsFrom(graph, task);
+  const edges = graph.edges.filter((edge) => edge.id.includes(prefix));
+  const citations = graph.citations.filter((citation) =>
     citation.id.includes(prefix),
   );
   const predicates = facts
@@ -225,6 +283,10 @@ function fixtureStructure(task: M3aTask): string {
     task.query.maxPaths,
     task.query.maxHops,
   ].join("|");
+}
+
+function fixtureStructure(task: M3aTask): string {
+  return fixtureStructureFrom(M3B_REFERENCE_GRAPH, task);
 }
 
 export type M3b4CalibrationCorpusAudit = Readonly<{
@@ -300,5 +362,179 @@ export function auditM3b4CalibrationCorpusDisjointness(): M3b4CalibrationCorpusA
       reusedFactWording === 0 &&
       reusedAnswers === 0 &&
       reusedFixtureStructures === 0,
+  };
+}
+
+export type M3b5HeldoutCorpusAudit = Readonly<{
+  cases: number;
+  categoryCounts: ReadonlyArray<
+    Readonly<{ category: M3aTask["category"]; count: number }>
+  >;
+  reusedFixtureIds: number;
+  reusedEntities: number;
+  reusedExactInstructions: number;
+  reusedInstructionWording: number;
+  reusedFactWording: number;
+  reusedAnswers: number;
+  reusedFixtureStructures: number;
+  reusedNeighborhoodDigests: number;
+  factorialDesignPassed: boolean;
+  passed: boolean;
+}>;
+
+function offlineSources(
+  graph: z.infer<typeof evidenceGraphSchema>,
+): M3a1Sources {
+  const lexicalFacts = createMatchedTextEvidenceSource(graph);
+  const graphFacts = createGraphSelectedFactsEvidenceSource(graph);
+  const graphAdjacency = createGraphSelectedAdjacencyEvidenceSource(graph);
+  const graphTyped = createInMemoryGraphEvidenceSource(graph);
+  if (
+    !lexicalFacts.ok ||
+    !graphFacts.ok ||
+    !graphAdjacency.ok ||
+    !graphTyped.ok
+  )
+    throw new Error("M3b.5 offline evidence source construction failed.");
+  return {
+    lexicalFacts: lexicalFacts.value,
+    graphFacts: graphFacts.value,
+    graphAdjacency: graphAdjacency.value,
+    graphTyped: graphTyped.value,
+  };
+}
+
+async function neighborhoodDigests(
+  graph: z.infer<typeof evidenceGraphSchema>,
+  tasks: ReadonlyArray<M3aTask>,
+): Promise<ReadonlySet<string>> {
+  const built = offlineSources(graph);
+  const sources = [
+    built.lexicalFacts,
+    built.graphFacts,
+    built.graphAdjacency,
+    built.graphTyped,
+  ];
+  const references = await Promise.all(
+    tasks.flatMap((task) =>
+      sources.map(async (source) => {
+        const selected = await source.select(task.query);
+        if (!selected.ok) throw new Error(selected.error.message);
+        const reference = await referenceEvidenceSelection(selected.value);
+        if (!reference.ok) throw new Error(reference.error.message);
+        return reference.value.neighborhoodDigest;
+      }),
+    ),
+  );
+  return new Set(references);
+}
+
+export async function auditM3b5HeldoutCorpusDisjointness(): Promise<M3b5HeldoutCorpusAudit> {
+  const inspected = [...inspectedCorpus, ...M3B4_CALIBRATION_TASKS];
+  const heldout = M3B_PREREGISTERED_CORPUS.filter(
+    (task) => task.split === "heldout",
+  );
+  const categoryCounts = m3a1CategorySchema.options.map((category) => ({
+    category,
+    count: heldout.filter((task) => task.category === category).length,
+  }));
+  const reusedFixtureIds = overlapCount(
+    valuesFor(inspected, (task) => [task.id]),
+    valuesFor(heldout, (task) => [task.id]),
+  );
+  const reusedEntities = overlapCount(
+    valuesFor(inspected, (task) =>
+      fixtureFactsFrom(inspectedReferenceGraph, task).flatMap((fact) => [
+        fact.subject,
+        fact.object,
+      ]),
+    ),
+    valuesFor(heldout, (task) =>
+      fixtureFacts(task).flatMap((fact) => [fact.subject, fact.object]),
+    ),
+  );
+  const reusedExactInstructions = overlapCount(
+    valuesFor(inspected, (task) => [task.instruction]),
+    valuesFor(heldout, (task) => [task.instruction]),
+  );
+  const reusedInstructionWording = overlapCount(
+    valuesFor(inspected, (task) => [instructionTemplate(task)]),
+    valuesFor(heldout, (task) => [instructionTemplate(task)]),
+  );
+  const reusedFactWording = overlapCount(
+    valuesFor(inspected, (task) =>
+      fixtureFactsFrom(inspectedReferenceGraph, task).map(
+        (fact) => fact.statement,
+      ),
+    ),
+    valuesFor(heldout, (task) =>
+      fixtureFacts(task).map((fact) => fact.statement),
+    ),
+  );
+  const reusedAnswers = overlapCount(
+    valuesFor(inspected, (task) => task.expectedAnswerValues),
+    valuesFor(heldout, (task) => task.expectedAnswerValues),
+  );
+  const reusedFixtureStructures = overlapCount(
+    valuesFor(inspected, (task) => [
+      fixtureStructureFrom(inspectedReferenceGraph, task),
+    ]),
+    valuesFor(heldout, (task) => [fixtureStructure(task)]),
+  );
+  const [inspectedNeighborhoods, heldoutNeighborhoods] = await Promise.all([
+    neighborhoodDigests(inspectedReferenceGraph, inspected),
+    neighborhoodDigests(M3B_REFERENCE_GRAPH, heldout),
+  ]);
+  const reusedNeighborhoodDigests = overlapCount(
+    inspectedNeighborhoods,
+    heldoutNeighborhoods,
+  );
+  const mirroredDevelopment = heldout.map((task) =>
+    m3aTaskSchema.parse({
+      ...task,
+      id: task.id.replace(/^m3a1-/u, "m3a1-audit-development-"),
+      split: "development",
+    }),
+  );
+  const factorialDesign = await auditM3aOfflineDesign({
+    graph: M3B_REFERENCE_GRAPH,
+    tasks: [...mirroredDevelopment, ...heldout],
+    sources: offlineSources(M3B_REFERENCE_GRAPH),
+  });
+  const factorialDesignPassed = factorialDesign.ok;
+  const expectedCounts = new Map<M3aTask["category"], number>([
+    ["multi-hop", 20],
+    ["temporal", 20],
+    ["contradiction", 20],
+    ["provenance", 20],
+    ["retraction", 20],
+    ["negative-control", 60],
+  ]);
+  return {
+    cases: heldout.length,
+    categoryCounts,
+    reusedFixtureIds,
+    reusedEntities,
+    reusedExactInstructions,
+    reusedInstructionWording,
+    reusedFactWording,
+    reusedAnswers,
+    reusedFixtureStructures,
+    reusedNeighborhoodDigests,
+    factorialDesignPassed,
+    passed:
+      heldout.length === 160 &&
+      categoryCounts.every(
+        (item) => item.count === expectedCounts.get(item.category),
+      ) &&
+      reusedFixtureIds === 0 &&
+      reusedEntities === 0 &&
+      reusedExactInstructions === 0 &&
+      reusedInstructionWording === 0 &&
+      reusedFactWording === 0 &&
+      reusedAnswers === 0 &&
+      reusedFixtureStructures === 0 &&
+      reusedNeighborhoodDigests === 0 &&
+      factorialDesignPassed,
   };
 }

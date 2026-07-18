@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import {
   auditM3b4CalibrationCorpusDisjointness,
+  auditM3b5HeldoutCorpusDisjointness,
   auditM3bWilliamsSchedule,
   blindAuditM3bMaterialization,
   blindM3a1IntegrityAudit,
@@ -20,6 +21,7 @@ import {
   M3B_PREREGISTERED_CORPUS,
   M3B_REFERENCE_GRAPH,
   M3B4_CALIBRATION_TASKS,
+  M3B5_HELDOUT_PROVIDER_ATTEMPT_QUOTAS,
   type M3bAttemptProvenance,
   type M3bMaterializedPhase,
   type M3bOracle,
@@ -229,9 +231,33 @@ describe("M3b offline execution infrastructure", () => {
       ),
     );
     expect(heldoutDigest).toBe(
-      "1d36022bd4443efc9da03120dd67a1da0a5c072c81a20e530807cc2832dd32a6",
+      "f2224ddd815582b4b4b4798bb4a765813cbf2fa68b2bfb26b8e1f55172580927",
     );
   });
+
+  it("proves strict M3b.5 held-out disjointness without exposing cases", async () => {
+    expect(await auditM3b5HeldoutCorpusDisjointness()).toEqual({
+      cases: 160,
+      categoryCounts: [
+        { category: "multi-hop", count: 20 },
+        { category: "temporal", count: 20 },
+        { category: "contradiction", count: 20 },
+        { category: "provenance", count: 20 },
+        { category: "retraction", count: 20 },
+        { category: "negative-control", count: 60 },
+      ],
+      reusedFixtureIds: 0,
+      reusedEntities: 0,
+      reusedExactInstructions: 0,
+      reusedInstructionWording: 0,
+      reusedFactWording: 0,
+      reusedAnswers: 0,
+      reusedFixtureStructures: 0,
+      reusedNeighborhoodDigests: 0,
+      factorialDesignPassed: true,
+      passed: true,
+    });
+  }, 120_000);
 
   it("materializes exact offline probe, calibration, and held-out matrices", () => {
     expect(blindAuditM3bMaterialization(probe)).toMatchObject({
@@ -287,16 +313,19 @@ describe("M3b offline execution infrastructure", () => {
     expect(blindAuditM3bMaterialization(heldout)).toMatchObject({
       cases: 160,
       initialCalls: 2_560,
-      maximumSemanticRepairs: 2_560,
-      maximumWireRepairs: 2_560,
-      maximumTransportRetries: 7_680,
-      maximumCalls: 15_360,
+      maximumSemanticRepairs: 256,
+      maximumWireRepairs: 128,
+      maximumTransportRetries: 128,
+      maximumCalls: 3_072,
       frozenNeighborhoods: 640,
       passed: true,
     });
     expect(probe.manifest.pool.id).toBe("m3b-development");
     expect(calibration.manifest.pool.id).toBe("m3b-development");
     expect(heldout.manifest.pool.id).toBe("m3b-heldout");
+    expect(heldout.manifest.attemptQuotas).toBe(
+      M3B5_HELDOUT_PROVIDER_ATTEMPT_QUOTAS,
+    );
     expect(
       new Set([
         probe.manifest.experimentDigest,

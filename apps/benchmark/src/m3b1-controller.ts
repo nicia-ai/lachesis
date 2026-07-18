@@ -55,6 +55,7 @@ export type M3b1PreflightReport = Readonly<{
     | "complete-protocol-pass"
     | "complete-semantic-gate-fail"
     | "complete-calibration-fail"
+    | "complete-calibration-pass"
     | "blocked-unexecuted"
     | "superseded-unexecuted";
   initialCalls: number;
@@ -153,11 +154,7 @@ export async function preflightM3b1(input: {
   const historicalDisposition = m3bExecutionDisposition(
     input.materialized.phase.experimentDigest,
   );
-  const disposition =
-    historicalDisposition === "live-capable" &&
-    input.materialized.phase.phase === "m3b-heldout"
-      ? ("blocked-unexecuted" as const)
-      : historicalDisposition;
+  const disposition = historicalDisposition;
   const missingCredentialNames = missingCredentials(input.credentials);
   const checks = {
     materialization: validated.ok,
@@ -631,7 +628,7 @@ export async function executeM3b1(input: {
     };
   const ledgerPath = join(
     input.storageRoot,
-    "m3b4",
+    input.materialized.phase.milestone.replace(".", ""),
     input.materialized.campaign.campaignDigest,
     "ledger.ndjson",
   );
