@@ -9,8 +9,7 @@ effect interpreters.
 This repository contains the measured plan kernel, deterministic generation
 benchmark substrate, the frozen M1b/M1c experiment controllers, the completed M2
 functional-JSON-IR versus restricted-capability-TypeScript representation
-ablation, the offline M3a.1 factorial evidence-substrate design, and M3b's
-offline shared-plan execution infrastructure.
+ablation, and the completed M3 factorial evidence-substrate study.
 
 ## What works
 
@@ -125,11 +124,11 @@ four-arm substrate benchmark and M3b kill gates, and the
 study substrate, [M3b.1 live binding](docs/m3b1-live-binding.md) for the frozen
 failed probe, the [M3b.2 correction](docs/m3b2-protocol-correction.md), and the
 [M3b.3 semantic-obligation correction](docs/m3b3-semantic-obligations.md) for
-the frozen calibration failure. The current offline milestone is
+the frozen calibration failure,
 [M3b.4 structured-output forensics](docs/m3b4-structured-output-forensics.md),
-which closed with a passing stress probe and calibration, and the offline-only
-[M3b.5 held-out preparation](docs/m3b5-heldout-preparation.md), which freezes a
-strictly disjoint corpus and a fresh held-out authority envelope.
+and the historical [M3b.5 held-out freeze](docs/m3b5-heldout-preparation.md).
+M3b.5 and M3 are closed as `complete-formal-fail`; see the immutable
+[M3 results](docs/m3-results.md) for the formal conclusions and claim boundary.
 
 ## Validation
 
@@ -155,8 +154,14 @@ never executed. M3b.2 is frozen as a semantic-gate failure. M3b.3 passed its
 probe and is frozen as an immutable calibration failure; held-out was not
 authorized. M3b.4's stress probe and calibration are complete and immutable;
 calibration achieved 236/240 first-attempt success and 240/240 final
-reliability. M3b.5 prepares a strictly disjoint held-out identity offline.
-Materialization and preregistration do not authorize held-out inference.
+reliability. M3b.5 subsequently completed all 2,560 held-out records. Its
+negative-control and safety gates passed, but every universal structural-
+superiority conclusion failed under the frozen provider-by-repetition rule. M3
+is complete and may not be rerun or reinterpreted under relaxed gates.
+
+M4 is only a proposed provider-aware evidence-view compiler and confirmatory
+benchmark. It has not been implemented, materialized, preregistered, or
+authorized. TypeGraph remains absent from the evaluated model-quality claims.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

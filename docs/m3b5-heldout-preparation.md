@@ -1,7 +1,9 @@
 # M3b.5: held-out preparation
 
-Status: offline freeze only. No provider inference or executable held-out state
-is authorized by this revision.
+Status: historical offline freeze. The frozen held-out experiment subsequently
+completed and M3b.5 closed as `complete-formal-fail`. This document preserves
+the prospective design; see [the immutable M3 results](m3-results.md) for the
+frozen conclusion. No M3 experiment may be rerun or modified.
 
 M3b.4 calibration is immutable at source commit
 `eecd8566042159d8d13e30f25a4cfc6de6ab491f`, preregistration commit
@@ -76,3 +78,12 @@ formal failure.
 Materialization and credential-free preflight confer no authority. Live
 execution requires a separate acknowledgement of the exact campaign, experiment,
 phase-manifest digest, caps, matrix, and attempt quotas.
+
+## Historical disposition
+
+The separately authorized held-out execution completed all 2,560 records. The
+negative-control non-inferiority and safety gates passed, but none of the three
+universal structural-superiority contrasts passed independently for both
+providers and both repetitions. M3b.5 and M3 are therefore closed as
+`complete-formal-fail`. The result did not change any gate, prompt, scorer,
+manifest, corpus, schedule, or experiment artifact.
