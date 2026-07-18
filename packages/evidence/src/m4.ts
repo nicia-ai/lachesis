@@ -41,6 +41,21 @@ export const m4EvidenceViewSchema = z.enum([
   "graph-typed",
 ]);
 
+export const m4ProviderProfileSchema = z
+  .strictObject({
+    id: identifierSchema,
+    version: z.string().min(1),
+    provider: m4ProviderSchema,
+  })
+  .readonly();
+
+export const m4PublicTaskProfileSchema = z
+  .strictObject({
+    taskClass: m4TaskClassSchema,
+    answerContract: m3bAnswerContractSchema,
+  })
+  .readonly();
+
 const m4PolicyRuleSchema = z
   .strictObject({
     provider: m4ProviderSchema,
@@ -87,19 +102,36 @@ export const m4EvidenceCompilerPolicySchema = z
 export type M4Provider = z.infer<typeof m4ProviderSchema>;
 export type M4TaskClass = z.infer<typeof m4TaskClassSchema>;
 export type M4EvidenceView = z.infer<typeof m4EvidenceViewSchema>;
+export type M4ProviderProfile = z.infer<typeof m4ProviderProfileSchema>;
+export type M4PublicTaskProfile = z.infer<typeof m4PublicTaskProfileSchema>;
 export type M4EvidenceCompilerPolicy = z.infer<
   typeof m4EvidenceCompilerPolicySchema
 >;
 
 export const M4A_EVIDENCE_COMPILER_PROTOCOL = Object.freeze({
   id: "m4a-provider-aware-evidence-compiler",
-  version: "1",
+  version: "2",
   status: "offline-development-policy",
   evidenceBasis: "m3-development-evidence",
   liveInferenceAuthorized: false,
   campaignMaterializationAuthorized: false,
   heldoutMaterializationAuthorized: false,
   typeGraphIntegrated: false,
+});
+
+export const M4A_PROVIDER_PROFILES: Readonly<
+  Record<M4Provider, M4ProviderProfile>
+> = Object.freeze({
+  openai: m4ProviderProfileSchema.parse({
+    id: "openai-evidence-view-profile",
+    version: "1",
+    provider: "openai",
+  }),
+  anthropic: m4ProviderProfileSchema.parse({
+    id: "anthropic-evidence-view-profile",
+    version: "1",
+    provider: "anthropic",
+  }),
 });
 
 export const M4A_INITIAL_POLICY: M4EvidenceCompilerPolicy =
@@ -191,10 +223,29 @@ const m4AvailableViewDigestSchema = z
   })
   .readonly();
 
+const m4SelectorDescriptorSchema = z
+  .strictObject({
+    view: m4EvidenceViewSchema,
+    selection: z.enum(["lexical", "graph"]),
+    encoding: z.enum(["facts", "untyped-adjacency", "typed-relationships"]),
+    implementation: z.string().min(1),
+  })
+  .readonly();
+
+export const m4SelectorManifestSchema = z
+  .array(m4SelectorDescriptorSchema)
+  .length(4)
+  .readonly();
+
+export type M4SelectorManifest = z.infer<typeof m4SelectorManifestSchema>;
+
 const m4EvidenceCompilerIdentityBodyObject = z.strictObject({
-  protocol: z.literal("m4a-provider-aware-evidence-compiler/1"),
+  protocol: z.literal("m4a-provider-aware-evidence-compiler/2"),
   policyDigest: sha256Schema.brand<"M4EvidencePolicyDigest">(),
-  graphDigest: sha256Schema.brand<"M4EvidenceGraphDigest">(),
+  providerProfileDigest: sha256Schema.brand<"M4ProviderProfileDigest">(),
+  taskContractDigest: sha256Schema.brand<"M4TaskContractDigest">(),
+  selectorManifestDigest: sha256Schema.brand<"M4SelectorManifestDigest">(),
+  sourceSnapshotDigest: sha256Schema.brand<"M4SourceSnapshotDigest">(),
   queryDigest: sha256Schema.brand<"M4EvidenceQueryDigest">(),
   provider: m4ProviderSchema,
   taskClass: m4TaskClassSchema,
@@ -204,8 +255,7 @@ const m4EvidenceCompilerIdentityBodyObject = z.strictObject({
     sha256Schema.brand<"M4SelectedNeighborhoodDigest">(),
   controlNeighborhoodDigest:
     sha256Schema.brand<"M4ControlNeighborhoodDigest">(),
-  modelVisibleContextDigest:
-    sha256Schema.brand<"M4ModelVisibleContextDigest">(),
+  visibleViewDigest: sha256Schema.brand<"M4VisibleViewDigest">(),
   availableViewDigests: z
     .array(m4AvailableViewDigestSchema)
     .length(4)
@@ -218,13 +268,16 @@ const m4EvidenceCompilerIdentityBodySchema =
 export const m4EvidenceCompilerIdentitySchema =
   m4EvidenceCompilerIdentityBodyObject
     .extend({
-      compiledViewDigest: sha256Schema.brand<"M4CompiledViewDigest">(),
+      compilerAuditDigest: sha256Schema.brand<"M4CompilerAuditDigest">(),
     })
     .readonly();
 
 export const m4CompiledEvidenceViewSchema = z
   .strictObject({
     policy: m4EvidenceCompilerPolicySchema,
+    providerProfile: m4ProviderProfileSchema,
+    taskProfile: m4PublicTaskProfileSchema,
+    selectorManifest: m4SelectorManifestSchema,
     graph: evidenceGraphSchema,
     query: evidenceQuerySchema,
     identity: m4EvidenceCompilerIdentitySchema,
@@ -262,6 +315,19 @@ const M4_VIEW_ORDER: ReadonlyArray<M4EvidenceView> = Object.freeze([
   "graph-adjacency",
   "graph-typed",
 ]);
+
+function selectorManifest(
+  views: ReadonlyArray<z.infer<typeof m4CompiledViewEntrySchema>>,
+): M4SelectorManifest {
+  return m4SelectorManifestSchema.parse(
+    views.map((view) => ({
+      view: view.view,
+      selection: view.neighborhood.source.selection,
+      encoding: view.neighborhood.source.encoding,
+      implementation: view.neighborhood.source.implementation,
+    })),
+  );
+}
 
 function viewMatchesSource(
   view: M4EvidenceView,
@@ -371,16 +437,20 @@ export async function compileM4EvidenceView(
   input: Readonly<{
     graphInput: unknown;
     queryInput: unknown;
-    providerInput: unknown;
-    taskClassInput: unknown;
+    providerProfileInput: unknown;
+    taskProfileInput: unknown;
     policyInput?: unknown;
   }>,
 ): Promise<Result<M4CompiledEvidenceView, M4Failure>> {
-  const provider = m4ProviderSchema.safeParse(input.providerInput);
-  if (!provider.success)
+  const providerProfile = m4ProviderProfileSchema.safeParse(
+    input.providerProfileInput,
+  );
+  if (!providerProfile.success)
     return err(failure("INVALID_PROVIDER", "Provider validation failed."));
-  const taskClass = m4TaskClassSchema.safeParse(input.taskClassInput);
-  if (!taskClass.success)
+  const taskProfile = m4PublicTaskProfileSchema.safeParse(
+    input.taskProfileInput,
+  );
+  if (!taskProfile.success)
     return err(failure("INVALID_TASK_CLASS", "Task class validation failed."));
   const query = evidenceQuerySchema.safeParse(input.queryInput);
   if (!query.success)
@@ -393,8 +463,8 @@ export async function compileM4EvidenceView(
   const graph = canonicalGraph(validatedGraph.value.graph);
   const rule = policy.value.rules.find(
     (candidate) =>
-      candidate.provider === provider.data &&
-      candidate.taskClass === taskClass.data,
+      candidate.provider === providerProfile.data.provider &&
+      candidate.taskClass === taskProfile.data.taskClass,
   );
   if (rule === undefined)
     return err(
@@ -426,33 +496,53 @@ export async function compileM4EvidenceView(
       failure("IDENTITY_FAILURE", "Compiled evidence view set is incomplete."),
     );
 
-  const [policyDigest, graphDigest, queryDigest, modelVisibleContextDigest] =
-    await Promise.all([
-      digest(policy.value, "Evidence policy cannot be identified."),
-      digest(graph, "Evidence graph cannot be identified."),
-      digest(query.data, "Evidence query cannot be identified."),
-      digest(
-        selected.neighborhood.context,
-        "Model-visible evidence context cannot be identified.",
-      ),
-    ]);
+  const manifest = selectorManifest(views);
+  const [
+    policyDigest,
+    providerProfileDigest,
+    taskContractDigest,
+    selectorManifestDigest,
+    sourceSnapshotDigest,
+    queryDigest,
+    visibleViewDigest,
+  ] = await Promise.all([
+    digest(policy.value, "Evidence policy cannot be identified."),
+    digest(providerProfile.data, "Provider profile cannot be identified."),
+    digest(
+      taskProfile.data.answerContract,
+      "Task contract cannot be identified.",
+    ),
+    digest(manifest, "Selector manifest cannot be identified."),
+    digest(graph, "Evidence graph cannot be identified."),
+    digest(query.data, "Evidence query cannot be identified."),
+    digest(
+      selected.neighborhood.context,
+      "Model-visible evidence context cannot be identified.",
+    ),
+  ]);
   if (!policyDigest.ok) return policyDigest;
-  if (!graphDigest.ok) return graphDigest;
+  if (!providerProfileDigest.ok) return providerProfileDigest;
+  if (!taskContractDigest.ok) return taskContractDigest;
+  if (!selectorManifestDigest.ok) return selectorManifestDigest;
+  if (!sourceSnapshotDigest.ok) return sourceSnapshotDigest;
   if (!queryDigest.ok) return queryDigest;
-  if (!modelVisibleContextDigest.ok) return modelVisibleContextDigest;
+  if (!visibleViewDigest.ok) return visibleViewDigest;
 
   const body = m4EvidenceCompilerIdentityBodySchema.safeParse({
-    protocol: "m4a-provider-aware-evidence-compiler/1",
+    protocol: "m4a-provider-aware-evidence-compiler/2",
     policyDigest: policyDigest.value,
-    graphDigest: graphDigest.value,
+    providerProfileDigest: providerProfileDigest.value,
+    taskContractDigest: taskContractDigest.value,
+    selectorManifestDigest: selectorManifestDigest.value,
+    sourceSnapshotDigest: sourceSnapshotDigest.value,
     queryDigest: queryDigest.value,
-    provider: provider.data,
-    taskClass: taskClass.data,
+    provider: providerProfile.data.provider,
+    taskClass: taskProfile.data.taskClass,
     selectedView: rule.view,
     experimentalControlView: policy.value.experimentalControlView,
     selectedNeighborhoodDigest: selected.neighborhoodDigest,
     controlNeighborhoodDigest: control.neighborhoodDigest,
-    modelVisibleContextDigest: modelVisibleContextDigest.value,
+    visibleViewDigest: visibleViewDigest.value,
     availableViewDigests: views.map((view) => ({
       view: view.view,
       neighborhoodDigest: view.neighborhoodDigest,
@@ -465,16 +555,19 @@ export async function compileM4EvidenceView(
         "Evidence compiler identity validation failed.",
       ),
     );
-  const compiledViewDigest = await digest(
+  const compilerAuditDigest = await digest(
     body.data,
     "Compiled evidence view cannot be identified.",
   );
-  if (!compiledViewDigest.ok) return compiledViewDigest;
+  if (!compilerAuditDigest.ok) return compilerAuditDigest;
   const compiled = m4CompiledEvidenceViewSchema.safeParse({
     policy: policy.value,
+    providerProfile: providerProfile.data,
+    taskProfile: taskProfile.data,
+    selectorManifest: manifest,
     graph,
     query: query.data,
-    identity: { ...body.data, compiledViewDigest: compiledViewDigest.value },
+    identity: { ...body.data, compilerAuditDigest: compilerAuditDigest.value },
     views,
     selectedNeighborhood: selected.neighborhood,
     experimentalControlNeighborhood: control.neighborhood,
@@ -598,20 +691,49 @@ export async function validateM4CompiledEvidenceView(
       ? [{ view: entry.view, neighborhoodDigest: entry.digest.value }]
       : [],
   );
-  const [policyDigest, graphDigest, queryDigest, contextDigest] =
-    await Promise.all([
-      digest(canonical.value, "Evidence policy cannot be identified."),
-      digest(graph, "Evidence graph cannot be identified."),
-      digest(compiled.data.query, "Evidence query cannot be identified."),
-      digest(
-        compiled.data.modelVisibleContext,
-        "Model-visible context cannot be identified.",
+  const manifest = selectorManifest(compiled.data.views);
+  if (
+    JSON.stringify(manifest) !== JSON.stringify(compiled.data.selectorManifest)
+  )
+    return err(
+      failure(
+        "INVALID_COMPILED_VIEW",
+        "Compiled selector manifest does not match its evidence views.",
       ),
-    ]);
+    );
+  const [
+    policyDigest,
+    providerProfileDigest,
+    taskContractDigest,
+    selectorManifestDigest,
+    sourceSnapshotDigest,
+    queryDigest,
+    visibleViewDigest,
+  ] = await Promise.all([
+    digest(canonical.value, "Evidence policy cannot be identified."),
+    digest(
+      compiled.data.providerProfile,
+      "Provider profile cannot be identified.",
+    ),
+    digest(
+      compiled.data.taskProfile.answerContract,
+      "Task contract cannot be identified.",
+    ),
+    digest(manifest, "Selector manifest cannot be identified."),
+    digest(graph, "Evidence graph cannot be identified."),
+    digest(compiled.data.query, "Evidence query cannot be identified."),
+    digest(
+      compiled.data.modelVisibleContext,
+      "Model-visible context cannot be identified.",
+    ),
+  ]);
   if (!policyDigest.ok) return policyDigest;
-  if (!graphDigest.ok) return graphDigest;
+  if (!providerProfileDigest.ok) return providerProfileDigest;
+  if (!taskContractDigest.ok) return taskContractDigest;
+  if (!selectorManifestDigest.ok) return selectorManifestDigest;
+  if (!sourceSnapshotDigest.ok) return sourceSnapshotDigest;
   if (!queryDigest.ok) return queryDigest;
-  if (!contextDigest.ok) return contextDigest;
+  if (!visibleViewDigest.ok) return visibleViewDigest;
   const selectedDigest = availableViewDigests.find(
     (entry) => entry.view === compiled.data.identity.selectedView,
   );
@@ -624,10 +746,15 @@ export async function validateM4CompiledEvidenceView(
     );
   const applicableRule = canonical.value.rules.find(
     (rule) =>
-      rule.provider === compiled.data.identity.provider &&
-      rule.taskClass === compiled.data.identity.taskClass,
+      rule.provider === compiled.data.providerProfile.provider &&
+      rule.taskClass === compiled.data.taskProfile.taskClass,
   );
-  if (applicableRule?.view !== compiled.data.identity.selectedView)
+  if (
+    compiled.data.identity.provider !==
+      compiled.data.providerProfile.provider ||
+    compiled.data.identity.taskClass !== compiled.data.taskProfile.taskClass ||
+    applicableRule?.view !== compiled.data.identity.selectedView
+  )
     return err(
       failure(
         "INVALID_COMPILED_VIEW",
@@ -636,7 +763,10 @@ export async function validateM4CompiledEvidenceView(
     );
   const body = m4EvidenceCompilerIdentityBodySchema.safeParse({
     protocol: compiled.data.identity.protocol,
-    graphDigest: graphDigest.value,
+    providerProfileDigest: providerProfileDigest.value,
+    taskContractDigest: taskContractDigest.value,
+    selectorManifestDigest: selectorManifestDigest.value,
+    sourceSnapshotDigest: sourceSnapshotDigest.value,
     provider: compiled.data.identity.provider,
     taskClass: compiled.data.identity.taskClass,
     selectedView: compiled.data.identity.selectedView,
@@ -645,18 +775,18 @@ export async function validateM4CompiledEvidenceView(
     queryDigest: queryDigest.value,
     selectedNeighborhoodDigest: selectedDigest.neighborhoodDigest,
     controlNeighborhoodDigest: controlDigest.neighborhoodDigest,
-    modelVisibleContextDigest: contextDigest.value,
+    visibleViewDigest: visibleViewDigest.value,
     availableViewDigests,
   });
   if (!body.success)
     return err(
       failure("INVALID_COMPILED_VIEW", "Compiled identity validation failed."),
     );
-  const compiledViewDigest = await digest(
+  const compilerAuditDigest = await digest(
     body.data,
     "Compiled evidence view cannot be identified.",
   );
-  if (!compiledViewDigest.ok) return compiledViewDigest;
+  if (!compilerAuditDigest.ok) return compilerAuditDigest;
   const selectedContextDigest = await digest(
     selected.neighborhood.context,
     "Selected evidence context cannot be identified.",
@@ -673,8 +803,8 @@ export async function validateM4CompiledEvidenceView(
   if (!selectedNeighborhoodDigest.ok) return selectedNeighborhoodDigest;
   if (!controlNeighborhoodDigest.ok) return controlNeighborhoodDigest;
   if (
-    compiledViewDigest.value !== compiled.data.identity.compiledViewDigest ||
-    selectedContextDigest.value !== contextDigest.value ||
+    compilerAuditDigest.value !== compiled.data.identity.compilerAuditDigest ||
+    selectedContextDigest.value !== visibleViewDigest.value ||
     selectedNeighborhoodDigest.value !== selectedDigest.neighborhoodDigest ||
     controlNeighborhoodDigest.value !== controlDigest.neighborhoodDigest ||
     JSON.stringify(compiled.data.identity.availableViewDigests) !==
@@ -753,9 +883,11 @@ export const m4ProvenanceGraphSchema = z
 
 export const m4ProvenanceReconstructionSchema = z
   .strictObject({
-    protocol: z.literal("m4b-deterministic-provenance-reconstruction/1"),
-    compiledViewDigest: sha256Schema,
-    answerContractDigest: sha256Schema,
+    protocol: z.literal("m4b-deterministic-provenance-reconstruction/2"),
+    visibleViewDigest: sha256Schema.brand<"M4VisibleViewDigest">(),
+    taskContractDigest: sha256Schema.brand<"M4TaskContractDigest">(),
+    reconstructionAlgorithmDigest:
+      sha256Schema.brand<"M4ReconstructionAlgorithmDigest">(),
     oracleAnswerDigest: sha256Schema,
     provenance: m4ProvenanceGraphSchema,
     reconstructionDigest:
@@ -773,7 +905,7 @@ export type M4ProvenanceReconstruction = z.infer<
 
 export const M4B_PROVENANCE_PROTOCOL = Object.freeze({
   id: "m4b-deterministic-provenance-reconstruction",
-  version: "1",
+  version: "2",
   oracleOutput: Object.freeze(["outcome", "answerValues", "supportingFactIds"]),
   runtimeDerived: Object.freeze([
     "citationIds",
@@ -784,6 +916,15 @@ export const M4B_PROVENANCE_PROTOCOL = Object.freeze({
   liveInferenceAuthorized: false,
   heldoutMaterializationAuthorized: false,
   typeGraphIntegrated: false,
+});
+
+export const M4B_RECONSTRUCTION_ALGORITHM = Object.freeze({
+  id: "m4-visible-evidence-provenance",
+  version: "2",
+  semanticDerivation: "public-contract-over-visible-facts",
+  citationConstruction: "visible-support-and-visible-edge-provenance",
+  pathAlgorithm: "directed-breadth-first-search",
+  shortestPathTieBreak: "lexicographic-edge-id",
 });
 
 type VisibleDerivation = Readonly<{
@@ -1005,7 +1146,6 @@ function canonicalPaths(
 export async function reconstructM4Provenance(
   input: Readonly<{
     compiledViewInput: unknown;
-    answerContractInput: unknown;
     oracleAnswerInput: unknown;
   }>,
 ): Promise<Result<M4ProvenanceReconstruction, M4Failure>> {
@@ -1013,14 +1153,7 @@ export async function reconstructM4Provenance(
     input.compiledViewInput,
   );
   if (!compiled.ok) return compiled;
-  const contract = m3bAnswerContractSchema.safeParse(input.answerContractInput);
-  if (!contract.success)
-    return err(
-      failure(
-        "SEMANTIC_OBLIGATION_FAILED",
-        "Answer contract validation failed.",
-      ),
-    );
+  const contract = compiled.value.taskProfile.answerContract;
   const oracleAnswer = m4OracleAnswerSchema.safeParse(input.oracleAnswerInput);
   if (!oracleAnswer.success)
     return err(
@@ -1031,7 +1164,7 @@ export async function reconstructM4Provenance(
     );
   const derivations = visibleDerivations(
     compiled.value.modelVisibleContext,
-    contract.data,
+    contract,
   );
   if (oracleAnswer.data.outcome === "insufficient-evidence") {
     const issues: Array<M4DiagnosticIssue> = [];
@@ -1083,7 +1216,7 @@ export async function reconstructM4Provenance(
         equalValues(
           candidate.answerValues,
           oracleAnswer.data.answerValues,
-          contract.data.ordering === "unordered",
+          contract.ordering === "unordered",
         ),
     );
     if (derivation === undefined)
@@ -1187,16 +1320,26 @@ export async function reconstructM4Provenance(
     return err(
       failure("IDENTITY_FAILURE", "Provenance graph validation failed."),
     );
-  const [answerContractDigest, oracleAnswerDigest] = await Promise.all([
-    digest(contract.data, "Answer contract cannot be identified."),
+  const [
+    taskContractDigest,
+    reconstructionAlgorithmDigest,
+    oracleAnswerDigest,
+  ] = await Promise.all([
+    digest(contract, "Task contract cannot be identified."),
+    digest(
+      M4B_RECONSTRUCTION_ALGORITHM,
+      "Reconstruction algorithm cannot be identified.",
+    ),
     digest(oracleAnswer.data, "Oracle answer cannot be identified."),
   ]);
-  if (!answerContractDigest.ok) return answerContractDigest;
+  if (!taskContractDigest.ok) return taskContractDigest;
+  if (!reconstructionAlgorithmDigest.ok) return reconstructionAlgorithmDigest;
   if (!oracleAnswerDigest.ok) return oracleAnswerDigest;
   const reconstructionBody = {
-    protocol: "m4b-deterministic-provenance-reconstruction/1" as const,
-    compiledViewDigest: compiled.value.identity.compiledViewDigest,
-    answerContractDigest: answerContractDigest.value,
+    protocol: "m4b-deterministic-provenance-reconstruction/2" as const,
+    visibleViewDigest: compiled.value.identity.visibleViewDigest,
+    taskContractDigest: taskContractDigest.value,
+    reconstructionAlgorithmDigest: reconstructionAlgorithmDigest.value,
     oracleAnswerDigest: oracleAnswerDigest.value,
     provenance: provenance.data,
   };

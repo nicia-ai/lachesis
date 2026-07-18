@@ -8,6 +8,7 @@ import {
   type M3aTask,
   M4A_EVIDENCE_COMPILER_PROTOCOL,
   M4A_INITIAL_POLICY,
+  M4A_PROVIDER_PROFILES,
   M4B_PROVENANCE_PROTOCOL,
   type M4CompiledEvidenceView,
   type M4EvidenceCompilerPolicy,
@@ -41,8 +42,11 @@ async function compile(
     await compileM4EvidenceView({
       graphInput: M3A1_REFERENCE_GRAPH,
       queryInput: task.query,
-      providerInput: provider,
-      taskClassInput: taskClass,
+      providerProfileInput: M4A_PROVIDER_PROFILES[provider],
+      taskProfileInput: {
+        taskClass,
+        answerContract: task.answerContract,
+      },
       policyInput,
     }),
   );
@@ -131,8 +135,11 @@ describe("M4a provider-aware evidence compiler", () => {
           edges: M3A1_REFERENCE_GRAPH.edges.toReversed(),
         },
         queryInput: task.query,
-        providerInput: "openai",
-        taskClassInput: "relational",
+        providerProfileInput: M4A_PROVIDER_PROFILES.openai,
+        taskProfileInput: {
+          taskClass: "relational",
+          answerContract: task.answerContract,
+        },
         policyInput: reversedPolicy,
       }),
     );
@@ -158,8 +165,11 @@ describe("M4a provider-aware evidence compiler", () => {
       await compileM4EvidenceView({
         graphInput: M3A1_REFERENCE_GRAPH,
         queryInput: task.query,
-        providerInput: "openai",
-        taskClassInput: "relational",
+        providerProfileInput: M4A_PROVIDER_PROFILES.openai,
+        taskProfileInput: {
+          taskClass: "relational",
+          answerContract: task.answerContract,
+        },
         policyInput: incomplete,
       }),
     ).toMatchObject({ ok: false, error: { code: "INVALID_POLICY" } });
@@ -167,8 +177,11 @@ describe("M4a provider-aware evidence compiler", () => {
       await compileM4EvidenceView({
         graphInput: M3A1_REFERENCE_GRAPH,
         queryInput: task.query,
-        providerInput: "openai",
-        taskClassInput: "relational",
+        providerProfileInput: M4A_PROVIDER_PROFILES.openai,
+        taskProfileInput: {
+          taskClass: "relational",
+          answerContract: task.answerContract,
+        },
         policyInput: graphFactsDefault,
       }),
     ).toMatchObject({ ok: false, error: { code: "INVALID_POLICY" } });
@@ -242,7 +255,6 @@ describe("M4b deterministic provenance reconstruction", () => {
     const reconstruction = unwrap(
       await reconstructM4Provenance({
         compiledViewInput: compiled,
-        answerContractInput: task.answerContract,
         oracleAnswerInput: expectedAnswer(task),
       }),
     );
@@ -275,7 +287,6 @@ describe("M4b deterministic provenance reconstruction", () => {
     const reordered = unwrap(
       await reconstructM4Provenance({
         compiledViewInput: compiled,
-        answerContractInput: task.answerContract,
         oracleAnswerInput: {
           ...expectedAnswer(task),
           supportingFactIds: task.expectedFactIds.toReversed(),
@@ -305,7 +316,6 @@ describe("M4b deterministic provenance reconstruction", () => {
         const reconstruction = unwrap(
           await reconstructM4Provenance({
             compiledViewInput: compiled,
-            answerContractInput: task.answerContract,
             oracleAnswerInput: expectedAnswer(task),
           }),
         );
@@ -324,7 +334,6 @@ describe("M4b deterministic provenance reconstruction", () => {
     const reconstruction = unwrap(
       await reconstructM4Provenance({
         compiledViewInput: compiled,
-        answerContractInput: task.answerContract,
         oracleAnswerInput: expectedAnswer(task),
       }),
     );
@@ -360,7 +369,6 @@ describe("M4b deterministic provenance reconstruction", () => {
     expect(
       await reconstructM4Provenance({
         compiledViewInput: compiled,
-        answerContractInput: task.answerContract,
         oracleAnswerInput: extraFields,
       }),
     ).toMatchObject({
@@ -370,7 +378,6 @@ describe("M4b deterministic provenance reconstruction", () => {
     expect(
       await reconstructM4Provenance({
         compiledViewInput: compiled,
-        answerContractInput: task.answerContract,
         oracleAnswerInput: wrongSupport,
       }),
     ).toMatchObject({
@@ -380,7 +387,6 @@ describe("M4b deterministic provenance reconstruction", () => {
     expect(
       await reconstructM4Provenance({
         compiledViewInput: compiled,
-        answerContractInput: task.answerContract,
         oracleAnswerInput: falseAbstention,
       }),
     ).toMatchObject({

@@ -11,7 +11,7 @@ held-out evidence, and no M4 confirmatory claim can reuse the M3 corpus.
 M4a and M4b reset the oracle boundary:
 
 ```text
-typed evidence graph + public query + provider + trusted task class
+typed evidence graph + public query + public provider/task profiles
   -> content-addressed evidence-view policy
   -> one selected model-visible evidence context
 
@@ -48,25 +48,31 @@ valid policy cannot select it as a default. The compiler requires exactly one
 rule for every provider/task-class pair, canonicalizes rule ordering, and
 rejects incomplete, duplicate, or control-selecting policies.
 
-Task class is a trusted benchmark/runtime declaration, not a model prediction.
-Future work must specify how production callers obtain it; this offline slice
-does not infer it from task prose.
+Provider profile, task class, and the answer contract are strict public inputs.
+Unknown fields are rejected, so the policy has no input position for answers,
+hidden properties, expected outcomes, or ground truth. Task class remains a
+trusted benchmark/runtime declaration, not a model prediction. Future work must
+specify how production callers obtain it; this offline slice does not infer it
+from task prose.
 
 The compiled artifact retains the canonical source graph as non-model-visible
-provenance. The compiled identity binds:
+audit provenance. Compiler protocol version 2 binds:
 
-- policy, graph, and query digests;
+- policy version and complete policy digest;
+- strict provider-profile and public task-contract digests;
+- the exact selector manifest, including each selector implementation version;
+- source-snapshot and public-query digests;
 - provider and trusted task class;
 - selected and control views;
 - every view's neighborhood digest;
-- the selected model-visible context digest; and
-- the compiler protocol version.
+- the selected visible-view digest; and
+- a source-inclusive compiler audit digest.
 
 Graph storage order and policy-rule order do not change the identity. Validation
 recomputes the graph digest, re-runs every view selection against that graph,
 checks view digests and source/view correspondence, and verifies the applicable
 policy rule, selected and control neighborhoods, model-visible context, and
-final compiled digest.
+final compiler audit digest.
 
 Only `modelVisibleContext` is an oracle payload. Provider, task class, selected
 view, source implementation, policy identity, graph digest, and experimental
@@ -88,9 +94,9 @@ The reduced oracle output is a strict object containing only:
 Extra fields are rejected. The oracle cannot author `citationIds`, `pathIds`,
 expected values, semantic scores, or provenance edges.
 
-`reconstructM4Provenance` first validates the compiled evidence identity and the
-public answer contract. It deterministically enumerates complete visible
-derivations and rejects:
+`reconstructM4Provenance` first validates the compiled evidence identity and
+uses the public answer contract already bound into that artifact. It
+deterministically enumerates complete visible derivations and rejects:
 
 - unknown, duplicate, or mismatched support;
 - answer values not derived from the declared supporting facts;
@@ -116,6 +122,44 @@ The plan/orchestration graph, evidence graph, and reconstructed run-provenance
 graph remain separate typed structures. Provenance links reference evidence
 identities but cannot schedule operations or rewrite evidence.
 
+## M4a.1 visible-evidence trust boundary
+
+After selector replay and artifact-integrity validation, model-output validation
+and provenance reconstruction may read only:
+
+- the compiled public answer contract;
+- the exact `modelVisibleContext`;
+- the model's answer values; and
+- the model's supporting fact IDs.
+
+The retained canonical source graph is available only while validating the
+compiler artifact: it can replay selectors, verify the source snapshot, and
+reconcile compiled identities. It is not passed to semantic derivation, citation
+construction, shortest-path selection, or provenance construction. Consequently,
+a source mutation that leaves the visible context unchanged must leave
+acceptance and reconstructed provenance unchanged.
+
+Content identities are separated by trust layer:
+
+| Layer            | Bound inputs                                                                         | Identity                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Policy selection | policy version, provider profile, public task class                                  | `policyDigest`, `providerProfileDigest`                                                       |
+| Compiler audit   | task contract, selector versions, source snapshot, query, all compiled views         | `taskContractDigest`, `selectorManifestDigest`, `sourceSnapshotDigest`, `compilerAuditDigest` |
+| Visible view     | exact normalized model-visible evidence context                                      | `visibleViewDigest`                                                                           |
+| Reconstruction   | visible view, task contract, reduced oracle answer, reconstruction algorithm version | `reconstructionDigest`                                                                        |
+
+The reconstruction identity deliberately does not include the source-inclusive
+compiler audit digest. Hidden source mutations therefore change
+`sourceSnapshotDigest` and `compilerAuditDigest`, while an unchanged visible
+view retains its `visibleViewDigest` and reconstruction identity.
+
+This is a noninterference claim supported by metamorphic and property tests, not
+a mechanized formal proof. The tests vary hidden facts and edges, remove visible
+support, create multiple equal-length visible paths, rename entities, and audit
+the closure of every accepted fact, citation, edge, and path. They demonstrate
+the claimed behavior for the generated and deterministic fixtures covered by the
+suite.
+
 ## Deterministic vertical slice
 
 The offline suite covers both providers and all six M3 development categories.
@@ -130,6 +174,15 @@ It proves:
 - facts-only views preserve citations without fabricating paths;
 - invalid support and false abstention fail deterministically; and
 - hidden scorer fields and model-authored citation/path fields are rejected.
+- hidden facts cannot complete visible derivations;
+- hidden shortcut edges cannot alter visible shortest paths;
+- equal visible views have equal reconstruction results despite different source
+  audit identities;
+- equal-length visible paths use a deterministic lexicographic edge-ID tie
+  break;
+- accepted provenance remains inside the visible evidence closure; and
+- entity renaming preserves structural behavior while changing the appropriate
+  content identities.
 
 These are contract and implementation results, not evidence that the adaptive
 policy improves model quality.
