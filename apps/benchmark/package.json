@@ -12,7 +12,8 @@
   ],
   "bin": {
     "lachesis-benchmark": "./dist/cli.js",
-    "m4d0-audit": "./dist/m4d0-audit-cli.js"
+    "m4d0-audit": "./dist/m4d0-audit-cli.js",
+    "m4d1-design": "./dist/m4d1-design-cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

@@ -56,3 +56,6 @@ See [the M3a design](../../docs/m3a-graph-native-decomposition.md) and the
 the immutable [M3 results](../../docs/m3-results.md), and the offline
 [M4a/M4b design](../../docs/m4a-evidence-compiler.md), and the reproducible
 [M4d.0 policy viability audit](../../docs/m4d0-evidence-policy-viability.md).
+The offline [M4d.1 design](../../docs/m4d1-offline-protocol-power-design.md)
+adds a reduced oracle protocol and an exact prospective paired-power audit
+without generating a corpus or creating live experiment authority.

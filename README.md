@@ -139,7 +139,10 @@ passes storage, temporal-replay, and provenance parity without changing any
 model-visible evidence or making a model-quality claim. The offline
 [M4d.0 policy viability audit](docs/m4d0-evidence-policy-viability.md) rejects
 the existing coarse M4a policy and retains only a narrow development-derived
-candidate for possible confirmation on a completely fresh corpus.
+candidate for possible confirmation on a completely fresh corpus. The offline
+[M4d.1 protocol and power design](docs/m4d1-offline-protocol-power-design.md)
+implements the reduced oracle boundary and exact paired design, but stops before
+corpus generation because the conservative powered sample is impractical.
 
 ## Validation
 

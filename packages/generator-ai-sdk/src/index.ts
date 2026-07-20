@@ -1,8 +1,10 @@
 import {
   decodeM3bOracleWire,
+  decodeM4d1OracleWire,
   M3B_ORACLE_PROMPT,
   type M3bAttemptProvenance,
   type M3bOracle,
+  type M3bOracleAttempt,
   type M3bOracleFailureCode,
   type M3bOracleIdentity,
   m3bOracleOutputSchema,
@@ -10,10 +12,16 @@ import {
   type M3bOracleUsage,
   type M3bRawOutputArtifact,
   type M3bRawOutputWriter,
+  M4D1_REDUCED_ORACLE_PROMPT,
+  type M4d1Oracle,
+  type M4d1OracleOutput,
+  type M4d1OracleRequest,
+  m4OracleAnswerSchema,
 } from "@nicia-ai/lachesis-evidence";
 import {
   type AdapterDispatchEvidence,
   calculateCostUsdMicros,
+  calculateMaximumCostUsdMicros,
   type CodeModeModelAdapter,
   type CodeModeModelRequest,
   codeModeOutcomeSchema,
@@ -43,6 +51,7 @@ export const M3B1_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-
 export const M3B2_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-typed-evidence-oracle/2`;
 export const M3B3_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-semantic-obligation-oracle/3`;
 export const M3B4_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-staged-wire-recovery-oracle/4`;
+export const M4D1_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m4d1-reduced-visible-evidence-oracle/1`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -287,6 +296,30 @@ const m3b3OutputJsonSchema: ProviderJsonSchema = {
 deepFreezeValue(m3b3OutputJsonSchema);
 export const M3B3_OUTPUT_JSON_SCHEMA = m3b3OutputJsonSchema;
 export const M3B4_OUTPUT_JSON_SCHEMA = M3B3_OUTPUT_JSON_SCHEMA;
+
+const m4d1OutputJsonSchema: ProviderJsonSchema = {
+  type: "object",
+  properties: {
+    outcome: {
+      type: "string",
+      enum: ["answered", "insufficient-evidence"],
+    },
+    answerValues: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 2,
+    },
+    supportingFactIds: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      maxItems: 64,
+    },
+  },
+  required: ["outcome", "answerValues", "supportingFactIds"],
+  additionalProperties: false,
+};
+deepFreezeValue(m4d1OutputJsonSchema);
+export const M4D1_OUTPUT_JSON_SCHEMA = m4d1OutputJsonSchema;
 
 export const M1B_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
   OPENAI_PRICING,
@@ -1155,6 +1188,18 @@ function renderM3bOracleRequest(request: M3bOracleRequest): string {
   });
 }
 
+function renderM4d1OracleRequest(request: M4d1OracleRequest): string {
+  return JSON.stringify({
+    protocol: M4D1_REDUCED_ORACLE_PROMPT,
+    publicOutputSchema: M4D1_OUTPUT_JSON_SCHEMA,
+    instruction: request.instruction,
+    answerContract: request.answerContract,
+    evidence: request.evidence,
+    wireRepair: request.wireRepair,
+    semanticRepair: request.semanticRepair,
+  });
+}
+
 function m3bFailureCode(error: unknown): M3bOracleFailureCode {
   const message = errorMessage(error).toLowerCase();
   if (message.includes("overload") || message.includes("429"))
@@ -1359,11 +1404,42 @@ function m3bUsage(
   };
 }
 
-type M3bAiSdkOracleInput = Readonly<{
+type StagedWireDecodeResult<Output> =
+  | Readonly<{
+      kind: "accepted";
+      output: Output;
+      issues: M3bAttemptProvenance["issues"];
+    }>
+  | Readonly<{
+      kind: "json-parse-failed" | "wire-schema-rejected";
+      output: null;
+      issues: M3bAttemptProvenance["issues"];
+    }>;
+
+type StagedOutputValidation<Output> =
+  | Readonly<{ success: true; data: Output }>
+  | Readonly<{ success: false; error: unknown }>;
+
+type StagedOracleAttempt<Output> =
+  | Readonly<{
+      kind: "success";
+      output: Output;
+      usage: M3bOracleUsage;
+      provenance: M3bAttemptProvenance;
+    }>
+  | Extract<M3bOracleAttempt, Readonly<{ kind: "failure" }>>;
+
+type StagedAiSdkOracleInput<Request, Output> = Readonly<{
   identity: M3bOracleIdentity;
   pricing: PricingEntry;
   loadModel: (observer: DispatchObserver) => Promise<unknown>;
   providerOptions: ProviderOptions;
+  outputJsonSchema: ProviderJsonSchema;
+  outputName: string;
+  outputDescription: string;
+  renderRequest: (request: Request) => string;
+  validateOutput: (value: unknown) => StagedOutputValidation<Output>;
+  decodeWire: (text: string) => StagedWireDecodeResult<Output>;
   runtime?: AiSdkRuntime | undefined;
   timeoutMs?: number | undefined;
   rawOutputWriter?: M3bRawOutputWriter | undefined;
@@ -1387,12 +1463,20 @@ async function persistRawOutput(
     : { artifact: null, error: written.error };
 }
 
-function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
+function createStagedAiSdkOracle<Request, Output>(
+  input: StagedAiSdkOracleInput<Request, Output>,
+): Readonly<{
+  identity: M3bOracleIdentity;
+  generate: (
+    request: Request,
+    context: Readonly<{ recordKey: string; attemptIndex: number }>,
+  ) => Promise<StagedOracleAttempt<Output>>;
+}> {
   return {
     identity: input.identity,
     async generate(request, context) {
       const portable = validatePortableStructuredOutputSchema(
-        M3B4_OUTPUT_JSON_SCHEMA,
+        input.outputJsonSchema,
       );
       if (!portable.ok)
         return {
@@ -1422,12 +1506,11 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
         isNoObjectGeneratedError =
           sdk.isNoObjectGeneratedError ?? isNoObjectGeneratedError;
         const output = sdk.outputObject({
-          name: "m3b_evidence_answer",
-          description:
-            "A typed answer or insufficient-evidence outcome with citation and canonical-path references.",
-          schema: sdk.jsonSchema(M3B4_OUTPUT_JSON_SCHEMA, {
+          name: input.outputName,
+          description: input.outputDescription,
+          schema: sdk.jsonSchema(input.outputJsonSchema, {
             validate: (value: unknown) => {
-              const parsed = m3bOracleOutputSchema.safeParse(value);
+              const parsed = input.validateOutput(value);
               return parsed.success
                 ? { success: true, value: parsed.data }
                 : {
@@ -1439,7 +1522,7 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
         });
         const raw = await sdk.generateText({
           model: await input.loadModel(observer),
-          prompt: renderM3bOracleRequest(request),
+          prompt: input.renderRequest(request),
           maxOutputTokens: input.identity.settings.maxOutputTokens,
           maxRetries: 0,
           abortSignal,
@@ -1493,7 +1576,7 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
               outputEvidence: await boundedOutputEvidence(parsed.data.output),
             }),
           };
-        const normalized = m3bOracleOutputSchema.safeParse(parsed.data.output);
+        const normalized = input.validateOutput(parsed.data.output);
         const outputEvidence = await boundedOutputEvidence(parsed.data.output);
         const rejectedOutputArtifact = normalized.success
           ? { artifact: null, error: null }
@@ -1606,7 +1689,7 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
                 error: artifact.error,
               }),
             };
-          const decoded = decodeM3bOracleWire(rawText);
+          const decoded = input.decodeWire(rawText);
           if (decoded.kind === "accepted")
             return {
               kind: "success",
@@ -1672,6 +1755,32 @@ function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
       }
     },
   };
+}
+
+type M3bAiSdkOracleInput = Omit<
+  StagedAiSdkOracleInput<
+    M3bOracleRequest,
+    z.infer<typeof m3bOracleOutputSchema>
+  >,
+  | "outputJsonSchema"
+  | "outputName"
+  | "outputDescription"
+  | "renderRequest"
+  | "validateOutput"
+  | "decodeWire"
+>;
+
+function createM3bAiSdkOracle(input: M3bAiSdkOracleInput): M3bOracle {
+  return createStagedAiSdkOracle({
+    ...input,
+    outputJsonSchema: M3B4_OUTPUT_JSON_SCHEMA,
+    outputName: "m3b_evidence_answer",
+    outputDescription:
+      "A typed answer or insufficient-evidence outcome with citation and canonical-path references.",
+    renderRequest: renderM3bOracleRequest,
+    validateOutput: (value: unknown) => m3bOracleOutputSchema.safeParse(value),
+    decodeWire: decodeM3bOracleWire,
+  });
 }
 
 export function createOpenAiM3bOracle(
@@ -1749,6 +1858,174 @@ export function createAnthropicM3bOracle(
       : { rawOutputWriter: input.rawOutputWriter }),
     ...(input.runtime === undefined ? {} : { runtime: input.runtime }),
   });
+}
+
+function createM4d1AiSdkOracle(
+  input: Omit<
+    StagedAiSdkOracleInput<M4d1OracleRequest, M4d1OracleOutput>,
+    | "outputJsonSchema"
+    | "outputName"
+    | "outputDescription"
+    | "renderRequest"
+    | "validateOutput"
+    | "decodeWire"
+  >,
+): M4d1Oracle {
+  return createStagedAiSdkOracle({
+    ...input,
+    outputJsonSchema: M4D1_OUTPUT_JSON_SCHEMA,
+    outputName: "m4d1_reduced_evidence_answer",
+    outputDescription:
+      "A reduced typed answer or insufficient-evidence outcome containing only answer values and supporting visible fact references.",
+    renderRequest: renderM4d1OracleRequest,
+    validateOutput: (value: unknown) => m4OracleAnswerSchema.safeParse(value),
+    decodeWire: decodeM4d1OracleWire,
+  });
+}
+
+export const M4D1_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
+  Object.freeze([
+    m3bOracleIdentity("openai", M4D1_PROVIDER_ADAPTER_VERSION),
+    m3bOracleIdentity("anthropic", M4D1_PROVIDER_ADAPTER_VERSION, "json-tool"),
+  ]);
+
+export const M4D1_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
+  OPENAI_PRICING,
+  ANTHROPIC_DIRECT_PRICING,
+]);
+
+export function createOpenAiM4d1Oracle(
+  provider?: OpenAiProviderSettings,
+  diagnostics?: Readonly<{
+    rawOutputWriter?: M3bRawOutputWriter | undefined;
+    runtime?: AiSdkRuntime | undefined;
+  }>,
+): M4d1Oracle {
+  const identity = m3bOracleIdentity("openai", M4D1_PROVIDER_ADAPTER_VERSION);
+  return createM4d1AiSdkOracle({
+    identity,
+    pricing: OPENAI_PRICING,
+    loadModel: (observer) =>
+      providerModel(
+        ["@ai-sdk", "openai"].join("/"),
+        "createOpenAI",
+        providerSettings(provider),
+        identity.model,
+        observer,
+        "responses",
+      ),
+    providerOptions: {
+      openai: {
+        reasoningEffort: "low",
+        store: false,
+        serviceTier: "default",
+      },
+    },
+    ...(diagnostics?.rawOutputWriter === undefined
+      ? {}
+      : { rawOutputWriter: diagnostics.rawOutputWriter }),
+    ...(diagnostics?.runtime === undefined
+      ? {}
+      : { runtime: diagnostics.runtime }),
+  });
+}
+
+export function createAnthropicM4d1Oracle(
+  input: Readonly<{
+    acknowledgeAdaptiveThinking: true;
+    provider?: AnthropicProviderSettings | undefined;
+    rawOutputWriter?: M3bRawOutputWriter | undefined;
+    runtime?: AiSdkRuntime | undefined;
+  }>,
+): M4d1Oracle {
+  const identity = m3bOracleIdentity(
+    "anthropic",
+    M4D1_PROVIDER_ADAPTER_VERSION,
+    "json-tool",
+  );
+  return createM4d1AiSdkOracle({
+    identity,
+    pricing: ANTHROPIC_DIRECT_PRICING,
+    loadModel: (observer) =>
+      providerModel(
+        ["@ai-sdk", "anthropic"].join("/"),
+        "createAnthropic",
+        providerSettings(input.provider),
+        identity.model,
+        observer,
+      ),
+    providerOptions: {
+      anthropic: {
+        thinking: { type: "adaptive" },
+        effort: "low",
+        structuredOutputMode: "jsonTool",
+      },
+    },
+    ...(input.rawOutputWriter === undefined
+      ? {}
+      : { rawOutputWriter: input.rawOutputWriter }),
+    ...(input.runtime === undefined ? {} : { runtime: input.runtime }),
+  });
+}
+
+export type M4d1ProtocolProbeDesign = Readonly<{
+  id: "m4d1-reduced-oracle-protocol-probe";
+  version: "1";
+  provider: "anthropic";
+  categories: readonly ["contradiction", "retraction"];
+  outcomeFixturesPerCategory: 2;
+  viewsPerCategory: 2;
+  initialCalls: 8;
+  maximumWireRepairs: 2;
+  maximumSemanticRepairs: 2;
+  maximumTransportRetries: 4;
+  maximumProviderAttempts: 16;
+  maximumInputTokens: 128_000;
+  maximumOutputTokens: 32_000;
+  maximumTotalTokens: 160_000;
+  maximumCostUsdMicros: number;
+  pricing: PricingEntry;
+  liveExecutionAuthorized: false;
+  materializationAuthorized: false;
+}>;
+
+type MaximumCostFailure = Extract<
+  ReturnType<typeof calculateMaximumCostUsdMicros>,
+  Readonly<{ ok: false }>
+>["error"];
+
+export function createM4d1ProtocolProbeDesign():
+  | Readonly<{ ok: true; value: M4d1ProtocolProbeDesign }>
+  | Readonly<{ ok: false; error: MaximumCostFailure }> {
+  const perAttempt = calculateMaximumCostUsdMicros(
+    ANTHROPIC_DIRECT_PRICING,
+    8_000,
+    2_000,
+  );
+  if (!perAttempt.ok) return perAttempt;
+  return {
+    ok: true,
+    value: Object.freeze({
+      id: "m4d1-reduced-oracle-protocol-probe",
+      version: "1",
+      provider: "anthropic",
+      categories: Object.freeze(["contradiction", "retraction"] as const),
+      outcomeFixturesPerCategory: 2,
+      viewsPerCategory: 2,
+      initialCalls: 8,
+      maximumWireRepairs: 2,
+      maximumSemanticRepairs: 2,
+      maximumTransportRetries: 4,
+      maximumProviderAttempts: 16,
+      maximumInputTokens: 128_000,
+      maximumOutputTokens: 32_000,
+      maximumTotalTokens: 160_000,
+      maximumCostUsdMicros: perAttempt.value * 16,
+      pricing: ANTHROPIC_DIRECT_PRICING,
+      liveExecutionAuthorized: false,
+      materializationAuthorized: false,
+    }),
+  };
 }
 
 export type M2CodeModePrimaryAdapters = Readonly<{

@@ -11,6 +11,9 @@ import {
   M3B_REFERENCE_GRAPH,
   m3bOracleOutputSchema,
   m3bOracleRequestSchema,
+  type M4d1OracleRequest,
+  m4d1OracleRequestSchema,
+  m4OracleAnswerSchema,
   validateM3bSemanticOutput,
 } from "@nicia-ai/lachesis-evidence";
 import {
@@ -38,11 +41,14 @@ import {
   createAiSdkModelAdapter,
   createAnthropicCodeModeAdapter,
   createAnthropicM3bOracle,
+  createAnthropicM4d1Oracle,
   createBedrockAnthropicPlanAdapter,
   createM1bPricingSnapshot,
   createM1bPrimaryAdapters,
+  createM4d1ProtocolProbeDesign,
   createOpenAiCodeModeAdapter,
   createOpenAiM3bOracle,
+  createOpenAiM4d1Oracle,
   M1B_ANTHROPIC_MODEL,
   M1B_BEDROCK_ANTHROPIC_MODEL,
   M1B_OPENAI_MODEL,
@@ -52,6 +58,8 @@ import {
   M3B4_ANTHROPIC_TRANSPORT_SELECTION,
   M3B4_ORACLE_IDENTITIES,
   M3B4_OUTPUT_JSON_SCHEMA,
+  M4D1_ORACLE_IDENTITIES,
+  M4D1_OUTPUT_JSON_SCHEMA,
 } from "../src/index.js";
 
 function unwrap<T, E>(result: Result<T, E>): T {
@@ -1666,5 +1674,209 @@ describe("AI SDK provider adapters", () => {
       for (const value of Object.values(hostile))
         expect(prompt).not.toContain(value);
     }
+  });
+
+  it("serializes the reduced M4d.1 contract through real provider packages without experimental identities", async () => {
+    const providerValidator = z.fromJSONSchema(M4D1_OUTPUT_JSON_SCHEMA);
+    fc.assert(
+      fc.property(fc.jsonValue(), (value) => {
+        expect(providerValidator.safeParse(value).success).toBe(
+          m4OracleAnswerSchema.safeParse(value).success,
+        );
+      }),
+      { numRuns: 1_000 },
+    );
+    const task = required(
+      M3B_PREREGISTERED_CORPUS.find(
+        (candidate) =>
+          candidate.split === "development" &&
+          candidate.category === "contradiction",
+      ),
+      "Missing M4d.1 request task.",
+    );
+    const facts = M3B_REFERENCE_GRAPH.facts.filter((fact) =>
+      task.expectedFactIds.includes(fact.id),
+    );
+    const citationIds = new Set(facts.flatMap((fact) => fact.citationIds));
+    const visibleRequest = m4d1OracleRequestSchema.parse({
+      instruction: task.instruction,
+      answerContract: task.answerContract,
+      evidence: {
+        facts,
+        citations: M3B_REFERENCE_GRAPH.citations.filter((citation) =>
+          citationIds.has(citation.id),
+        ),
+        edges: [],
+        paths: [],
+      },
+      wireRepair: null,
+      semanticRepair: null,
+    });
+    const hostile = {
+      representationIdentity: "HOSTILE_REPRESENTATION_IDENTITY",
+      armIdentity: "HOSTILE_ARM_IDENTITY",
+      policyIdentity: "HOSTILE_POLICY_IDENTITY",
+      typeGraphIdentity: "HOSTILE_TYPEGRAPH_IDENTITY",
+      sourceIdentity: "HOSTILE_SOURCE_IDENTITY",
+      expectedAnswerIdentity: "HOSTILE_EXPECTED_ANSWER_IDENTITY",
+    };
+    const requestWithHiddenMetadata: M4d1OracleRequest & typeof hostile = {
+      ...visibleRequest,
+      ...hostile,
+    };
+    const openaiRequests: Array<CapturedFetchRequest> = [];
+    const anthropicRequests: Array<CapturedFetchRequest> = [];
+    const openai = createOpenAiM4d1Oracle({
+      apiKey: "offline-dummy",
+      fetch: interceptedFetch(openaiRequests),
+    });
+    const anthropic = createAnthropicM4d1Oracle({
+      acknowledgeAdaptiveThinking: true,
+      provider: {
+        apiKey: "offline-dummy",
+        fetch: interceptedFetch(anthropicRequests),
+      },
+    });
+    const context = {
+      recordKey: "offline-m4d1-request",
+      attemptIndex: 0,
+      invocation: "initial" as const,
+      transportRetryIndex: 0,
+      attemptType: "initial" as const,
+    };
+    await openai.generate(requestWithHiddenMetadata, context);
+    await anthropic.generate(requestWithHiddenMetadata, context);
+    expect(openaiRequests).toHaveLength(1);
+    expect(anthropicRequests).toHaveLength(1);
+    expect(openai.identity).toEqual(
+      M4D1_ORACLE_IDENTITIES.find((identity) => identity.provider === "openai"),
+    );
+    expect(anthropic.identity).toEqual(
+      M4D1_ORACLE_IDENTITIES.find(
+        (identity) => identity.provider === "anthropic",
+      ),
+    );
+
+    const openaiBody = z
+      .looseObject({
+        model: z.string(),
+        reasoning: z.looseObject({ effort: z.string() }),
+        text: z.looseObject({
+          format: z.looseObject({ schema: z.unknown() }),
+        }),
+        tools: z.array(z.unknown()).optional(),
+      })
+      .parse(required(openaiRequests[0], "Missing M4d.1 OpenAI request.").body);
+    expect(openaiBody.model).toBe(M1B_OPENAI_MODEL);
+    expect(openaiBody.reasoning.effort).toBe("low");
+    expect(openaiBody.tools).toBeUndefined();
+    expect(unwrap(canonicalizeJson(openaiBody.text.format.schema))).toBe(
+      unwrap(canonicalizeJson(M4D1_OUTPUT_JSON_SCHEMA)),
+    );
+
+    const anthropicBody = z
+      .looseObject({
+        model: z.string(),
+        thinking: z.looseObject({ type: z.string() }),
+        output_config: z.looseObject({ effort: z.string() }),
+        tools: z.array(
+          z.looseObject({ name: z.string(), input_schema: z.unknown() }),
+        ),
+      })
+      .parse(
+        required(anthropicRequests[0], "Missing M4d.1 Anthropic request.").body,
+      );
+    expect(anthropicBody.model).toBe(M1B_ANTHROPIC_MODEL);
+    expect(anthropicBody.thinking.type).toBe("adaptive");
+    expect(anthropicBody.output_config.effort).toBe("low");
+    expect(anthropicBody.tools.map((tool) => tool.name)).toEqual(["json"]);
+    expect(unwrap(canonicalizeJson(anthropicBody.tools[0]?.input_schema))).toBe(
+      unwrap(canonicalizeJson(M4D1_OUTPUT_JSON_SCHEMA)),
+    );
+
+    for (const captured of [...openaiRequests, ...anthropicRequests]) {
+      const serialized = JSON.stringify(captured.body);
+      const visibleText = stringLeaves(captured.body).join("\n");
+      expect(serialized).toContain(task.instruction);
+      expect(serialized).toContain("supportingFactIds");
+      expect(serialized).toContain("runtimeDerived");
+      expect(visibleText).toContain("canonical-paths");
+      expect(serialized).not.toMatch(
+        /lexical-facts|graph-facts|graph-adjacency|graph-typed|typegraph|in-memory-reference-graph|matched-text/iu,
+      );
+      expect(serialized).not.toContain(context.recordKey);
+      for (const identity of Object.values(hostile))
+        expect(serialized).not.toContain(identity);
+    }
+
+    const semanticRepair = m4d1OracleRequestSchema.parse({
+      ...visibleRequest,
+      semanticRepair: {
+        previousOutput: {
+          outcome: "answered",
+          answerValues: ["wrong-public-role"],
+          supportingFactIds: [required(facts[0], "Missing visible fact.").id],
+        },
+        obligationIssues: [
+          {
+            code: "answer-support-does-not-form-visible-derivation",
+            path: ["supportingFactIds"],
+          },
+        ],
+      },
+    });
+    await anthropic.generate(semanticRepair, {
+      ...context,
+      attemptIndex: 1,
+      invocation: "semantic-repair",
+      attemptType: "semantic-repair",
+    });
+    const repairBody = JSON.stringify(
+      required(anthropicRequests[1], "Missing semantic repair request.").body,
+    );
+    expect(repairBody).toContain("previousOutput");
+    expect(repairBody).toContain(
+      "answer-support-does-not-form-visible-derivation",
+    );
+    expect(repairBody).not.toMatch(/expectedAnswer|policyIdentity|typeGraph/iu);
+
+    const staged = createAnthropicM4d1Oracle({
+      acknowledgeAdaptiveThinking: true,
+      provider: { apiKey: "offline-dummy" },
+      runtime: runtimeReturning({
+        text: '{"outcome":"answered"}',
+        output: { outcome: "answered" },
+        usage: { inputTokens: 10, outputTokens: 5 },
+        response: { id: "offline-m4d1-wire-rejection" },
+        finishReason: "stop",
+      }),
+    });
+    expect(await staged.generate(visibleRequest, context)).toMatchObject({
+      kind: "failure",
+      code: "wire-schema-rejected",
+      dispatchEvidence: "dispatched-with-usage",
+      provenance: {
+        stage: "wire-decoding",
+        category: "wire-schema-rejected",
+        jsonParseResult: "passed",
+        wireSchemaResult: "failed",
+        usageAvailable: true,
+      },
+    });
+
+    const probe = createM4d1ProtocolProbeDesign();
+    expect(probe).toMatchObject({
+      ok: true,
+      value: {
+        initialCalls: 8,
+        maximumWireRepairs: 2,
+        maximumSemanticRepairs: 2,
+        maximumTransportRetries: 4,
+        maximumProviderAttempts: 16,
+        maximumCostUsdMicros: 640000,
+        liveExecutionAuthorized: false,
+        materializationAuthorized: false,
+      },
+    });
   });
 });

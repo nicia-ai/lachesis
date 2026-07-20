@@ -18,11 +18,13 @@ import {
   M3B_REFERENCE_GRAPH,
   M4A_INITIAL_POLICY,
   M4A_PROVIDER_PROFILES,
+  m4d1OracleRequestSchema,
   type M4EvidenceView,
   type M4Provider,
   reconstructM4Provenance,
   referenceEvidenceSelection,
   selectEvidence,
+  selectM4d1CandidateView,
 } from "@nicia-ai/lachesis-evidence";
 import { createLocalSqliteStore } from "@nicia-ai/typegraph/sqlite/local";
 import fc from "fast-check";
@@ -270,6 +272,67 @@ describe("M4c TypeGraph parity", () => {
 
     expect(typeGraphChoices).toEqual(memoryChoices);
     expect(typeGraphChoices).toHaveLength(320);
+  }, 120_000);
+
+  it("gives the M4d.1 candidate byte-identical visible requests on TypeGraph", async () => {
+    const typeGraph = await repository(M3B_REFERENCE_GRAPH);
+    const providers: ReadonlyArray<M4Provider> = ["openai", "anthropic"];
+    const memoryRequests: Array<unknown> = [];
+    const typeGraphRequests: Array<unknown> = [];
+
+    for (const task of M3B_PREREGISTERED_CORPUS) {
+      for (const provider of providers) {
+        const view = selectM4d1CandidateView(provider, task.category);
+        const memory = unwrap(
+          await selectEvidence(
+            memorySource(M3B_REFERENCE_GRAPH, view),
+            task.query,
+          ),
+        );
+        const storedSource = unwrap(await typeGraph.source(view));
+        const stored = unwrap(await selectEvidence(storedSource, task.query));
+        expect(stored.context).toEqual(memory.context);
+        const [memoryDigest, storedDigest] = await Promise.all([
+          digestValue(memory.context),
+          digestValue(stored.context),
+        ]);
+        expect(storedDigest).toEqual(memoryDigest);
+        const memoryRequest = m4d1OracleRequestSchema.parse({
+          instruction: task.instruction,
+          answerContract: task.answerContract,
+          evidence: memory.context,
+          wireRepair: null,
+          semanticRepair: null,
+        });
+        const storedRequest = m4d1OracleRequestSchema.parse({
+          instruction: task.instruction,
+          answerContract: task.answerContract,
+          evidence: stored.context,
+          wireRepair: null,
+          semanticRepair: null,
+        });
+        expect(JSON.stringify(storedRequest)).toBe(
+          JSON.stringify(memoryRequest),
+        );
+        memoryRequests.push({
+          provider,
+          category: task.category,
+          view,
+          request: memoryRequest,
+        });
+        typeGraphRequests.push({
+          provider,
+          category: task.category,
+          view,
+          request: storedRequest,
+        });
+      }
+    }
+
+    expect(typeGraphRequests).toEqual(memoryRequests);
+    expect(typeGraphRequests).toHaveLength(
+      M3B_PREREGISTERED_CORPUS.length * providers.length,
+    );
   }, 120_000);
 
   it("is independent of insertion and database row order", async () => {
