@@ -54,4 +54,5 @@ See [the M3a design](../../docs/m3a-graph-native-decomposition.md) and the
 [M3b.3 semantic obligations](../../docs/m3b3-semantic-obligations.md), and the
 [M3b.4 staged wire-recovery design](../../docs/m3b4-structured-output-forensics.md),
 the immutable [M3 results](../../docs/m3-results.md), and the offline
-[M4a/M4b design](../../docs/m4a-evidence-compiler.md).
+[M4a/M4b design](../../docs/m4a-evidence-compiler.md), and the reproducible
+[M4d.0 policy viability audit](../../docs/m4d0-evidence-policy-viability.md).

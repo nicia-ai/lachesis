@@ -2,8 +2,9 @@ import { unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { type Result } from "@nicia-ai/lachesis";
+import { digestValue, type Result } from "@nicia-ai/lachesis";
 import {
+  classifyM4TaskCategory,
   compileM4EvidenceView,
   createGraphSelectedAdjacencyEvidenceSource,
   createGraphSelectedFactsEvidenceSource,
@@ -13,6 +14,8 @@ import {
   type EvidenceSource,
   M3A1_PREREGISTERED_CORPUS,
   M3A1_REFERENCE_GRAPH,
+  M3B_PREREGISTERED_CORPUS,
+  M3B_REFERENCE_GRAPH,
   M4A_INITIAL_POLICY,
   M4A_PROVIDER_PROFILES,
   type M4EvidenceView,
@@ -72,16 +75,6 @@ function memorySource(
     }
   })();
   return unwrap(source);
-}
-
-function taskClass(
-  category: (typeof M3A1_PREREGISTERED_CORPUS)[number]["category"],
-): "relational" | "non-relational" | "negative-control" {
-  return category === "negative-control"
-    ? "negative-control"
-    : category === "temporal" || category === "retraction"
-      ? "non-relational"
-      : "relational";
 }
 
 function databasePath(label: string): string {
@@ -153,7 +146,7 @@ describe("M4c TypeGraph parity", () => {
         );
       }
     }
-  });
+  }, 30_000);
 
   it("preserves compiler, visible-view, validation, and reconstruction identities", async () => {
     const typeGraph = await repository();
@@ -169,7 +162,7 @@ describe("M4c TypeGraph parity", () => {
           queryInput: task.query,
           providerProfileInput: M4A_PROVIDER_PROFILES[provider],
           taskProfileInput: {
-            taskClass: taskClass(task.category),
+            taskClass: classifyM4TaskCategory(task.category),
             answerContract: task.answerContract,
           },
           policyInput: M4A_INITIAL_POLICY,
@@ -207,6 +200,77 @@ describe("M4c TypeGraph parity", () => {
       }
     }
   }, 20_000);
+
+  it("preserves frozen M3 policy inputs, choices, and visible identities", async () => {
+    const typeGraph = await repository(M3B_REFERENCE_GRAPH);
+    const tasks = M3B_PREREGISTERED_CORPUS.filter(
+      (task) => task.split === "heldout",
+    );
+    const providers: ReadonlyArray<M4Provider> = ["openai", "anthropic"];
+    const memoryChoices: Array<
+      Readonly<{
+        caseId: string;
+        provider: M4Provider;
+        taskClass: "relational" | "non-relational" | "negative-control";
+        selectedView: M4EvidenceView;
+        neighborhoodDigest: string;
+        visibleViewDigest: string;
+      }>
+    > = [];
+    const typeGraphChoices: typeof memoryChoices = [];
+
+    for (const task of tasks) {
+      for (const provider of providers) {
+        const taskClass = classifyM4TaskCategory(task.category);
+        const rule = M4A_INITIAL_POLICY.rules.find(
+          (candidate) =>
+            candidate.provider === provider &&
+            candidate.taskClass === taskClass,
+        );
+        if (rule === undefined) throw new Error("M4a policy rule is missing.");
+        const memory = unwrap(
+          await selectEvidence(
+            memorySource(M3B_REFERENCE_GRAPH, rule.view),
+            task.query,
+          ),
+        );
+        const storedSource = unwrap(await typeGraph.source(rule.view));
+        const stored = unwrap(await selectEvidence(storedSource, task.query));
+        expect(stored).toEqual(memory);
+        const memoryReference = unwrap(
+          await referenceEvidenceSelection(memory),
+        );
+        const storedReference = unwrap(
+          await referenceEvidenceSelection(stored),
+        );
+        const memoryVisibleViewDigest = unwrap(
+          await digestValue(memory.context),
+        );
+        const storedVisibleViewDigest = unwrap(
+          await digestValue(stored.context),
+        );
+        memoryChoices.push({
+          caseId: task.id,
+          provider,
+          taskClass,
+          selectedView: rule.view,
+          neighborhoodDigest: memoryReference.neighborhoodDigest,
+          visibleViewDigest: memoryVisibleViewDigest,
+        });
+        typeGraphChoices.push({
+          caseId: task.id,
+          provider,
+          taskClass,
+          selectedView: rule.view,
+          neighborhoodDigest: storedReference.neighborhoodDigest,
+          visibleViewDigest: storedVisibleViewDigest,
+        });
+      }
+    }
+
+    expect(typeGraphChoices).toEqual(memoryChoices);
+    expect(typeGraphChoices).toHaveLength(320);
+  }, 120_000);
 
   it("is independent of insertion and database row order", async () => {
     const reordered: EvidenceGraph = {

@@ -136,7 +136,10 @@ The offline [M4a/M4b evidence compiler](docs/m4a-evidence-compiler.md) treats
 all M3 results as development evidence and creates no campaign or held-out
 identity. The optional [M4c TypeGraph adapter](docs/m4c-typegraph-parity.md)
 passes storage, temporal-replay, and provenance parity without changing any
-model-visible evidence or making a model-quality claim.
+model-visible evidence or making a model-quality claim. The offline
+[M4d.0 policy viability audit](docs/m4d0-evidence-policy-viability.md) rejects
+the existing coarse M4a policy and retains only a narrow development-derived
+candidate for possible confirmation on a completely fresh corpus.
 
 ## Validation
 

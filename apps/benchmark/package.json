@@ -11,7 +11,8 @@
     "README.md"
   ],
   "bin": {
-    "lachesis-benchmark": "./dist/cli.js"
+    "lachesis-benchmark": "./dist/cli.js",
+    "m4d0-audit": "./dist/m4d0-audit-cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

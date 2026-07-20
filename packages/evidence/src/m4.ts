@@ -14,7 +14,11 @@ import {
   referenceEvidenceSelection,
   selectEvidence,
 } from "./contract.js";
-import { type M3bAnswerContract, m3bAnswerContractSchema } from "./corpus.js";
+import {
+  type M3a1Category,
+  type M3bAnswerContract,
+  m3bAnswerContractSchema,
+} from "./corpus.js";
 import {
   createGraphSelectedAdjacencyEvidenceSource,
   createGraphSelectedFactsEvidenceSource,
@@ -107,6 +111,20 @@ export type M4PublicTaskProfile = z.infer<typeof m4PublicTaskProfileSchema>;
 export type M4EvidenceCompilerPolicy = z.infer<
   typeof m4EvidenceCompilerPolicySchema
 >;
+
+export function classifyM4TaskCategory(category: M3a1Category): M4TaskClass {
+  switch (category) {
+    case "negative-control":
+      return "negative-control";
+    case "temporal":
+    case "retraction":
+      return "non-relational";
+    case "multi-hop":
+    case "contradiction":
+    case "provenance":
+      return "relational";
+  }
+}
 
 export const M4A_EVIDENCE_COMPILER_PROTOCOL = Object.freeze({
   id: "m4a-provider-aware-evidence-compiler",

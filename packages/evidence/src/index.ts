@@ -169,6 +169,7 @@ export {
   M3B4_CALIBRATION_TASKS,
 } from "./m3b4-calibration-corpus.js";
 export {
+  classifyM4TaskCategory,
   compileM4EvidenceView,
   M4A_EVIDENCE_COMPILER_PROTOCOL,
   M4A_INITIAL_POLICY,
@@ -208,6 +209,20 @@ export {
   reconstructM4Provenance,
   validateM4CompiledEvidenceView,
 } from "./m4.js";
+export {
+  auditM4d0PolicyViability,
+  M4D0_AUDIT_PROTOCOL,
+  type M4d0Audit,
+  type M4d0AuditFailure,
+  m4d0AuditFailureSchema,
+  m4d0AuditSchema,
+  type M4d0PairedContrast,
+  m4d0PairedContrastSchema,
+  type M4d0PolicyStratum,
+  m4d0PolicyStratumSchema,
+  type M4d0PolicySummary,
+  m4d0PolicySummarySchema,
+} from "./m4d0.js";
 export {
   createMatchedTextChunks,
   createMatchedTextEvidenceSource,
