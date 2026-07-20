@@ -1,0 +1,100 @@
+{
+  "formatVersion": 1,
+  "milestone": "M4",
+  "status": "complete-mixed",
+  "m4d1Status": "complete-design-no-go",
+  "closureBaselineCommit": "30afd676bcf373f3c7acc81894b41e73ba1c7d71",
+  "providerCallsMadeByClosure": 0,
+  "artifactsCreatedByClosure": {
+    "confirmatoryCorpus": false,
+    "protocolProbe": false,
+    "campaign": false,
+    "manifest": false,
+    "preregistration": false,
+    "executableState": false
+  },
+  "components": [
+    {
+      "name": "M4a evidence compiler",
+      "status": "complete",
+      "commit": "62de4bdd3a10f8db9c2254bf5dca42cd4c0fc0d4"
+    },
+    {
+      "name": "M4a.1 visible-evidence boundary",
+      "status": "complete-property-tested",
+      "commit": "f8d4992913b67c9129bb88babbdb76e6d16aa347"
+    },
+    {
+      "name": "M4b deterministic provenance",
+      "status": "complete",
+      "commit": "62de4bdd3a10f8db9c2254bf5dca42cd4c0fc0d4"
+    },
+    {
+      "name": "M4c TypeGraph parity",
+      "status": "complete-offline",
+      "commit": "a52f39e32877bc8cac844d50409b4970b0a3019f",
+      "typegraphVersion": "0.38.0"
+    },
+    {
+      "name": "M4d.0 policy viability",
+      "status": "complete-development-policy-rejected",
+      "commit": "ad875ca89608e3b3d9f1fd44bc7e342af51748e3"
+    },
+    {
+      "name": "M4d.1 protocol and power design",
+      "status": "complete-design-no-go",
+      "commit": "30afd676bcf373f3c7acc81894b41e73ba1c7d71"
+    }
+  ],
+  "policies": {
+    "productionDefault": "lexical-facts",
+    "originalAdaptive": {
+      "digest": "d93d87fc1d337b691f0fc24be5524e491525052cce8fa7157ed1ab4e4ddc721f",
+      "status": "development-rejected",
+      "default": false
+    },
+    "exploratoryCandidate": {
+      "digest": "29121609dde1241c4cfd5fae5053e5fbf3482c3de963b97e0e6fa220e8f3daa7",
+      "status": "research-only-unconfirmed",
+      "default": false,
+      "rules": [
+        "Anthropic contradiction -> graph facts",
+        "Anthropic retraction -> typed graph",
+        "all other provider/category pairs -> lexical facts"
+      ]
+    }
+  },
+  "powerDesign": {
+    "digest": "29c80e1348933b232d057e8030d94c0abee53c91f76e79ff5f131a8f36b2366a",
+    "targetPower": 0.9,
+    "minimumDiscordantPairsPerHypothesisPerRepetition": 20,
+    "pairedTest": "exact-two-sided-mcnemar",
+    "multiplicity": "holm",
+    "providersOrRepetitionsPooledForDecision": false,
+    "contradictionCasesPerRepetition": 2289,
+    "retractionCasesPerRepetition": 228,
+    "uniqueCasesPerRepetition": 2517,
+    "initialProviderCalls": 10068,
+    "practicalityCeilingUniqueCases": 500,
+    "decision": "no-go-impractical",
+    "gatesRelaxed": false,
+    "populationEnrichedPostHoc": false
+  },
+  "identities": {
+    "m4d0Audit": "af33443a315e2c69632297ca77ddb4738b54815431f010453f783be7c3b94176",
+    "reducedOraclePrompt": "7ffac8734d0b356e9a155996560de2a60dd41fd39136d516f20b5d3e36fc2edd",
+    "reducedOutputSchema": "8065e56a828c6b6c871b0d4b2d381a0d1cb730e166620e1512f973e4e3da1bf7",
+    "disjointnessDesign": "2bc49a93a95e564c395d2b2a35ec637c44345d4f00bc6e922177142242c557ee",
+    "unmaterializedProbeDesign": "dc730952639e833040ccf87418ac9feea3155893c363b777fac8c2cea5d5d8d5"
+  },
+  "nonclaims": [
+    "No adaptive-policy superiority.",
+    "No graph-serialization superiority.",
+    "No TypeGraph model-quality advantage.",
+    "No confirmation of the exploratory category effects."
+  ],
+  "proposedM5": {
+    "status": "proposal-only",
+    "claimBoundary": "Natural-workload reliability, provenance completeness, replay, budgets, and developer experience; not graph superiority."
+  }
+}

@@ -1,9 +1,10 @@
 # M4d.1 offline protocol and power design
 
-Status: offline design complete; confirmatory corpus generation is blocked as
-impractical under the conservative prospective power convention. No campaign,
+Status: `complete-design-no-go`. Confirmatory corpus generation is blocked as
+impractical under the conservative prospective power convention. The candidate
+policy remains research-only, non-default, and unconfirmed. No campaign,
 manifest, preregistration, executable state, provider call, or final corpus was
-created.
+created. M4 is closed with mixed conclusions in the [M4 results](m4-results.md).
 
 ## Claim boundary and policies
 

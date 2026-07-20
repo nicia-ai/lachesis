@@ -142,7 +142,9 @@ the existing coarse M4a policy and retains only a narrow development-derived
 candidate for possible confirmation on a completely fresh corpus. The offline
 [M4d.1 protocol and power design](docs/m4d1-offline-protocol-power-design.md)
 implements the reduced oracle boundary and exact paired design, but stops before
-corpus generation because the conservative powered sample is impractical.
+corpus generation because the conservative powered sample is impractical. M4 is
+closed as `complete-mixed`, and M4d.1 is `complete-design-no-go`; see the
+immutable [M4 results](docs/m4-results.md).
 
 ## Validation
 
@@ -157,7 +159,7 @@ pnpm smoke
 git diff --check
 ```
 
-## Not yet implemented
+## Roadmap
 
 The project still excludes conventional or bounded-general CodeMode,
 model-facing graph-native traversal, joins, `boundedExplore`, optimizer
@@ -173,11 +175,14 @@ passed, but every universal structural superiority conclusion failed under the
 frozen provider-by-repetition rule. M3 is complete and may not be rerun or
 reinterpreted under relaxed gates.
 
-M4a/M4b and the optional M4c TypeGraph storage adapter now provide only an
-offline deterministic vertical slice. The project still has no M4 live
-controller, fresh confirmatory corpus, campaign, materialization,
-preregistration, or inference authorization. M4d confirmation remains proposed,
-and TypeGraph remains absent from all evaluated model-quality claims.
+M4a/M4b and the optional M4c TypeGraph storage adapter provide an offline
+deterministic evidence-runtime substrate. The original M4 adaptive policy is
+development-rejected; its narrow exploratory replacement remains research-only
+and unconfirmed because the frozen powered design exceeded the practicality
+ceiling. Lexical evidence remains the production default. The proposed
+[M5 roadmap](docs/roadmap.md) focuses on a cohesive production evidence runtime,
+natural-workload reliability, provenance completeness, replay, budgets, and
+developer experience—not graph superiority. M5 is not implemented here.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

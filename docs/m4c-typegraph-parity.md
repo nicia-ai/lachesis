@@ -70,5 +70,6 @@ references, and closed-repository capability violations.
 
 Parity establishes storage, temporal, and replay compatibility only. It does not
 establish performance, scale, graph-retrieval advantage, model-quality
-improvement, or a TypeGraph accuracy effect. Those remain deferred to a fresh,
-separately preregistered M4d study.
+improvement, or a TypeGraph accuracy effect. M4d.1 subsequently closed as a
+prospective design no-go without a confirmatory corpus or live study. See the
+[M4 results](m4-results.md).

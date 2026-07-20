@@ -187,7 +187,7 @@ It proves:
 These are contract and implementation results, not evidence that the adaptive
 policy improves model quality.
 
-## Subsequent M4 work
+## Historical subsequent M4 work
 
 M4c subsequently added an optional TypeGraph adapter behind the existing
 `EvidenceSource` contract. Its offline suite requires byte-identical selected
@@ -196,8 +196,8 @@ canonical neighborhood digests against the in-memory implementation. The result
 establishes a storage/query/replay implementation property, not an accuracy
 improvement. See [M4c TypeGraph parity](m4c-typegraph-parity.md).
 
-M4d requires a completely fresh corpus and separate preregistration. Its frozen
-comparison should include the adaptive policy, fixed lexical baseline, fixed
-adjacency, fixed typed graph, and at most a descriptive oracle-best ceiling.
-Provider/model generalization is a separate experiment. No M4 campaign or live
-identity exists in this milestone.
+M4d.0 subsequently rejected the original adaptive policy using M3 development
+evidence. M4d.1 retained only a narrow research candidate and stopped at a
+prospective design no-go: its required 2,517-case corpus exceeded the frozen
+500-case practicality ceiling. M4 is now closed with mixed conclusions; lexical
+evidence remains the production default. See the [M4 results](m4-results.md).
