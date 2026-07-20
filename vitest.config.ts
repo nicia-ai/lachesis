@@ -4,6 +4,20 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: "@nicia-ai/lachesis-evidence-typegraph/sqlite",
+        replacement: new URL(
+          "./packages/evidence-typegraph/src/sqlite.ts",
+          import.meta.url,
+        ).pathname,
+      },
+      {
+        find: "@nicia-ai/lachesis-evidence-typegraph",
+        replacement: new URL(
+          "./packages/evidence-typegraph/src/index.ts",
+          import.meta.url,
+        ).pathname,
+      },
+      {
         find: "@nicia-ai/lachesis-evidence",
         replacement: new URL(
           "./packages/evidence/src/index.ts",
@@ -44,6 +58,7 @@ export default defineConfig({
       include: [
         "packages/kernel/src/**/*.ts",
         "packages/evidence/src/**/*.ts",
+        "packages/evidence-typegraph/src/**/*.ts",
         "packages/generator/src/**/*.ts",
         "apps/benchmark/src/controller.ts",
         "apps/benchmark/src/ledger.ts",

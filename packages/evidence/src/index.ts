@@ -63,6 +63,7 @@ export {
   createInMemoryGraphEvidenceSource,
   type EvidenceGraph,
   evidenceGraphSchema,
+  validateEvidenceGraph,
 } from "./graph.js";
 export {
   blindAuditM3bMaterialization,

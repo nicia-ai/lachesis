@@ -13,6 +13,7 @@ import {
   M3A1_REFERENCE_GRAPH,
   selectEvidence,
 } from "@nicia-ai/lachesis-evidence";
+import { TYPEGRAPH_EVIDENCE_SCHEMA } from "@nicia-ai/lachesis-evidence-typegraph";
 import {
   compileCodeMode,
   createRecordedModelAdapter,
@@ -213,6 +214,7 @@ async function exerciseKernel(): Promise<Response> {
       executed.ok &&
       codeModeRun.ok &&
       evidence.ok &&
+      TYPEGRAPH_EVIDENCE_SCHEMA.id === "lachesis-m4c-evidence-storage" &&
       evidence.value.context.paths.length > 0,
     planHash: summary.planHash,
     canonicalLength: summary.canonicalPlan.length,

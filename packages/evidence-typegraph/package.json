@@ -1,0 +1,49 @@
+{
+  "name": "@nicia-ai/lachesis-evidence-typegraph",
+  "version": "0.1.0",
+  "description": "Optional TypeGraph evidence-storage adapter for Lachesis M4",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Nicia AI",
+  "private": true,
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./sqlite": {
+      "types": "./dist/sqlite.d.ts",
+      "import": "./dist/sqlite.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "smoke": "node --input-type=module -e \"const root = await import('@nicia-ai/lachesis-evidence-typegraph'); const sqlite = await import('@nicia-ai/lachesis-evidence-typegraph/sqlite'); if (typeof root.createTypeGraphEvidenceRepository !== 'function' || typeof sqlite.createTypeGraphSqliteEvidenceRepository !== 'function') process.exit(1);\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:*",
+    "@nicia-ai/lachesis-evidence": "workspace:*",
+    "@nicia-ai/typegraph": "0.38.0",
+    "zod": "4.4.3"
+  },
+  "peerDependencies": {
+    "better-sqlite3": ">=9.0.0 <13.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "better-sqlite3": "12.11.1",
+    "fast-check": "4.8.0"
+  }
+}

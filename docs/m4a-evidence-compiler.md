@@ -187,13 +187,14 @@ It proves:
 These are contract and implementation results, not evidence that the adaptive
 policy improves model quality.
 
-## Deferred M4 work
+## Subsequent M4 work
 
-M4c may add a TypeGraph adapter only behind the existing `EvidenceSource`
-contract. Parity must require byte-identical selected facts, edges, ordering,
-temporal snapshot, model-visible serialization, and canonical neighborhood
-digests against the in-memory implementation. Passing parity would establish a
-storage/query/replay implementation property, not an accuracy improvement.
+M4c subsequently added an optional TypeGraph adapter behind the existing
+`EvidenceSource` contract. Its offline suite requires byte-identical selected
+facts, edges, ordering, temporal snapshot, model-visible serialization, and
+canonical neighborhood digests against the in-memory implementation. The result
+establishes a storage/query/replay implementation property, not an accuracy
+improvement. See [M4c TypeGraph parity](m4c-typegraph-parity.md).
 
 M4d requires a completely fresh corpus and separate preregistration. Its frozen
 comparison should include the adaptive policy, fixed lexical baseline, fixed

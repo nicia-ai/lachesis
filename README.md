@@ -134,7 +134,9 @@ M3b.5 and M3 are closed as `complete-formal-fail`; see the immutable
 [M3 results](docs/m3-results.md) for the formal conclusions and claim boundary.
 The offline [M4a/M4b evidence compiler](docs/m4a-evidence-compiler.md) treats
 all M3 results as development evidence and creates no campaign or held-out
-identity.
+identity. The optional [M4c TypeGraph adapter](docs/m4c-typegraph-parity.md)
+passes storage, temporal-replay, and provenance parity without changing any
+model-visible evidence or making a model-quality claim.
 
 ## Validation
 
@@ -151,25 +153,25 @@ git diff --check
 
 ## Not yet implemented
 
-The project still excludes conventional or bounded-general CodeMode, TypeGraph,
-SQL/Drizzle, persistent knowledge-graph storage, model-facing graph-native
-traversal, joins, `boundedExplore`, optimizer rewrites, durable/distributed
-scheduling, general adaptive loops, package publication, and deployment. M3b.1
-is closed as a protocol failure; its calibration and held-out identities were
-never executed. M3b.2 is frozen as a semantic-gate failure. M3b.3 passed its
-probe and is frozen as an immutable calibration failure; held-out was not
-authorized. M3b.4's stress probe and calibration are complete and immutable;
-calibration achieved 236/240 first-attempt success and 240/240 final
-reliability. M3b.5 subsequently completed all 2,560 held-out records. Its
-negative-control and safety gates passed, but every universal structural-
-superiority conclusion failed under the frozen provider-by-repetition rule. M3
-is complete and may not be rerun or reinterpreted under relaxed gates.
+The project still excludes conventional or bounded-general CodeMode,
+model-facing graph-native traversal, joins, `boundedExplore`, optimizer
+rewrites, durable/distributed scheduling, general adaptive loops, package
+publication, and deployment. M3b.1 is closed as a protocol failure; its
+calibration and held-out identities were never executed. M3b.2 is frozen as a
+semantic-gate failure. M3b.3 passed its probe and is frozen as an immutable
+calibration failure; held-out was not authorized. M3b.4's stress probe and
+calibration are complete and immutable; calibration achieved 236/240
+first-attempt success and 240/240 final reliability. M3b.5 subsequently
+completed all 2,560 held-out records. Its negative-control and safety gates
+passed, but every universal structural superiority conclusion failed under the
+frozen provider-by-repetition rule. M3 is complete and may not be rerun or
+reinterpreted under relaxed gates.
 
-M4a/M4b now provide only an offline deterministic vertical slice. The project
-still has no M4 live controller, fresh confirmatory corpus, campaign,
-materialization, preregistration, or inference authorization. M4c TypeGraph
-parity and M4d confirmation remain proposed and TypeGraph remains absent from
-all evaluated model-quality claims.
+M4a/M4b and the optional M4c TypeGraph storage adapter now provide only an
+offline deterministic vertical slice. The project still has no M4 live
+controller, fresh confirmatory corpus, campaign, materialization,
+preregistration, or inference authorization. M4d confirmation remains proposed,
+and TypeGraph remains absent from all evaluated model-quality claims.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

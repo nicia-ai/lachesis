@@ -14,7 +14,13 @@
       "@nicia-ai/lachesis-generator-ai-sdk": [
         "./packages/generator-ai-sdk/src/index.ts"
       ],
-      "@nicia-ai/lachesis-evidence": ["./packages/evidence/src/index.ts"]
+      "@nicia-ai/lachesis-evidence": ["./packages/evidence/src/index.ts"],
+      "@nicia-ai/lachesis-evidence-typegraph": [
+        "./packages/evidence-typegraph/src/index.ts"
+      ],
+      "@nicia-ai/lachesis-evidence-typegraph/sqlite": [
+        "./packages/evidence-typegraph/src/sqlite.ts"
+      ]
     },
     "lib": ["ES2023", "WebWorker"],
     "types": [],
