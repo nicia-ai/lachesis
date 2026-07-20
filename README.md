@@ -185,8 +185,10 @@ natural-workload reliability, provenance completeness, replay, budgets, and
 developer experience—not graph superiority. The offline
 [M5a vertical slice](docs/m5a-evidence-runtime.md) now composes the portable
 lexical-default runtime, deterministic provenance, and exact record/replay with
-optional TypeGraph storage. M5b live development remains unimplemented and
-unauthorized.
+optional TypeGraph storage. M5b live execution remains unauthorized. M5b.0 now
+provides the offline controlled-pilot substrate and a frozen natural
+repository-history corpus, without authorizing inference; see
+[the M5b.0 design](docs/m5b0-production-pilot.md).
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

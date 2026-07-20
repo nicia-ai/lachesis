@@ -22,7 +22,7 @@ const sufficiencyRuleSchema = z.literal(
   "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain",
 );
 
-export const m3bAnswerContractSchema = z.discriminatedUnion("role", [
+const m3bAnswerContractUnionSchema = z.discriminatedUnion("role", [
   z
     .strictObject({
       role: z.literal("headquarters-city"),
@@ -117,7 +117,64 @@ export const m3bAnswerContractSchema = z.discriminatedUnion("role", [
       sufficiencyRule: sufficiencyRuleSchema,
     })
     .readonly(),
+  z
+    .strictObject({
+      role: z.literal("evidence-values"),
+      cardinality: z.union([z.literal(1), z.literal(2)]),
+      ordering: z.enum(["scalar", "ordered", "unordered"]),
+      anchorSubject: z.string().min(1),
+      derivation: z.literal("same-subject-fact-set"),
+      requiredFactPredicates: z
+        .array(z.string().min(1))
+        .min(1)
+        .max(3)
+        .readonly(),
+      answerSource: z.enum([
+        "terminal-objects",
+        "last-object",
+        "first-last-objects",
+      ]),
+      minimumSupportingFacts: z.number().int().min(1).max(3),
+      sufficiencyRule: sufficiencyRuleSchema,
+    })
+    .readonly(),
 ]);
+
+export const m3bAnswerContractSchema = m3bAnswerContractUnionSchema
+  .superRefine((contract, context) => {
+    if (contract.role !== "evidence-values") return;
+    const expectedCardinality =
+      contract.answerSource === "last-object"
+        ? 1
+        : contract.answerSource === "first-last-objects"
+          ? 2
+          : contract.requiredFactPredicates.length;
+    if (contract.cardinality !== expectedCardinality)
+      context.addIssue({
+        code: "custom",
+        message: "Evidence-value cardinality must match its answer source.",
+        path: ["cardinality"],
+      });
+    if (
+      (contract.cardinality === 1 && contract.ordering !== "scalar") ||
+      (contract.cardinality > 1 && contract.ordering === "scalar")
+    )
+      context.addIssue({
+        code: "custom",
+        message: "Evidence-value ordering must match its cardinality.",
+        path: ["ordering"],
+      });
+    if (
+      contract.minimumSupportingFacts !== contract.requiredFactPredicates.length
+    )
+      context.addIssue({
+        code: "custom",
+        message:
+          "Evidence-value support must include one fact per required predicate.",
+        path: ["minimumSupportingFacts"],
+      });
+  })
+  .readonly();
 export type M3bAnswerContract = z.infer<typeof m3bAnswerContractSchema>;
 
 export const m3aTaskSchema = z

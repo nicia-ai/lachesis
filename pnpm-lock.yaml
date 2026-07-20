@@ -61,6 +61,9 @@ importers:
       "@nicia-ai/lachesis-evidence":
         specifier: workspace:*
         version: link:../../packages/evidence
+      "@nicia-ai/lachesis-evidence-typegraph":
+        specifier: workspace:*
+        version: link:../../packages/evidence-typegraph
       "@nicia-ai/lachesis-generator":
         specifier: workspace:*
         version: link:../../packages/generator

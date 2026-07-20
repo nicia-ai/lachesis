@@ -1,5 +1,6 @@
 import {
   appendFile,
+  chmod,
   mkdir,
   open,
   readFile,
@@ -497,7 +498,8 @@ export async function acquireCampaignLock(
 ): Promise<Result<CampaignLock, Diagnostic>> {
   const lockPath = `${path}.lock`;
   try {
-    await mkdir(dirname(path), { recursive: true });
+    await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+    await chmod(dirname(path), 0o700);
   } catch (error: unknown) {
     return {
       ok: false,
@@ -506,12 +508,13 @@ export async function acquireCampaignLock(
   }
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      await mkdir(lockPath);
+      await mkdir(lockPath, { mode: 0o700 });
       await writeFile(
         `${lockPath}/owner.json`,
         `${JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() })}\n`,
-        "utf8",
+        { encoding: "utf8", mode: 0o600 },
       );
+      await chmod(`${lockPath}/owner.json`, 0o600);
       return {
         ok: true,
         value: {

@@ -43,9 +43,10 @@ Evaluation should use fresh natural workloads and emphasize:
 
 M5 is not a graph-superiority study. Lexical evidence remains the production
 default, TypeGraph remains optional infrastructure, and the M4 exploratory
-candidate remains research-only and unconfirmed. M5b remains only proposed: it
-would add a separately reviewed and authorized live development pilot over
-natural workloads. No M5a artifact authorizes it.
+candidate remains research-only and unconfirmed. M5b.0 implements the offline
+controlled-pilot substrate and frozen natural repository-history corpus. Its
+probe and pilot remain unexecuted and each requires separate review and exact
+authorization. No M5a or M5b.0 artifact authorizes inference.
 
 No M4 corpus or inspected result should be relabeled as fresh confirmation in a
 future milestone.

@@ -23,6 +23,11 @@ lachesis-benchmark audit-m1c-heldout
 lachesis-benchmark audit-m2-heldout
 ```
 
+M5b.0 also installs `m5b-pilot` with materialize, validate, credential-free
+dry-run, separately authorized execute/resume, and offline report operations.
+See [the frozen workflow](../../docs/m5b0-production-pilot.md). Its dry-run is
+valid but deliberately non-executable without credentials and acknowledgement.
+
 Import, manifest materialization, validation, dry-run, and reporting are inert:
 they neither load provider models nor make provider requests. Live execution is
 the only path that constructs credential-bearing adapters, and it does so only

@@ -6,6 +6,7 @@ import {
   M3A1_PREREGISTERED_CORPUS,
   M3A1_REFERENCE_GRAPH,
   type M3aTask,
+  m3bOracleRequestSchema,
   M4A_EVIDENCE_COMPILER_PROTOCOL,
   M4A_INITIAL_POLICY,
   M4A_PROVIDER_PROFILES,
@@ -15,6 +16,7 @@ import {
   type M4OracleAnswer,
   type M4Provider,
   reconstructM4Provenance,
+  validateM3bSemanticOutput,
   validateM4CompiledEvidenceView,
 } from "../src/index.js";
 
@@ -61,6 +63,134 @@ function expectedAnswer(task: M3aTask): M4OracleAnswer {
 }
 
 describe("M4a provider-aware evidence compiler", () => {
+  it("validates repository-style evidence-value derivations in both semantic boundaries", async () => {
+    const answerContract = {
+      role: "evidence-values" as const,
+      cardinality: 2 as const,
+      ordering: "ordered" as const,
+      anchorSubject: "release",
+      derivation: "same-subject-fact-set" as const,
+      requiredFactPredicates: ["before", "after"],
+      answerSource: "first-last-objects" as const,
+      minimumSupportingFacts: 2,
+      sufficiencyRule:
+        "answer-only-when-a-complete-visible-derivation-exists-otherwise-abstain" as const,
+    };
+    const graph = {
+      id: "repository-history",
+      version: "1",
+      citations: [
+        {
+          id: "citation-before",
+          source: "repository",
+          locator: "before.md",
+          observedAt: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          id: "citation-after",
+          source: "repository",
+          locator: "after.md",
+          observedAt: "2026-01-02T00:00:00.000Z",
+        },
+      ],
+      facts: [
+        {
+          id: "fact-before",
+          statement: "Release status before was proposed.",
+          subject: "release",
+          predicate: "before",
+          object: "proposed",
+          citationIds: ["citation-before"],
+          validFrom: null,
+          validUntil: null,
+          recordedFrom: "2026-01-01T00:00:00.000Z",
+          recordedUntil: null,
+        },
+        {
+          id: "fact-after",
+          statement: "Release status after was complete.",
+          subject: "release",
+          predicate: "after",
+          object: "complete",
+          citationIds: ["citation-after"],
+          validFrom: null,
+          validUntil: null,
+          recordedFrom: "2026-01-02T00:00:00.000Z",
+          recordedUntil: null,
+        },
+      ],
+      edges: [],
+    };
+    const compiled = unwrap(
+      await compileM4EvidenceView({
+        graphInput: graph,
+        queryInput: {
+          id: "release-status",
+          text: "What was the release status before and after?",
+          validAt: null,
+          recordedAt: null,
+          maxFacts: 4,
+          maxCitations: 4,
+          maxEdges: 0,
+          maxPaths: 0,
+          maxHops: 0,
+          maxSerializedBytes: 8_000,
+          maxSerializedTokenUpperBound: 8_000,
+        },
+        providerProfileInput: M4A_PROVIDER_PROFILES.openai,
+        taskProfileInput: { taskClass: "non-relational", answerContract },
+        policyInput: {
+          ...M4A_INITIAL_POLICY,
+          rules: M4A_INITIAL_POLICY.rules.map((rule) => ({
+            ...rule,
+            view: "lexical-facts" as const,
+          })),
+        },
+      }),
+    );
+    const output = {
+      outcome: "answered" as const,
+      answerValues: ["proposed", "complete"],
+      supportingFactIds: ["fact-before", "fact-after"],
+    };
+    expect(
+      await reconstructM4Provenance({
+        compiledViewInput: compiled,
+        oracleAnswerInput: output,
+      }),
+    ).toMatchObject({ ok: true });
+    const request = m3bOracleRequestSchema.parse({
+      instruction: "What was the release status before and after?",
+      answerContract,
+      evidence: compiled.modelVisibleContext,
+      wireRepair: null,
+      semanticRepair: null,
+    });
+    const m3bOutput = {
+      ...output,
+      citationIds: ["citation-before", "citation-after"],
+      pathIds: [],
+    };
+    expect(validateM3bSemanticOutput(request, m3bOutput)).toEqual([]);
+    expect(
+      validateM3bSemanticOutput(request, {
+        ...m3bOutput,
+        answerValues: ["hidden", "complete"],
+      }),
+    ).toMatchObject([
+      { code: "answer-values-not-derived-from-supporting-facts" },
+    ]);
+    expect(
+      await reconstructM4Provenance({
+        compiledViewInput: compiled,
+        oracleAnswerInput: {
+          outcome: "insufficient-evidence",
+          answerValues: [],
+          supportingFactIds: [],
+        },
+      }),
+    ).toMatchObject({ ok: false });
+  });
   it("selects the frozen development-policy view and retains graph facts only as a control", async () => {
     const relational = developmentTask("multi-hop");
     const negative = developmentTask("negative-control");

@@ -12,6 +12,7 @@
   ],
   "bin": {
     "lachesis-benchmark": "./dist/cli.js",
+    "m5b-pilot": "./dist/m5b-cli.js",
     "m4d0-audit": "./dist/m4d0-audit-cli.js",
     "m4d1-design": "./dist/m4d1-design-cli.js"
   },
@@ -29,6 +30,7 @@
     "@nicia-ai/lachesis-generator": "workspace:*",
     "@nicia-ai/lachesis-generator-ai-sdk": "workspace:*",
     "@nicia-ai/lachesis-evidence": "workspace:*",
+    "@nicia-ai/lachesis-evidence-typegraph": "workspace:*",
     "zod": "4.4.3"
   },
   "devDependencies": {

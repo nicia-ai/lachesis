@@ -18,7 +18,12 @@
       "@nicia-ai/lachesis-generator-ai-sdk": [
         "../../packages/generator-ai-sdk/dist/index.d.ts"
       ],
-      "@nicia-ai/lachesis-evidence": ["../../packages/evidence/dist/index.d.ts"]
+      "@nicia-ai/lachesis-evidence": [
+        "../../packages/evidence/dist/index.d.ts"
+      ],
+      "@nicia-ai/lachesis-evidence-typegraph/sqlite": [
+        "../../packages/evidence-typegraph/dist/sqlite.d.ts"
+      ]
     }
   },
   "include": ["src/**/*.ts"],

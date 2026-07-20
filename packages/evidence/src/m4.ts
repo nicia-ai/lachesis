@@ -963,6 +963,53 @@ function temporalKey(
   return fact[field] ?? fact.recordedFrom;
 }
 
+function evidenceValueDerivations(
+  facts: ReadonlyArray<EvidenceFact>,
+  contract: Extract<M3bAnswerContract, Readonly<{ role: "evidence-values" }>>,
+): ReadonlyArray<VisibleDerivation> {
+  let selections: ReadonlyArray<ReadonlyArray<EvidenceFact>> = [[]];
+  for (const predicate of contract.requiredFactPredicates) {
+    const candidates = facts
+      .filter(
+        (fact) =>
+          fact.subject === contract.anchorSubject &&
+          fact.predicate === predicate,
+      )
+      .toSorted((left, right) =>
+        `${temporalKey(left, "recordedFrom")}/${left.id}`.localeCompare(
+          `${temporalKey(right, "recordedFrom")}/${right.id}`,
+        ),
+      );
+    selections = selections.flatMap((selection) =>
+      candidates.map((candidate) => [...selection, candidate]),
+    );
+  }
+  const unique = new Map<string, VisibleDerivation>();
+  for (const selection of selections) {
+    const supportingFactIds = selection.map((fact) => fact.id);
+    if (new Set(supportingFactIds).size !== supportingFactIds.length) continue;
+    const objects = selection.map((fact) => fact.object);
+    const answerValues =
+      contract.answerSource === "last-object"
+        ? objects.slice(-1)
+        : contract.answerSource === "first-last-objects"
+          ? [objects[0], objects.at(-1)].flatMap((value) =>
+              value === undefined ? [] : [value],
+            )
+          : objects;
+    const normalizedAnswers =
+      contract.ordering === "unordered"
+        ? answerValues.toSorted()
+        : answerValues;
+    const key = `${supportingFactIds.join("/")}:${normalizedAnswers.join("/")}`;
+    unique.set(key, {
+      answerValues: normalizedAnswers,
+      supportingFactIds,
+    });
+  }
+  return [...unique.values()];
+}
+
 function visibleDerivations(
   context: EvidenceContext,
   contract: M3bAnswerContract,
@@ -1069,6 +1116,8 @@ function visibleDerivations(
           answerValues: [fact.object],
           supportingFactIds: [fact.id],
         }));
+    case "evidence-values":
+      return evidenceValueDerivations(facts, contract);
   }
 }
 

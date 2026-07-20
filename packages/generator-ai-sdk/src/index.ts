@@ -52,6 +52,7 @@ export const M3B2_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-
 export const M3B3_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-arm-blinded-semantic-obligation-oracle/3`;
 export const M3B4_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m3b-staged-wire-recovery-oracle/4`;
 export const M4D1_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m4d1-reduced-visible-evidence-oracle/1`;
+export const M5B0_PROVIDER_ADAPTER_VERSION = `${AI_SDK_ADAPTER_VERSION};m5b-production-pilot-reduced-oracle/1`;
 export const M1B_OPENAI_MODEL = "gpt-5.6-terra";
 export const M1B_ANTHROPIC_MODEL = "claude-sonnet-5";
 export const M1B_BEDROCK_ANTHROPIC_MODEL = "us.anthropic.claude-sonnet-5";
@@ -1894,14 +1895,32 @@ export const M4D1_PRICING_ENTRIES: ReadonlyArray<PricingEntry> = Object.freeze([
   ANTHROPIC_DIRECT_PRICING,
 ]);
 
-export function createOpenAiM4d1Oracle(
+export const M5B0_ORACLE_IDENTITIES: ReadonlyArray<M3bOracleIdentity> =
+  Object.freeze([
+    m3bOracleIdentity("openai", M5B0_PROVIDER_ADAPTER_VERSION),
+    m3bOracleIdentity("anthropic", M5B0_PROVIDER_ADAPTER_VERSION, "json-tool"),
+  ]);
+
+export const M5B0_PRICING_ENTRIES = M4D1_PRICING_ENTRIES;
+
+export function createM5b0PricingSnapshot(): ReturnType<
+  typeof createPricingSnapshot
+> {
+  return createPricingSnapshot({
+    capturedAt: "2026-07-20T00:00:00-07:00",
+    entries: M5B0_PRICING_ENTRIES,
+  });
+}
+
+function createOpenAiReducedEvidenceOracle(
+  adapterVersion: string,
   provider?: OpenAiProviderSettings,
   diagnostics?: Readonly<{
     rawOutputWriter?: M3bRawOutputWriter | undefined;
     runtime?: AiSdkRuntime | undefined;
   }>,
 ): M4d1Oracle {
-  const identity = m3bOracleIdentity("openai", M4D1_PROVIDER_ADAPTER_VERSION);
+  const identity = m3bOracleIdentity("openai", adapterVersion);
   return createM4d1AiSdkOracle({
     identity,
     pricing: OPENAI_PRICING,
@@ -1930,8 +1949,9 @@ export function createOpenAiM4d1Oracle(
   });
 }
 
-export function createAnthropicM4d1Oracle(
+function createAnthropicReducedEvidenceOracle(
   input: Readonly<{
+    adapterVersion: string;
     acknowledgeAdaptiveThinking: true;
     provider?: AnthropicProviderSettings | undefined;
     rawOutputWriter?: M3bRawOutputWriter | undefined;
@@ -1940,7 +1960,7 @@ export function createAnthropicM4d1Oracle(
 ): M4d1Oracle {
   const identity = m3bOracleIdentity(
     "anthropic",
-    M4D1_PROVIDER_ADAPTER_VERSION,
+    input.adapterVersion,
     "json-tool",
   );
   return createM4d1AiSdkOracle({
@@ -1965,6 +1985,62 @@ export function createAnthropicM4d1Oracle(
       ? {}
       : { rawOutputWriter: input.rawOutputWriter }),
     ...(input.runtime === undefined ? {} : { runtime: input.runtime }),
+  });
+}
+
+export function createOpenAiM4d1Oracle(
+  provider?: OpenAiProviderSettings,
+  diagnostics?: Readonly<{
+    rawOutputWriter?: M3bRawOutputWriter | undefined;
+    runtime?: AiSdkRuntime | undefined;
+  }>,
+): M4d1Oracle {
+  return createOpenAiReducedEvidenceOracle(
+    M4D1_PROVIDER_ADAPTER_VERSION,
+    provider,
+    diagnostics,
+  );
+}
+
+export function createAnthropicM4d1Oracle(
+  input: Readonly<{
+    acknowledgeAdaptiveThinking: true;
+    provider?: AnthropicProviderSettings | undefined;
+    rawOutputWriter?: M3bRawOutputWriter | undefined;
+    runtime?: AiSdkRuntime | undefined;
+  }>,
+): M4d1Oracle {
+  return createAnthropicReducedEvidenceOracle({
+    ...input,
+    adapterVersion: M4D1_PROVIDER_ADAPTER_VERSION,
+  });
+}
+
+export function createOpenAiM5b0Oracle(
+  provider?: OpenAiProviderSettings,
+  diagnostics?: Readonly<{
+    rawOutputWriter?: M3bRawOutputWriter | undefined;
+    runtime?: AiSdkRuntime | undefined;
+  }>,
+): M4d1Oracle {
+  return createOpenAiReducedEvidenceOracle(
+    M5B0_PROVIDER_ADAPTER_VERSION,
+    provider,
+    diagnostics,
+  );
+}
+
+export function createAnthropicM5b0Oracle(
+  input: Readonly<{
+    acknowledgeAdaptiveThinking: true;
+    provider?: AnthropicProviderSettings | undefined;
+    rawOutputWriter?: M3bRawOutputWriter | undefined;
+    runtime?: AiSdkRuntime | undefined;
+  }>,
+): M4d1Oracle {
+  return createAnthropicReducedEvidenceOracle({
+    ...input,
+    adapterVersion: M5B0_PROVIDER_ADAPTER_VERSION,
   });
 }
 

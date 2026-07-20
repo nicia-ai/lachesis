@@ -42,6 +42,7 @@ import {
   createAnthropicCodeModeAdapter,
   createAnthropicM3bOracle,
   createAnthropicM4d1Oracle,
+  createAnthropicM5b0Oracle,
   createBedrockAnthropicPlanAdapter,
   createM1bPricingSnapshot,
   createM1bPrimaryAdapters,
@@ -49,6 +50,7 @@ import {
   createOpenAiCodeModeAdapter,
   createOpenAiM3bOracle,
   createOpenAiM4d1Oracle,
+  createOpenAiM5b0Oracle,
   M1B_ANTHROPIC_MODEL,
   M1B_BEDROCK_ANTHROPIC_MODEL,
   M1B_OPENAI_MODEL,
@@ -60,6 +62,8 @@ import {
   M3B4_OUTPUT_JSON_SCHEMA,
   M4D1_ORACLE_IDENTITIES,
   M4D1_OUTPUT_JSON_SCHEMA,
+  M5B0_ORACLE_IDENTITIES,
+  M5B0_PROVIDER_ADAPTER_VERSION,
 } from "../src/index.js";
 
 function unwrap<T, E>(result: Result<T, E>): T {
@@ -1878,5 +1882,83 @@ describe("AI SDK provider adapters", () => {
         materializationAuthorized: false,
       },
     });
+  });
+
+  it("binds M5b to the real reduced provider routes without widening the visible request", async () => {
+    const task = required(
+      M3B_PREREGISTERED_CORPUS.find(
+        (candidate) =>
+          candidate.split === "development" &&
+          candidate.category === "negative-control",
+      ),
+      "Missing M5b transport fixture.",
+    );
+    const fact = required(
+      M3B_REFERENCE_GRAPH.facts.find(
+        (candidate) => candidate.id === task.expectedFactIds[0],
+      ),
+      "Missing M5b visible fact.",
+    );
+    const request = m4d1OracleRequestSchema.parse({
+      instruction: task.instruction,
+      answerContract: task.answerContract,
+      evidence: {
+        facts: [fact],
+        citations: M3B_REFERENCE_GRAPH.citations.filter((citation) =>
+          fact.citationIds.includes(citation.id),
+        ),
+        edges: [],
+        paths: [],
+      },
+      wireRepair: null,
+      semanticRepair: null,
+    });
+    const openaiRequests: Array<CapturedFetchRequest> = [];
+    const anthropicRequests: Array<CapturedFetchRequest> = [];
+    const openai = createOpenAiM5b0Oracle({
+      apiKey: "offline-dummy",
+      fetch: interceptedFetch(openaiRequests),
+    });
+    const anthropic = createAnthropicM5b0Oracle({
+      acknowledgeAdaptiveThinking: true,
+      provider: {
+        apiKey: "offline-dummy",
+        fetch: interceptedFetch(anthropicRequests),
+      },
+    });
+    const context = {
+      recordKey: "offline-m5b-request",
+      attemptIndex: 0,
+      invocation: "initial" as const,
+      transportRetryIndex: 0,
+      attemptType: "initial" as const,
+    };
+    await openai.generate(request, context);
+    await anthropic.generate(request, context);
+    expect(openai.identity.adapterVersion).toBe(M5B0_PROVIDER_ADAPTER_VERSION);
+    expect(anthropic.identity.adapterVersion).toBe(
+      M5B0_PROVIDER_ADAPTER_VERSION,
+    );
+    expect([openai.identity, anthropic.identity]).toEqual(
+      M5B0_ORACLE_IDENTITIES,
+    );
+    expect(openai.identity.settings).toMatchObject({
+      reasoning: "low",
+      sdkRetries: 0,
+      structuredOutput: "json-schema",
+    });
+    expect(anthropic.identity.settings).toMatchObject({
+      reasoning: "adaptive-low",
+      sdkRetries: 0,
+      structuredOutput: "json-tool",
+    });
+    for (const captured of [...openaiRequests, ...anthropicRequests]) {
+      const serialized = JSON.stringify(captured.body);
+      expect(serialized).toContain(task.instruction);
+      expect(serialized).toContain("supportingFactIds");
+      expect(serialized).not.toMatch(
+        /expectedAnswer|typegraph|graph-typed|graph-adjacency|policyIdentity|armIdentity/iu,
+      );
+    }
   });
 });
