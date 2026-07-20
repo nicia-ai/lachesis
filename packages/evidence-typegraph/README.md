@@ -19,3 +19,11 @@ TypeGraph topology is never executable control flow.
 
 See [`docs/m4c-typegraph-parity.md`](../../docs/m4c-typegraph-parity.md) for the
 trust boundary, temporal semantics, parity evidence, and nonclaims.
+
+M5a integration is exposed through `createM5TypeGraphEvidenceStore`, which
+adapts a repository backed by a host-provided TypeGraph `HistoryStore` to the
+portable production evidence-runtime contract. The Node-only `./sqlite` subpath
+also exports `createM5TypeGraphSqliteEvidenceStore` as a managed local-SQLite
+convenience. Both paths preserve the same visible evidence and reconstructed
+provenance as the in-memory runtime; only storage audit identities may differ.
+See the [M5a runtime guide](../../docs/m5a-evidence-runtime.md).

@@ -6,9 +6,11 @@ import {
   semanticObligationSchema,
 } from "@nicia-ai/lachesis";
 import {
+  createInMemoryM5EvidenceStore,
   createInMemoryGraphEvidenceSource,
   M3A1_PREREGISTERED_CORPUS,
   M3A1_REFERENCE_GRAPH,
+  M5A_RUNTIME_PROTOCOL,
   selectEvidence,
 } from "@nicia-ai/lachesis-evidence";
 import { z } from "zod";
@@ -77,4 +79,19 @@ if (evidenceTask === undefined) throw new Error("Node evidence task missing");
 const evidence = await selectEvidence(evidenceSource.value, evidenceTask.query);
 if (!evidence.ok || evidence.value.context.paths.length === 0)
   throw new Error("Node evidence selection failed");
+const runtimeStore = await createInMemoryM5EvidenceStore({
+  id: "node-smoke-evidence",
+  version: "1",
+  snapshots: [
+    {
+      recordedAt: "2026-01-01T00:00:00.000Z",
+      graph: M3A1_REFERENCE_GRAPH,
+    },
+  ],
+});
+if (
+  !runtimeStore.ok ||
+  M5A_RUNTIME_PROTOCOL.defaultEvidenceView !== "lexical-facts"
+)
+  throw new Error("Node M5 evidence-runtime smoke failed");
 process.stdout.write("Node public-package smoke passed.\n");

@@ -16,6 +16,7 @@ export {
   type TypeGraphSnapshotIdentity,
   typeGraphSnapshotIdentitySchema,
 } from "./contract.js";
+export { createM5TypeGraphEvidenceStore } from "./m5.js";
 export {
   createTypeGraphEvidenceRepository,
   TYPEGRAPH_EVIDENCE_SCHEMA,

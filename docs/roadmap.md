@@ -16,11 +16,15 @@
 
 See [M4 results](m4-results.md) for the closure record and exact nonclaims.
 
-## Proposed M5: production evidence runtime
+## M5: production evidence runtime
 
-M5 is a proposed production-oriented milestone, not an implemented or authorized
-experiment. Its intended product boundary is one cohesive public
-evidence-runtime API with:
+M5a now provides an entirely offline vertical slice of the cohesive public
+evidence-runtime API. It composes the executable-plan boundary, lexical-default
+evidence compilation, reduced oracle output, deterministic validation and
+provenance, content-addressed record/replay, and optional TypeGraph storage. See
+the [M5a runtime](m5a-evidence-runtime.md).
+
+The product boundary is:
 
 - lexical-by-default model-facing evidence;
 - optional TypeGraph storage, history, and provenance;
@@ -39,7 +43,9 @@ Evaluation should use fresh natural workloads and emphasize:
 
 M5 is not a graph-superiority study. Lexical evidence remains the production
 default, TypeGraph remains optional infrastructure, and the M4 exploratory
-candidate remains research-only and unconfirmed.
+candidate remains research-only and unconfirmed. M5b remains only proposed: it
+would add a separately reviewed and authorized live development pilot over
+natural workloads. No M5a artifact authorizes it.
 
 No M4 corpus or inspected result should be relabeled as fresh confirmation in a
 future milestone.

@@ -62,3 +62,11 @@ without generating a corpus or creating live experiment authority. M4 is now
 closed with mixed conclusions: lexical evidence remains the production default,
 and the exploratory adaptive policy remains research-only and unconfirmed. See
 the immutable [M4 results](../../docs/m4-results.md).
+
+M5a adds the portable production evidence-runtime facade in this package. It
+accepts an opaque executable plan, public task contract, trusted policy, pinned
+evidence store, and injected mock/record oracle; lexical evidence is the
+default. Successful runs persist content-addressed replay artifacts, while
+replay requires exact identities and contacts neither the evidence store nor
+oracle. TypeGraph remains outside this package. See the
+[M5a runtime guide](../../docs/m5a-evidence-runtime.md).

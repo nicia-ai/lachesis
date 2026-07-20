@@ -9,6 +9,7 @@ import {
 } from "@nicia-ai/lachesis";
 import {
   createInMemoryGraphEvidenceSource,
+  createInMemoryM5EvidenceStore,
   M3A1_PREREGISTERED_CORPUS,
   M3A1_REFERENCE_GRAPH,
   selectEvidence,
@@ -209,11 +210,22 @@ async function exerciseKernel(): Promise<Response> {
     evidenceSource.value,
     evidenceTask.query,
   );
+  const runtimeStore = await createInMemoryM5EvidenceStore({
+    id: "worker-smoke-evidence",
+    version: "1",
+    snapshots: [
+      {
+        recordedAt: "2026-01-01T00:00:00.000Z",
+        graph: M3A1_REFERENCE_GRAPH,
+      },
+    ],
+  });
   return Response.json({
     ok:
       executed.ok &&
       codeModeRun.ok &&
       evidence.ok &&
+      runtimeStore.ok &&
       TYPEGRAPH_EVIDENCE_SCHEMA.id === "lachesis-m4c-evidence-storage" &&
       evidence.value.context.paths.length > 0,
     planHash: summary.planHash,

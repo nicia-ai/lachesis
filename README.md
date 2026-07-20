@@ -182,7 +182,11 @@ and unconfirmed because the frozen powered design exceeded the practicality
 ceiling. Lexical evidence remains the production default. The proposed
 [M5 roadmap](docs/roadmap.md) focuses on a cohesive production evidence runtime,
 natural-workload reliability, provenance completeness, replay, budgets, and
-developer experience—not graph superiority. M5 is not implemented here.
+developer experience—not graph superiority. The offline
+[M5a vertical slice](docs/m5a-evidence-runtime.md) now composes the portable
+lexical-default runtime, deterministic provenance, and exact record/replay with
+optional TypeGraph storage. M5b live development remains unimplemented and
+unauthorized.
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and
