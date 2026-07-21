@@ -261,7 +261,7 @@ jobs:
           npm publish ".release-packages/nicia-ai-lachesis-evidence-typegraph-$RELEASE_VERSION.tgz" --tag alpha --access public
           npm publish ".release-packages/nicia-ai-lachesis-generator-$RELEASE_VERSION.tgz" --tag alpha --access public
 
-      - name: Verify alpha dist-tags
+      - name: Enforce and verify alpha-only dist-tags
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -272,10 +272,39 @@ jobs:
             @nicia-ai/lachesis-evidence-typegraph \
             @nicia-ai/lachesis-generator
           do
-            test "$(npm view "$package_name@$RELEASE_VERSION" version)" = "$RELEASE_VERSION"
-            test "$(npm view "$package_name" dist-tags.alpha)" = "$RELEASE_VERSION"
+            published=false
+            for attempt in $(seq 1 24)
+            do
+              version="$(npm view "$package_name@$RELEASE_VERSION" version 2>/dev/null || true)"
+              alpha="$(npm view "$package_name" dist-tags.alpha 2>/dev/null || true)"
+              if test "$version" = "$RELEASE_VERSION" && test "$alpha" = "$RELEASE_VERSION"
+              then
+                published=true
+                break
+              fi
+              echo "Waiting for $package_name registry visibility ($attempt/24)" >&2
+              sleep 5
+            done
+            test "$published" = "true"
             latest="$(npm view "$package_name" dist-tags.latest 2>/dev/null || true)"
-            test "$latest" != "$RELEASE_VERSION"
+            if test "$latest" = "$RELEASE_VERSION"
+            then
+              npm dist-tag rm "$package_name" latest
+            fi
+            alpha_only=false
+            for attempt in $(seq 1 24)
+            do
+              alpha="$(npm view "$package_name" dist-tags.alpha 2>/dev/null || true)"
+              latest="$(npm view "$package_name" dist-tags.latest 2>/dev/null || true)"
+              if test "$alpha" = "$RELEASE_VERSION" && test "$latest" != "$RELEASE_VERSION"
+              then
+                alpha_only=true
+                break
+              fi
+              echo "Waiting for $package_name dist-tag convergence ($attempt/24)" >&2
+              sleep 5
+            done
+            test "$alpha_only" = "true"
           done
 
       - name: Return release to draft on failure
