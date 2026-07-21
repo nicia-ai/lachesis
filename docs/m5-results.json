@@ -1,0 +1,144 @@
+{
+  "formatVersion": "1",
+  "kind": "m5-results-record",
+  "status": "complete-operational-pass",
+  "frozenIdentity": {
+    "sourceCommit": "1f1db6247c07653dc2e91715e4b25d18b7781a5c",
+    "campaignDigest": "9eb02a74d5c696c355b9047f27c65c7dafc8ba7ea156c32b5bbd3d61ac2f765f",
+    "experimentDigest": "2b0de5d270d5284997660abba3977de66f93f70cd7fda2820a2429bdc868aba3",
+    "phaseManifestDigest": "82c9e5d532eef29bec54d538402e635e2bfee4b7d6341f29885f5f594ef72c74",
+    "scheduleDigest": "376cce010bdbc296ab3503eabbfec57db9ed354638cd295b7d92d20784064a63",
+    "ledgerEventCount": 68,
+    "ledgerHead": "fc5c566d2a4c089259684c7e8cf1a3353a1ed25b92657bc4786a9382edb0acc9"
+  },
+  "operationalResult": {
+    "records": 24,
+    "initialCalls": 24,
+    "providerAttempts": 24,
+    "firstAttemptEndToEndSuccesses": 24,
+    "firstAttemptSemanticSuccesses": 24,
+    "finalReliableRecords": 24,
+    "answerableCitationAndProvenanceValidated": 22,
+    "typedInsufficientEvidenceCorrect": 2,
+    "wireRepairs": 0,
+    "semanticRepairs": 0,
+    "transportRetries": 0,
+    "opaqueFailures": 0,
+    "missingUsage": 0,
+    "safetyViolations": 0,
+    "replayVerified": 24,
+    "zeroDispatchResumeVerified": true
+  },
+  "pilotUsage": {
+    "inputTokens": 90964,
+    "outputTokens": 2209,
+    "costUsdMicros": 229089,
+    "aggregateLatencyMs": 43171,
+    "providers": [
+      {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5",
+        "records": 12,
+        "inputTokens": 56262,
+        "outputTokens": 1526,
+        "costUsdMicros": 127784,
+        "aggregateLatencyMs": 27076
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-5.6-terra",
+        "records": 12,
+        "inputTokens": 34702,
+        "outputTokens": 683,
+        "costUsdMicros": 101305,
+        "aggregateLatencyMs": 16095
+      }
+    ]
+  },
+  "campaignAccounting": {
+    "consumedUsdMicros": 311961,
+    "remainingUsdMicros": 4688039,
+    "providerObservedUsdMicros": 311961,
+    "conservativeUsdMicros": 0,
+    "unsettledUsdMicros": 0,
+    "providers": [
+      {
+        "provider": "anthropic",
+        "consumedUsdMicros": 170452,
+        "remainingUsdMicros": 1829548
+      },
+      {
+        "provider": "openai",
+        "consumedUsdMicros": 141509,
+        "remainingUsdMicros": 2858491
+      }
+    ]
+  },
+  "artifactChecksums": {
+    "algorithm": "sha256",
+    "treeAlgorithm": "sha256 of the byte-exact, LF-delimited, lexicographically sorted '<file-sha256>  <root-relative-path>' entries",
+    "externalRoot": "/Users/paul/.local/share/lachesis/m5b",
+    "files": [
+      {
+        "path": "manifests/freeze-1f1db62-pilot/campaign.json",
+        "sha256": "5cf6b197cb029c04327392f8e5c45c7e400d4bd9c34a364fe7140baa00c9f700"
+      },
+      {
+        "path": "manifests/freeze-1f1db62-pilot/checksums.json",
+        "sha256": "ce8a6bf4cd74c6ece97bf47276e16fc3db223997e3729e6c0e6376825244d991"
+      },
+      {
+        "path": "manifests/freeze-1f1db62-pilot/corpus.json",
+        "sha256": "772138be2a49031b5a029b5e83f2dca49f4bd46a410c6d2da18809c1ad03c32d"
+      },
+      {
+        "path": "manifests/freeze-1f1db62-pilot/freeze-review.json",
+        "sha256": "7e61c33b9f87dbf4e83908b2a3df4a0dec97b563349cdb30ddc92262ba463d3c"
+      },
+      {
+        "path": "manifests/freeze-1f1db62-pilot/m5b-pilot.json",
+        "sha256": "6dc0fe6b033b20702b7ee12b88b924731d0b6844063a59e5aa7dd6527cfc9617"
+      },
+      {
+        "path": "state/9eb02a74d5c696c355b9047f27c65c7dafc8ba7ea156c32b5bbd3d61ac2f765f/ledger.ndjson",
+        "sha256": "69dcb186d27ef1d01ae537ad423a70c0b138c04f2866a1bf4645b115ce2752f1"
+      },
+      {
+        "path": "state/9eb02a74d5c696c355b9047f27c65c7dafc8ba7ea156c32b5bbd3d61ac2f765f/ledger.ndjson.head",
+        "sha256": "2e4b31f39ef8f5130241e936b069879aaed4728e24c3dddc763078e3e577a636"
+      },
+      {
+        "path": "state/m5b/2b0de5d270d5284997660abba3977de66f93f70cd7fda2820a2429bdc868aba3/private-artifacts/evidence.sqlite",
+        "sha256": "7927bbc48357f057757258d851c3ffd4e8bbd7f537a27e66a76141919f3b4539"
+      }
+    ],
+    "trees": [
+      {
+        "path": "state/m5b/2b0de5d270d5284997660abba3977de66f93f70cd7fda2820a2429bdc868aba3/records",
+        "fileCount": 24,
+        "sha256": "51adc14d3679f2c0f58517261222ba889bf1aec9e2905cecc90f5aa79d6c5be7"
+      },
+      {
+        "path": "state/m5b/2b0de5d270d5284997660abba3977de66f93f70cd7fda2820a2429bdc868aba3/private-artifacts/replay",
+        "fileCount": 24,
+        "sha256": "8721c4d055f84e31faae634a60e25921190789513648f2b654a5a2199d79088f"
+      }
+    ]
+  },
+  "permissionPolicy": {
+    "directoryMode": "0700",
+    "fileMode": "0600",
+    "sqliteSidecarsAudited": true,
+    "sqliteSidecarsPresentAfterClose": false,
+    "violations": 0
+  },
+  "nonclaims": [
+    "provider-superiority",
+    "graph-superiority",
+    "graph-serialization-superiority",
+    "typegraph-model-quality-advantage",
+    "production-scale-performance",
+    "security-certification",
+    "general-model-quality"
+  ]
+}
