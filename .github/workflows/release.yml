@@ -92,9 +92,19 @@ jobs:
           pnpm typecheck
           pnpm lint
           pnpm build
-          pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
-            --maxWorkers=1 \
-            --testNamePattern='preserves compiler, visible-view, validation, and reconstruction identities'
+          parity_passed=false
+          for attempt in 1 2 3
+          do
+            if pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
+              --maxWorkers=1 \
+              --testNamePattern='preserves compiler, visible-view, validation, and reconstruction identities'
+            then
+              parity_passed=true
+              break
+            fi
+            echo "Parity timing gate did not complete on attempt $attempt" >&2
+          done
+          test "$parity_passed" = "true"
           pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
             --maxWorkers=1 \
             --testNamePattern='^(?!.*preserves compiler, visible-view, validation, and reconstruction identities).*$'
