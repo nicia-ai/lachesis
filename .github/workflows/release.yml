@@ -87,7 +87,20 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run frozen release verification
-        run: pnpm verify:release
+        run: |
+          pnpm format:check
+          pnpm typecheck
+          pnpm lint
+          pnpm build
+          pnpm exec vitest run --maxWorkers=1
+          pnpm test:coverage
+          pnpm build
+          pnpm smoke
+          pnpm test:examples
+          pnpm test:load
+          pnpm audit:source-safety
+          pnpm audit:public-api
+          pnpm audit:packages
 
       - name: Verify authorized package set
         run: |
