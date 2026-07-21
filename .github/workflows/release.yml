@@ -1,0 +1,213 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: Exact audited source commit to publish
+        required: true
+        type: string
+
+concurrency:
+  group: release-alpha
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  RELEASE_COMMIT: 478ab365d51feb7bb57cd056c8762b421efa3a1d
+  RELEASE_VERSION: 0.1.0-alpha.1
+  RELEASE_TAG: v0.1.0-alpha.1
+
+jobs:
+  release:
+    name: Publish audited public alpha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Confirm immutable release authorization
+        env:
+          REQUESTED_COMMIT: ${{ inputs.release_commit }}
+        run: test "$REQUESTED_COMMIT" = "$RELEASE_COMMIT"
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+          fetch-depth: 0
+
+      - name: Verify exact clean source
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_COMMIT"
+          test -z "$(git status --porcelain)"
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Require one-time bootstrap credential
+        env:
+          BOOTSTRAP_NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: test -n "$BOOTSTRAP_NPM_TOKEN"
+
+      - name: Require npm trusted-publishing support
+        run: |
+          NPM_VERSION="$(npm --version)"
+          export NPM_VERSION
+          node - <<'NODE'
+          const version = process.env.NPM_VERSION;
+          if (version === undefined) throw new Error("npm version is unavailable");
+          const [major, minor] = version.split(".").map(Number);
+          if (major < 11 || (major === 11 && minor < 5)) {
+            throw new Error(`npm 11.5.1 or newer is required; found ${version}`);
+          }
+          NODE
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run frozen release verification
+        run: pnpm verify:release
+
+      - name: Verify authorized package set
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+
+          const expected = new Map([
+            ["packages/kernel/package.json", "@nicia-ai/lachesis"],
+            ["packages/evidence/package.json", "@nicia-ai/lachesis-evidence"],
+            ["packages/runtime/package.json", "@nicia-ai/lachesis-runtime"],
+            ["packages/evidence-typegraph/package.json", "@nicia-ai/lachesis-evidence-typegraph"],
+            ["packages/generator/package.json", "@nicia-ai/lachesis-generator"],
+          ]);
+          const publicPackages = new Map();
+          for (const root of ["packages", "apps", "compat", "examples"]) {
+            if (!fs.existsSync(root)) continue;
+            for (const entry of fs.readdirSync(root)) {
+              const manifestPath = path.join(root, entry, "package.json");
+              if (!fs.existsSync(manifestPath)) continue;
+              const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+              if (manifest.private !== true) publicPackages.set(manifestPath, manifest);
+            }
+          }
+          if (publicPackages.size !== expected.size) {
+            throw new Error(`Expected exactly ${expected.size} public packages; found ${publicPackages.size}`);
+          }
+          for (const [manifestPath, expectedName] of expected) {
+            const manifest = publicPackages.get(manifestPath);
+            if (
+              manifest?.name !== expectedName ||
+              manifest.version !== process.env.RELEASE_VERSION ||
+              manifest.publishConfig?.access !== "public"
+            ) {
+              throw new Error(`Unauthorized package metadata at ${manifestPath}`);
+            }
+          }
+          NODE
+
+      - name: Check registry state
+        id: registry
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          present=0
+          absent=0
+          for package_name in \
+            @nicia-ai/lachesis \
+            @nicia-ai/lachesis-evidence \
+            @nicia-ai/lachesis-runtime \
+            @nicia-ai/lachesis-evidence-typegraph \
+            @nicia-ai/lachesis-generator
+          do
+            if npm view "$package_name@$RELEASE_VERSION" version >/dev/null 2>&1
+            then
+              present=$((present + 1))
+            else
+              absent=$((absent + 1))
+            fi
+          done
+          if test "$present" -eq 0
+          then
+            echo "state=absent" >> "$GITHUB_OUTPUT"
+          elif test "$absent" -eq 0
+          then
+            echo "state=present" >> "$GITHUB_OUTPUT"
+          else
+            echo "Refusing a partial release: $present versions exist and $absent are absent" >&2
+            exit 1
+          fi
+
+      - name: Pack audited artifacts
+        run: |
+          mkdir -p .release-packages
+          pnpm --filter @nicia-ai/lachesis pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
+          pnpm --filter @nicia-ai/lachesis-evidence pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
+          pnpm --filter @nicia-ai/lachesis-runtime pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
+          pnpm --filter @nicia-ai/lachesis-evidence-typegraph pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
+          pnpm --filter @nicia-ai/lachesis-generator pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
+
+      - name: Publish public alpha
+        if: steps.registry.outputs.state == 'absent'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          npm publish ".release-packages/nicia-ai-lachesis-$RELEASE_VERSION.tgz" --tag alpha --access public
+          npm publish ".release-packages/nicia-ai-lachesis-evidence-$RELEASE_VERSION.tgz" --tag alpha --access public
+          npm publish ".release-packages/nicia-ai-lachesis-runtime-$RELEASE_VERSION.tgz" --tag alpha --access public
+          npm publish ".release-packages/nicia-ai-lachesis-evidence-typegraph-$RELEASE_VERSION.tgz" --tag alpha --access public
+          npm publish ".release-packages/nicia-ai-lachesis-generator-$RELEASE_VERSION.tgz" --tag alpha --access public
+
+      - name: Verify alpha dist-tags
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for package_name in \
+            @nicia-ai/lachesis \
+            @nicia-ai/lachesis-evidence \
+            @nicia-ai/lachesis-runtime \
+            @nicia-ai/lachesis-evidence-typegraph \
+            @nicia-ai/lachesis-generator
+          do
+            test "$(npm view "$package_name@$RELEASE_VERSION" version)" = "$RELEASE_VERSION"
+            test "$(npm view "$package_name" dist-tags.alpha)" = "$RELEASE_VERSION"
+            latest="$(npm view "$package_name" dist-tags.latest 2>/dev/null || true)"
+            test "$latest" != "$RELEASE_VERSION"
+          done
+
+      - name: Create immutable release tag and notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          remote_direct="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG" | cut -f1)"
+          remote_peeled="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG^{}" | cut -f1)"
+          remote_target="${remote_peeled:-$remote_direct}"
+          if test -n "$remote_target"
+          then
+            test "$remote_target" = "$RELEASE_COMMIT"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag --annotate "$RELEASE_TAG" "$RELEASE_COMMIT" --message "Lachesis $RELEASE_VERSION"
+            git push origin "$RELEASE_TAG"
+          fi
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1
+          then
+            test "$(gh release view "$RELEASE_TAG" --json isPrerelease --jq .isPrerelease)" = "true"
+          else
+            gh release create "$RELEASE_TAG" \
+              --target "$RELEASE_COMMIT" \
+              --title "Lachesis $RELEASE_VERSION" \
+              --notes-file docs/m5c-release-notes.md \
+              --prerelease \
+              --verify-tag
+          fi
