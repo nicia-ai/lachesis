@@ -1,12 +1,8 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_commit:
-        description: Exact audited source commit to publish
-        required: true
-        type: string
+  release:
+    types: [published]
 
 concurrency:
   group: release-alpha
@@ -24,13 +20,21 @@ env:
 jobs:
   release:
     name: Publish audited public alpha
+    if: github.event.release.tag_name == 'v0.1.0-alpha.1'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Confirm immutable release authorization
         env:
-          REQUESTED_COMMIT: ${{ inputs.release_commit }}
-        run: test "$REQUESTED_COMMIT" = "$RELEASE_COMMIT"
+          EVENT_COMMIT: ${{ github.sha }}
+          EVENT_REF: ${{ github.ref }}
+          RELEASE_DRAFT: ${{ github.event.release.draft }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          test "$EVENT_COMMIT" = "$RELEASE_COMMIT"
+          test "$EVENT_REF" = "refs/tags/$RELEASE_TAG"
+          test "$RELEASE_DRAFT" = "false"
+          test "$RELEASE_PRERELEASE" = "true"
 
       - uses: actions/checkout@v6
         with:
@@ -41,6 +45,14 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$RELEASE_COMMIT"
           test -z "$(git status --porcelain)"
+
+      - name: Verify frozen release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          release_body="$(gh release view "$RELEASE_TAG" --json body --jq .body)"
+          expected_body="$(cat docs/m5c-release-notes.md)"
+          test "$release_body" = "$expected_body"
 
       - uses: pnpm/action-setup@v5
 
@@ -184,30 +196,10 @@ jobs:
             test "$latest" != "$RELEASE_VERSION"
           done
 
-      - name: Create immutable release tag and notes
+      - name: Return release to draft on failure
+        if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          remote_direct="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG" | cut -f1)"
-          remote_peeled="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG^{}" | cut -f1)"
-          remote_target="${remote_peeled:-$remote_direct}"
-          if test -n "$remote_target"
-          then
-            test "$remote_target" = "$RELEASE_COMMIT"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git tag --annotate "$RELEASE_TAG" "$RELEASE_COMMIT" --message "Lachesis $RELEASE_VERSION"
-            git push origin "$RELEASE_TAG"
-          fi
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1
-          then
-            test "$(gh release view "$RELEASE_TAG" --json isPrerelease --jq .isPrerelease)" = "true"
-          else
-            gh release create "$RELEASE_TAG" \
-              --target "$RELEASE_COMMIT" \
-              --title "Lachesis $RELEASE_VERSION" \
-              --notes-file docs/m5c-release-notes.md \
-              --prerelease \
-              --verify-tag
-          fi
+        run:
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY"
+          --draft=true
