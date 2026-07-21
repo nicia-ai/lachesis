@@ -65,11 +65,6 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
-      - name: Require one-time bootstrap credential
-        env:
-          BOOTSTRAP_NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: test -n "$BOOTSTRAP_NPM_TOKEN"
-
       - name: Require npm trusted-publishing support
         run: |
           NPM_VERSION="$(npm --version)"
@@ -209,8 +204,6 @@ jobs:
 
       - name: Check registry state
         id: registry
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           present=0
           absent=0
@@ -251,8 +244,6 @@ jobs:
       - name: Publish public alpha
         if: steps.registry.outputs.state == 'absent'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
           npm publish ".release-packages/nicia-ai-lachesis-$RELEASE_VERSION.tgz" --tag alpha --access public
@@ -262,8 +253,6 @@ jobs:
           npm publish ".release-packages/nicia-ai-lachesis-generator-$RELEASE_VERSION.tgz" --tag alpha --access public
 
       - name: Verify alpha dist-tags
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           for package_name in \
             @nicia-ai/lachesis \
@@ -294,24 +283,6 @@ jobs:
               node -e 'const versions = JSON.parse(process.env.versions); if (Array.isArray(versions) ? versions.length !== 1 : typeof versions !== "string") process.exit(1)'
               echo "$package_name retains npm's first-version latest alias; alpha is authoritative" >&2
             fi
-          done
-
-      - name: Configure token-free trusted publishing
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          for package_name in \
-            @nicia-ai/lachesis \
-            @nicia-ai/lachesis-evidence \
-            @nicia-ai/lachesis-runtime \
-            @nicia-ai/lachesis-evidence-typegraph \
-            @nicia-ai/lachesis-generator
-          do
-            npm trust github "$package_name" \
-              --repo nicia-ai/lachesis \
-              --file release.yml \
-              --allow-publish \
-              --yes
           done
 
       - name: Return release to draft on failure
