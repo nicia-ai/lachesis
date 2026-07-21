@@ -78,8 +78,8 @@ jobs:
           const version = process.env.NPM_VERSION;
           if (version === undefined) throw new Error("npm version is unavailable");
           const [major, minor] = version.split(".").map(Number);
-          if (major < 11 || (major === 11 && minor < 5)) {
-            throw new Error(`npm 11.5.1 or newer is required; found ${version}`);
+          if (major < 11 || (major === 11 && minor < 15)) {
+            throw new Error(`npm 11.15.0 or newer is required; found ${version}`);
           }
           NODE
 
@@ -261,7 +261,7 @@ jobs:
           npm publish ".release-packages/nicia-ai-lachesis-evidence-typegraph-$RELEASE_VERSION.tgz" --tag alpha --access public
           npm publish ".release-packages/nicia-ai-lachesis-generator-$RELEASE_VERSION.tgz" --tag alpha --access public
 
-      - name: Enforce and verify alpha-only dist-tags
+      - name: Verify alpha dist-tags
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -289,22 +289,29 @@ jobs:
             latest="$(npm view "$package_name" dist-tags.latest 2>/dev/null || true)"
             if test "$latest" = "$RELEASE_VERSION"
             then
-              npm dist-tag rm "$package_name" latest
+              versions="$(npm view "$package_name" versions --json)"
+              export versions
+              node -e 'const versions = JSON.parse(process.env.versions); if (Array.isArray(versions) ? versions.length !== 1 : typeof versions !== "string") process.exit(1)'
+              echo "$package_name retains npm's first-version latest alias; alpha is authoritative" >&2
             fi
-            alpha_only=false
-            for attempt in $(seq 1 24)
-            do
-              alpha="$(npm view "$package_name" dist-tags.alpha 2>/dev/null || true)"
-              latest="$(npm view "$package_name" dist-tags.latest 2>/dev/null || true)"
-              if test "$alpha" = "$RELEASE_VERSION" && test "$latest" != "$RELEASE_VERSION"
-              then
-                alpha_only=true
-                break
-              fi
-              echo "Waiting for $package_name dist-tag convergence ($attempt/24)" >&2
-              sleep 5
-            done
-            test "$alpha_only" = "true"
+          done
+
+      - name: Configure token-free trusted publishing
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for package_name in \
+            @nicia-ai/lachesis \
+            @nicia-ai/lachesis-evidence \
+            @nicia-ai/lachesis-runtime \
+            @nicia-ai/lachesis-evidence-typegraph \
+            @nicia-ai/lachesis-generator
+          do
+            npm trust github "$package_name" \
+              --repo nicia-ai/lachesis \
+              --file release.yml \
+              --allow-publish \
+              --yes
           done
 
       - name: Return release to draft on failure
