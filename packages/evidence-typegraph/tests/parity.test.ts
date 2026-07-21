@@ -1,4 +1,4 @@
-import { unlink } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -79,13 +79,14 @@ function memorySource(
   return unwrap(source);
 }
 
-function databasePath(label: string): string {
-  const path = join(
+async function databasePath(label: string): Promise<string> {
+  const directory = join(
     tmpdir(),
-    `lachesis-typegraph-${label}-${crypto.randomUUID()}.sqlite`,
+    `lachesis-typegraph-${label}-${crypto.randomUUID()}`,
   );
-  databasePaths.push(path);
-  return path;
+  await mkdir(directory, { mode: 0o700 });
+  databasePaths.push(directory);
+  return join(directory, "evidence.sqlite");
 }
 
 function reorderByKeys<T extends Readonly<{ id: string }>>(
@@ -104,18 +105,9 @@ function reorderByKeys<T extends Readonly<{ id: string }>>(
 afterEach(async () => {
   await Promise.all(repositories.splice(0).map((entry) => entry.close()));
   await Promise.all(
-    databasePaths.splice(0).map(async (path) => {
-      try {
-        await unlink(path);
-      } catch (error) {
-        if (!(
-          error instanceof Error &&
-          "code" in error &&
-          error.code === "ENOENT"
-        ))
-          throw error;
-      }
-    }),
+    databasePaths
+      .splice(0)
+      .map((path) => rm(path, { recursive: true, force: true })),
   );
 });
 
@@ -512,7 +504,7 @@ describe("M4c TypeGraph fail-closed behavior", () => {
   });
 
   it("rejects schema/source mismatch when reopening a persistent store", async () => {
-    const path = databasePath("identity");
+    const path = await databasePath("identity");
     const first = await repository(M3A1_REFERENCE_GRAPH, path);
     await first.close();
     repositories.splice(repositories.indexOf(first), 1);

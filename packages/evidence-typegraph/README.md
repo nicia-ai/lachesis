@@ -1,7 +1,7 @@
 # `@nicia-ai/lachesis-evidence-typegraph`
 
-Optional M4c storage adapter implementing Lachesis evidence snapshots over the
-native, Drizzle-free TypeGraph 0.38 Store contract.
+Stable-alpha optional storage adapter implementing Lachesis evidence snapshots
+over the native, Drizzle-free TypeGraph 0.38 Store contract.
 
 The root package is runtime-portable and accepts a TypeGraph `HistoryStore`
 created by the host. This is the integration point for Cloudflare-backed stores
@@ -26,4 +26,6 @@ portable production evidence-runtime contract. The Node-only `./sqlite` subpath
 also exports `createM5TypeGraphSqliteEvidenceStore` as a managed local-SQLite
 convenience. Both paths preserve the same visible evidence and reconstructed
 provenance as the in-memory runtime; only storage audit identities may differ.
-See the [M5a runtime guide](../../docs/m5a-evidence-runtime.md).
+Managed SQLite paths are pre-created privately and expose a permission audit for
+the database, journal, WAL, and shared-memory files. See the
+[M5a runtime guide](../../docs/m5a-evidence-runtime.md).

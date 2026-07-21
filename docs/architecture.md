@@ -51,6 +51,12 @@ relationships never become scheduling edges and run events never become evidence
 claims. See
 [M3a.1 graph-native decomposition](./m3a-graph-native-decomposition.md).
 
+M5 composes these domains through `@nicia-ai/lachesis-runtime`. A run pins the
+knowledge snapshot, compiles a lexical model-visible view by default, invokes a
+bounded host effect, validates only visible support, and deterministically
+constructs the run/provenance graph. Its recording contains the three distinct
+identities; it never converts evidence topology into plan control flow.
+
 M3b adds a portable matched execution layer above that contract. One compiled
 functional plan invokes an arm-blinded oracle effect across four frozen contexts
 in a digest-bound Williams schedule. Source identity remains run provenance and
@@ -93,6 +99,11 @@ empty ambient `types` set. It uses `crypto.subtle`, `TextEncoder`, and injected
 time/identity providers. The CLI alone owns filesystem and process behavior.
 Compatibility fixtures consume built public exports in Node and through a real
 Wrangler/Workers bundle.
+
+The public-alpha runtime root is portable under the same boundary. Node
+filesystem persistence lives only at `@nicia-ai/lachesis-runtime/node`.
+Host-provided TypeGraph stores enter through the portable TypeGraph adapter;
+managed `better-sqlite3` enters only through its explicit Node subpath.
 
 ## Current guarantee boundary
 

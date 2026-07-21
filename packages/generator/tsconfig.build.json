@@ -4,6 +4,7 @@
     "noEmit": false,
     "rootDir": "src",
     "outDir": "dist",
+    "declarationMap": true,
     "sourceMap": true,
     "paths": {
       "@nicia-ai/lachesis": ["../../packages/kernel/dist/index.d.ts"]

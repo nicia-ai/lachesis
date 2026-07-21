@@ -20,7 +20,9 @@
       ],
       "@nicia-ai/lachesis-evidence-typegraph/sqlite": [
         "./packages/evidence-typegraph/src/sqlite.ts"
-      ]
+      ],
+      "@nicia-ai/lachesis-runtime": ["./packages/runtime/src/index.ts"],
+      "@nicia-ai/lachesis-runtime/node": ["./packages/runtime/src/node.ts"]
     },
     "lib": ["ES2023", "WebWorker"],
     "types": [],

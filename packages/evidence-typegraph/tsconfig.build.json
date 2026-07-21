@@ -10,7 +10,12 @@
     "types": [],
     "paths": {
       "@nicia-ai/lachesis": ["../../packages/kernel/dist/index.d.ts"],
-      "@nicia-ai/lachesis-evidence": ["../../packages/evidence/dist/index.d.ts"]
+      "@nicia-ai/lachesis-evidence": [
+        "../../packages/evidence/dist/index.d.ts"
+      ],
+      "@nicia-ai/lachesis-runtime/node": [
+        "../../packages/runtime/dist/node.d.ts"
+      ]
     }
   },
   "include": ["src/**/*.ts"],

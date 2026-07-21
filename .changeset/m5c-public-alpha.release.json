@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "release": "m5c-public-alpha",
+  "status": "prepared-not-published",
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "fromVersion": "0.1.0",
+      "toVersion": "0.1.0-alpha.1"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "fromVersion": "0.1.0",
+      "toVersion": "0.1.0-alpha.1"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "fromVersion": "0.1.0",
+      "toVersion": "0.1.0-alpha.1"
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "fromVersion": "0.1.0",
+      "toVersion": "0.1.0-alpha.1"
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "fromVersion": null,
+      "toVersion": "0.1.0-alpha.1"
+    }
+  ],
+  "releaseNotes": "docs/m5c-release-notes.md"
+}

@@ -2,6 +2,7 @@ import eslint from "@eslint/js";
 import vitest from "@vitest/eslint-plugin";
 import configPrettier from "eslint-config-prettier";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
+import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -23,6 +24,7 @@ export default tseslint.config(
   configPrettier,
   {
     languageOptions: {
+      globals: globals.node,
       parser: tseslint.parser,
       parserOptions: {
         projectService: true,
@@ -73,6 +75,14 @@ export default tseslint.config(
   {
     files: ["packages/kernel/src/json.ts"],
     rules: { "no-restricted-syntax": "off" },
+  },
+  {
+    ...tseslint.configs.disableTypeChecked,
+    files: ["examples/**/*.mjs", "scripts/**/*.mjs"],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: { projectService: false },
+    },
   },
   {
     files: ["**/*.test.ts"],

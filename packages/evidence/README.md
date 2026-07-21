@@ -1,5 +1,9 @@
 # `@nicia-ai/lachesis-evidence`
 
+Status: **experimental low-level API**. New applications should start with
+`@nicia-ai/lachesis-runtime`, which exposes the supported public-alpha workflow
+without the research surfaces below.
+
 Portable, substrate-neutral evidence-selection contracts plus deterministic
 in-memory graph and matched-text reference implementations. M3 is closed; the
 package now includes an offline M4a/M4b evidence compiler and deterministic

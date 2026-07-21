@@ -4,6 +4,11 @@ import {
   type M5EvidenceStoreFailure,
   validateEvidenceGraph,
 } from "@nicia-ai/lachesis-evidence";
+import {
+  auditPrivateSqliteFile,
+  preparePrivateSqliteFile,
+  type PrivateSqliteAudit,
+} from "@nicia-ai/lachesis-runtime/node";
 import { createLocalSqliteStore } from "@nicia-ai/typegraph/sqlite/local";
 
 import {
@@ -19,11 +24,38 @@ import {
 export type M5ManagedSqliteEvidenceStore = Readonly<{
   store: M5EvidenceStore;
   repository: TypeGraphEvidenceRepository;
+  permissionAudit: () => Promise<
+    Result<PrivateSqliteAudit | null, TypeGraphAdapterFailure>
+  >;
   close: () => Promise<void>;
 }>;
 
 export type M5ManagedSqliteEvidenceStoreFailure =
   TypeGraphAdapterFailure | M5EvidenceStoreFailure;
+
+function permissionFailure(message: string): TypeGraphAdapterFailure {
+  return { code: "ADAPTER_CAPABILITY_VIOLATION", message };
+}
+
+async function preparePrivatePath(
+  path: string | undefined,
+): Promise<Result<void, TypeGraphAdapterFailure>> {
+  if (path === undefined) return { ok: true, value: undefined };
+  const prepared = await preparePrivateSqliteFile(path);
+  return prepared.ok
+    ? { ok: true, value: undefined }
+    : { ok: false, error: permissionFailure(prepared.error.message) };
+}
+
+async function auditPrivatePath(
+  path: string | undefined,
+): Promise<Result<PrivateSqliteAudit | null, TypeGraphAdapterFailure>> {
+  if (path === undefined) return { ok: true, value: null };
+  const audited = await auditPrivateSqliteFile(path);
+  return audited.ok
+    ? audited
+    : { ok: false, error: permissionFailure(audited.error.message) };
+}
 
 /**
  * Creates an M4c repository backed by TypeGraph's managed local SQLite store.
@@ -42,16 +74,25 @@ export async function createTypeGraphSqliteEvidenceRepository(
       code: "INVALID_SOURCE_GRAPH",
       message: validated.error.message,
     });
+  const prepared = await preparePrivatePath(input.path);
+  if (!prepared.ok) return prepared;
   try {
     const store = await createLocalSqliteStore(TYPEGRAPH_EVIDENCE_SCHEMA, {
       ...(input.path === undefined ? {} : { path: input.path }),
       store: { history: true },
     });
-    return await createTypeGraphEvidenceRepository({
+    const repository = await createTypeGraphEvidenceRepository({
       graphInput: input.graphInput,
       store,
       backendIdentity: { id: "typegraph-local-sqlite", version: "0.38.0" },
     });
+    if (!repository.ok) return repository;
+    const permissionAudit = await auditPrivatePath(input.path);
+    if (!permissionAudit.ok) {
+      await repository.value.close();
+      return permissionAudit;
+    }
+    return repository;
   } catch (error) {
     return err({
       code: "TYPEGRAPH_OPERATION_FAILED",
@@ -84,6 +125,7 @@ export async function createM5TypeGraphSqliteEvidenceStore(
     value: {
       store: store.value,
       repository: repository.value,
+      permissionAudit: () => auditPrivatePath(input.path),
       close: () => repository.value.close(),
     },
   };

@@ -1,0 +1,11 @@
+{
+  "name": "@nicia-ai/lachesis-m5-alpha-examples",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@nicia-ai/lachesis-evidence-typegraph": "workspace:*",
+    "@nicia-ai/lachesis-runtime": "workspace:*",
+    "@nicia-ai/typegraph": "0.38.0"
+  }
+}

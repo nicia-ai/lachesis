@@ -13,6 +13,7 @@
     "@nicia-ai/lachesis-evidence": "workspace:*",
     "@nicia-ai/lachesis-evidence-typegraph": "workspace:*",
     "@nicia-ai/lachesis-generator": "workspace:*",
+    "@nicia-ai/lachesis-runtime": "workspace:*",
     "zod": "4.4.3"
   }
 }

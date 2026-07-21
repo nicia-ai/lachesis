@@ -10,6 +10,9 @@ importers:
       "@eslint/js":
         specifier: 10.0.1
         version: 10.0.1(eslint@10.7.0)
+      "@nicia-ai/lachesis-runtime":
+        specifier: workspace:*
+        version: link:packages/runtime
       "@types/node":
         specifier: 24.13.3
         version: 24.13.3
@@ -37,6 +40,9 @@ importers:
       fast-check:
         specifier: 4.8.0
         version: 4.8.0
+      globals:
+        specifier: 17.7.0
+        version: 17.7.0
       prettier:
         specifier: 3.9.5
         version: 3.9.5
@@ -99,6 +105,9 @@ importers:
       "@nicia-ai/lachesis-evidence":
         specifier: workspace:*
         version: link:../../packages/evidence
+      "@nicia-ai/lachesis-runtime":
+        specifier: workspace:*
+        version: link:../../packages/runtime
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -117,9 +126,24 @@ importers:
       "@nicia-ai/lachesis-generator":
         specifier: workspace:*
         version: link:../../packages/generator
+      "@nicia-ai/lachesis-runtime":
+        specifier: workspace:*
+        version: link:../../packages/runtime
       zod:
         specifier: 4.4.3
         version: 4.4.3
+
+  examples/m5-alpha:
+    dependencies:
+      "@nicia-ai/lachesis-evidence-typegraph":
+        specifier: workspace:*
+        version: link:../../packages/evidence-typegraph
+      "@nicia-ai/lachesis-runtime":
+        specifier: workspace:*
+        version: link:../../packages/runtime
+      "@nicia-ai/typegraph":
+        specifier: 0.38.0
+        version: 0.38.0(better-sqlite3@12.11.1)(drizzle-orm@0.45.2(better-sqlite3@12.11.1))(zod@4.4.3)
 
   packages/evidence:
     dependencies:
@@ -138,6 +162,9 @@ importers:
       "@nicia-ai/lachesis-evidence":
         specifier: workspace:*
         version: link:../evidence
+      "@nicia-ai/lachesis-runtime":
+        specifier: workspace:*
+        version: link:../runtime
       "@nicia-ai/typegraph":
         specifier: 0.38.0
         version: 0.38.0(better-sqlite3@12.11.1)(drizzle-orm@0.45.2(better-sqlite3@12.11.1))(zod@4.4.3)
@@ -207,6 +234,19 @@ importers:
       zod:
         specifier: 4.4.3
         version: 4.4.3
+
+  packages/runtime:
+    dependencies:
+      "@nicia-ai/lachesis":
+        specifier: workspace:*
+        version: link:../kernel
+      "@nicia-ai/lachesis-evidence":
+        specifier: workspace:*
+        version: link:../evidence
+    devDependencies:
+      "@types/node":
+        specifier: 24.13.3
+        version: 24.13.3
 
 packages:
   "@ai-sdk/amazon-bedrock@5.0.23":

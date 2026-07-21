@@ -18,7 +18,7 @@ See [M4 results](m4-results.md) for the closure record and exact nonclaims.
 
 ## M5: production evidence runtime
 
-M5a now provides an entirely offline vertical slice of the cohesive public
+M5a provides an entirely offline vertical slice of the cohesive public
 evidence-runtime API. It composes the executable-plan boundary, lexical-default
 evidence compilation, reduced oracle output, deterministic validation and
 provenance, content-addressed record/replay, and optional TypeGraph storage. See
@@ -43,10 +43,17 @@ Evaluation should use fresh natural workloads and emphasize:
 
 M5 is not a graph-superiority study. Lexical evidence remains the production
 default, TypeGraph remains optional infrastructure, and the M4 exploratory
-candidate remains research-only and unconfirmed. M5b.0 implements the offline
-controlled-pilot substrate and frozen natural repository-history corpus. Its
-probe and pilot remain unexecuted and each requires separate review and exact
-authorization. No M5a or M5b.0 artifact authorizes inference.
+candidate remains research-only and unconfirmed. M5b.1 is closed as
+`complete-operational-pass`. The replacement four-record probe and the frozen
+24-record natural repository-history pilot both passed; the original
+permission-failed M5b.0 probe remains immutable and report-only. See
+[M5 results](m5-results.md).
+
+M5c prepares the first public alpha entirely offline. It adds a cohesive facade,
+verified examples, strict package boundaries, private recording and SQLite
+hardening, packed-consumer checks, and an explicit alpha stability policy. It
+does not publish packages or authorize another provider call. See the
+[public-alpha guide](public-alpha.md).
 
 No M4 corpus or inspected result should be relabeled as fresh confirmation in a
 future milestone.

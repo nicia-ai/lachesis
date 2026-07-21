@@ -5,6 +5,7 @@
   "type": "module",
   "license": "Apache-2.0",
   "author": "Nicia AI",
+  "private": true,
   "files": [
     "dist",
     "README.md",

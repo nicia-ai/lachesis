@@ -1,4 +1,4 @@
-import { unlink } from "node:fs/promises";
+import { chmod, mkdir, open, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -54,13 +54,14 @@ function unwrap<T, E>(result: Result<T, E>): T {
   return result.value;
 }
 
-function databasePath(label: string): string {
-  const path = join(
+async function databasePath(label: string): Promise<string> {
+  const directory = join(
     tmpdir(),
-    `lachesis-m5-${label}-${crypto.randomUUID()}.sqlite`,
+    `lachesis-m5-${label}-${crypto.randomUUID()}`,
   );
-  paths.push(path);
-  return path;
+  await mkdir(directory, { mode: 0o700 });
+  paths.push(directory);
+  return join(directory, "evidence.sqlite");
 }
 
 afterEach(async () => {
@@ -69,18 +70,7 @@ afterEach(async () => {
   );
   await Promise.all(managedStores.splice(0).map((store) => store.close()));
   await Promise.all(
-    paths.splice(0).map(async (path) => {
-      try {
-        await unlink(path);
-      } catch (error) {
-        if (!(
-          error instanceof Error &&
-          "code" in error &&
-          error.code === "ENOENT"
-        ))
-          throw error;
-      }
-    }),
+    paths.splice(0).map((path) => rm(path, { recursive: true, force: true })),
   );
 });
 
@@ -336,7 +326,7 @@ describe("M5 TypeGraph runtime parity", () => {
     const repository = unwrap(
       await createTypeGraphSqliteEvidenceRepository({
         graphInput: GRAPH,
-        path: databasePath("failure-map"),
+        path: await databasePath("failure-map"),
       }),
     );
     repositories.push(repository);
@@ -427,7 +417,7 @@ describe("M5 TypeGraph runtime parity", () => {
     const historyStore = await createLocalSqliteStore(
       TYPEGRAPH_EVIDENCE_SCHEMA,
       {
-        path: databasePath("host"),
+        path: await databasePath("host"),
         store: { history: true },
       },
     );
@@ -446,7 +436,7 @@ describe("M5 TypeGraph runtime parity", () => {
     const managed = unwrap(
       await createM5TypeGraphSqliteEvidenceStore({
         graphInput: GRAPH,
-        path: databasePath("managed"),
+        path: await databasePath("managed"),
       }),
     );
     managedStores.push(managed);
@@ -468,6 +458,8 @@ describe("M5 TypeGraph runtime parity", () => {
     expect(managedResult.evidenceSnapshot.sourceSnapshotDigest).toBe(
       memoryResult.evidenceSnapshot.sourceSnapshotDigest,
     );
+    const permissionAudit = unwrap(await managed.permissionAudit());
+    expect(permissionAudit?.artifacts.length).toBeGreaterThan(0);
     expect(hostResult.evidenceSnapshot.storageSnapshotDigest).not.toBe(
       memoryResult.evidenceSnapshot.storageSnapshotDigest,
     );
@@ -482,7 +474,7 @@ describe("M5 TypeGraph runtime parity", () => {
     const managed = unwrap(
       await createM5TypeGraphSqliteEvidenceStore({
         graphInput: GRAPH,
-        path: databasePath("retraction"),
+        path: await databasePath("retraction"),
       }),
     );
     managedStores.push(managed);
@@ -527,4 +519,49 @@ describe("M5 TypeGraph runtime parity", () => {
     );
     expect(replayed).toEqual(historical);
   }, 20_000);
+});
+
+it("fails closed on managed SQLite symlinks and permission drift", async () => {
+  const permissivePath = await databasePath("permissive");
+  const permissive = await open(permissivePath, "wx", 0o600);
+  await permissive.close();
+  await chmod(permissivePath, 0o644);
+  expect(
+    await createM5TypeGraphSqliteEvidenceStore({
+      graphInput: GRAPH,
+      path: permissivePath,
+    }),
+  ).toMatchObject({
+    ok: false,
+    error: { code: "ADAPTER_CAPABILITY_VIOLATION" },
+  });
+
+  const linkedPath = await databasePath("linked");
+  const targetPath = `${linkedPath}.target`;
+  const target = await open(targetPath, "wx", 0o600);
+  await target.close();
+  await symlink(targetPath, linkedPath);
+  expect(
+    await createM5TypeGraphSqliteEvidenceStore({
+      graphInput: GRAPH,
+      path: linkedPath,
+    }),
+  ).toMatchObject({
+    ok: false,
+    error: { code: "ADAPTER_CAPABILITY_VIOLATION" },
+  });
+
+  const driftPath = await databasePath("drift");
+  const managed = unwrap(
+    await createM5TypeGraphSqliteEvidenceStore({
+      graphInput: GRAPH,
+      path: driftPath,
+    }),
+  );
+  managedStores.push(managed);
+  await chmod(driftPath, 0o644);
+  expect(await managed.permissionAudit()).toMatchObject({
+    ok: false,
+    error: { code: "ADAPTER_CAPABILITY_VIOLATION" },
+  });
 });

@@ -1,0 +1,52 @@
+{
+  "name": "@nicia-ai/lachesis-runtime",
+  "version": "0.1.0-alpha.1",
+  "description": "Cohesive public evidence-runtime API for Lachesis",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Nicia AI",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
+    }
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicia-ai/lachesis.git",
+    "directory": "packages/runtime"
+  },
+  "homepage": "https://github.com/nicia-ai/lachesis#readme",
+  "bugs": {
+    "url": "https://github.com/nicia-ai/lachesis/issues"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "smoke": "node --input-type=module -e \"const api = await import('@nicia-ai/lachesis-runtime'); const node = await import('@nicia-ai/lachesis-runtime/node'); if (typeof api.run !== 'function' || typeof api.replay !== 'function' || typeof api.compilePlan !== 'function' || typeof node.createPrivateFileRecordingStore !== 'function') process.exit(1);\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:*",
+    "@nicia-ai/lachesis-evidence": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3"
+  }
+}

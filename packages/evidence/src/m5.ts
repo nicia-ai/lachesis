@@ -253,6 +253,21 @@ export const m5OracleEffectFailureSchema = z
   })
   .readonly();
 
+const m5OracleInvocationResultSchema = z.discriminatedUnion("ok", [
+  z
+    .strictObject({
+      ok: z.literal(true),
+      value: m5OracleWireResultSchema,
+    })
+    .readonly(),
+  z
+    .strictObject({
+      ok: z.literal(false),
+      error: m5OracleEffectFailureSchema,
+    })
+    .readonly(),
+]);
+
 export type M5OracleEffectIdentity = z.infer<
   typeof m5OracleEffectIdentitySchema
 >;
@@ -913,6 +928,60 @@ type CapturedOracle = Readonly<{
   replayEntry: ReplayEntry;
 }>;
 
+type OracleInvocationRace =
+  | Readonly<{
+      kind: "completed";
+      value: unknown;
+    }>
+  | Readonly<{ kind: "cancelled" }>
+  | Readonly<{ kind: "timed-out" }>;
+
+async function invokeOracleWithinBudget(
+  input: Readonly<{
+    interpreter: M5OracleInterpreter;
+    request: M4d1OracleRequest;
+    requestDigest: string;
+    budget: M5OracleBudget;
+    signal: AbortSignal;
+  }>,
+): Promise<OracleInvocationRace> {
+  if (input.signal.aborted) return { kind: "cancelled" };
+  const controller = new AbortController();
+  const cancel = (): void => {
+    controller.abort();
+  };
+  input.signal.addEventListener("abort", cancel, { once: true });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timedOut = new Promise<OracleInvocationRace>((resolve) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      resolve({ kind: "timed-out" });
+    }, input.budget.maxWallClockMs);
+  });
+  const cancelled = new Promise<OracleInvocationRace>((resolve) => {
+    controller.signal.addEventListener(
+      "abort",
+      () => {
+        if (input.signal.aborted) resolve({ kind: "cancelled" });
+      },
+      { once: true },
+    );
+  });
+  const invoked = Promise.resolve(
+    input.interpreter.effect.invoke(input.request, {
+      requestDigest: input.requestDigest,
+      budget: input.budget,
+      signal: controller.signal,
+    }),
+  ).then<OracleInvocationRace>((value) => ({ kind: "completed", value }));
+  try {
+    return await Promise.race([invoked, cancelled, timedOut]);
+  } finally {
+    input.signal.removeEventListener("abort", cancel);
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 function buildEffectHandler(
   input: Readonly<{
     expectedRequest: M4d1OracleRequest;
@@ -977,9 +1046,11 @@ function buildEffectHandler(
       input.fail(failure);
       return err(diagnostic("RUNTIME_SCHEMA_VIOLATION", failure.message));
     }
-    let invoked: Result<M5OracleWireResult, M5OracleEffectFailure>;
+    let raced: OracleInvocationRace;
     try {
-      invoked = await input.interpreter.effect.invoke(input.expectedRequest, {
+      raced = await invokeOracleWithinBudget({
+        interpreter: input.interpreter,
+        request: input.expectedRequest,
         requestDigest: input.expectedRequestDigest,
         budget: input.trustedPolicy.budget,
         signal: input.signal,
@@ -995,6 +1066,39 @@ function buildEffectHandler(
       input.fail(failure);
       return err(diagnostic("RUNTIME_SCHEMA_VIOLATION", failure.message));
     }
+    if (raced.kind === "cancelled") {
+      const failure = cancelled("oracle");
+      input.fail(failure);
+      return err(diagnostic("RUNTIME_SCHEMA_VIOLATION", failure.message));
+    }
+    if (raced.kind === "timed-out") {
+      const failure = runtimeFailure(
+        "BUDGET_EXHAUSTED",
+        "oracle",
+        "Oracle wall-clock deadline was exceeded.",
+      );
+      input.fail(failure);
+      return err(diagnostic("BUDGET_EXCEEDED", failure.message));
+    }
+    const parsedInvocation = m5OracleInvocationResultSchema.safeParse(
+      raced.value,
+    );
+    if (!parsedInvocation.success) {
+      const failure = runtimeFailure(
+        "ORACLE_EFFECT_FAILED",
+        "oracle",
+        "Oracle effect returned an invalid result or usage envelope.",
+        parsedInvocation.error.issues.slice(0, 64).map((issue) => ({
+          code: issue.code,
+          path: issue.path.map((part) =>
+            typeof part === "symbol" ? String(part) : part,
+          ),
+        })),
+      );
+      input.fail(failure);
+      return err(diagnostic("RUNTIME_SCHEMA_VIOLATION", failure.message));
+    }
+    const invoked = parsedInvocation.data;
     if (!invoked.ok) {
       const failure = mapOracleFailure(invoked.error);
       input.fail(failure);

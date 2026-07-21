@@ -2,6 +2,7 @@ packages:
   - "packages/*"
   - "apps/*"
   - "compat/*"
+  - "examples/*"
 
 onlyBuiltDependencies:
   - better-sqlite3

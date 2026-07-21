@@ -9,7 +9,8 @@ effect interpreters.
 This repository contains the measured plan kernel, deterministic generation
 benchmark substrate, the frozen M1b/M1c experiment controllers, the completed M2
 functional-JSON-IR versus restricted-capability-TypeScript representation
-ablation, and the completed M3 factorial evidence-substrate study.
+ablation, the completed M3 factorial evidence-substrate study, and the M5
+public-alpha evidence runtime.
 
 ## What works
 
@@ -67,6 +68,9 @@ ablation, and the completed M3 factorial evidence-substrate study.
 - An offline M4 evidence compiler with a content-addressed provider/task policy,
   arm-blinded selected contexts, graph-facts controls, and deterministic
   provenance reconstruction from answer values plus supporting fact IDs.
+- A cohesive lexical-default production evidence runtime with typed
+  answer/citation/provenance results, bounded injected oracle effects,
+  content-addressed record/replay, and optional TypeGraph storage.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
 
@@ -74,7 +78,39 @@ Deterministic orchestration is not semantic determinism. Exact replay comes from
 recorded effect results bound to plan, catalog, operation, invocation, effect,
 and input identities, plus injected time and run identifiers.
 
-## Try the example
+## Public-alpha quickstart
+
+The supported product API is `@nicia-ai/lachesis-runtime`:
+
+```ts
+import {
+  compilePlan,
+  createRecordingOracleInterpreter,
+  run,
+} from "@nicia-ai/lachesis-runtime";
+
+const compiled = await compilePlan(planJson, catalog, policy, obligations);
+if (!compiled.ok) return compiled;
+
+const completed = await run({
+  executablePlan: compiled.value,
+  publicTaskContract,
+  inputValues,
+  trustedPolicy,
+  evidenceStore,
+  snapshot,
+  oracle: createRecordingOracleInterpreter(hostOracle),
+  recordingStore,
+  signal,
+});
+```
+
+See the [public-alpha guide](docs/public-alpha.md) for the complete tutorial,
+package selection, API reference, trust boundaries, record/replay semantics,
+TypeGraph integration, compatibility, security guidance, and alpha policy. Every
+example under [`examples/m5-alpha`](examples/m5-alpha) runs offline.
+
+## Kernel CLI example
 
 ```bash
 corepack enable
@@ -102,16 +138,19 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
 ## Workspace
 
 - `packages/kernel` — portable public package `@nicia-ai/lachesis`.
+- `packages/runtime` — supported public-alpha facade
+  `@nicia-ai/lachesis-runtime`, with a separate Node-only subpath.
 - `packages/generator` — provider-neutral package
   `@nicia-ai/lachesis-generator`; no live provider SDKs.
 - `packages/generator-ai-sdk` — Node-only live-provider adapter package; kept
   outside the kernel and portable generator.
-- `packages/evidence` — portable substrate-neutral evidence contracts and the
-  offline M3a.1 factorial text/reference-graph implementations; no TypeGraph
+- `packages/evidence` — portable substrate-neutral evidence contracts and
+  offline research substrates; explicitly experimental and without a TypeGraph
   dependency.
+- `packages/evidence-typegraph` — optional public TypeGraph 0.38 adapter; its
+  managed SQLite subpath is Node-only.
 - `apps/benchmark` — private Node-only M1b/M1c/M2 campaign controller and CLI.
-- `apps/cli` — Node-only public package `@nicia-ai/lachesis-cli` and `lachesis`
-  binary.
+- `apps/cli` — private workspace CLI used by repository fixtures.
 - `fixtures` — valid/invalid plans, inputs, and effect recordings.
 - `compat` — built-package Node and Workers consumers.
 - `docs` — architecture and material ADRs.
@@ -144,7 +183,10 @@ candidate for possible confirmation on a completely fresh corpus. The offline
 implements the reduced oracle boundary and exact paired design, but stops before
 corpus generation because the conservative powered sample is impractical. M4 is
 closed as `complete-mixed`, and M4d.1 is `complete-design-no-go`; see the
-immutable [M4 results](docs/m4-results.md).
+immutable [M4 results](docs/m4-results.md). M5 is closed as
+`complete-operational-pass`; see the immutable [M5 results](docs/m5-results.md).
+M5c prepares the offline public alpha without publishing a package or
+authorizing another provider call.
 
 ## Validation
 
@@ -179,18 +221,17 @@ M4a/M4b and the optional M4c TypeGraph storage adapter provide an offline
 deterministic evidence-runtime substrate. The original M4 adaptive policy is
 development-rejected; its narrow exploratory replacement remains research-only
 and unconfirmed because the frozen powered design exceeded the practicality
-ceiling. Lexical evidence remains the production default. The proposed
+ceiling. Lexical evidence remains the production default. The
 [M5 roadmap](docs/roadmap.md) focuses on a cohesive production evidence runtime,
 natural-workload reliability, provenance completeness, replay, budgets, and
 developer experience—not graph superiority. The offline
 [M5a vertical slice](docs/m5a-evidence-runtime.md) now composes the portable
 lexical-default runtime, deterministic provenance, and exact record/replay with
-optional TypeGraph storage. M5b live execution remains unauthorized. M5b.0 now
-provides the offline controlled-pilot substrate and a frozen natural
-repository-history corpus, without authorizing inference. M5b.1 closes the
-private-SQLite permission defect while preserving the failed M5b.0 probe as
-immutable report-only history; see
-[the M5b.0 design](docs/m5b0-production-pilot.md).
+optional TypeGraph storage. M5b.1 closed as `complete-operational-pass`: its
+replacement probe and 24-record production pilot passed, while the original
+M5b.0 integrity-failed probe remains immutable report-only history. See
+[the M5b design](docs/m5b0-production-pilot.md) and
+[M5 results](docs/m5-results.md).
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2
 protocol failure was corrected before the completed M2.3 probe, calibration, and

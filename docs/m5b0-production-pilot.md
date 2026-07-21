@@ -1,8 +1,9 @@
 # M5b.0 offline live-pilot infrastructure
 
-Status: M5b.0 protocol probe closed as `complete-integrity-fail`; M5b.1
-permission hardening implemented offline. The original experiment, records, and
-ten-event ledger remain immutable and report-only.
+Status: M5b.1 closed as `complete-operational-pass`. The replacement probe and
+24-record production pilot passed. The M5b.0 protocol probe remains
+`complete-integrity-fail`, immutable, and report-only. See the frozen
+[M5 results](m5-results.md).
 
 M5b.0 turns the M5 evidence runtime into a controlled Node-only development
 pilot without changing its portable trust boundary. The corpus is a frozen
@@ -93,13 +94,22 @@ answers or abstentions, visible-evidence citations and provenance for answered
 cases, accounting reconciliation, integrity, and zero unauthorized, capability,
 or identity violations. Pilot acceptance applies corresponding 24/24 gates.
 
+## Completed M5b.1 result
+
+The replacement probe passed 4/4. The production pilot passed 24/24 on the first
+attempt, with zero wire repairs, semantic repairs, transport retries, opaque
+failures, missing usage, permission violations, or replay mismatches. The final
+campaign ledger contains 68 events, ends at
+`fc5c566d2a4c089259684c7e8cf1a3353a1ed25b92657bc4786a9382edb0acc9`, and records
+cumulative spend of `311961` micro-US dollars. Exact resume dispatched zero
+calls.
+
 ## Nonclaims
 
-M5b.0 does not authorize or perform inference, establish production readiness,
-compare providers, claim graph or TypeGraph model-quality benefit, or generalize
-from this small development corpus. Live execution and the 24-record pilot each
-require separate exact authorization; probe authorization does not authorize the
-pilot.
+M5b does not establish provider superiority, graph or TypeGraph model-quality
+benefit, production-scale performance, or general correctness beyond the small
+frozen development corpus. Completion does not authorize rerunning the pilot or
+executing another experiment.
 
 The failed probe experiment
 `80b4f6e323b7e15a0f6ff8e0a711445aa401eba3c99fb47fe0943372ce36668a` is

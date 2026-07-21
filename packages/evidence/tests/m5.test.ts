@@ -1384,4 +1384,154 @@ describe("M5a production evidence runtime", () => {
       error: { code: "REPLAY_ARTIFACT_MISMATCH" },
     });
   });
+
+  it("enforces the live deadline and validates hostile adapter result envelopes", async () => {
+    const plan = await runtimePlan();
+    const trustedPolicy = policy(plan.summary);
+    const base = {
+      executablePlan: plan.executable,
+      publicTaskContract: TASK,
+      inputValues: new Map(),
+      trustedPolicy,
+      evidenceStore: await store(),
+      snapshot: { validAt: null, recordedAt: CURRENT_RECORDED_AT },
+      recordingStore: createMemoryM5RecordingStore(),
+      signal: signal(),
+    };
+    const validEffect = await deterministicEffect([]);
+    expect(
+      Reflect.set(validEffect, "invoke", () =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            wireText: "{}",
+            replayResultId: "malformed-usage",
+            usage: { inputTokens: -1, outputTokens: 0, wallClockMs: 0 },
+          },
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      await runM5EvidenceRuntime({
+        ...base,
+        oracle: createM5RecordingOracleInterpreter(validEffect),
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "ORACLE_EFFECT_FAILED", stage: "oracle" },
+    });
+
+    let deadlineSignalObserved = false;
+    const deadlineEffect: M5OracleEffect = {
+      identity: await effectIdentity(),
+      invoke: (_request, context) =>
+        new Promise(() => {
+          context.signal.addEventListener(
+            "abort",
+            () => {
+              deadlineSignalObserved = true;
+            },
+            { once: true },
+          );
+        }),
+    };
+    expect(
+      await runM5EvidenceRuntime({
+        ...base,
+        trustedPolicy: {
+          ...trustedPolicy,
+          budget: { ...trustedPolicy.budget, maxWallClockMs: 5 },
+        },
+        oracle: createM5RecordingOracleInterpreter(deadlineEffect),
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "BUDGET_EXHAUSTED", stage: "oracle" },
+    });
+    expect(deadlineSignalObserved).toBe(true);
+
+    const rejectedEffect: M5OracleEffect = {
+      identity: await effectIdentity(),
+      invoke: () => Promise.reject(new TypeError("sensitive adapter detail")),
+    };
+    expect(
+      await runM5EvidenceRuntime({
+        ...base,
+        oracle: createM5RecordingOracleInterpreter(rejectedEffect),
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: {
+        code: "ORACLE_EFFECT_FAILED",
+        message: "Oracle effect failed: TypeError.",
+      },
+    });
+
+    const caller = new AbortController();
+    const cancelledEffect: M5OracleEffect = {
+      identity: await effectIdentity(),
+      invoke: () => {
+        queueMicrotask(() => {
+          caller.abort();
+        });
+        return new Promise<never>(() => undefined);
+      },
+    };
+    expect(
+      await runM5EvidenceRuntime({
+        ...base,
+        signal: caller.signal,
+        oracle: createM5RecordingOracleInterpreter(cancelledEffect),
+      }),
+    ).toMatchObject({ ok: false, error: { code: "CANCELLED" } });
+
+    const throwingRecordingStore: M5RecordingStore = {
+      load: () => Promise.resolve({ ok: true, value: undefined }),
+      save: () => Promise.reject(new Error("sensitive storage detail")),
+    };
+    expect(
+      await runM5EvidenceRuntime({
+        ...base,
+        oracle: createM5RecordingOracleInterpreter(
+          await deterministicEffect([]),
+        ),
+        recordingStore: throwingRecordingStore,
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "RECORDING_FAILED", stage: "recording" },
+    });
+
+    const throwingReplayStore: M5RecordingStore = {
+      load: () => Promise.reject(new Error("sensitive storage detail")),
+      save: () => Promise.resolve({ ok: true, value: undefined }),
+    };
+    expect(
+      await replayM5EvidenceRuntime({
+        executablePlan: plan.executable,
+        publicTaskContract: TASK,
+        trustedPolicy,
+        artifactDigest: "0".repeat(64),
+        recordingStore: throwingReplayStore,
+        signal: signal(),
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "REPLAY_ARTIFACT_MISMATCH", stage: "replay" },
+    });
+
+    expect(
+      await replayM5EvidenceRuntime({
+        executablePlan: plan.executable,
+        publicTaskContract: TASK,
+        trustedPolicy,
+        artifactDigest: "0".repeat(64),
+        recordingStore: createMemoryM5RecordingStore(),
+        signal: signal(),
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "REPLAY_ARTIFACT_MISMATCH", stage: "replay" },
+    });
+  });
 });

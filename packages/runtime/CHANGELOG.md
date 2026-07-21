@@ -1,0 +1,11 @@
+# Changelog
+
+## 0.1.0-alpha.1
+
+- Introduces the ESM-only public alpha facade for plan compilation, lexical
+  evidence execution, typed results, deterministic provenance, recording, and
+  exact replay.
+- Adds a Node-only private file recording store with atomic, content-addressed
+  writes and strict ownership and permission checks.
+- Keeps provider dispatch and TypeGraph storage optional and outside the
+  portable entrypoint.

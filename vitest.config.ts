@@ -4,6 +4,16 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: "@nicia-ai/lachesis-runtime/node",
+        replacement: new URL("./packages/runtime/src/node.ts", import.meta.url)
+          .pathname,
+      },
+      {
+        find: "@nicia-ai/lachesis-runtime",
+        replacement: new URL("./packages/runtime/src/index.ts", import.meta.url)
+          .pathname,
+      },
+      {
         find: "@nicia-ai/lachesis-evidence-typegraph/sqlite",
         replacement: new URL(
           "./packages/evidence-typegraph/src/sqlite.ts",
@@ -59,6 +69,7 @@ export default defineConfig({
         "packages/kernel/src/**/*.ts",
         "packages/evidence/src/**/*.ts",
         "packages/evidence-typegraph/src/**/*.ts",
+        "packages/runtime/src/**/*.ts",
         "packages/generator/src/**/*.ts",
         "apps/benchmark/src/controller.ts",
         "apps/benchmark/src/ledger.ts",

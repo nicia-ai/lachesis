@@ -9,7 +9,6 @@ import {
 } from "@nicia-ai/lachesis";
 import {
   createInMemoryGraphEvidenceSource,
-  createInMemoryM5EvidenceStore,
   M3A1_PREREGISTERED_CORPUS,
   M3A1_REFERENCE_GRAPH,
   selectEvidence,
@@ -22,6 +21,7 @@ import {
   freezeRecordedModelFixture,
   generatePlan,
 } from "@nicia-ai/lachesis-generator";
+import { createInMemoryEvidenceStore } from "@nicia-ai/lachesis-runtime";
 import { z } from "zod";
 
 const textSchema = defineSchema({
@@ -210,7 +210,7 @@ async function exerciseKernel(): Promise<Response> {
     evidenceSource.value,
     evidenceTask.query,
   );
-  const runtimeStore = await createInMemoryM5EvidenceStore({
+  const runtimeStore = await createInMemoryEvidenceStore({
     id: "worker-smoke-evidence",
     version: "1",
     snapshots: [

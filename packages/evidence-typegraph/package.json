@@ -1,15 +1,15 @@
 {
   "name": "@nicia-ai/lachesis-evidence-typegraph",
-  "version": "0.1.0",
-  "description": "Optional TypeGraph evidence-storage adapter for Lachesis M4",
+  "version": "0.1.0-alpha.1",
+  "description": "Optional TypeGraph storage, history, and provenance adapter for the Lachesis evidence runtime",
   "type": "module",
   "license": "Apache-2.0",
   "author": "Nicia AI",
-  "private": true,
   "sideEffects": false,
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "exports": {
@@ -22,6 +22,21 @@
       "import": "./dist/sqlite.js"
     }
   },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicia-ai/lachesis.git",
+    "directory": "packages/evidence-typegraph"
+  },
+  "homepage": "https://github.com/nicia-ai/lachesis#readme",
+  "bugs": {
+    "url": "https://github.com/nicia-ai/lachesis/issues"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "smoke": "node --input-type=module -e \"const root = await import('@nicia-ai/lachesis-evidence-typegraph'); const sqlite = await import('@nicia-ai/lachesis-evidence-typegraph/sqlite'); if (typeof root.createTypeGraphEvidenceRepository !== 'function' || typeof root.createM5TypeGraphEvidenceStore !== 'function' || typeof sqlite.createTypeGraphSqliteEvidenceRepository !== 'function' || typeof sqlite.createM5TypeGraphSqliteEvidenceStore !== 'function') process.exit(1);\"",
@@ -30,6 +45,7 @@
   "dependencies": {
     "@nicia-ai/lachesis": "workspace:*",
     "@nicia-ai/lachesis-evidence": "workspace:*",
+    "@nicia-ai/lachesis-runtime": "workspace:*",
     "@nicia-ai/typegraph": "0.38.0",
     "zod": "4.4.3"
   },

@@ -1,5 +1,8 @@
 # `@nicia-ai/lachesis-generator`
 
+Status: **experimental**. This package exposes provider-neutral generation and
+research infrastructure; it is not part of the stable-alpha runtime facade.
+
 Provider-neutral generation, bounded compiler-guided repair, deterministic
 recorded adapters, and resumable semantic benchmarks for Lachesis.
 
