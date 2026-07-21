@@ -92,8 +92,53 @@ jobs:
           pnpm typecheck
           pnpm lint
           pnpm build
-          pnpm exec vitest run --maxWorkers=1
-          pnpm test:coverage
+          pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
+            --maxWorkers=1 \
+            --testNamePattern='preserves compiler, visible-view, validation, and reconstruction identities'
+          pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
+            --maxWorkers=1 \
+            --testNamePattern='^(?!.*preserves compiler, visible-view, validation, and reconstruction identities).*$'
+          pnpm exec vitest run --maxWorkers=1 \
+            --exclude=packages/evidence-typegraph/tests/parity.test.ts
+          mkdir -p .vitest-reports
+          cat > "$RUNNER_TEMP/vitest-release-shard.config.mjs" <<EOF
+          import base from "${GITHUB_WORKSPACE}/vitest.config.ts";
+          export default {
+            ...base,
+            test: {
+              ...base.test,
+              coverage: {
+                ...base.test?.coverage,
+                thresholds: { branches: 0, functions: 0, lines: 0, statements: 0 },
+              },
+            },
+          };
+          EOF
+          pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
+            --maxWorkers=1 \
+            --testNamePattern='preserves compiler, visible-view, validation, and reconstruction identities' \
+            --coverage \
+            --coverage.reportsDirectory="$RUNNER_TEMP/coverage-target" \
+            --config="$RUNNER_TEMP/vitest-release-shard.config.mjs" \
+            --reporter=blob \
+            --outputFile=.vitest-reports/target.json
+          pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
+            --maxWorkers=1 \
+            --testNamePattern='^(?!.*preserves compiler, visible-view, validation, and reconstruction identities).*$' \
+            --coverage \
+            --coverage.reportsDirectory="$RUNNER_TEMP/coverage-parity-rest" \
+            --config="$RUNNER_TEMP/vitest-release-shard.config.mjs" \
+            --reporter=blob \
+            --outputFile=.vitest-reports/parity-rest.json
+          pnpm exec vitest run \
+            --maxWorkers=1 \
+            --exclude=packages/evidence-typegraph/tests/parity.test.ts \
+            --coverage \
+            --coverage.reportsDirectory="$RUNNER_TEMP/coverage-rest" \
+            --config="$RUNNER_TEMP/vitest-release-shard.config.mjs" \
+            --reporter=blob \
+            --outputFile=.vitest-reports/rest.json
+          pnpm exec vitest run --merge-reports=.vitest-reports --coverage
           pnpm build
           pnpm smoke
           pnpm test:examples
