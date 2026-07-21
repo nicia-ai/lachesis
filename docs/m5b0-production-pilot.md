@@ -1,7 +1,8 @@
 # M5b.0 offline live-pilot infrastructure
 
-Status: implemented offline. No provider call or execution authorization is part
-of this milestone.
+Status: M5b.0 protocol probe closed as `complete-integrity-fail`; M5b.1
+permission hardening implemented offline. The original experiment, records, and
+ten-event ledger remain immutable and report-only.
 
 M5b.0 turns the M5 evidence runtime into a controlled Node-only development
 pilot without changing its portable trust boundary. The corpus is a frozen
@@ -44,6 +45,23 @@ diagnostics, content digests, sizes, usage, and sanitized classifications. They
 contain no credential or provider response identifier. The redaction audit runs
 before every durable record write.
 
+M5b.1 extends this boundary to managed SQLite. Before TypeGraph or
+`better-sqlite3` opens a database, the Node controller creates and validates the
+immediate directory as an owned, non-symlink `0700` directory and exclusively
+pre-creates the database with `O_EXCL | O_NOFOLLOW` at `0600`. Existing paths
+must already be owned, regular, non-symlink files with exact mode `0600`; the
+controller never repairs a permissive path after exposure. It audits the main
+database and any rollback-journal, WAL, or shared-memory sidecars immediately
+after SQLite opens and after execution. The process umask is never changed.
+
+The root cause of the M5b.0 integrity failure was below the TypeGraph evidence
+adapter: TypeGraph passed a missing path to `better-sqlite3`, SQLite created the
+main file from its permissive creation mode, and journal/WAL/shared-memory files
+inherited the resulting main-file permissions. Controlled child-process tests
+reproduce that behavior under umasks `0022`, `0000`, and `0077`, then prove the
+M5b.1 precreation boundary yields `0600` for every database artifact under all
+three.
+
 ## Evidence and graph boundaries
 
 Lexical evidence is the production default. Research evidence policies require
@@ -82,3 +100,10 @@ compare providers, claim graph or TypeGraph model-quality benefit, or generalize
 from this small development corpus. Live execution and the 24-record pilot each
 require separate exact authorization; probe authorization does not authorize the
 pilot.
+
+The failed probe experiment
+`80b4f6e323b7e15a0f6ff8e0a711445aa401eba3c99fb47fe0943372ce36668a` is
+permanently report-only. Execute and resume reject it before credential
+inspection, locking, reservation, or dispatch. Its ten-event ledger ending at
+`73e3c8495fc73093e3bd704633589c3c017a589f0e579d53b39b0ed1fa68e14d` and its
+41,436 µUSD settlement are historical facts, not credited or altered by M5b.1.

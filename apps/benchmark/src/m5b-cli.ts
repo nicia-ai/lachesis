@@ -21,6 +21,7 @@ import {
 import { m5bCorpusSchema, materializeM5bCorpus } from "./m5b-corpus.js";
 import {
   m5bCampaignManifestSchema,
+  m5bExecutionDisposition,
   type M5bMaterializedPhase,
   m5bPhaseManifestSchema,
   materializeM5bPhase,
@@ -145,32 +146,23 @@ async function loadFrozen(
     : { ok: false, error: failure("Frozen M5b artifact checksums differ.") };
 }
 
-async function materializeAll(
+async function materializeProbe(
   repositoryRoot: string,
   outputRoot: string,
   sourceCommit: string,
-): Promise<Result<Readonly<{ probe: string; pilot: string }>, Diagnostic>> {
+): Promise<Result<Readonly<{ probe: string }>, Diagnostic>> {
   const corpus = await materializeM5bCorpus({ repositoryRoot });
   if (!corpus.ok) return corpus;
-  const [probe, pilot] = await Promise.all([
-    materializeM5bPhase({
-      phase: "m5b-protocol-probe",
-      sourceCommit,
-      corpus: corpus.value,
-    }),
-    materializeM5bPhase({
-      phase: "m5b-pilot",
-      sourceCommit,
-      corpus: corpus.value,
-    }),
-  ]);
+  const probe = await materializeM5bPhase({
+    phase: "m5b-protocol-probe",
+    sourceCommit,
+    corpus: corpus.value,
+  });
   if (!probe.ok) return probe;
-  if (!pilot.ok) return pilot;
   const artifacts: ReadonlyArray<readonly [string, unknown]> = [
     ["corpus.json", corpus.value],
     ["campaign.json", probe.value.campaign],
     ["m5b-protocol-probe.json", probe.value.phase],
-    ["m5b-pilot.json", pilot.value.phase],
   ];
   const checksums: Array<Readonly<{ path: string; digest: string }>> = [];
   for (const [name, value] of artifacts) {
@@ -189,7 +181,6 @@ async function materializeAll(
         ok: true,
         value: {
           probe: probe.value.phase.experimentDigest,
-          pilot: pilot.value.phase.experimentDigest,
         },
       }
     : checksumWrite;
@@ -211,7 +202,7 @@ async function main(args: ReadonlyArray<string>): Promise<number> {
   const artifactRoot = valueAt(args, 2);
   const sourceCommit = commitSchema.parse(valueAt(args, 3));
   if (command === "materialize") {
-    const result = await materializeAll(
+    const result = await materializeProbe(
       repositoryRoot,
       artifactRoot,
       sourceCommit,
@@ -266,6 +257,15 @@ async function main(args: ReadonlyArray<string>): Promise<number> {
     });
     output(dryRun);
     return dryRun.ok && dryRun.value.valid ? 0 : 1;
+  }
+  if (m5bExecutionDisposition(materialized.value.phase) !== "live-capable") {
+    output({
+      ok: false,
+      error: failure(
+        "The immutable M5b.0 failed probe is report-only and cannot execute or resume.",
+      ),
+    });
+    return 1;
   }
   const acknowledgement: M5bLiveAcknowledgement = {
     campaignDigest: digestSchema.parse(valueAt(args, 6)),

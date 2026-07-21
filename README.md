@@ -187,7 +187,9 @@ developer experience—not graph superiority. The offline
 lexical-default runtime, deterministic provenance, and exact record/replay with
 optional TypeGraph storage. M5b live execution remains unauthorized. M5b.0 now
 provides the offline controlled-pilot substrate and a frozen natural
-repository-history corpus, without authorizing inference; see
+repository-history corpus, without authorizing inference. M5b.1 closes the
+private-SQLite permission defect while preserving the failed M5b.0 probe as
+immutable report-only history; see
 [the M5b.0 design](docs/m5b0-production-pilot.md).
 
 M2 is complete and closed as a valid formal failure. Its historical M2.2

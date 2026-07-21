@@ -1,4 +1,13 @@
-import { chmod, mkdtemp, readFile, rm, stat, utimes } from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  open,
+  readFile,
+  rm,
+  stat,
+  utimes,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -23,6 +32,8 @@ import {
 import { type M5bCorpus, materializeM5bCorpus } from "../src/m5b-corpus.js";
 import { inspectM5bLedger } from "../src/m5b-ledger.js";
 import {
+  M5B0_FAILED_PROBE_DISPOSITION,
+  m5bExecutionDisposition,
   type M5bMaterializedPhase,
   materializeM5bPhase,
   validateM5bMaterialization,
@@ -151,6 +162,69 @@ function fakeOracle(
 }
 
 describe("M5b.0 offline production-pilot infrastructure", () => {
+  it("preserves the failed probe identity as report-only before credentials or state", async () => {
+    const materialized = unwrap(
+      await materializeM5bPhase({
+        phase: "m5b-protocol-probe",
+        sourceCommit: M5B0_FAILED_PROBE_DISPOSITION.sourceCommit,
+        corpus: await corpus(),
+      }),
+    );
+    expect(materialized.phase).toMatchObject({
+      experimentDigest: M5B0_FAILED_PROBE_DISPOSITION.experimentDigest,
+      phaseManifestDigest: M5B0_FAILED_PROBE_DISPOSITION.phaseManifestDigest,
+    });
+    expect(m5bExecutionDisposition(materialized.phase)).toBe(
+      "complete-integrity-fail-report-only",
+    );
+    const root = await temporaryRoot();
+    let credentialReads = 0;
+    const calls: Array<
+      Readonly<{ request: M4d1OracleRequest; invocation: string }>
+    > = [];
+    const expectedByInstruction = new Map(
+      materialized.corpus.tasks.map((task) => [
+        task.task.instruction,
+        task.expected,
+      ]),
+    );
+    const result = await executeM5b({
+      materialized,
+      storageRoot: root,
+      currentCommit: M5B0_FAILED_PROBE_DISPOSITION.sourceCommit,
+      cleanWorktree: true,
+      acknowledgement: acknowledgement(materialized),
+      credentials: {
+        get openaiApiKey(): string {
+          credentialReads += 1;
+          return "offline-openai-secret";
+        },
+        get anthropicApiKey(): string {
+          credentialReads += 1;
+          return "offline-anthropic-secret";
+        },
+      },
+      oracles: {
+        openai: fakeOracle({
+          provider: "openai",
+          expectedByInstruction,
+          calls,
+        }),
+        anthropic: fakeOracle({
+          provider: "anthropic",
+          expectedByInstruction,
+          calls,
+        }),
+      },
+    });
+    expect(result).toMatchObject({ ok: false });
+    expect(credentialReads).toBe(0);
+    expect(calls).toHaveLength(0);
+    await expect(
+      stat(join(root, materialized.campaign.campaignDigest)),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
   it("materializes an auditable natural repository corpus and exact derived limits", async () => {
     const frozen = await corpus();
     expect(frozen).toMatchObject({
@@ -389,6 +463,65 @@ describe("M5b.0 offline production-pilot infrastructure", () => {
         }),
       ).eventCount,
     ).toBe(0);
+  });
+
+  it("audits the private database before reservation or provider dispatch", async () => {
+    const materialized = await probe();
+    const root = await temporaryRoot();
+    const privateRoot = join(
+      root,
+      materialized.phase.storageNamespace,
+      "private-artifacts",
+    );
+    await mkdir(privateRoot, { recursive: true, mode: 0o700 });
+    const database = await open(
+      join(privateRoot, "evidence.sqlite"),
+      "wx",
+      0o600,
+    );
+    await database.close();
+    await chmod(join(privateRoot, "evidence.sqlite"), 0o644);
+    const calls: Array<
+      Readonly<{ request: M4d1OracleRequest; invocation: string }>
+    > = [];
+    const expectedByInstruction = new Map(
+      materialized.corpus.tasks.map((task) => [
+        task.task.instruction,
+        task.expected,
+      ]),
+    );
+    const result = await executeM5b({
+      materialized,
+      storageRoot: root,
+      currentCommit: SOURCE_COMMIT,
+      cleanWorktree: true,
+      acknowledgement: acknowledgement(materialized),
+      credentials: {
+        openaiApiKey: "offline-openai-secret",
+        anthropicApiKey: "offline-anthropic-secret",
+      },
+      oracles: {
+        openai: fakeOracle({
+          provider: "openai",
+          expectedByInstruction,
+          calls,
+        }),
+        anthropic: fakeOracle({
+          provider: "anthropic",
+          expectedByInstruction,
+          calls,
+        }),
+      },
+    });
+    expect(result).toMatchObject({ ok: false });
+    expect(calls).toHaveLength(0);
+    const ledger = unwrap(
+      await inspectM5bLedger({
+        path: join(root, materialized.campaign.campaignDigest, "ledger.ndjson"),
+        campaign: materialized.campaign,
+      }),
+    );
+    expect(ledger.eventCount).toBe(0);
   });
 
   it("preserves stale locks and bounds private raw-output artifacts", async () => {

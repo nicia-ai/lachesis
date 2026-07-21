@@ -34,6 +34,7 @@ import {
 import { z } from "zod";
 
 import { type M5bCorpus, validateM5bCorpus } from "./m5b-corpus.js";
+import { M5B_PRIVATE_SQLITE_POLICY } from "./m5b-private-sqlite.js";
 
 const digestSchema = z.string().regex(/^[a-f0-9]{64}$/u);
 const commitSchema = z.string().regex(/^[a-f0-9]{40}$/u);
@@ -65,6 +66,37 @@ export const M5B0_ACCEPTANCE_GATES = Object.freeze({
   providerSuperiorityClaimAllowed: false,
   graphSuperiorityClaimAllowed: false,
 });
+
+export const M5B0_FAILED_PROBE_DISPOSITION = Object.freeze({
+  status: "complete-integrity-fail-report-only",
+  sourceCommit: "6361d48b22d600e26e2052d6d4d45e2a6cbd3548",
+  experimentDigest:
+    "80b4f6e323b7e15a0f6ff8e0a711445aa401eba3c99fb47fe0943372ce36668a",
+  phaseManifestDigest:
+    "b05f3a650c9d6c8a2659f9def3899d530440f9dc2825230c13e37711f9225993",
+  campaignDigest:
+    "9eb02a74d5c696c355b9047f27c65c7dafc8ba7ea156c32b5bbd3d61ac2f765f",
+  ledgerEventCount: 10,
+  ledgerHead:
+    "73e3c8495fc73093e3bd704633589c3c017a589f0e579d53b39b0ed1fa68e14d",
+  consumedUsdMicros: 41_436,
+  reason: "private-evidence-sqlite-mode-was-0644",
+} as const);
+
+export type M5bExecutionDisposition =
+  "live-capable" | typeof M5B0_FAILED_PROBE_DISPOSITION.status;
+
+export function m5bExecutionDisposition(
+  phase: M5bPhaseManifest,
+): M5bExecutionDisposition {
+  return phase.sourceCommit === M5B0_FAILED_PROBE_DISPOSITION.sourceCommit &&
+    phase.experimentDigest === M5B0_FAILED_PROBE_DISPOSITION.experimentDigest &&
+    phase.phaseManifestDigest ===
+      M5B0_FAILED_PROBE_DISPOSITION.phaseManifestDigest &&
+    phase.campaignDigest === M5B0_FAILED_PROBE_DISPOSITION.campaignDigest
+    ? M5B0_FAILED_PROBE_DISPOSITION.status
+    : "live-capable";
+}
 
 export const m5bCampaignManifestSchema = z
   .strictObject({
@@ -169,7 +201,7 @@ const providerBindingSchema = z
 export const m5bPhaseManifestSchema = z
   .strictObject({
     formatVersion: z.literal("1"),
-    milestone: z.literal("m5b.0"),
+    milestone: z.enum(["m5b.0", "m5b.1"]),
     status: z.literal("unexecuted-live-capable"),
     phase: z.enum(["m5b-protocol-probe", "m5b-pilot"]),
     sourceCommit: commitSchema,
@@ -214,6 +246,7 @@ export const m5bPhaseManifestSchema = z
     oraclePromptDigest: digestSchema,
     outputSchemaDigest: digestSchema,
     redactionPolicyDigest: digestSchema,
+    privateSqlitePolicyDigest: digestSchema.optional(),
     acceptanceGatesDigest: digestSchema,
     pricingSnapshot: pricingSnapshotSchema,
     providerBindings: z.array(providerBindingSchema).length(2).readonly(),
@@ -603,16 +636,24 @@ export async function materializeM5bPhase(
     outputSchemaDigest,
     redactionPolicyDigest,
     acceptanceGatesDigest,
+    privateSqlitePolicyDigest,
   ] = await Promise.all([
     digestValue(M4D1_REDUCED_ORACLE_PROMPT),
     digestValue(M4D1_OUTPUT_JSON_SCHEMA),
     digestValue(M5B0_REDACTION_POLICY),
     digestValue(M5B0_ACCEPTANCE_GATES),
+    digestValue(M5B_PRIVATE_SQLITE_POLICY),
   ]);
   if (!oraclePromptDigest.ok) return oraclePromptDigest;
   if (!outputSchemaDigest.ok) return outputSchemaDigest;
   if (!redactionPolicyDigest.ok) return redactionPolicyDigest;
   if (!acceptanceGatesDigest.ok) return acceptanceGatesDigest;
+  if (!privateSqlitePolicyDigest.ok) return privateSqlitePolicyDigest;
+  const isHistoricalM5b0 =
+    sourceCommit.data === M5B0_FAILED_PROBE_DISPOSITION.sourceCommit;
+  const privateSqliteIdentity = isHistoricalM5b0
+    ? {}
+    : { privateSqlitePolicyDigest: privateSqlitePolicyDigest.value };
   const identityBody = {
     phase: input.phase,
     sourceCommit: sourceCommit.data,
@@ -628,6 +669,7 @@ export async function materializeM5bPhase(
     outputSchemaDigest: outputSchemaDigest.value,
     redactionPolicyDigest: redactionPolicyDigest.value,
     acceptanceGatesDigest: acceptanceGatesDigest.value,
+    ...privateSqliteIdentity,
     pricingSnapshotDigest: pricing.value.digest,
     providerBindings: providerBindings.value,
     quotas,
@@ -637,7 +679,7 @@ export async function materializeM5bPhase(
   if (!experimentDigest.ok) return experimentDigest;
   const phaseBody = {
     formatVersion: "1" as const,
-    milestone: "m5b.0" as const,
+    milestone: isHistoricalM5b0 ? ("m5b.0" as const) : ("m5b.1" as const),
     status: "unexecuted-live-capable" as const,
     phase: input.phase,
     sourceCommit: sourceCommit.data,
@@ -654,6 +696,7 @@ export async function materializeM5bPhase(
     outputSchemaDigest: outputSchemaDigest.value,
     redactionPolicyDigest: redactionPolicyDigest.value,
     acceptanceGatesDigest: acceptanceGatesDigest.value,
+    ...privateSqliteIdentity,
     pricingSnapshot: pricing.value,
     providerBindings: providerBindings.value,
     attemptQuotas: quotas,

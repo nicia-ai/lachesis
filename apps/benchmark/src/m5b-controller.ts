@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { access, chmod, mkdir } from "node:fs/promises";
+import { access } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
@@ -47,10 +47,15 @@ import {
   openM5bLedger,
 } from "./m5b-ledger.js";
 import {
+  m5bExecutionDisposition,
   type M5bMaterializedPhase,
   type M5bPhaseManifest,
   validateM5bMaterialization,
 } from "./m5b-manifests.js";
+import {
+  auditM5bPrivateSqlite,
+  prepareM5bPrivateSqlite,
+} from "./m5b-private-sqlite.js";
 import {
   auditM5bRedaction,
   createDurableM5RecordingStore,
@@ -87,6 +92,7 @@ export type M5bPreflightReport = Readonly<{
   missingCredentialNames: ReadonlyArray<"OPENAI_API_KEY" | "ANTHROPIC_API_KEY">;
   budget: M5bBudgetStatus;
   checks: Readonly<{
+    executionDisposition: boolean;
     materialization: boolean;
     sourceCommit: boolean;
     cleanWorktree: boolean;
@@ -102,6 +108,7 @@ export type M5bExecutionReport = Readonly<{
   experimentDigest: string;
   phaseManifestDigest: string;
   phase: M5bPhaseManifest["phase"];
+  disposition: ReturnType<typeof m5bExecutionDisposition>;
   records: number;
   resumed: number;
   providerAttempts: number;
@@ -244,6 +251,8 @@ export async function preflightM5b(
     input.materialized.corpus.tasks.map((task) => task.taskDigest),
   );
   const checks = {
+    executionDisposition:
+      m5bExecutionDisposition(input.materialized.phase) === "live-capable",
     materialization: validated.ok,
     sourceCommit: input.currentCommit === input.materialized.phase.sourceCommit,
     cleanWorktree: input.cleanWorktree,
@@ -827,6 +836,7 @@ function report(
   const everyRecordComplete =
     records.length === materialized.phase.initialRecords;
   const passed =
+    m5bExecutionDisposition(materialized.phase) === "live-capable" &&
     everyRecordComplete &&
     preciseClassifications === records.length &&
     missingUsageAttempts === 0 &&
@@ -846,6 +856,7 @@ function report(
     experimentDigest: materialized.phase.experimentDigest,
     phaseManifestDigest: materialized.phase.phaseManifestDigest,
     phase: materialized.phase.phase,
+    disposition: m5bExecutionDisposition(materialized.phase),
     records: records.length,
     resumed,
     providerAttempts: records.reduce(
@@ -923,6 +934,13 @@ export async function executeM5b(
     oracles?: M5bExecutionOracles | undefined;
   }>,
 ): Promise<Result<M5bExecutionReport, Diagnostic>> {
+  if (m5bExecutionDisposition(input.materialized.phase) !== "live-capable")
+    return {
+      ok: false,
+      error: failure(
+        "The immutable M5b.0 failed probe is report-only and cannot execute or resume.",
+      ),
+    };
   const ledgerPath = join(
     input.storageRoot,
     input.materialized.campaign.campaignDigest,
@@ -955,20 +973,23 @@ export async function executeM5b(
     input.materialized.phase.storageNamespace,
   );
   const privateArtifactsRoot = join(experimentRoot, "private-artifacts");
-  await mkdir(privateArtifactsRoot, { recursive: true, mode: 0o700 });
-  await Promise.all([
-    chmod(experimentRoot, 0o700),
-    chmod(privateArtifactsRoot, 0o700),
-  ]);
+  const databasePath = join(privateArtifactsRoot, "evidence.sqlite");
+  const prepared = await prepareM5bPrivateSqlite(databasePath);
+  if (!prepared.ok) {
+    await lock.value.release();
+    return prepared;
+  }
   const managed = await createM5TypeGraphSqliteEvidenceStore({
     graphInput: input.materialized.corpus.graph,
-    path: join(privateArtifactsRoot, "evidence.sqlite"),
+    path: databasePath,
   });
   if (!managed.ok) {
     await lock.value.release();
     return { ok: false, error: failure(managed.error.message) };
   }
   try {
+    const initialPermissionAudit = await auditM5bPrivateSqlite(databasePath);
+    if (!initialPermissionAudit.ok) return initialPermissionAudit;
     const ledger = await openM5bLedger({
       path: ledgerPath,
       campaign: input.materialized.campaign,
@@ -1044,6 +1065,8 @@ export async function executeM5b(
       experimentRoot,
     });
     if (!replay.ok) return replay;
+    const finalPermissionAudit = await auditM5bPrivateSqlite(databasePath);
+    if (!finalPermissionAudit.ok) return finalPermissionAudit;
     return {
       ok: true,
       value: report(
