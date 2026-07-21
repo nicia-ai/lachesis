@@ -147,6 +147,24 @@ jobs:
           pnpm test:load
           pnpm audit:source-safety
           pnpm audit:public-api
+          mkdir -p "$RUNNER_TEMP/lachesis-pack-audit-prefetch"
+          cat > "$RUNNER_TEMP/lachesis-pack-audit-prefetch/package.json" <<'EOF'
+          {
+            "name": "lachesis-pack-audit-prefetch",
+            "private": true,
+            "packageManager": "pnpm@10.33.0",
+            "dependencies": {
+              "@nicia-ai/typegraph": "0.38.0",
+              "@types/node": "24.13.3",
+              "better-sqlite3": "12.11.1",
+              "typescript": "6.0.3",
+              "zod": "4.4.3"
+            }
+          }
+          EOF
+          pnpm --dir "$RUNNER_TEMP/lachesis-pack-audit-prefetch" install \
+            --ignore-scripts \
+            --lockfile=false
           pnpm audit:packages
 
       - name: Verify authorized package set
