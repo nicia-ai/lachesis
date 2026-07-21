@@ -1,8 +1,12 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: Exact audited source commit to publish
+        required: true
+        type: string
 
 concurrency:
   group: release-alpha
@@ -20,21 +24,15 @@ env:
 jobs:
   release:
     name: Publish audited public alpha
-    if: github.event.release.tag_name == 'v0.1.0-alpha.1'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Confirm immutable release authorization
         env:
-          EVENT_COMMIT: ${{ github.sha }}
-          EVENT_REF: ${{ github.ref }}
-          RELEASE_DRAFT: ${{ github.event.release.draft }}
-          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+          REQUESTED_COMMIT: ${{ inputs.release_commit }}
         run: |
-          test "$EVENT_COMMIT" = "$RELEASE_COMMIT"
-          test "$EVENT_REF" = "refs/tags/$RELEASE_TAG"
-          test "$RELEASE_DRAFT" = "false"
-          test "$RELEASE_PRERELEASE" = "true"
+          test "$REQUESTED_COMMIT" = "$RELEASE_COMMIT"
+          test "$GITHUB_REF" = "refs/heads/main"
 
       - uses: actions/checkout@v6
         with:
@@ -50,6 +48,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          remote_target="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG^{}" | cut -f1)"
+          test "$remote_target" = "$RELEASE_COMMIT"
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "false"
+          test "$(gh release view "$RELEASE_TAG" --json isPrerelease --jq .isPrerelease)" = "true"
           release_body="$(gh release view "$RELEASE_TAG" --json body --jq .body)"
           expected_body="$(cat docs/m5c-release-notes.md)"
           test "$release_body" = "$expected_body"
