@@ -116,14 +116,6 @@ jobs:
           EOF
           pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
             --maxWorkers=1 \
-            --testNamePattern='preserves compiler, visible-view, validation, and reconstruction identities' \
-            --coverage \
-            --coverage.reportsDirectory="$RUNNER_TEMP/coverage-target" \
-            --config="$RUNNER_TEMP/vitest-release-shard.config.mjs" \
-            --reporter=blob \
-            --outputFile=.vitest-reports/target.json
-          pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
-            --maxWorkers=1 \
             --testNamePattern='^(?!.*preserves compiler, visible-view, validation, and reconstruction identities).*$' \
             --coverage \
             --coverage.reportsDirectory="$RUNNER_TEMP/coverage-parity-rest" \
