@@ -39,7 +39,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.node.json",
-    "smoke": "node --input-type=module -e \"const api = await import('@nicia-ai/lachesis-generator'); const nodeApi = await import('@nicia-ai/lachesis-generator/node'); if (typeof api.generatePlan !== 'function' || typeof api.loadM1aCorpus !== 'function' || typeof api.loadM1cPreregisteredCorpus !== 'function' || typeof api.compileCodeMode !== 'function' || typeof api.loadM2PreregisteredCorpus !== 'function' || typeof api.runM2PairedBenchmark !== 'function' || typeof nodeApi.createJsonFileBenchmarkStore !== 'function' || typeof nodeApi.createJsonFileM2CodeModeStore !== 'function') process.exit(1);\"",
+    "smoke": "node --input-type=module -e \"const api = await import('@nicia-ai/lachesis-generator'); const nodeApi = await import('@nicia-ai/lachesis-generator/node'); if (typeof api.generatePlan !== 'function' || typeof api.loadM1aCorpus !== 'function' || typeof api.loadM1cPreregisteredCorpus !== 'function' || typeof api.compileCodeMode !== 'function' || typeof api.loadM2PreregisteredCorpus !== 'function' || typeof api.runM2PairedBenchmark !== 'function' || typeof api.normalizeSuccessfulStrategyPlan !== 'function' || typeof api.compileTemplateFirst !== 'function' || typeof api.loadM6OfflineStrategyCorpus !== 'function' || typeof nodeApi.createJsonFileBenchmarkStore !== 'function' || typeof nodeApi.createJsonFileM2CodeModeStore !== 'function') process.exit(1);\"",
     "typecheck": "tsc --noEmit -p tsconfig.portable.json && tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

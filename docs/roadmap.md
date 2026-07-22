@@ -57,3 +57,21 @@ does not publish packages or authorize another provider call. See the
 
 No M4 corpus or inspected result should be relabeled as fresh confirmation in a
 future milestone.
+
+## M6: compositional harness and typed strategy calcification
+
+M6a/M6b is complete as an entirely offline experimental vertical slice in
+`@nicia-ai/lachesis-generator`. It adds deterministic trajectory-shape and
+strategy-contract identities, immutable typed templates, public-value binding,
+validation envelopes, an auditable candidate/canary/stable/deprecated registry,
+typed fallback, planner-effect elimination on stable hits, exact kernel replay,
+and sanitized trace grouping. Cross-catalog equivalence fails closed because the
+current catalog has no trusted semantic-role declaration. See the
+[M6 design](m6a-compositional-harness.md).
+
+The exact next recommended milestone is M6c: add trusted versioned catalog
+semantic-role declarations with role-specific property obligations and a fresh
+offline cross-catalog conformance suite. Do not begin a live or training study
+until that narrower equivalence boundary survives adversarial audit. A later M6d
+may design a separately authorized paired discovery-versus-template study;
+M6a/M6b creates no live identity or authority for it.

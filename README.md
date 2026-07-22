@@ -73,6 +73,10 @@ public-alpha evidence runtime.
   content-addressed record/replay, and optional TypeGraph storage.
 - Forty-two content-addressed benchmark cases spanning four unrelated catalogs,
   including bounded recursion and intentionally impossible policies.
+- An experimental offline M6 compositional harness that normalizes successful
+  plans, calcifies validated typed strategy templates, fails closed on semantic
+  or authority drift, eliminates an injected planner on stable hits, and groups
+  sanitized trace identities without provider access.
 
 Deterministic orchestration is not semantic determinism. Exact replay comes from
 recorded effect results bound to plan, catalog, operation, invocation, effect,
@@ -187,6 +191,12 @@ immutable [M4 results](docs/m4-results.md). M5 is closed as
 `complete-operational-pass`; see the immutable [M5 results](docs/m5-results.md).
 M5c prepares the offline public alpha without publishing a package or
 authorizing another provider call.
+
+M6a/M6b adds an entirely offline experimental strategy-template surface to
+`@nicia-ai/lachesis-generator`; it does not widen the supported runtime facade,
+train a model, dispatch a provider, or claim learned cross-domain
+generalization. See the
+[compositional harness design](docs/m6a-compositional-harness.md).
 
 ## Validation
 
