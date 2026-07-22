@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "protocol": "lachesis-m7c-independent-agent-author-study/1",
+  "status": "prepared-for-external-preregistration-not-registered-not-executed",
+  "population": "fresh-mutually-isolated-agent-sessions",
+  "humanEvidence": "none-human-author-protocol-reserved-separately",
+  "releaseCandidate": {
+    "version": "0.1.0-alpha.3",
+    "commit": "e972400a2ff4e65e4b2fe68bc2585f5453e82a06",
+    "requiredAncestors": [
+      "ed37d0a379ae906555d86be1b0c4c528ba6e3932",
+      "085211a53c9424ca2a29141001ff9abf07cf4b1f"
+    ],
+    "tarballs": [
+      {
+        "name": "@nicia-ai/lachesis",
+        "sha256": "0980ebbc94d07756544f40bfcb60cf8dc6f5f1b392b3742c845a51bca528a0d6"
+      },
+      {
+        "name": "@nicia-ai/lachesis-evidence",
+        "sha256": "00fbd999bc193d923ff483a12fd8cb3289f81c68c99f0ae795b5233636dea20a"
+      },
+      {
+        "name": "@nicia-ai/lachesis-evidence-typegraph",
+        "sha256": "3a03d8dccc660199a3b5ee41f27341be35fd37504899dec14bf7843d0014ef93"
+      },
+      {
+        "name": "@nicia-ai/lachesis-generator",
+        "sha256": "daf38e1d644ecdf7f5a4a094f813772aa422026c01b536a5bf1b7419ca723c66"
+      },
+      {
+        "name": "@nicia-ai/lachesis-runtime",
+        "sha256": "5fadcca6e114697e29b7794e2867bf6fe3ae18c5e56216754da09563dde43da4"
+      }
+    ]
+  },
+  "immutablePriorReports": {
+    "m7a": "8cc35372ec4f4f560180a2f26cf4edb46c9c298f49f21cc39f8df07cde19cf85",
+    "m7b": "1dc71b40b919b69d177ed0986962f10f7b7311831dc63df0667891693a75b4c4"
+  },
+  "bindings": {
+    "protocol": {
+      "path": "docs/m7c-protocol.md",
+      "sha256": "622010be8a2307cc09b20eddcd3e3800f39485757881554b532609d74372c7e0"
+    },
+    "authorInstructions": {
+      "path": "docs/m7c-author-instructions.md",
+      "sha256": "3b56b4a3a3d04b8fb625675c50c05d6ea04659f6bccddcf18688d3a365d43599"
+    },
+    "adjudicatorInstructions": {
+      "path": "docs/m7c-adjudicator-instructions.md",
+      "sha256": "d14d939bb4ef9186451302e53f1e7ad0fb11ea2dab3e81217d7385d0261bd9a1"
+    },
+    "constructorInstructions": {
+      "path": "docs/m7c-constructor-instructions.md",
+      "sha256": "d4723ad04c071d6b2219ade30331c64aca554ad640ac025e276c500ff299c127"
+    },
+    "authorEnvironment": {
+      "path": "docs/m7c-author-environment.json",
+      "sha256": "22edf9e489e430427edbec805e622e2390fe520664c6e764c6a7d4e701ad98c2"
+    },
+    "countsOnlyAudit": {
+      "path": "docs/m7c-counts-only-corpus-audit.json",
+      "sha256": "d3338ba97fceb74cd8d4dcb96a56f74bfcc5714fa5701dc0e6ee3e99cbb9d0c1"
+    },
+    "analysis": {
+      "path": "studies/m7c-analysis/src/analysis.ts",
+      "sha256": "25cfe319d73f174f2a95ab6a100f9fa02e0c749d62f853d7cb55387a15213cc4"
+    },
+    "publicDocumentation": [
+      {
+        "path": "docs/public-alpha.md",
+        "sha256": "11d4527fa86f185efe52ab1900045f32b5d2c694333d8f06df645da3ce1fbb0d"
+      },
+      {
+        "path": "docs/external-catalog-conformance.md",
+        "sha256": "d8ae89cb79d2dc8d5f68241941fe5d81a8ae3b4b3e6380df6996db8cb4f4af07"
+      },
+      {
+        "path": "packages/kernel/README.md",
+        "sha256": "e7f20b5dd53cb6f6966cb97236078ae61b8e1e5680d0d7f156fe358a18d835d0"
+      },
+      {
+        "path": "packages/generator/README.md",
+        "sha256": "233742022365a1efab1e5fa1b0a7a868b2a8f0d4b4073149f25701902a1c47d0"
+      },
+      {
+        "path": "docs/public-api-inventory-alpha.3.json",
+        "sha256": "dd650aee078767eacfbc703bc0fe66025d6d107bfc14cd20b6c67b8da2d19e5f"
+      }
+    ],
+    "fixtureIdentities": "required-after-external-preregistration-and-before-author-execution",
+    "adjudicationCriteria": "bound-by-adjudicator-instructions-and-protocol",
+    "analysisCode": "bound-before-corpus-construction"
+  },
+  "design": {
+    "authorSessions": 12,
+    "catalogFamilies": 6,
+    "authorFamilyAssignments": 72,
+    "initialDecisions": 288,
+    "initialNonEquivalentDecisions": 144,
+    "initialEquivalentDecisions": 72,
+    "initialDeclarationRepairableDecisions": 72,
+    "initialAndPostDiagnosticNeverPooled": true,
+    "crossedAuthorAndCatalogClustering": true,
+    "decisionLevelFullyIndependentAssumption": false
+  },
+  "primaryEndpoint": "zero-accepted-false-semantic-equivalences-overall-and-in-every-author-and-catalog-family-stratum",
+  "secondaryEndpoints": [
+    "false-rejection",
+    "correct-diagnostic-outcome-classification",
+    "failure-role-boundary-localization",
+    "safe-repair-direction-comprehension",
+    "declaration-repair-success",
+    "post-diagnostic-non-equivalence-preservation",
+    "completion-time-and-repair-attempts",
+    "irrelevant-evolution-manifest-and-diagnostic-stability"
+  ],
+  "killGates": [
+    "any-false-equivalence-accepted",
+    "repair-advice-manufactures-equivalence",
+    "hidden-adjudication-information-reaches-author",
+    "frozen-identity-or-package-document-binding-differs",
+    "stratum-missing-or-silently-pooled"
+  ],
+  "confidence": {
+    "level": 0.95,
+    "zeroEventDecisionUpperBoundAt144": 0.02058879229949584,
+    "zeroEventAuthorClusterUpperBoundAt12": 0.22092219194555585,
+    "zeroEventCatalogClusterUpperBoundAt6": 0.39303776899708276,
+    "decisionBoundInterpretation": "descriptive-only-because-decisions-are-clustered"
+  },
+  "authorization": {
+    "externalPreregistration": "not-performed",
+    "corpusConstruction": "not-authorized-until-external-preregistration",
+    "agentAuthorSessions": "not-authorized",
+    "adjudication": "not-authorized",
+    "analysisExecution": "not-authorized",
+    "alpha3Publication": "separately-controlled"
+  },
+  "nonclaims": [
+    "no-human-developer-evidence",
+    "no-independent-agent-results-yet",
+    "no-compositional-generalization",
+    "no-live-provider-or-inference-claim",
+    "no-m8-authorization"
+  ],
+  "recordDigest": "5daee83257122090ac02d4ff99d20baff15517df7345d9fa3368006687624133"
+}

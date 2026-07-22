@@ -1,6 +1,7 @@
 # Draft M7c independent catalog-author study
 
-Status: **drafted, not executed, identities not frozen**.
+Status: **superseded by the final [`m7c-protocol.md`](m7c-protocol.md); never
+executed**.
 
 M7c may be frozen only after the M7b implementation and report are committed. No
 author recruitment, catalog creation, adjudication, provider call, campaign, or

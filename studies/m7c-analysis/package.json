@@ -1,0 +1,15 @@
+{
+  "name": "@nicia-ai/lachesis-m7c-analysis",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:0.1.0-alpha.3",
+    "zod": "4.4.3"
+  }
+}

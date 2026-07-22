@@ -221,7 +221,11 @@ equivalence, zero unsafe repair directions, exact localization for every case,
 and explicit non-substitution for every genuine semantic mismatch. This is a
 narrow GO to freeze—but not execute—the independent M7c author-study protocol.
 See the [M7b results](docs/m7b-diagnostic-hardening.md) and the
-[unexecuted M7c draft](docs/m7c-independent-author-study-draft.md).
+[final unexecuted M7c protocol](docs/m7c-protocol.md). M7c's primary population
+is fresh, isolated agent sessions; it is not human-developer evidence. The
+separately committed synchronized
+[alpha.3 release candidate](docs/m7c-alpha3-release-notes.md) remains
+unpublished.
 
 ## Validation
 

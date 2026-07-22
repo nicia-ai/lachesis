@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "lachesis-m7c-counts-only-corpus-audit",
+  "status": "protocol-counts-frozen-corpus-not-constructed",
+  "contentInspected": false,
+  "identitiesCreated": false,
+  "planned": {
+    "constructorRoles": 6,
+    "authorSessions": 12,
+    "catalogFamilies": 6,
+    "authorFamilyAssignments": 72,
+    "pairsPerAssignment": 4,
+    "initialDecisions": 288,
+    "initialNonEquivalentDecisions": 144,
+    "initialEquivalentDecisions": 72,
+    "initialDeclarationRepairableDecisions": 72,
+    "nonEquivalentDecisionsPerAuthor": 12,
+    "nonEquivalentDecisionsPerFamily": 24,
+    "independentPrimaryAdjudicatorsPerDecision": 2,
+    "tieBreakAdjudicatorsWhenNeeded": 1
+  },
+  "freshnessRequirements": {
+    "families": true,
+    "entities": true,
+    "operations": true,
+    "wording": true,
+    "structures": true,
+    "semanticConflicts": true,
+    "disjointFromM7aAndM7b": true
+  },
+  "clustering": {
+    "crossedByAuthorAndCatalogFamily": true,
+    "decisionLevelTreatedAsFullyIndependent": false,
+    "unpooledAuthorReportsRequired": 12,
+    "unpooledFamilyReportsRequired": 6
+  },
+  "executionAuthorized": false
+}

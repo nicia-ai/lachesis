@@ -292,6 +292,15 @@ importers:
         specifier: 24.13.3
         version: 24.13.3
 
+  studies/m7c-analysis:
+    dependencies:
+      "@nicia-ai/lachesis":
+        specifier: workspace:0.1.0-alpha.3
+        version: link:../../packages/kernel
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+
 packages:
   "@ai-sdk/amazon-bedrock@5.0.23":
     resolution:
