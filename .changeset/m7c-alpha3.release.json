@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "release": "m7c-alpha3",
+  "status": "prepared-not-published",
+  "sourceBaseTag": "v0.1.0-alpha.2",
+  "requiredAncestorCommits": [
+    "ed37d0a379ae906555d86be1b0c4c528ba6e3932",
+    "085211a53c9424ca2a29141001ff9abf07cf4b1f"
+  ],
+  "artifactSourcePolicy": "exact audited release-candidate commit supplied to the workflow and matched by the annotated release tag",
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "fromVersion": "0.1.0-alpha.2",
+      "toVersion": "0.1.0-alpha.3",
+      "releaseKind": "documentation-only-synchronized",
+      "apiChanged": false,
+      "behaviorChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "fromVersion": "0.1.0-alpha.2",
+      "toVersion": "0.1.0-alpha.3",
+      "releaseKind": "dependency-only-synchronized",
+      "apiChanged": false,
+      "behaviorChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "fromVersion": "0.1.0-alpha.2",
+      "toVersion": "0.1.0-alpha.3",
+      "releaseKind": "dependency-only-synchronized",
+      "apiChanged": false,
+      "behaviorChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "fromVersion": "0.1.0-alpha.2",
+      "toVersion": "0.1.0-alpha.3",
+      "releaseKind": "additive-experimental",
+      "apiChanged": true,
+      "behaviorChanged": true
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "fromVersion": "0.1.0-alpha.2",
+      "toVersion": "0.1.0-alpha.3",
+      "releaseKind": "dependency-only-synchronized",
+      "apiChanged": false,
+      "behaviorChanged": false
+    }
+  ],
+  "releaseNotes": "docs/m7c-alpha3-release-notes.md",
+  "publicApiInventory": "docs/public-api-inventory-alpha.3.json",
+  "packageDeltaAudit": "docs/m7c-alpha3-package-delta.json",
+  "tarballDigests": "docs/m7c-alpha3-tarball-digests.json",
+  "tarballChecksums": "docs/m7c-alpha3-tarballs.sha256",
+  "releaseChecksums": "docs/m7c-alpha3-release.sha256",
+  "m7aReportDigest": "8cc35372ec4f4f560180a2f26cf4edb46c9c298f49f21cc39f8df07cde19cf85",
+  "m7bReportDigest": "1dc71b40b919b69d177ed0986962f10f7b7311831dc63df0667891693a75b4c4"
+}

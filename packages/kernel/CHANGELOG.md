@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-alpha.3
+
+- Adds public external-catalog author guidance for versioned semantic roles and
+  finite cross-catalog conformance. No kernel export or runtime behavior
+  changes.
+
 ## 0.1.0-alpha.2
 
 - Adds optional trusted, versioned catalog semantic-role declarations to the

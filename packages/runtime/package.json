@@ -1,6 +1,6 @@
 {
   "name": "@nicia-ai/lachesis-runtime",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "Cohesive public evidence-runtime API for Lachesis",
   "type": "module",
   "license": "Apache-2.0",

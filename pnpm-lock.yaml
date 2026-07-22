@@ -160,10 +160,10 @@ importers:
   examples/m7a-independent-catalogs:
     dependencies:
       "@nicia-ai/lachesis":
-        specifier: workspace:0.1.0-alpha.2
+        specifier: workspace:0.1.0-alpha.3
         version: link:../../packages/kernel
       "@nicia-ai/lachesis-generator":
-        specifier: workspace:0.1.0-alpha.2
+        specifier: workspace:0.1.0-alpha.3
         version: link:../../packages/generator
       zod:
         specifier: 4.4.3
@@ -176,10 +176,10 @@ importers:
   examples/m7b-diagnostics:
     dependencies:
       "@nicia-ai/lachesis":
-        specifier: workspace:0.1.0-alpha.2
+        specifier: workspace:0.1.0-alpha.3
         version: link:../../packages/kernel
       "@nicia-ai/lachesis-generator":
-        specifier: workspace:0.1.0-alpha.2
+        specifier: workspace:0.1.0-alpha.3
         version: link:../../packages/generator
       zod:
         specifier: 4.4.3

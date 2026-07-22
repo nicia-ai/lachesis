@@ -1,6 +1,6 @@
 {
   "name": "@nicia-ai/lachesis-generator",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "Provider-neutral plan generation and resumable benchmark substrate for Lachesis",
   "type": "module",
   "license": "Apache-2.0",

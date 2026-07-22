@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "kind": "lachesis-alpha-package-delta-audit",
+  "fromTag": "v0.1.0-alpha.2",
+  "fromCommit": "762b17c5f1f971aeb76dc19d5b33fbc82b757a2c",
+  "toVersion": "0.1.0-alpha.3",
+  "requiredAncestorCommits": [
+    "ed37d0a379ae906555d86be1b0c4c528ba6e3932",
+    "085211a53c9424ca2a29141001ff9abf07cf4b1f"
+  ],
+  "publicApi": {
+    "removedExports": [],
+    "changedEntrypoints": [
+      {
+        "package": "@nicia-ai/lachesis-generator",
+        "entrypoint": ".",
+        "fromExportCount": 304,
+        "toExportCount": 317,
+        "addedExports": [
+          "CatalogConformanceDiagnostic",
+          "CatalogDiagnosticAssessment",
+          "CatalogDiagnosticCode",
+          "CatalogDiagnosticOutcome",
+          "CatalogRepairAction",
+          "catalogConformanceDiagnosticSchema",
+          "catalogDiagnosticAssessmentSchema",
+          "catalogDiagnosticCodeSchema",
+          "catalogDiagnosticOutcomeSchema",
+          "catalogRepairActionSchema",
+          "diagnoseCatalogsOffline",
+          "renderCatalogConformanceDiagnostic",
+          "verifyCatalogConformanceDiagnostic"
+        ]
+      }
+    ],
+    "unchangedEntrypoints": [
+      "@nicia-ai/lachesis:.",
+      "@nicia-ai/lachesis-runtime:.",
+      "@nicia-ai/lachesis-runtime:./node",
+      "@nicia-ai/lachesis-evidence:.",
+      "@nicia-ai/lachesis-evidence-typegraph:.",
+      "@nicia-ai/lachesis-evidence-typegraph:./sqlite",
+      "@nicia-ai/lachesis-generator:./node"
+    ]
+  },
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "classification": "changed",
+      "delta": "additive experimental structured catalog diagnostics; unchanged conformance acceptance path"
+    },
+    {
+      "name": "@nicia-ai/lachesis",
+      "classification": "documentation-only-synchronized",
+      "delta": "external catalog-author guidance only; no export or behavior change"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "classification": "dependency-only-synchronized",
+      "delta": "synchronized kernel dependency only"
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "classification": "dependency-only-synchronized",
+      "delta": "synchronized kernel and evidence dependencies only"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "classification": "dependency-only-synchronized",
+      "delta": "synchronized kernel, evidence, and runtime dependencies only"
+    }
+  ],
+  "safetyBoundary": {
+    "conformanceRulesWeakened": false,
+    "rejectedPairsConvertedToEquivalence": false,
+    "stableRuntimeFacadeWidened": false,
+    "providerOrCredentialCodeAdded": false
+  }
+}

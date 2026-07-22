@@ -22,7 +22,7 @@
     "audit:public-api": "node scripts/audit-public-api.mjs",
     "audit:packages": "node scripts/audit-packed-packages.mjs",
     "audit:source-safety": "node scripts/audit-source-safety.mjs",
-    "audit:release-checksums": "shasum -a 256 -c docs/m6-results.sha256 && shasum -a 256 -c docs/m6c-release.sha256",
+    "audit:release-checksums": "shasum -a 256 -c docs/m6-results.sha256 && shasum -a 256 -c docs/m6c-release.sha256 && shasum -a 256 -c docs/m7c-alpha3-release.sha256",
     "verify:release": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm test:coverage && pnpm build && pnpm smoke && pnpm test:examples && pnpm test:load && pnpm audit:source-safety && pnpm audit:public-api && pnpm audit:release-checksums && pnpm audit:packages",
     "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "smoke": "pnpm --filter @nicia-ai/lachesis-generator smoke && pnpm --filter @nicia-ai/lachesis-evidence smoke && pnpm --filter @nicia-ai/lachesis-evidence-typegraph smoke && pnpm --filter @nicia-ai/lachesis-benchmark smoke && pnpm --filter @nicia-ai/lachesis-node-smoke test && pnpm --filter @nicia-ai/lachesis-worker-smoke test"

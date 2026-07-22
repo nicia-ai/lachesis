@@ -22,7 +22,7 @@ const packageDirectories = [
   "packages/runtime",
   "packages/evidence-typegraph",
 ];
-const expectedReleaseVersion = "0.1.0-alpha.2";
+const expectedReleaseVersion = "0.1.0-alpha.3";
 
 if (process.versions.node.split(".")[0] !== "24")
   throw new Error(`Node 24 is required; found ${process.versions.node}.`);
@@ -92,6 +92,14 @@ try {
   const publicPackageNames = new Set(
     sourceManifests.map((manifest) => manifest.name),
   );
+  await command(
+    process.execPath,
+    ["scripts/prepare-alpha3-tarballs.mjs", "--output-dir", packed],
+    { cwd: root },
+  );
+  const deterministicReport = await readManifest(
+    join(root, "docs/m7c-alpha3-tarball-digests.json"),
+  );
   for (const manifest of sourceManifests) {
     if (manifest.version !== expectedReleaseVersion)
       throw new Error(
@@ -104,17 +112,9 @@ try {
     const manifest = sourceManifests[index];
     if (manifest === undefined)
       throw new Error(`Missing source manifest for ${directory}.`);
-    await command("pnpm", ["pack", "--pack-destination", packed], {
-      cwd: join(root, directory),
-    });
-    const candidates = (await readdir(packed)).filter(
-      (file) => file.endsWith(".tgz") && ![...tarballs.values()].includes(file),
-    );
-    if (candidates.length !== 1)
-      throw new Error(
-        `Unable to identify packed artifact for ${manifest.name}.`,
-      );
-    const tarball = candidates[0];
+    const tarball = `${manifest.name.slice(1).replace("/", "-")}-${expectedReleaseVersion}.tgz`;
+    if (!(await readdir(packed)).includes(tarball))
+      throw new Error(`Missing deterministic artifact for ${manifest.name}.`);
     tarballs.set(manifest.name, tarball);
     const tarballPath = join(packed, tarball);
     const listing = (
@@ -230,11 +230,22 @@ try {
     }
     const tarballContents = await readFile(tarballPath);
     const metadata = await stat(tarballPath);
+    const sha256 = createHash("sha256").update(tarballContents).digest("hex");
+    const expectedArtifact = deterministicReport.artifacts?.find(
+      (artifact) => artifact.tarball === tarball,
+    );
+    if (
+      expectedArtifact?.sha256 !== sha256 ||
+      expectedArtifact.byteIdenticalAcrossTwoPacks !== true
+    )
+      throw new Error(
+        `${manifest.name} differs from its frozen tarball digest.`,
+      );
     packages.push({
       name: manifest.name,
       version: manifest.version,
       tarball,
-      sha256: createHash("sha256").update(tarballContents).digest("hex"),
+      sha256,
       tarballBytes: metadata.size,
       files: listing.length,
     });

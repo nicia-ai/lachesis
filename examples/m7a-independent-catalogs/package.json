@@ -8,8 +8,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@nicia-ai/lachesis": "workspace:0.1.0-alpha.2",
-    "@nicia-ai/lachesis-generator": "workspace:0.1.0-alpha.2",
+    "@nicia-ai/lachesis": "workspace:0.1.0-alpha.3",
+    "@nicia-ai/lachesis-generator": "workspace:0.1.0-alpha.3",
     "zod": "4.4.3"
   },
   "devDependencies": {

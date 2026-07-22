@@ -18,10 +18,10 @@ permissions:
 
 env:
   RELEASE_COMMIT: ${{ inputs.release_commit }}
-  RELEASE_VERSION: 0.1.0-alpha.2
-  RELEASE_TAG: v0.1.0-alpha.2
-  RELEASE_NOTES: docs/m6c-release-notes.md
-  RELEASE_CHECKSUMS: docs/m6c-release.sha256
+  RELEASE_VERSION: 0.1.0-alpha.3
+  RELEASE_TAG: v0.1.0-alpha.3
+  RELEASE_NOTES: docs/m7c-alpha3-release-notes.md
+  RELEASE_CHECKSUMS: docs/m7c-alpha3-release.sha256
 
 jobs:
   release:
@@ -253,12 +253,8 @@ jobs:
 
       - name: Pack audited artifacts
         run: |
-          mkdir -p .release-packages
-          pnpm --filter @nicia-ai/lachesis pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
-          pnpm --filter @nicia-ai/lachesis-evidence pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
-          pnpm --filter @nicia-ai/lachesis-runtime pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
-          pnpm --filter @nicia-ai/lachesis-evidence-typegraph pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
-          pnpm --filter @nicia-ai/lachesis-generator pack --pack-destination "$GITHUB_WORKSPACE/.release-packages"
+          node scripts/prepare-alpha3-tarballs.mjs --output-dir .release-packages
+          shasum -a 256 -c docs/m7c-alpha3-tarballs.sha256
 
       - name: Publish public alpha
         if: steps.registry.outputs.state == 'absent'

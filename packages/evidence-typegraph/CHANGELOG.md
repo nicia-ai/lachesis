@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.3
+
+- Dependency-only synchronized release with the alpha.3 kernel, evidence, and
+  runtime packages; no TypeGraph API or behavior change.
+
 ## 0.1.0-alpha.2
 
 - Dependency-only synchronized release with the alpha.2 kernel, evidence, and

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.0-alpha.3
 
 - Adds portable, deterministic catalog-rejection diagnostics with stable codes,
   explicit repairability outcomes, typed safe actions, semantic and observation
