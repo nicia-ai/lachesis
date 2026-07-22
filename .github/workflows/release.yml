@@ -86,9 +86,9 @@ jobs:
       - name: Run frozen release verification
         run: |
           pnpm format:check
+          pnpm build
           pnpm typecheck
           pnpm lint
-          pnpm build
           parity_passed=false
           for attempt in 1 2 3
           do
