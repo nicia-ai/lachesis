@@ -223,6 +223,12 @@ Catalog semantic-role declarations follow the same rule. The declaration API is
 stable-alpha kernel surface; the cross-catalog conformance runner remains
 experimental generator surface.
 
+External catalog authors can use the public-package-only workflow in the
+[catalog conformance guide](external-catalog-conformance.md). The M7a offline
+vertical slice and proposed genuinely independent-author protocol are documented
+in the [M7a results](m7a-results.md) and
+[study proposal](m7a-preregistered-study-proposal.md).
+
 ## Security guidance
 
 - Treat plans, oracle output, evidence, and replay files as untrusted input.

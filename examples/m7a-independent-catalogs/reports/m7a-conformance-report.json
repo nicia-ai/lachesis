@@ -1,0 +1,342 @@
+{
+  "protocol": "lachesis-m7a-independent-catalog-trial/1",
+  "packages": {
+    "kernel": "@nicia-ai/lachesis@0.1.0-alpha.2",
+    "generator": "@nicia-ai/lachesis-generator@0.1.0-alpha.2"
+  },
+  "execution": {
+    "network": "disabled",
+    "modelInference": "none",
+    "effectsInvoked": 0,
+    "authorship": "role-simulated-not-independent-human-evidence"
+  },
+  "caseRegistryDigest": "1d32cef1a6cdcd65655d2a2661d29ad4f42f120d3a30486128dd0538c43310a5",
+  "blindOutcomeDigest": "1b7a49ff0173e6b39f142093963821a4261b3b9bb448cd4d62a6e093bf904807",
+  "adjudicationDigest": "867aa4e49d7ccc1189452e769e22e635c734f43ff8f1caf0cd06ee0628297836",
+  "cases": [
+    {
+      "caseId": "blind-01",
+      "family": "warehouse",
+      "expected": "equivalent",
+      "mutationClass": "none",
+      "rationale": "The two warehouse author modules agree on every frozen boundary and reducer obligation.",
+      "accepted": true,
+      "outcome": "accepted",
+      "classification": "true-accept",
+      "leftCatalogFingerprint": "9839e2617189b2645c0c7551a19b1306c81bd6258199f4ddcb7700827dbb28e2",
+      "rightCatalogFingerprint": "deed0336cb8ecbac6119c7657676eed8411fc73a00ad8db8a8e521e1fab455dc",
+      "leftManifestDigest": "b553abe5e99196137f6b70a25f38422662e266f52f7ee9c639d7284c33266e2a",
+      "rightManifestDigest": "5e1db00c716d7b615e7dad3ae0cb9ad34c2b9c88580c018d1e5992dde55a5ff7",
+      "suiteDigest": "ced4c7ea1aa6f568cb21457fb9e7daac14820ba909a0cc401eecd56155122227",
+      "conformanceReportDigest": "888495e2b1f1985d6d2b2c718841bd62ba040576b8f1c17ff4c740c43746e4a5",
+      "diagnostic": null
+    },
+    {
+      "caseId": "blind-02",
+      "family": "transit",
+      "expected": "equivalent",
+      "mutationClass": "none",
+      "rationale": "The two transit author modules agree on every frozen boundary and reducer obligation.",
+      "accepted": true,
+      "outcome": "accepted",
+      "classification": "true-accept",
+      "leftCatalogFingerprint": "e3684a1b876cadd5e65de8ea5e7fcb95f133ee1093170604b8010b0cede501bf",
+      "rightCatalogFingerprint": "416b98ef5f85782d3cd5fb71c5ce5fae7deb188ac177d81de5840ad33fb3fed0",
+      "leftManifestDigest": "08dd97b4e2d9f845355fa8256ec213d8d1882841b94101ac41c9299b7030586c",
+      "rightManifestDigest": "d5d4baaaf6d7e8a9346048c28a2468bf6a2e234d6bc24881c39848f05ef8f483",
+      "suiteDigest": "00fe1ce9618d7226c474fff226a32f7e0dc58790ceae3742d8f206985f25b311",
+      "conformanceReportDigest": "27ec46ee827e23f6aa2b15cd144296b410df8ad1284a90c821da004d373c7ad8",
+      "diagnostic": null
+    },
+    {
+      "caseId": "blind-03",
+      "family": "support",
+      "expected": "equivalent",
+      "mutationClass": "none",
+      "rationale": "The two support author modules agree on every frozen boundary and reducer obligation.",
+      "accepted": true,
+      "outcome": "accepted",
+      "classification": "true-accept",
+      "leftCatalogFingerprint": "f2ff80a171cb04a6a6bc700355814e15abb2fe9a183a3e8ad94bd2fc0ffbb8f6",
+      "rightCatalogFingerprint": "a471917470aee1d3e7b95d61d50bf7edeeb08851415265793d9ced8b0c6151a5",
+      "leftManifestDigest": "fd0b2c9347b1c86522b4184633478800811a53a9643b962dd101b1c867ae0021",
+      "rightManifestDigest": "52ed242fb73e2b87bfc19ec04bbfa42e950019e8eff759b91ef22817a7a614a7",
+      "suiteDigest": "7f2b7fe394b07edb024c6ca0ccfa0bcfd79105f39a13c1a9f0d7b37f0d90f016",
+      "conformanceReportDigest": "581537bf464f469105f4f7524c9b4887ab8ff6de1d4e7ae6da3db11b6a35c41d",
+      "diagnostic": null
+    },
+    {
+      "caseId": "blind-04",
+      "family": "warehouse",
+      "expected": "non-equivalent",
+      "mutationClass": "schema-boundary",
+      "rationale": "The hostile warehouse schema rejects the valid upper-capacity boundary 1000.",
+      "accepted": false,
+      "outcome": "rejected",
+      "classification": "true-rejection",
+      "leftCatalogFingerprint": "9839e2617189b2645c0c7551a19b1306c81bd6258199f4ddcb7700827dbb28e2",
+      "rightCatalogFingerprint": "cbac94e412d2641e224df38626082d0c19d4f7c04dd7c560dc01714b1d22018f",
+      "leftManifestDigest": "b553abe5e99196137f6b70a25f38422662e266f52f7ee9c639d7284c33266e2a",
+      "rightManifestDigest": "f11e395aa69f956a926b6755226131d3fb43a164dfea5f6515898cacd8670680",
+      "suiteDigest": "ced4c7ea1aa6f568cb21457fb9e7daac14820ba909a0cc401eecd56155122227",
+      "conformanceReportDigest": null,
+      "diagnostic": {
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Mutual schema acceptance failed for semantic role m7a.role/warehouse/units@1.",
+        "failureClassLocated": true,
+        "targetLocated": true,
+        "repairDirectionPresent": false
+      }
+    },
+    {
+      "caseId": "blind-05",
+      "family": "warehouse",
+      "expected": "non-equivalent",
+      "mutationClass": "predicate-boundary",
+      "rationale": "The hostile warehouse predicate excludes the reorder boundary 10.",
+      "accepted": false,
+      "outcome": "rejected",
+      "classification": "true-rejection",
+      "leftCatalogFingerprint": "9839e2617189b2645c0c7551a19b1306c81bd6258199f4ddcb7700827dbb28e2",
+      "rightCatalogFingerprint": "e5c7ef2bf7f2778f02df649f68f8dad45afa3ccaeb9c354d24dce6e29ba8aab3",
+      "leftManifestDigest": "b553abe5e99196137f6b70a25f38422662e266f52f7ee9c639d7284c33266e2a",
+      "rightManifestDigest": "0f51ac4cb7d127a11b4a3c9673e2ccb35c089161b38e423bbc40f2ae0a507111",
+      "suiteDigest": "ced4c7ea1aa6f568cb21457fb9e7daac14820ba909a0cc401eecd56155122227",
+      "conformanceReportDigest": null,
+      "diagnostic": {
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Pointwise obligation failed for semantic role m7a.role/warehouse/needs-reorder@1.",
+        "failureClassLocated": true,
+        "targetLocated": true,
+        "repairDirectionPresent": false
+      }
+    },
+    {
+      "caseId": "blind-06",
+      "family": "warehouse",
+      "expected": "non-equivalent",
+      "mutationClass": "reducer-behavior",
+      "rationale": "The hostile warehouse reducer selects minimum rather than maximum demand.",
+      "accepted": false,
+      "outcome": "rejected",
+      "classification": "true-rejection",
+      "leftCatalogFingerprint": "9839e2617189b2645c0c7551a19b1306c81bd6258199f4ddcb7700827dbb28e2",
+      "rightCatalogFingerprint": "e9d0791e373e96439a4d1b356438ff72dbc6b0145a07c07465bbb9131aba2473",
+      "leftManifestDigest": "b553abe5e99196137f6b70a25f38422662e266f52f7ee9c639d7284c33266e2a",
+      "rightManifestDigest": "b7309eef7d2d317e0d7a5655f6ca7a6671eb1d81aaf47282eac5e51f49186390",
+      "suiteDigest": "ced4c7ea1aa6f568cb21457fb9e7daac14820ba909a0cc401eecd56155122227",
+      "conformanceReportDigest": null,
+      "diagnostic": {
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Identity or determinism obligation failed for reducer role m7a.role/warehouse/peak-demand@1.",
+        "failureClassLocated": true,
+        "targetLocated": true,
+        "repairDirectionPresent": false
+      }
+    },
+    {
+      "caseId": "blind-07",
+      "family": "transit",
+      "expected": "non-equivalent",
+      "mutationClass": "schema-boundary",
+      "rationale": "The hostile transit schema rejects the declared upper delay boundary 7200.",
+      "accepted": false,
+      "outcome": "rejected",
+      "classification": "true-rejection",
+      "leftCatalogFingerprint": "e3684a1b876cadd5e65de8ea5e7fcb95f133ee1093170604b8010b0cede501bf",
+      "rightCatalogFingerprint": "677e58418349ac3c4c861df89c52e6a37cca74672a43a7469d909a370da68335",
+      "leftManifestDigest": "08dd97b4e2d9f845355fa8256ec213d8d1882841b94101ac41c9299b7030586c",
+      "rightManifestDigest": "5a7052a5d59fbc7c542bbd43e7a96306856d7ba61ddcd478f47a595baa95a354",
+      "suiteDigest": "00fe1ce9618d7226c474fff226a32f7e0dc58790ceae3742d8f206985f25b311",
+      "conformanceReportDigest": null,
+      "diagnostic": {
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Mutual schema acceptance failed for semantic role m7a.role/transit/delay-seconds@1.",
+        "failureClassLocated": true,
+        "targetLocated": true,
+        "repairDirectionPresent": false
+      }
+    },
+    {
+      "caseId": "blind-08",
+      "family": "transit",
+      "expected": "non-equivalent",
+      "mutationClass": "predicate-boundary",
+      "rationale": "The hostile transit predicate excludes the service-alert boundary 300.",
+      "accepted": false,
+      "outcome": "rejected",
+      "classification": "true-rejection",
+      "leftCatalogFingerprint": "e3684a1b876cadd5e65de8ea5e7fcb95f133ee1093170604b8010b0cede501bf",
+      "rightCatalogFingerprint": "cec9bbf8d7db8a7ccd5023881b07bdfc9ca87d31e73c500fad2ba9cae5a86dd8",
+      "leftManifestDigest": "08dd97b4e2d9f845355fa8256ec213d8d1882841b94101ac41c9299b7030586c",
+      "rightManifestDigest": "3ce60e8e6d3ac109d4c5a9a57164d050697d252444929e6b165e310840839653",
+      "suiteDigest": "00fe1ce9618d7226c474fff226a32f7e0dc58790ceae3742d8f206985f25b311",
+      "conformanceReportDigest": null,
+      "diagnostic": {
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Pointwise obligation failed for semantic role m7a.role/transit/service-alert@1.",
+        "failureClassLocated": true,
+        "targetLocated": true,
+        "repairDirectionPresent": false
+      }
+    },
+    {
+      "caseId": "blind-09",
+      "family": "transit",
+      "expected": "non-equivalent",
+      "mutationClass": "role-version",
+      "rationale": "The hostile transit catalog declares a distinct role protocol version.",
+      "accepted": false,
+      "outcome": "rejected",
+      "classification": "true-rejection",
+      "leftCatalogFingerprint": "e3684a1b876cadd5e65de8ea5e7fcb95f133ee1093170604b8010b0cede501bf",
+      "rightCatalogFingerprint": "1e4a835162a6ebf2569a989ef7363bc33eaae2dac156cf0afd97fdfc9c743cc4",
+      "leftManifestDigest": "08dd97b4e2d9f845355fa8256ec213d8d1882841b94101ac41c9299b7030586c",
+      "rightManifestDigest": "7e7c9b95d0898978a63a2f9032ac128e5194688ac8db6553beb2b123e9f09b48",
+      "suiteDigest": "00fe1ce9618d7226c474fff226a32f7e0dc58790ceae3742d8f206985f25b311",
+      "conformanceReportDigest": null,
+      "diagnostic": {
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Catalogs do not declare the same versioned semantic-role set.",
+        "failureClassLocated": true,
+        "targetLocated": true,
+        "repairDirectionPresent": true
+      }
+    },
+    {
+      "caseId": "blind-10",
+      "family": "support",
+      "expected": "non-equivalent",
+      "mutationClass": "schema-boundary",
+      "rationale": "The hostile support schema rejects the valid priority boundary 0.",
+      "accepted": false,
+      "outcome": "rejected",
+      "classification": "true-rejection",
+      "leftCatalogFingerprint": "f2ff80a171cb04a6a6bc700355814e15abb2fe9a183a3e8ad94bd2fc0ffbb8f6",
+      "rightCatalogFingerprint": "737bfd55e1488c17ee47e05175f3bfc7cc5f101ebb331467b6cbe1769611a901",
+      "leftManifestDigest": "fd0b2c9347b1c86522b4184633478800811a53a9643b962dd101b1c867ae0021",
+      "rightManifestDigest": "7b8917d924291e59ed2d9fac03b6f934226e8d6b21e00d3e4b9c7af2ed3c9a77",
+      "suiteDigest": "7f2b7fe394b07edb024c6ca0ccfa0bcfd79105f39a13c1a9f0d7b37f0d90f016",
+      "conformanceReportDigest": null,
+      "diagnostic": {
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Mutual schema acceptance failed for semantic role m7a.role/support/priority@1.",
+        "failureClassLocated": true,
+        "targetLocated": true,
+        "repairDirectionPresent": false
+      }
+    },
+    {
+      "caseId": "blind-11",
+      "family": "support",
+      "expected": "non-equivalent",
+      "mutationClass": "predicate-boundary",
+      "rationale": "The hostile support predicate excludes escalation priority 4.",
+      "accepted": false,
+      "outcome": "rejected",
+      "classification": "true-rejection",
+      "leftCatalogFingerprint": "f2ff80a171cb04a6a6bc700355814e15abb2fe9a183a3e8ad94bd2fc0ffbb8f6",
+      "rightCatalogFingerprint": "996d8eceecca27569ce9a8da4dd1ad3e5f889a6ee00cfaaf578d0e88bbbb7172",
+      "leftManifestDigest": "fd0b2c9347b1c86522b4184633478800811a53a9643b962dd101b1c867ae0021",
+      "rightManifestDigest": "4d413c292036313ce06681c80c2a491f47fa219299e5fc29ab9453b287f29540",
+      "suiteDigest": "7f2b7fe394b07edb024c6ca0ccfa0bcfd79105f39a13c1a9f0d7b37f0d90f016",
+      "conformanceReportDigest": null,
+      "diagnostic": {
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Pointwise obligation failed for semantic role m7a.role/support/escalate@1.",
+        "failureClassLocated": true,
+        "targetLocated": true,
+        "repairDirectionPresent": false
+      }
+    },
+    {
+      "caseId": "blind-12",
+      "family": "support",
+      "expected": "non-equivalent",
+      "mutationClass": "reducer-behavior",
+      "rationale": "The hostile support reducer selects minimum rather than maximum priority.",
+      "accepted": false,
+      "outcome": "rejected",
+      "classification": "true-rejection",
+      "leftCatalogFingerprint": "f2ff80a171cb04a6a6bc700355814e15abb2fe9a183a3e8ad94bd2fc0ffbb8f6",
+      "rightCatalogFingerprint": "7375626811ff4a8ddad0b40991878d44b10e31b252458314177026fb10b583a0",
+      "leftManifestDigest": "fd0b2c9347b1c86522b4184633478800811a53a9643b962dd101b1c867ae0021",
+      "rightManifestDigest": "705bcda085b41ae7194c251a23adfbd525c059a6c9591b12b8d4ece10c06d4c8",
+      "suiteDigest": "7f2b7fe394b07edb024c6ca0ccfa0bcfd79105f39a13c1a9f0d7b37f0d90f016",
+      "conformanceReportDigest": null,
+      "diagnostic": {
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Identity or determinism obligation failed for reducer role m7a.role/support/highest-priority@1.",
+        "failureClassLocated": true,
+        "targetLocated": true,
+        "repairDirectionPresent": false
+      }
+    }
+  ],
+  "metrics": {
+    "equivalentPairs": 3,
+    "hostilePairs": 9,
+    "acceptedHostilePairs": 0,
+    "falseRejections": 0,
+    "trueAccepts": 3,
+    "trueRejections": 9,
+    "falseEquivalenceRate": {
+      "numerator": 0,
+      "denominator": 9
+    },
+    "falseRejectionRate": {
+      "numerator": 0,
+      "denominator": 3
+    },
+    "failureClassLocalization": {
+      "numerator": 9,
+      "denominator": 9
+    },
+    "targetLocalization": {
+      "numerator": 9,
+      "denominator": 9
+    },
+    "repairDirectionPresence": {
+      "numerator": 1,
+      "denominator": 9
+    }
+  },
+  "protocolChecks": {
+    "crossFamilyRejected": true,
+    "incompleteFixtureSetRejected": true,
+    "duplicateAdjudicationIdsRejected": true,
+    "extraAdjudicationIdsRejected": true
+  },
+  "evolution": {
+    "registrationOrderFingerprintStable": true,
+    "reconstructionFingerprintStable": true,
+    "versionedCatalogFingerprintChanged": true,
+    "versionedManifestDigestChanged": true,
+    "behaviorPreservingEvolutionConformed": true,
+    "roleVersionMismatchRejected": true,
+    "priorReportStillVerified": true,
+    "originalFingerprint": "deed0336cb8ecbac6119c7657676eed8411fc73a00ad8db8a8e521e1fab455dc",
+    "evolvedFingerprint": "3f7ce30e6d423a0adcd01a09ef3cc9b3da068b573459eb0f0d3ad37d69d741d6",
+    "originalManifestDigest": "5e1db00c716d7b615e7dad3ae0cb9ad34c2b9c88580c018d1e5992dde55a5ff7",
+    "evolvedManifestDigest": "6c1a1ce1a141990c70f3f5acd09f4a3280e8af55ddaf810b024bd94b68484142"
+  },
+  "gates": {
+    "zeroFalseEquivalence": true,
+    "zeroFalseRejection": true,
+    "completeHostileCoverage": true,
+    "failureClassLocalizationAtLeast90Percent": true,
+    "targetLocalizationAtLeast80Percent": true,
+    "deterministicIdentity": true,
+    "evolutionAllPassed": true
+  },
+  "decision": "GO",
+  "decisionScope": "larger-offline-independent-author-conformance-study",
+  "nonclaims": [
+    "no-universal-extensional-equivalence",
+    "no-equivalence-outside-frozen-fixtures",
+    "no-independent-human-authorship-evidence-from-this-slice",
+    "no-compositional-generalization",
+    "no-live-inference-strategy-promotion-m8-or-typegraph-quality-claim"
+  ],
+  "reportDigest": "8cc35372ec4f4f560180a2f26cf4edb46c9c298f49f21cc39f8df07cde19cf85"
+}

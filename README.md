@@ -205,6 +205,16 @@ ceiling and empirical power and maximum cost remain unknown. See the
 The synchronized `0.1.0-alpha.2` candidate is described in the
 [alpha.2 release notes](docs/m6c-release-notes.md).
 
+M7a adds an entirely offline public-package consumer trial for independent
+catalog conformance. Its role-simulated slice covers three unrelated catalog
+families, blinded adjudication, hostile near-equivalence, catalog evolution,
+deterministic reports, and external-author documentation. See the
+[prospective plan](docs/m7a-independent-catalog-trial-plan.md),
+[author guide](docs/external-catalog-conformance.md), and
+[M7a results](docs/m7a-results.md). The result is a narrow GO for a larger
+offline independent-author study, not for inference, promotion, M8, or a
+generalization claim.
+
 ## Validation
 
 ```bash

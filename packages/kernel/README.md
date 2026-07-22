@@ -33,3 +33,7 @@ Adding or changing roles changes the catalog fingerprint. Bump the catalog
 version, retain the previous catalog for old replay artifacts, and recompile
 rather than rewriting stored identities. Role declarations alone do not prove
 cross-catalog equivalence or authorize operation substitution.
+
+For role-contract design, complete boundary fixtures, offline conformance,
+diagnostic repair, and version migration, see the
+[external catalog-author guide](../../docs/external-catalog-conformance.md).

@@ -41,5 +41,12 @@ because its distribution-free requirement is 1,200 fresh cases, above the
 [M6 design](../../docs/m6a-compositional-harness.md) and immutable
 [M6 results](../../docs/m6-results.md).
 
+External catalog authors should follow the
+[alpha.2 catalog conformance guide](../../docs/external-catalog-conformance.md).
+It requires complete role coverage, boundary-focused finite fixtures,
+content-addressed reports, fail-closed repair, and fresh reports after catalog
+evolution. A passing report remains scoped to its exact fingerprints and fixture
+digest.
+
 M1a contains no live model SDK. Provider adapters and CodeMode enter only in the
 M1b pilot, outside `@nicia-ai/lachesis`.
