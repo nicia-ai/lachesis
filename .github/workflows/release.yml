@@ -158,6 +158,7 @@ jobs:
               "@types/node": "24.13.3",
               "better-sqlite3": "12.11.1",
               "typescript": "6.0.3",
+              "wrangler": "4.110.0",
               "zod": "4.4.3"
             }
           }
