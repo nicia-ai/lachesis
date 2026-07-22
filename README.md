@@ -202,6 +202,8 @@ is a no-go because the distribution-free requirement exceeds the practical case
 ceiling and empirical power and maximum cost remain unknown. See the
 [compositional harness design](docs/m6a-compositional-harness.md) and immutable
 [M6 results](docs/m6-results.md). M6 is closed as `closed-offline-design-no-go`.
+The synchronized `0.1.0-alpha.2` candidate is described in the
+[alpha.2 release notes](docs/m6c-release-notes.md).
 
 ## Validation
 

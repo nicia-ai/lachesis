@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.2
+
+- Dependency-only synchronized release with `@nicia-ai/lachesis` and
+  `@nicia-ai/lachesis-evidence`; no runtime API or behavior changes.
+
 ## 0.1.0-alpha.1
 
 - Introduces the ESM-only public alpha facade for plan compilation, lexical

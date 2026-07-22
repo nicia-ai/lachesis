@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.0-alpha.2
 
 - Adds the experimental offline M6 strategy normalization, immutable template,
   lifecycle registry, binding, typed fallback, trace-mining, and synthetic

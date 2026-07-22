@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   mkdir,
   mkdtemp,
@@ -21,6 +22,10 @@ const packageDirectories = [
   "packages/runtime",
   "packages/evidence-typegraph",
 ];
+const expectedReleaseVersion = "0.1.0-alpha.2";
+
+if (process.versions.node.split(".")[0] !== "24")
+  throw new Error(`Node 24 is required; found ${process.versions.node}.`);
 
 function command(program, arguments_, options = {}) {
   return new Promise((resolvePromise, reject) => {
@@ -52,11 +57,22 @@ function command(program, arguments_, options = {}) {
   });
 }
 
-async function readManifest(path) {
-  const parsed = parseJson(await readFile(path, "utf8"));
+function parseManifest(text, label) {
+  const parsed = parseJson(text);
   if (!parsed.ok || parsed.value === null || Array.isArray(parsed.value))
-    throw new Error(`Invalid package manifest: ${path}.`);
+    throw new Error(`Invalid package manifest: ${label}.`);
   return parsed.value;
+}
+
+async function readManifest(path) {
+  return parseManifest(await readFile(path, "utf8"), path);
+}
+
+function exportTargets(value) {
+  if (typeof value === "string") return [value];
+  if (value === null || Array.isArray(value) || typeof value !== "object")
+    throw new Error("Package exports contain an unsupported target.");
+  return Object.values(value).flatMap((target) => exportTargets(target));
 }
 
 const temporary = await mkdtemp(join(tmpdir(), "lachesis-pack-audit-"));
@@ -68,10 +84,26 @@ try {
     mkdir(packed, { recursive: true }),
     mkdir(consumer, { recursive: true }),
   ]);
+  const sourceManifests = await Promise.all(
+    packageDirectories.map((directory) =>
+      readManifest(join(root, directory, "package.json")),
+    ),
+  );
+  const publicPackageNames = new Set(
+    sourceManifests.map((manifest) => manifest.name),
+  );
+  for (const manifest of sourceManifests) {
+    if (manifest.version !== expectedReleaseVersion)
+      throw new Error(
+        `${manifest.name} is ${manifest.version}; expected ${expectedReleaseVersion}.`,
+      );
+  }
   const tarballs = new Map();
   const packages = [];
-  for (const directory of packageDirectories) {
-    const manifest = await readManifest(join(root, directory, "package.json"));
+  for (const [index, directory] of packageDirectories.entries()) {
+    const manifest = sourceManifests[index];
+    if (manifest === undefined)
+      throw new Error(`Missing source manifest for ${directory}.`);
     await command("pnpm", ["pack", "--pack-destination", packed], {
       cwd: join(root, directory),
     });
@@ -84,8 +116,9 @@ try {
       );
     const tarball = candidates[0];
     tarballs.set(manifest.name, tarball);
+    const tarballPath = join(packed, tarball);
     const listing = (
-      await command("tar", ["-tf", join(packed, tarball)], { capture: true })
+      await command("tar", ["-tf", tarballPath], { capture: true })
     ).stdout
       .trim()
       .split("\n")
@@ -114,10 +147,94 @@ try {
       throw new Error(
         `${manifest.name} pack contains private source material.`,
       );
-    const metadata = await stat(join(packed, tarball));
+    const packedManifest = parseManifest(
+      (
+        await command("tar", ["-xOf", tarballPath, "package/package.json"], {
+          capture: true,
+        })
+      ).stdout,
+      `${tarball}:package/package.json`,
+    );
+    if (
+      packedManifest.name !== manifest.name ||
+      packedManifest.version !== expectedReleaseVersion ||
+      packedManifest.type !== "module" ||
+      packedManifest.publishConfig?.access !== "public"
+    )
+      throw new Error(`${manifest.name} packed metadata is not release-safe.`);
+    for (const target of exportTargets(packedManifest.exports)) {
+      if (
+        !target.startsWith("./dist/") ||
+        !listing.includes(`package/${target.slice(2)}`)
+      )
+        throw new Error(`${manifest.name} export target ${target} is absent.`);
+    }
+    for (const path of listing.filter((file) =>
+      file.startsWith("package/dist/"),
+    )) {
+      if (path.endsWith(".js") && !listing.includes(`${path}.map`))
+        throw new Error(`${manifest.name} source map is missing for ${path}.`);
+      if (path.endsWith(".d.ts") && !listing.includes(`${path}.map`))
+        throw new Error(
+          `${manifest.name} declaration map is missing for ${path}.`,
+        );
+    }
+    for (const section of [
+      "dependencies",
+      "optionalDependencies",
+      "peerDependencies",
+    ]) {
+      const dependencies = packedManifest[section];
+      if (
+        dependencies === undefined ||
+        dependencies === null ||
+        Array.isArray(dependencies) ||
+        typeof dependencies !== "object"
+      )
+        continue;
+      for (const [name, version] of Object.entries(dependencies)) {
+        if (publicPackageNames.has(name) && version !== expectedReleaseVersion)
+          throw new Error(
+            `${manifest.name} resolves ${name} to ${String(version)}, not ${expectedReleaseVersion}.`,
+          );
+      }
+    }
+    for (const declaration of listing.filter(
+      (path) =>
+        path.endsWith(".d.ts") &&
+        !path.endsWith("/node.d.ts") &&
+        !path.endsWith("/node-store.d.ts") &&
+        !path.endsWith("/sqlite.d.ts"),
+    )) {
+      const text = (
+        await command("tar", ["-xOf", tarballPath, declaration], {
+          capture: true,
+        })
+      ).stdout;
+      for (const forbidden of [
+        'from "node:',
+        "from 'node:",
+        "NodeJS.",
+        "Buffer",
+        'from "drizzle-orm',
+        'from "better-sqlite3',
+        'from "@ai-sdk/',
+        'from "openai',
+        'from "@anthropic-ai/',
+      ]) {
+        if (text.includes(forbidden))
+          throw new Error(
+            `${manifest.name} portable declaration leaks ${forbidden}.`,
+          );
+      }
+    }
+    const tarballContents = await readFile(tarballPath);
+    const metadata = await stat(tarballPath);
     packages.push({
       name: manifest.name,
       version: manifest.version,
+      tarball,
+      sha256: createHash("sha256").update(tarballContents).digest("hex"),
       tarballBytes: metadata.size,
       files: listing.length,
     });
@@ -146,6 +263,7 @@ try {
         devDependencies: {
           "@types/node": "24.13.3",
           typescript: "6.0.3",
+          wrangler: "4.110.0",
         },
       },
       null,
@@ -155,10 +273,12 @@ try {
   await writeFile(
     join(consumer, "portable.ts"),
     `import { catalogSemanticRolesSchema } from "@nicia-ai/lachesis";
+import { selectEvidence } from "@nicia-ai/lachesis-evidence";
 import { conformCatalogsOffline, designM6dPairedStudy } from "@nicia-ai/lachesis-generator";
 import { compilePlan, run, replay } from "@nicia-ai/lachesis-runtime";
 import { createM5TypeGraphEvidenceStore } from "@nicia-ai/lachesis-evidence-typegraph";
 void catalogSemanticRolesSchema;
+void selectEvidence;
 void conformCatalogsOffline;
 void designM6dPairedStudy;
 void compilePlan;
@@ -166,6 +286,35 @@ void run;
 void replay;
 void createM5TypeGraphEvidenceStore;
 `,
+  );
+  await writeFile(
+    join(consumer, "worker.ts"),
+    `import { catalogSemanticRolesSchema } from "@nicia-ai/lachesis";
+import { selectEvidence } from "@nicia-ai/lachesis-evidence";
+import { TYPEGRAPH_EVIDENCE_SCHEMA } from "@nicia-ai/lachesis-evidence-typegraph";
+import { conformCatalogsOffline } from "@nicia-ai/lachesis-generator";
+import { createInMemoryEvidenceStore } from "@nicia-ai/lachesis-runtime";
+export default {
+  fetch(): Response {
+    return Response.json({
+      portable: [catalogSemanticRolesSchema, selectEvidence, TYPEGRAPH_EVIDENCE_SCHEMA, conformCatalogsOffline, createInMemoryEvidenceStore].every(Boolean),
+    });
+  },
+};
+`,
+  );
+  await writeFile(
+    join(consumer, "wrangler.jsonc"),
+    `${JSON.stringify(
+      {
+        $schema: "./node_modules/wrangler/config-schema.json",
+        name: "lachesis-packed-worker-smoke",
+        main: "worker.ts",
+        compatibility_date: "2026-06-01",
+      },
+      null,
+      2,
+    )}\n`,
   );
   await writeFile(
     join(consumer, "node.ts"),
@@ -240,6 +389,11 @@ if (typeof run !== "function" || typeof replay !== "function" || typeof createM5
     cwd: consumer,
   });
   await command(process.execPath, ["smoke.mjs"], { cwd: consumer });
+  await command(
+    "pnpm",
+    ["exec", "wrangler", "deploy", "--dry-run", "--outdir", "worker-dist"],
+    { cwd: consumer },
+  );
 
   process.stdout.write(
     `${JSON.stringify(
@@ -252,6 +406,8 @@ if (typeof run !== "function" || typeof replay !== "function" || typeof createM5
           skipLibCheck: false,
           portable: "passed",
           node: "passed",
+          nodeVersion: process.versions.node,
+          workers: "passed",
           esm: "passed",
           commonjs: "not-promised",
           network: "offline-install",

@@ -8,7 +8,7 @@
   "packages": [
     {
       "package": "@nicia-ai/lachesis",
-      "version": "0.1.0-alpha.1",
+      "version": "0.1.0-alpha.2",
       "classification": "stable-alpha",
       "entrypoints": [
         {
@@ -134,7 +134,7 @@
     },
     {
       "package": "@nicia-ai/lachesis-runtime",
-      "version": "0.1.0-alpha.1",
+      "version": "0.1.0-alpha.2",
       "classification": "stable-alpha",
       "entrypoints": [
         {
@@ -245,7 +245,7 @@
     },
     {
       "package": "@nicia-ai/lachesis-evidence-typegraph",
-      "version": "0.1.0-alpha.1",
+      "version": "0.1.0-alpha.2",
       "classification": "stable-alpha",
       "entrypoints": [
         {
@@ -291,7 +291,7 @@
     },
     {
       "package": "@nicia-ai/lachesis-evidence",
-      "version": "0.1.0-alpha.1",
+      "version": "0.1.0-alpha.2",
       "classification": "experimental",
       "entrypoints": [
         {
@@ -596,7 +596,7 @@
     },
     {
       "package": "@nicia-ai/lachesis-generator",
-      "version": "0.1.0-alpha.1",
+      "version": "0.1.0-alpha.2",
       "classification": "experimental",
       "entrypoints": [
         {

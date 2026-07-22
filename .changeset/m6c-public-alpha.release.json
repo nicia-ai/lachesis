@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "release": "m6c-public-alpha",
+  "status": "prepared-not-published",
+  "sourceBaseCommit": "2a238cb477a1855e49daa3bef5cdfcd7f166a091",
+  "artifactSourcePolicy": "exact release-candidate commit supplied to the workflow and matched by the annotated release tag",
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "fromVersion": "0.1.0-alpha.1",
+      "toVersion": "0.1.0-alpha.2",
+      "releaseKind": "additive-stable-alpha"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "fromVersion": "0.1.0-alpha.1",
+      "toVersion": "0.1.0-alpha.2",
+      "releaseKind": "dependency-only-synchronized"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "fromVersion": "0.1.0-alpha.1",
+      "toVersion": "0.1.0-alpha.2",
+      "releaseKind": "dependency-only-synchronized"
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "fromVersion": "0.1.0-alpha.1",
+      "toVersion": "0.1.0-alpha.2",
+      "releaseKind": "additive-experimental"
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "fromVersion": "0.1.0-alpha.1",
+      "toVersion": "0.1.0-alpha.2",
+      "releaseKind": "dependency-only-synchronized"
+    }
+  ],
+  "releaseNotes": "docs/m6c-release-notes.md",
+  "publicApiInventory": "docs/public-api-inventory.json",
+  "releaseChecksums": "docs/m6c-release.sha256",
+  "m6Results": "docs/m6-results.json",
+  "m6Status": "closed-offline-design-no-go"
+}

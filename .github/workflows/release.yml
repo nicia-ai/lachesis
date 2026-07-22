@@ -17,9 +17,11 @@ permissions:
   id-token: write
 
 env:
-  RELEASE_COMMIT: 478ab365d51feb7bb57cd056c8762b421efa3a1d
-  RELEASE_VERSION: 0.1.0-alpha.1
-  RELEASE_TAG: v0.1.0-alpha.1
+  RELEASE_COMMIT: ${{ inputs.release_commit }}
+  RELEASE_VERSION: 0.1.0-alpha.2
+  RELEASE_TAG: v0.1.0-alpha.2
+  RELEASE_NOTES: docs/m6c-release-notes.md
+  RELEASE_CHECKSUMS: docs/m6c-release.sha256
 
 jobs:
   release:
@@ -28,10 +30,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Confirm immutable release authorization
-        env:
-          REQUESTED_COMMIT: ${{ inputs.release_commit }}
         run: |
-          test "$REQUESTED_COMMIT" = "$RELEASE_COMMIT"
+          test "${#RELEASE_COMMIT}" -eq 40
+          test -z "$(printf '%s' "$RELEASE_COMMIT" | tr -d '0123456789abcdef')"
           test "$GITHUB_REF" = "refs/heads/main"
 
       - uses: actions/checkout@v6
@@ -53,8 +54,9 @@ jobs:
           test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "false"
           test "$(gh release view "$RELEASE_TAG" --json isPrerelease --jq .isPrerelease)" = "true"
           release_body="$(gh release view "$RELEASE_TAG" --json body --jq .body)"
-          expected_body="$(cat docs/m5c-release-notes.md)"
+          expected_body="$(cat "$RELEASE_NOTES")"
           test "$release_body" = "$expected_body"
+          shasum -a 256 -c "$RELEASE_CHECKSUMS"
 
       - uses: pnpm/action-setup@v5
 
@@ -142,6 +144,7 @@ jobs:
           pnpm test:load
           pnpm audit:source-safety
           pnpm audit:public-api
+          pnpm audit:release-checksums
           mkdir -p "$RUNNER_TEMP/lachesis-pack-audit-prefetch"
           cat > "$RUNNER_TEMP/lachesis-pack-audit-prefetch/package.json" <<'EOF'
           {
@@ -232,6 +235,21 @@ jobs:
             exit 1
           fi
 
+      - name: Snapshot existing latest dist-tags
+        run: |
+          latest_snapshot="$RUNNER_TEMP/latest-dist-tags.tsv"
+          : > "$latest_snapshot"
+          for package_name in \
+            @nicia-ai/lachesis \
+            @nicia-ai/lachesis-evidence \
+            @nicia-ai/lachesis-runtime \
+            @nicia-ai/lachesis-evidence-typegraph \
+            @nicia-ai/lachesis-generator
+          do
+            latest="$(npm view "$package_name" dist-tags.latest 2>/dev/null || true)"
+            printf '%s\t%s\n' "$package_name" "$latest" >> "$latest_snapshot"
+          done
+
       - name: Pack audited artifacts
         run: |
           mkdir -p .release-packages
@@ -254,6 +272,7 @@ jobs:
 
       - name: Verify alpha dist-tags
         run: |
+          latest_snapshot="$RUNNER_TEMP/latest-dist-tags.tsv"
           for package_name in \
             @nicia-ai/lachesis \
             @nicia-ai/lachesis-evidence \
@@ -276,13 +295,8 @@ jobs:
             done
             test "$published" = "true"
             latest="$(npm view "$package_name" dist-tags.latest 2>/dev/null || true)"
-            if test "$latest" = "$RELEASE_VERSION"
-            then
-              versions="$(npm view "$package_name" versions --json)"
-              export versions
-              node -e 'const versions = JSON.parse(process.env.versions); if (Array.isArray(versions) ? versions.length !== 1 : typeof versions !== "string") process.exit(1)'
-              echo "$package_name retains npm's first-version latest alias; alpha is authoritative" >&2
-            fi
+            expected_latest="$(awk -F '\t' -v name="$package_name" '$1 == name { print $2 }' "$latest_snapshot")"
+            test "$latest" = "$expected_latest"
           done
 
       - name: Return release to draft on failure

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.2
+
+- Dependency-only synchronized release with `@nicia-ai/lachesis`; no evidence
+  API or behavior changes.
+
 ## 0.1.0-alpha.1
 
 - Publishes the portable evidence contracts and runtime substrate as an

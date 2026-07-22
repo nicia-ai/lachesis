@@ -1,6 +1,6 @@
 {
   "name": "@nicia-ai/lachesis-evidence-typegraph",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Optional TypeGraph storage, history, and provenance adapter for the Lachesis evidence runtime",
   "type": "module",
   "license": "Apache-2.0",

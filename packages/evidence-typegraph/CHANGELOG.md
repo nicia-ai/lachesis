@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.2
+
+- Dependency-only synchronized release with the alpha.2 kernel, evidence, and
+  runtime packages; no TypeGraph adapter API or behavior changes.
+
 ## 0.1.0-alpha.1
 
 - Publishes the optional TypeGraph 0.38 evidence-store adapter as a stable alpha
