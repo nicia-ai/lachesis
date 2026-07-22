@@ -145,6 +145,18 @@ importers:
         specifier: 0.38.0
         version: 0.38.0(better-sqlite3@12.11.1)(drizzle-orm@0.45.2(better-sqlite3@12.11.1))(zod@4.4.3)
 
+  examples/m6-offline:
+    dependencies:
+      "@nicia-ai/lachesis":
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      "@nicia-ai/lachesis-generator":
+        specifier: workspace:*
+        version: link:../../packages/generator
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+
   packages/evidence:
     dependencies:
       "@nicia-ai/lachesis":

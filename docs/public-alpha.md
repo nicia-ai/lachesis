@@ -60,6 +60,11 @@ cover:
 
 `pnpm test:examples` runs every example without network access or credentials.
 
+It also runs the separate experimental
+[`examples/m6-offline`](../examples/m6-offline) catalog-role and conformance
+example. That example uses the generator research package and does not widen the
+stable runtime facade.
+
 ## API reference
 
 ### Compilation
@@ -71,6 +76,31 @@ cover:
   bounded operations.
 - `inspectExecutablePlan()` exposes immutable identities and analyzed bounds,
   never the internal executable representation.
+
+### Catalog semantic roles and migration
+
+The stable kernel accepts optional trusted, versioned semantic-role declarations
+on `createCatalog()`. Declarations map registered schemas and operations to
+application-owned `(id, version)` roles. They contain no source, callbacks,
+effects, or plan-wire authority. Duplicate, dangling, operation-kind, and false
+reducer-law declarations fail catalog construction.
+
+Adding, removing, or changing a declaration changes the catalog fingerprint.
+Treat this as a catalog migration:
+
+1. bump the catalog version;
+2. retain the old catalog when old plans or replay artifacts must remain usable;
+3. recompile plans against the new fingerprint;
+4. never rewrite stored plan, semantic-contract, effect-request, replay, or
+   template identities; and
+5. rerun the application-supplied conformance suite whenever either catalog or
+   its fixtures change.
+
+Catalog roles do not authorize cross-catalog template execution. The
+experimental generator's `conformCatalogsOffline()` returns a finite,
+content-addressed report for supplied fixtures only. Verify it with
+`verifyCatalogConformanceReport()`. Automatic operation substitution remains out
+of scope.
 
 ### Evidence and oracle setup
 
@@ -189,6 +219,9 @@ packages carry no public compatibility promise.
 
 Replay protocols and content identities are stricter than API compatibility: an
 identity-changing correction never silently reinterprets an older artifact.
+Catalog semantic-role declarations follow the same rule. The declaration API is
+stable-alpha kernel surface; the cross-catalog conformance runner remains
+experimental generator surface.
 
 ## Security guidance
 

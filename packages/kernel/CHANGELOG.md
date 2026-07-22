@@ -2,6 +2,8 @@
 
 ## 0.1.0-alpha.1
 
+- Adds optional trusted, versioned catalog semantic-role declarations to the
+  fingerprinted catalog boundary without changing the plan wire format.
 - Publishes the portable typed plan compiler/runtime as a stable alpha API.
 - Binds executable plans to catalog, policy, resource, and semantic-contract
   identities.

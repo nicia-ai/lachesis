@@ -45,6 +45,16 @@ export {
   toPublicExamples,
 } from "./case.js";
 export {
+  type CatalogConformanceFixture,
+  catalogConformanceFixtureSchema,
+  type CatalogConformanceReport,
+  catalogConformanceReportSchema,
+  type CatalogConformanceSuite,
+  catalogConformanceSuiteSchema,
+  conformCatalogsOffline,
+  verifyCatalogConformanceReport,
+} from "./catalog-conformance.js";
+export {
   CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
   CODEMODE_PROTOCOL,
   type CodeModeArtifact,
@@ -171,6 +181,27 @@ export {
   type M6FalseEquivalenceAudit,
   type M6OfflineStrategyCorpus,
 } from "./m6-corpus.js";
+export {
+  auditM6cFalseEquivalence,
+  loadM6cOfflineConformanceCorpus,
+  type M6cFalseEquivalenceAudit,
+  type M6cOfflineConformanceCorpus,
+} from "./m6c-corpus.js";
+export {
+  assignM6dSequence,
+  auditM6dWorkloadDisjointness,
+  boundM6dMaximumCost,
+  designM6dPairedStudy,
+  type M6dBound,
+  m6dBoundSchema,
+  type M6dDisjointnessAudit,
+  type M6dMaximumCostBound,
+  type M6dStudyDesign,
+  m6dStudyDesignSchema,
+  type M6dWorkloadIdentity,
+  m6dWorkloadIdentitySchema,
+  verifyM6dStudyDesign,
+} from "./m6d-design.js";
 export {
   type AdapterDispatchEvidence,
   DEFAULT_INFERENCE_SETTINGS,

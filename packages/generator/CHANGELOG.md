@@ -5,6 +5,10 @@
 - Adds the experimental offline M6 strategy normalization, immutable template,
   lifecycle registry, binding, typed fallback, trace-mining, and synthetic
   false-equivalence audit APIs.
+- Adds the M6c offline cross-catalog conformance runner, content-addressed pass
+  reports, and a fresh 8-case adversarial non-equivalence audit.
+- Adds the content-addressed M6d paired-study no-go design, deterministic arm
+  order, workload-disjointness audit, and explicit maximum-cost calculator.
 
 ## 0.1.0-alpha.1
 

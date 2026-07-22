@@ -75,6 +75,7 @@ type CatalogManifestCore = Readonly<{
   catalog: CatalogReference;
   schemas: ReadonlyArray<ManifestSchema>;
   operations: ReadonlyArray<ManifestOperation>;
+  semanticRoles?: ReturnType<typeof readCatalog>["semanticRoles"];
 }>;
 
 export type PlanLanguageManifest = CatalogManifestCore &
@@ -153,6 +154,9 @@ function catalogCore(catalog: Catalog): CatalogManifestCore {
   return {
     formatVersion: "1",
     catalog: state.identity,
+    ...(state.semanticRoles === undefined
+      ? {}
+      : { semanticRoles: state.semanticRoles }),
     schemas: [...state.schemas.values()]
       .map((schema) => ({
         reference: schemaReference(schema),

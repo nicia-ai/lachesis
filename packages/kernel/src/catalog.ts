@@ -3,6 +3,11 @@ import { z } from "zod";
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
 import { err, ok, type Result } from "./result.js";
 import {
+  type CatalogSemanticRoles,
+  type CatalogSemanticRolesInput,
+  catalogSemanticRolesSchema,
+} from "./semantic-role.js";
+import {
   type CatalogReference,
   catalogReferenceSchema,
   type OperationReference,
@@ -12,7 +17,7 @@ import {
 } from "./wire.js";
 
 type JsonValue = z.infer<ReturnType<typeof z.json>>;
-type Reference = SchemaReference | OperationReference | CatalogReference;
+type Reference = Readonly<{ id: string; version: string }>;
 
 export type SchemaKind =
   | Readonly<{ kind: "scalar"; semantic?: "boolean" | undefined }>
@@ -130,10 +135,12 @@ export type CatalogState = Readonly<{
   identity: CatalogReference;
   schemas: ReadonlyMap<string, RuntimeSchema>;
   operations: ReadonlyMap<string, RuntimeOperation>;
+  semanticRoles?: CatalogSemanticRoles | undefined;
 }>;
 
 export type CatalogDescription = Readonly<{
   identity: CatalogReference;
+  semanticRoles?: CatalogSemanticRoles | undefined;
   schemas: ReadonlyArray<
     Readonly<{
       id: SchemaReference["id"];
@@ -169,6 +176,9 @@ export function snapshotCatalog(catalog: Catalog): Catalog {
     identity: state.identity,
     schemas: new Map(state.schemas),
     operations: new Map(state.operations),
+    ...(state.semanticRoles === undefined
+      ? {}
+      : { semanticRoles: state.semanticRoles }),
   });
 }
 
@@ -598,6 +608,7 @@ export function createCatalog(
     identity: Readonly<{ id: string; version: string }>;
     schemas: ReadonlyArray<RuntimeSchema>;
     operations: ReadonlyArray<RuntimeOperation>;
+    semanticRoles?: CatalogSemanticRolesInput | undefined;
   }>,
 ): Result<Catalog, ReadonlyArray<Diagnostic>> {
   const identity = catalogReferenceSchema.safeParse(definition.identity);
@@ -612,6 +623,17 @@ export function createCatalog(
   const schemas = new Map<string, RuntimeSchema>();
   const operations = new Map<string, RuntimeOperation>();
   const diagnostics: Array<Diagnostic> = [];
+  const semanticRoles =
+    definition.semanticRoles === undefined
+      ? undefined
+      : catalogSemanticRolesSchema.safeParse(definition.semanticRoles);
+  if (semanticRoles !== undefined && !semanticRoles.success)
+    diagnostics.push(
+      diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "Catalog semantic-role declarations are invalid.",
+      ),
+    );
   for (const registration of definition.schemas) {
     const schema = freezeRuntimeSchema(registration);
     const key = referenceKey(schema);
@@ -681,8 +703,86 @@ export function createCatalog(
       );
     }
   }
+  if (semanticRoles?.success) {
+    const schemaRoles = new Set<string>();
+    const roleSchemas = new Set<string>();
+    for (const declaration of semanticRoles.data.schemas) {
+      const role = referenceKey(declaration.role);
+      const schema = referenceKey(declaration.schema);
+      if (schemaRoles.has(role) || roleSchemas.has(schema))
+        diagnostics.push(
+          diagnostic(
+            "INVALID_WIRE_SCHEMA",
+            `Semantic schema role ${role} or registration ${schema} is duplicated.`,
+          ),
+        );
+      schemaRoles.add(role);
+      roleSchemas.add(schema);
+      if (!schemas.has(schema))
+        diagnostics.push(
+          diagnostic(
+            "UNKNOWN_SCHEMA",
+            `Semantic schema role ${role} references unknown schema ${schema}.`,
+          ),
+        );
+    }
+    const operationRoles = new Set<string>();
+    const roleOperations = new Set<string>();
+    for (const declaration of semanticRoles.data.operations) {
+      const role = referenceKey(declaration.role);
+      const operationKey = referenceKey(declaration.operation);
+      const operation = operations.get(operationKey);
+      if (operationRoles.has(role) || roleOperations.has(operationKey))
+        diagnostics.push(
+          diagnostic(
+            "INVALID_WIRE_SCHEMA",
+            `Semantic operation role ${role} or registration ${operationKey} is duplicated.`,
+          ),
+        );
+      operationRoles.add(role);
+      roleOperations.add(operationKey);
+      if (operation === undefined) {
+        diagnostics.push(
+          diagnostic(
+            "UNKNOWN_OPERATION",
+            `Semantic operation role ${role} references unknown operation ${operationKey}.`,
+          ),
+        );
+        continue;
+      }
+      if (operation.kind !== declaration.kind)
+        diagnostics.push(
+          diagnostic(
+            "OPERATION_KIND_MISMATCH",
+            `Semantic operation role ${role} declares ${declaration.kind} for ${operation.kind} operation ${operationKey}.`,
+          ),
+        );
+      if (
+        operation.kind === "reducer" &&
+        declaration.kind === "reducer" &&
+        (operation.laws.associative !== declaration.obligations.associative ||
+          operation.laws.commutative !== declaration.obligations.commutative ||
+          operation.laws.idempotent !== declaration.obligations.idempotent)
+      )
+        diagnostics.push(
+          diagnostic(
+            "INVALID_REDUCER",
+            `Semantic reducer role ${role} must claim exactly the registered reducer laws.`,
+          ),
+        );
+    }
+  }
   return diagnostics.length === 0
-    ? ok(storeCatalog({ identity: identity.data, schemas, operations }))
+    ? ok(
+        storeCatalog({
+          identity: identity.data,
+          schemas,
+          operations,
+          ...(semanticRoles?.success
+            ? { semanticRoles: semanticRoles.data }
+            : {}),
+        }),
+      )
     : err(diagnostics);
 }
 
@@ -690,6 +790,9 @@ export function describeCatalog(catalog: Catalog): CatalogDescription {
   const state = readCatalog(catalog);
   return {
     identity: state.identity,
+    ...(state.semanticRoles === undefined
+      ? {}
+      : { semanticRoles: state.semanticRoles }),
     schemas: [...state.schemas.values()]
       .map((schema) => ({
         id: schema.id,

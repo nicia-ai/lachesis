@@ -1,0 +1,11 @@
+{
+  "name": "@nicia-ai/lachesis-m6-offline-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:*",
+    "@nicia-ai/lachesis-generator": "workspace:*",
+    "zod": "4.4.3"
+  }
+}

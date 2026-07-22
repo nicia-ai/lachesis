@@ -27,14 +27,19 @@ its digest. Research gates use held-out records, matched comparison tuples,
 explicit denominators, and 95% confidence intervals. Node filesystem storage is
 available only from `@nicia-ai/lachesis-generator/node`.
 
-M6a/M6b adds an offline experimental compositional-harness surface: successful
+M6a–M6d adds an offline experimental compositional-harness surface: successful
 plans can be normalized into trajectory-shape and strategy-contract identities,
 promoted into immutable typed templates, matched against public task features,
 bound only through public value slots, and recompiled through the ordinary
 kernel boundary. The registry fails closed on semantic mismatch, envelope
 overflow, ambiguity, authority widening, and identity tamper. It makes no live
-provider or learned-generalization claim. See the
-[M6 design](../../docs/m6a-compositional-harness.md).
+provider or learned-generalization claim. M6c adds finite application-supplied
+cross-catalog conformance for trusted versioned catalog roles; declarations
+alone never establish equivalence. M6d closes as a paired-study design no-go
+because its distribution-free requirement is 1,200 fresh cases, above the
+500-case ceiling, while empirical power and maximum cost remain unknown. See the
+[M6 design](../../docs/m6a-compositional-harness.md) and immutable
+[M6 results](../../docs/m6-results.md).
 
 M1a contains no live model SDK. Provider adapters and CodeMode enter only in the
 M1b pilot, outside `@nicia-ai/lachesis`.

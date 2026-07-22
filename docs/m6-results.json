@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1",
+  "kind": "m6-results-record",
+  "milestone": "M6",
+  "status": "closed-offline-design-no-go",
+  "providerCallsMade": 0,
+  "liveArtifacts": {
+    "finalCorpus": false,
+    "providerIdentity": false,
+    "campaign": false,
+    "manifest": false,
+    "preregistration": false,
+    "spendingAuthority": false
+  },
+  "components": [
+    {
+      "name": "M6a compositional normalization and typed templates",
+      "status": "complete-offline"
+    },
+    {
+      "name": "M6b lifecycle, binding, fallback, trace mining, and replay",
+      "status": "complete-offline"
+    },
+    {
+      "name": "M6c trusted semantic roles and cross-catalog conformance",
+      "status": "complete-offline-adversarial-pass"
+    },
+    {
+      "name": "M6d paired discovery-versus-template study design",
+      "status": "complete-design-no-go"
+    }
+  ],
+  "offlineAudits": {
+    "strategyFalseEquivalence": {
+      "protocol": "lachesis-m6-false-equivalence-audit/1",
+      "hostileCases": 12,
+      "acceptedHostileCollisions": 0,
+      "digest": "3bb9d5d8d239a1efbcfebe63c5794125fac2b4dc9a5dcfb8b3490fcabe3837b1"
+    },
+    "crossCatalogFalseEquivalence": {
+      "protocol": "lachesis-m6c-false-equivalence-audit/1",
+      "hostileCases": 8,
+      "acceptedHostileCollisions": 0,
+      "digest": "da038886b4b543c13d1a2f7881d9e7672adb9d52b2964718c44e7fc63a3562c0"
+    }
+  },
+  "pairedStudyDesign": {
+    "protocol": "lachesis-m6d-paired-study-design/1",
+    "digest": "479bdfa0675210f28c19c28c5d66a7348682fc65d624ccd6337ba68337b42832",
+    "primaryEstimand": "template-minus-discovery-first-attempt-semantic-success",
+    "noninferiorityMarginBasisPoints": 1000,
+    "familyAlpha": 0.05,
+    "inference": "distribution-free-one-sided-hoeffding-lower-bound",
+    "empiricalPower": "unknown-no-prospective-discordance-distribution",
+    "casesPerRepetition": 600,
+    "repetitions": 2,
+    "requiredFreshCases": 1200,
+    "practicalFreshCaseCeiling": 500,
+    "maximumTemplatePlannerCalls": 0,
+    "effectCalls": "unknown-no-frozen-catalog-effect-envelope",
+    "maximumCostUsdMicros": "unknown-no-frozen-provider-model-pricing-or-token-envelope",
+    "disjointnessContractDigest": "9521688207d4b49ebdb5d29831ab4881d94022d3714c1da833437d7555226f91",
+    "decision": "no-go"
+  },
+  "validationAtClosure": {
+    "testFiles": 20,
+    "tests": 336,
+    "coverage": {
+      "statementsPercent": 90.16,
+      "branchesPercent": 80.08,
+      "functionsPercent": 97.28,
+      "linesPercent": 94.34
+    },
+    "nodeSmoke": "passed",
+    "workersSmoke": "passed",
+    "sourceSafetyAudit": "passed",
+    "publicApiAudit": "passed",
+    "packedConsumerAudit": "passed",
+    "cliPositiveNegativeSmoke": "passed"
+  },
+  "productionDecision": {
+    "templateReuse": "experimental-offline-only",
+    "crossCatalogSubstitution": "not-authorized",
+    "liveStudy": "blocked",
+    "publicRuntimeFacadeWidened": false
+  },
+  "nonclaims": [
+    "No learned compositional generalization.",
+    "No cross-domain model generalization.",
+    "No universal cross-catalog extensional equivalence.",
+    "No accuracy, latency, or cost superiority.",
+    "No production-scale template learning.",
+    "No permission for live inference or provider spending."
+  ]
+}

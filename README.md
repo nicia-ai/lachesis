@@ -76,7 +76,9 @@ public-alpha evidence runtime.
 - An experimental offline M6 compositional harness that normalizes successful
   plans, calcifies validated typed strategy templates, fails closed on semantic
   or authority drift, eliminates an injected planner on stable hits, and groups
-  sanitized trace identities without provider access.
+  sanitized trace identities without provider access. Trusted versioned catalog
+  roles and a finite application-supplied conformance runner reject
+  cross-catalog semantic drift.
 
 Deterministic orchestration is not semantic determinism. Exact replay comes from
 recorded effect results bound to plan, catalog, operation, invocation, effect,
@@ -192,11 +194,14 @@ immutable [M4 results](docs/m4-results.md). M5 is closed as
 M5c prepares the offline public alpha without publishing a package or
 authorizing another provider call.
 
-M6a/M6b adds an entirely offline experimental strategy-template surface to
-`@nicia-ai/lachesis-generator`; it does not widen the supported runtime facade,
-train a model, dispatch a provider, or claim learned cross-domain
-generalization. See the
-[compositional harness design](docs/m6a-compositional-harness.md).
+M6a–M6d adds an entirely offline experimental strategy-template and catalog
+conformance surface to `@nicia-ai/lachesis-generator`; it does not widen the
+supported runtime facade, train a model, dispatch a provider, or claim learned
+cross-domain generalization. Its paired discovery-versus-template study design
+is a no-go because the distribution-free requirement exceeds the practical case
+ceiling and empirical power and maximum cost remain unknown. See the
+[compositional harness design](docs/m6a-compositional-harness.md) and immutable
+[M6 results](docs/m6-results.md). M6 is closed as `closed-offline-design-no-go`.
 
 ## Validation
 

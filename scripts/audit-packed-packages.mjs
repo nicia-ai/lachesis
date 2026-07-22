@@ -154,8 +154,13 @@ try {
   );
   await writeFile(
     join(consumer, "portable.ts"),
-    `import { compilePlan, run, replay } from "@nicia-ai/lachesis-runtime";
+    `import { catalogSemanticRolesSchema } from "@nicia-ai/lachesis";
+import { conformCatalogsOffline, designM6dPairedStudy } from "@nicia-ai/lachesis-generator";
+import { compilePlan, run, replay } from "@nicia-ai/lachesis-runtime";
 import { createM5TypeGraphEvidenceStore } from "@nicia-ai/lachesis-evidence-typegraph";
+void catalogSemanticRolesSchema;
+void conformCatalogsOffline;
+void designM6dPairedStudy;
 void compilePlan;
 void run;
 void replay;

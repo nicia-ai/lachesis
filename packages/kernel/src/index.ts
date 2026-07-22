@@ -98,6 +98,18 @@ export {
   hashSemanticContract,
 } from "./semantic.js";
 export type {
+  CatalogSemanticRoles,
+  CatalogSemanticRolesInput,
+  OperationRoleDeclaration,
+  SchemaRoleDeclaration,
+  SemanticRoleReference,
+} from "./semantic-role.js";
+export {
+  catalogSemanticRolesSchema,
+  operationRoleDeclarationSchema,
+  semanticRoleReferenceSchema,
+} from "./semantic-role.js";
+export type {
   CatalogReference,
   ModelPlanProposal,
   NodeId,

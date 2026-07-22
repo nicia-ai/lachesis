@@ -21,3 +21,15 @@ const result = await executePlan(compiled.value, options);
 artifact binds the checked plan, successful analysis, plan hash, catalog
 fingerprint, capabilities, and budget. `createPlanLanguageManifest` exposes the
 canonical content-addressed JSON language description for plan generators.
+
+Catalogs may opt into trusted, versioned semantic-role declarations through the
+`semanticRoles` field of `createCatalog()`. Roles are fingerprinted catalog
+metadata; they never enter the plan wire format and contain no implementation or
+authority. Construction rejects duplicate or dangling declarations,
+operation-kind mismatches, and reducer-role law claims that differ from the
+registered reducer.
+
+Adding or changing roles changes the catalog fingerprint. Bump the catalog
+version, retain the previous catalog for old replay artifacts, and recompile
+rather than rewriting stored identities. Role declarations alone do not prove
+cross-catalog equivalence or authorize operation substitution.

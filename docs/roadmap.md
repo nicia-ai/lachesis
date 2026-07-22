@@ -60,18 +60,39 @@ future milestone.
 
 ## M6: compositional harness and typed strategy calcification
 
+M6 is closed as `closed-offline-design-no-go`. See the immutable
+[M6 results](m6-results.md) and the detailed
+[M6 design](m6a-compositional-harness.md).
+
 M6a/M6b is complete as an entirely offline experimental vertical slice in
 `@nicia-ai/lachesis-generator`. It adds deterministic trajectory-shape and
 strategy-contract identities, immutable typed templates, public-value binding,
 validation envelopes, an auditable candidate/canary/stable/deprecated registry,
 typed fallback, planner-effect elimination on stable hits, exact kernel replay,
-and sanitized trace grouping. Cross-catalog equivalence fails closed because the
-current catalog has no trusted semantic-role declaration. See the
+and sanitized trace grouping. That slice failed cross-catalog equivalence closed
+because it had no trusted semantic-role declaration. See the
 [M6 design](m6a-compositional-harness.md).
 
-The exact next recommended milestone is M6c: add trusted versioned catalog
-semantic-role declarations with role-specific property obligations and a fresh
-offline cross-catalog conformance suite. Do not begin a live or training study
-until that narrower equivalence boundary survives adversarial audit. A later M6d
-may design a separately authorized paired discovery-versus-template study;
-M6a/M6b creates no live identity or authority for it.
+M6c is complete. Catalogs may now opt into trusted, versioned schema and
+operation roles without changing the plan wire format. Role declarations are
+fingerprinted catalog metadata; duplicate, dangling, kind-incompatible, and
+false reducer-law declarations are rejected. The application-supplied offline
+conformance runner enforces role-specific properties and laws. The fresh
+development-only suite accepts one distinct-ID catalog pair and rejects all 8
+adversarial non-equivalence fixtures with 0 collisions. See the
+[M6 design](m6a-compositional-harness.md).
+
+M6d is complete as `complete-design-no-go`. The paired primary estimand is
+first-attempt semantic-success noninferiority of template reuse versus discovery
+at a 10-percentage-point margin. No prospective discordance distribution exists,
+so empirical power is `unknown`; a distribution-free one-sided precision bound
+requires 600 fresh pairs in each of two repetitions, or 1,200 cases total. That
+exceeds the 500-case practical ceiling. Maximum effect calls and cost are also
+`unknown` until catalog, token, pricing, and per-call ceilings are frozen. No
+final corpus, provider identity, campaign, preregistration, or spending
+authority was created. See the [M6 design](m6a-compositional-harness.md).
+
+M6 is closed rather than advanced to a live run. A future prospective redesign
+must resolve the case-count and cost blockers before requesting separate live
+authorization. A smaller corpus must not be described as satisfying the frozen
+M6d design.

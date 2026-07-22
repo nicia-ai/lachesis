@@ -1,8 +1,8 @@
-# M6a/M6b: compositional harness and typed strategy calcification
+# M6a–M6d: compositional harness, conformance, and paired-study design
 
-Status: **offline vertical slice complete**. M6a/M6b makes no provider call,
-creates no campaign, training run, live manifest, preregistration, or spending
-authority, and does not change any frozen M1–M5 artifact.
+Status: **complete-design-no-go**. M6a–M6d makes no provider call, creates no
+campaign, training run, live manifest, preregistration, or spending authority,
+and does not change any frozen M1–M5 artifact.
 
 ## Motivation and claim boundary
 
@@ -91,13 +91,19 @@ class and replayability, reducer laws, recursion step/measure and hard limit,
 semantic obligations, leaf observation contracts, and the evidence-sufficiency
 contract.
 
-The current catalog has no application-neutral semantic-role trait that could
-safely equate different operation IDs across catalogs. M6 therefore fails
-closed: cross-surface-domain examples reuse a template only when the application
-assigns the same public task class and the plans use the same exact catalog
-operations. Descriptions are not treated as semantics. Cross-catalog role
-equivalence is deferred until a trusted catalog role declaration and its
-law/audit obligations exist.
+M6c adds an opt-in application-neutral semantic-role declaration to the trusted
+catalog boundary. A role is an `(id, version)` identity and maps at most once to
+a schema or operation inside one catalog. Descriptions are never treated as
+semantics. Catalog construction rejects duplicate or dangling mappings,
+operation-kind mismatches, and reducer-role claims that differ from the
+registered reducer laws. Catalog fingerprints cover the declarations.
+
+Declarations alone do not establish equivalence. The offline conformance runner
+requires two catalogs to declare the same role set and exactly one bounded
+fixture for every attempted role. A passing content-addressed report is scoped
+to those catalog fingerprints, declarations, and fixture values. It does not
+change the exact-catalog identity inside an M6a template and does not authorize
+automatic operation substitution.
 
 ### Exact instantiation identity
 
@@ -193,6 +199,29 @@ test run reports **0 accepted hostile collisions out of 12**. Tests additionally
 exercise all seven binding rejection classes and verify that semantic changes
 can share a topology hash while differing in strategy identity.
 
+### M6c cross-catalog conformance corpus
+
+`loadM6cOfflineConformanceCorpus()` is a second, fresh synthetic
+development-only corpus. The positive pair uses different catalog, schema, and
+operation IDs while declaring the same versioned roles. The application-supplied
+suite covers one schema role and all six operation kinds.
+
+| Role                | Enforced offline obligation                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema              | Same semantic kind and bounds by role; mutual acceptance of every supplied JSON value                                                 |
+| Function, predicate | Total deterministic results and pointwise equality; function output bounds agree                                                      |
+| Reducer             | Equal identity and claims; deterministic pointwise reduction, identity, and every claimed associative, commutative, or idempotent law |
+| Fixed-point step    | Same-schema role, total deterministic transition, and pointwise equality                                                              |
+| Measure             | Total deterministic nonnegative safe-integer result and pointwise equality                                                            |
+| Effect              | Exact class, capability, replayability, state-change trait, resource bounds, and input/output roles; no effect is invoked             |
+
+The hostile set independently mutates schema domain, function output, predicate
+decision, reducer behavior, fixed-point transition, measure value, effect
+authority, and role version. The content-addressed audit requires all 8 IDs once
+and reports **0 accepted hostile collisions out of 8**. Because the suite is
+finite, `passed` means conformance on the declared fixture domain only; it is
+not a universal extensional proof.
+
 ## Trace mining and replay
 
 `mineStrategyTraces` accepts only bounded sanitized summaries containing a trace
@@ -207,6 +236,44 @@ planner and zero host oracle effects; no evidence store is present. The replay
 entry remains bound to the concrete semantic contract. Different evidence
 snapshot contents may reuse a template only when the public evidence contract
 matches; concrete evidence and run identities remain separate.
+
+## M6d paired discovery-versus-template design
+
+M6d materializes only a content-addressed offline design. The primary estimand
+is the paired difference in first-attempt semantic success, template minus
+discovery, with a 10-percentage-point noninferiority margin. Each fresh public
+task receives both arms under the same trusted policy, evidence-sufficiency
+contract, and validation envelope. SHA-256 case-digest parity assigns
+discovery-first or template-first order; scoring is arm-blinded. The template
+arm permits zero planner calls and requires either the exact catalog or a
+verified M6c conformance report.
+
+There is no prospective paired discordance distribution, so empirical power is
+explicitly `unknown`. M6d does not fabricate one from the synthetic M6a–M6c
+audits. Instead, a one-sided distribution-free Hoeffding lower bound for a
+paired outcome in `[-1, 1]`, family alpha 0.05, and a 0.10 margin requires 600
+fresh pairs per repetition. Two independent repetitions require 1,200 fresh
+cases, above the 500-case practical ceiling. Maximum effect calls and cost also
+remain `unknown` until a concrete catalog effect envelope, provider/model token
+envelope, and frozen pricing are supplied. `boundM6dMaximumCost` can calculate a
+known safe-integer ceiling only from explicit per-call bounds.
+
+The final corpus is not materialized. `auditM6dWorkloadDisjointness` requires
+candidate uniqueness and zero M1–M6c overlap across case identity, normalized
+instruction, public task value, evidence contract/content, catalog pair, and
+template identity.
+
+The reversible 20-pair canary has a zero-template-planner-call invariant. False
+role equivalence, authority or budget widening, catalog/report mismatch, any
+template-arm planner call, or semantic-contract/replay mismatch disables reuse
+and deprecates the template. Canary evidence cannot automatically promote or
+authorize anything.
+
+The design outcome is **no-go** because required cases exceed the practical
+ceiling, empirical power and maximum cost are unknown, and no fresh final corpus
+exists. No live identity, campaign, preregistration, provider identity, or
+spending authority was created. The reproducible design digest is
+`479bdfa0675210f28c19c28c5d66a7348682fc65d624ccd6337ba68337b42832`.
 
 ## Prompt and rule audit
 
@@ -241,7 +308,7 @@ build, Node/Workers smoke, examples, load baseline, package dry-runs, CLI
 positive/negative smokes, source-safety audit, public API audit, and
 `git diff --check` remain required before handoff.
 
-M6a/M6b establishes deterministic normalization, typed template construction and
+M6a–M6d establishes deterministic normalization, typed template construction and
 binding, offline matching/lifecycle behavior, planner-effect elimination on a
 hit, exact replay, and content-addressed trace grouping. It does **not**
 establish trained compositional generalization, short-to-long learned transfer,
@@ -249,12 +316,9 @@ cross-domain model generalization, accuracy/cost superiority, functional-IR or
 graph superiority, Press/OpenProse compatibility, production-scale learning, or
 permission for live inference.
 
-## Deferred M6c/M6d
+## Deferred live study
 
-The next recommended milestone is **M6c: trusted semantic-role declarations and
-an offline application-supplied cross-catalog conformance suite**. It should add
-versioned catalog role identities, role-specific law/property obligations,
-adversarial non-equivalence fixtures, and reversible canary evidence. It should
-remain offline. M6d may subsequently design—without automatically authorizing—a
-fresh paired live study of discovery versus stable-template reuse. Neither is
-implemented or materialized here.
+The paired live study remains blocked. A future prospective redesign may change
+the estimand, margin, precision convention, repetitions, or practical ceiling,
+but may not relabel a smaller corpus as satisfying this content-addressed M6d
+design. Any live execution still requires separate explicit authorization.
