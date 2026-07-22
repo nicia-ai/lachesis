@@ -17,7 +17,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --maxWorkers=1",
-    "test:examples": "node examples/m5-alpha/run-all.mjs && node examples/m6-offline/catalog-conformance.mjs && node examples/m7a-independent-catalogs/dist/run-trial.js",
+    "test:examples": "node examples/m5-alpha/run-all.mjs && node examples/m6-offline/catalog-conformance.mjs && node examples/m7a-independent-catalogs/dist/run-trial.js && node examples/m7b-diagnostics/dist/run.js",
     "test:load": "node scripts/m5-load-baseline.mjs",
     "audit:public-api": "node scripts/audit-public-api.mjs",
     "audit:packages": "node scripts/audit-packed-packages.mjs",

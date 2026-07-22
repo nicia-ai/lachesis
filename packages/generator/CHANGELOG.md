@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Adds portable, deterministic catalog-rejection diagnostics with stable codes,
+  explicit repairability outcomes, typed safe actions, semantic and observation
+  identities, and fail-closed non-substitution guidance.
+
 ## 0.1.0-alpha.2
 
 - Adds the experimental offline M6 strategy normalization, immutable template,

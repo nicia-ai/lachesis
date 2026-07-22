@@ -1,0 +1,20 @@
+{
+  "name": "@nicia-ai/lachesis-m7b-diagnostics",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "report": "node dist/run.js",
+    "report:write": "node dist/run.js --write",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:0.1.0-alpha.2",
+    "@nicia-ai/lachesis-generator": "workspace:0.1.0-alpha.2",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3"
+  }
+}

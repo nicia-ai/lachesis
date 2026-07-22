@@ -215,6 +215,14 @@ deterministic reports, and external-author documentation. See the
 offline independent-author study, not for inference, promotion, M8, or a
 generalization claim.
 
+M7b hardens the rejected-pair diagnostic path without changing conformance
+acceptance. A fresh nine-case development corpus achieves zero false
+equivalence, zero unsafe repair directions, exact localization for every case,
+and explicit non-substitution for every genuine semantic mismatch. This is a
+narrow GO to freeze—but not execute—the independent M7c author-study protocol.
+See the [M7b results](docs/m7b-diagnostic-hardening.md) and the
+[unexecuted M7c draft](docs/m7c-independent-author-study-draft.md).
+
 ## Validation
 
 ```bash

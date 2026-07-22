@@ -203,8 +203,9 @@ const report = {
   internalPackages,
 };
 const reportText = `${JSON.stringify(report, null, 2)}\n`;
-await writeFile(resolve(root, "docs/public-api-inventory.json"), reportText, {
-  encoding: "utf8",
-  mode: 0o644,
-});
+await writeFile(
+  resolve(root, "docs/m7b-development-api-inventory.json"),
+  reportText,
+  { encoding: "utf8", mode: 0o644 },
+);
 process.stdout.write(reportText);

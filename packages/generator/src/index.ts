@@ -55,6 +55,21 @@ export {
   verifyCatalogConformanceReport,
 } from "./catalog-conformance.js";
 export {
+  type CatalogConformanceDiagnostic,
+  catalogConformanceDiagnosticSchema,
+  type CatalogDiagnosticAssessment,
+  catalogDiagnosticAssessmentSchema,
+  type CatalogDiagnosticCode,
+  catalogDiagnosticCodeSchema,
+  type CatalogDiagnosticOutcome,
+  catalogDiagnosticOutcomeSchema,
+  type CatalogRepairAction,
+  catalogRepairActionSchema,
+  diagnoseCatalogsOffline,
+  renderCatalogConformanceDiagnostic,
+  verifyCatalogConformanceDiagnostic,
+} from "./catalog-diagnostic.js";
+export {
   CODEMODE_MODEL_VISIBLE_GRAMMAR_CONTRACT,
   CODEMODE_PROTOCOL,
   type CodeModeArtifact,

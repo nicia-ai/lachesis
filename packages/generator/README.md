@@ -48,5 +48,15 @@ content-addressed reports, fail-closed repair, and fresh reports after catalog
 evolution. A passing report remains scoped to its exact fingerprints and fixture
 digest.
 
+M7b adds a development-only structured diagnostic layer around the unchanged
+finite conformance decision. `diagnoseCatalogsOffline()` returns either the
+ordinary passing report or a typed rejection classified as
+`declaration-repairable`, `genuinely-non-equivalent`, or
+`insufficient-evidence`. Stable codes and typed repair actions are independent
+of deterministic human prose. Genuine semantic differences always return a
+`do-not-substitute` action; declaration guidance is conditional and never
+establishes equivalence. See the
+[M7b diagnostic guide](../../docs/m7b-diagnostic-hardening.md).
+
 M1a contains no live model SDK. Provider adapters and CodeMode enter only in the
 M1b pilot, outside `@nicia-ai/lachesis`.

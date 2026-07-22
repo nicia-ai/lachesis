@@ -1,0 +1,442 @@
+{
+  "protocol": "lachesis-m7b-diagnostic-hardening-report/1",
+  "provenance": "fresh-development-only-disjoint-from-m7c",
+  "m7aReportDigestPreserved": "8cc35372ec4f4f560180a2f26cf4edb46c9c298f49f21cc39f8df07cde19cf85",
+  "cases": [
+    {
+      "caseId": "m7b-dev-01-missing-declarations",
+      "conformanceAccepted": false,
+      "expectedOutcome": "declaration-repairable",
+      "expectedCode": "MISSING_ROLE_DECLARATION",
+      "expectedRoleId": "m7b.dev.role/number",
+      "expectedBoundary": "catalog-semantic-role-declarations",
+      "exactLocalization": true,
+      "safeGuidance": true,
+      "human": "MISSING_ROLE_DECLARATION | outcome=declaration-repairable | side=right | role=m7b.dev.role/number@1 | boundary=catalog-semantic-role-declarations | obligation=declared-versioned-role-set | A catalog has no semantic-role declaration, so its registrations cannot be aligned safely. | action=review-declaration | diagnostic=54f067dc5b57e530492328fb0ae25f167f26d27d3f6e8d30a63d9f068cf7aa86",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "MISSING_ROLE_DECLARATION",
+        "outcome": "declaration-repairable",
+        "side": "right",
+        "role": {
+          "id": "m7b.dev.role/number",
+          "version": "1"
+        },
+        "boundary": "catalog-semantic-role-declarations",
+        "obligation": "declared-versioned-role-set",
+        "explanation": "A catalog has no semantic-role declaration, so its registrations cannot be aligned safely.",
+        "action": {
+          "kind": "review-declaration",
+          "mechanical": false,
+          "side": "right",
+          "operation": "add-role",
+          "role": {
+            "id": "m7b.dev.role/number",
+            "version": "1"
+          },
+          "patchDescription": "Add explicit mappings for every suite role to the intended registered schemas and operations, then rerun conformance.",
+          "safetyCondition": "Only add a mapping after the catalog author attests that the registration implements the written role contract."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+          "rightCatalogFingerprint": "21f61eae08c940a5449081eed694e814ff6991044d4c660d54abd8b808a88970",
+          "leftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+          "rightManifestDigest": "78991e6704ae4d7c541a2dcfcafe8312ba9ae259d39831879db172a4c1011a35",
+          "fixtureDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+          "inputDigest": null,
+          "leftValueDigest": null,
+          "rightValueDigest": null
+        },
+        "diagnosticDigest": "54f067dc5b57e530492328fb0ae25f167f26d27d3f6e8d30a63d9f068cf7aa86",
+        "recordDigest": "66f3d6c580a4c64c76befff19fd91014501a12e22b72b9fd57e502261bcd1224"
+      }
+    },
+    {
+      "caseId": "m7b-dev-02-role-version",
+      "conformanceAccepted": false,
+      "expectedOutcome": "declaration-repairable",
+      "expectedCode": "ROLE_VERSION_MISMATCH",
+      "expectedRoleId": "m7b.dev.role/number",
+      "expectedBoundary": "role-version:m7b.dev.role/number",
+      "exactLocalization": true,
+      "safeGuidance": true,
+      "human": "ROLE_VERSION_MISMATCH | outcome=declaration-repairable | side=both | role=m7b.dev.role/number@1 | boundary=role-version:m7b.dev.role/number | obligation=exact-role-version | Role m7b.dev.role/number declares versions 1 and 2. | action=review-declaration | diagnostic=c56c3c19881ab7b40015a776f48cc3df664aba7300b4923dee21cdd5437d37f6",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "ROLE_VERSION_MISMATCH",
+        "outcome": "declaration-repairable",
+        "side": "both",
+        "role": {
+          "id": "m7b.dev.role/number",
+          "version": "1"
+        },
+        "boundary": "role-version:m7b.dev.role/number",
+        "obligation": "exact-role-version",
+        "explanation": "Role m7b.dev.role/number declares versions 1 and 2.",
+        "action": {
+          "kind": "review-declaration",
+          "mechanical": false,
+          "side": "both",
+          "operation": "align-role-version",
+          "role": {
+            "id": "m7b.dev.role/number",
+            "version": "1"
+          },
+          "patchDescription": "Select the written role-contract version each catalog actually implements, update only a stale declaration, and regenerate both manifests.",
+          "safetyCondition": "If the versions intentionally denote different semantics, do not edit metadata and do not substitute."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+          "rightCatalogFingerprint": "57a18aedcb981be16afa11ec8936fa4277566633f8de87fa0182b961904f3d54",
+          "leftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+          "rightManifestDigest": "7ce52efec2fc30f3e42a332644737204557d262dde15b0c9c92410ff73ba4676",
+          "fixtureDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+          "inputDigest": null,
+          "leftValueDigest": null,
+          "rightValueDigest": null
+        },
+        "diagnosticDigest": "c56c3c19881ab7b40015a776f48cc3df664aba7300b4923dee21cdd5437d37f6",
+        "recordDigest": "0138e5e941e9158f3865206ce591f26fcceae306c4e76142b1d37c9e1bd321d3"
+      }
+    },
+    {
+      "caseId": "m7b-dev-03-incomplete-evidence",
+      "conformanceAccepted": false,
+      "expectedOutcome": "insufficient-evidence",
+      "expectedCode": "INCOMPLETE_FIXTURE_EVIDENCE",
+      "expectedRoleId": "m7b.dev.role/observe",
+      "expectedBoundary": "missing-fixture:m7b.dev.role/observe@1",
+      "exactLocalization": true,
+      "safeGuidance": true,
+      "human": "INCOMPLETE_FIXTURE_EVIDENCE | outcome=insufficient-evidence | side=suite | role=m7b.dev.role/observe@1 | boundary=missing-fixture:m7b.dev.role/observe@1 | obligation=complete-role-evidence | No fixture supplies evidence for m7b.dev.role/observe@1. | action=edit-suite | diagnostic=79942da5aac4f14f63e2c21639331b6605452e2e606bbe93ce43538afa19f0ea",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "INCOMPLETE_FIXTURE_EVIDENCE",
+        "outcome": "insufficient-evidence",
+        "side": "suite",
+        "role": {
+          "id": "m7b.dev.role/observe",
+          "version": "1"
+        },
+        "boundary": "missing-fixture:m7b.dev.role/observe@1",
+        "obligation": "complete-role-evidence",
+        "explanation": "No fixture supplies evidence for m7b.dev.role/observe@1.",
+        "action": {
+          "kind": "edit-suite",
+          "mechanical": true,
+          "operation": "add-fixture",
+          "role": {
+            "id": "m7b.dev.role/observe",
+            "version": "1"
+          },
+          "patchDescription": "Add one boundary-focused fixture for m7b.dev.role/observe@1; do not infer equivalence until it passes."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+          "rightCatalogFingerprint": "1976e5805ecc2ca8e292eace91e37bcefdcbf07bfb536d796adbd9beb8710374",
+          "leftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+          "rightManifestDigest": "a88f02e8f4da4e3a386fc50f33812b4c873ba59272fee1c5db3a3baa6c4360b8",
+          "fixtureDigest": "b0c9055f41e32aa43a56765e7e17a670f255a54da8523ea6b94759121a889462",
+          "inputDigest": null,
+          "leftValueDigest": null,
+          "rightValueDigest": null
+        },
+        "diagnosticDigest": "79942da5aac4f14f63e2c21639331b6605452e2e606bbe93ce43538afa19f0ea",
+        "recordDigest": "2150ccd4046f09075863873b5f624cf49345faef2d6c360910dcd50949626afd"
+      }
+    },
+    {
+      "caseId": "m7b-dev-04-obligations",
+      "conformanceAccepted": false,
+      "expectedOutcome": "genuinely-non-equivalent",
+      "expectedCode": "INCOMPATIBLE_OBLIGATIONS",
+      "expectedRoleId": "m7b.dev.role/peak",
+      "expectedBoundary": "reducer-identity-and-laws",
+      "exactLocalization": true,
+      "safeGuidance": true,
+      "human": "INCOMPATIBLE_OBLIGATIONS | outcome=genuinely-non-equivalent | side=both | role=m7b.dev.role/peak@1 | boundary=reducer-identity-and-laws | obligation=same-reducer-obligations | Reducer role m7b.dev.role/peak@1 declares incompatible identity or law obligations. | action=do-not-substitute | diagnostic=351a43796fa996240ca8f01f744a2269d31e2c727ce83d50ff4c6858ad72f010",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "INCOMPATIBLE_OBLIGATIONS",
+        "outcome": "genuinely-non-equivalent",
+        "side": "both",
+        "role": {
+          "id": "m7b.dev.role/peak",
+          "version": "1"
+        },
+        "boundary": "reducer-identity-and-laws",
+        "obligation": "same-reducer-obligations",
+        "explanation": "Reducer role m7b.dev.role/peak@1 declares incompatible identity or law obligations.",
+        "action": {
+          "kind": "do-not-substitute",
+          "mechanical": false,
+          "violatedObligation": "same-reducer-obligations",
+          "reason": "The catalogs are semantically different on the supplied domain. Do not align metadata or substitute operations."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+          "rightCatalogFingerprint": "5234ab8caade90041df26f47b5ddc44a13f860e6fb5d42e88bf7b114eb109617",
+          "leftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+          "rightManifestDigest": "87c59c7698ee4cabc141da4e21f7443d2fdccdb07915a3a3f8b186ec6db5cfe9",
+          "fixtureDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+          "inputDigest": null,
+          "leftValueDigest": "1e9937aba9f73dd868f15630000c3c812af7911fdba60733075feeb3a249b82e",
+          "rightValueDigest": "85a828743817eef3f4104491a42df1fe6fedcbdd97d44a0af6d25b4832c9a234"
+        },
+        "diagnosticDigest": "351a43796fa996240ca8f01f744a2269d31e2c727ce83d50ff4c6858ad72f010",
+        "recordDigest": "c9960a626cb3c86cdab1c3732d82c60cc2562affea00c1817ddfe9bd533c1221"
+      }
+    },
+    {
+      "caseId": "m7b-dev-05-capability",
+      "conformanceAccepted": false,
+      "expectedOutcome": "genuinely-non-equivalent",
+      "expectedCode": "CAPABILITY_MISMATCH",
+      "expectedRoleId": "m7b.dev.role/observe",
+      "expectedBoundary": "effect-capability",
+      "exactLocalization": true,
+      "safeGuidance": true,
+      "human": "CAPABILITY_MISMATCH | outcome=genuinely-non-equivalent | side=both | role=m7b.dev.role/observe@1 | boundary=effect-capability | obligation=same-capability | Effect role m7b.dev.role/observe@1 requires different capabilities. | action=do-not-substitute | diagnostic=474a399a9ad7e3b86bc9b79ed60280d531c89ae714a2ec5258b020cc07e3d86f",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "CAPABILITY_MISMATCH",
+        "outcome": "genuinely-non-equivalent",
+        "side": "both",
+        "role": {
+          "id": "m7b.dev.role/observe",
+          "version": "1"
+        },
+        "boundary": "effect-capability",
+        "obligation": "same-capability",
+        "explanation": "Effect role m7b.dev.role/observe@1 requires different capabilities.",
+        "action": {
+          "kind": "do-not-substitute",
+          "mechanical": false,
+          "violatedObligation": "same-capability",
+          "reason": "The catalogs are semantically different on the supplied domain. Do not align metadata or substitute operations."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+          "rightCatalogFingerprint": "18aeebf47bb0ce6747cde7cc8d30f557230fd250872fdea7f4830487a78efd72",
+          "leftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+          "rightManifestDigest": "fe6c9087013adebb5f4063e115bb84b41015ee9a7725e634a4ac156acee15ada",
+          "fixtureDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+          "inputDigest": null,
+          "leftValueDigest": "7743373e2ccafce72834f915ae78b9c5dccf20ceebfbd102d566cb2c015eda25",
+          "rightValueDigest": "46e384ee64e84d2aacb2a4cad1b5735f00c4f0612cbd66f5c05608bca500c3a2"
+        },
+        "diagnosticDigest": "474a399a9ad7e3b86bc9b79ed60280d531c89ae714a2ec5258b020cc07e3d86f",
+        "recordDigest": "3a469f396c0df38709bb9f164e16f4fa4946cefcf39b157aee5d3a6f485fb08e"
+      }
+    },
+    {
+      "caseId": "m7b-dev-06-effect",
+      "conformanceAccepted": false,
+      "expectedOutcome": "genuinely-non-equivalent",
+      "expectedCode": "EFFECT_CONTRACT_MISMATCH",
+      "expectedRoleId": "m7b.dev.role/observe",
+      "expectedBoundary": "effect-contract",
+      "exactLocalization": true,
+      "safeGuidance": true,
+      "human": "EFFECT_CONTRACT_MISMATCH | outcome=genuinely-non-equivalent | side=both | role=m7b.dev.role/observe@1 | boundary=effect-contract | obligation=same-effect-contract | Effect role m7b.dev.role/observe@1 has a different class, replayability, or resource bound. | action=do-not-substitute | diagnostic=fb28edbfba7cb32f0a2355606630f2358b9db1ff279c9ee013c8ffb7b48302e9",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "EFFECT_CONTRACT_MISMATCH",
+        "outcome": "genuinely-non-equivalent",
+        "side": "both",
+        "role": {
+          "id": "m7b.dev.role/observe",
+          "version": "1"
+        },
+        "boundary": "effect-contract",
+        "obligation": "same-effect-contract",
+        "explanation": "Effect role m7b.dev.role/observe@1 has a different class, replayability, or resource bound.",
+        "action": {
+          "kind": "do-not-substitute",
+          "mechanical": false,
+          "violatedObligation": "same-effect-contract",
+          "reason": "The catalogs are semantically different on the supplied domain. Do not align metadata or substitute operations."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+          "rightCatalogFingerprint": "e7852d272eb1b7699eae6be4ff87e18c57306a4f0dcd54cd4e57b935e352d6f0",
+          "leftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+          "rightManifestDigest": "f58f5c6fe91b97aa88a4ea25ddd750658d6d0d4c50c5468c3b183973d8f29864",
+          "fixtureDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+          "inputDigest": null,
+          "leftValueDigest": "b67a37b27184f43d58ee0d78a23a0e7cb894f3ea773afb5a5e621a9e633ef215",
+          "rightValueDigest": "3e6a902b7fc959d4eb75c3a5d1829a3000b95553695807ec7a9491185b0c25a2"
+        },
+        "diagnosticDigest": "fb28edbfba7cb32f0a2355606630f2358b9db1ff279c9ee013c8ffb7b48302e9",
+        "recordDigest": "1884a5f6f47fc91eef0ef61b23fe93cb86543d7d5413a63cc0e51823a16e687a"
+      }
+    },
+    {
+      "caseId": "m7b-dev-07-ordering",
+      "conformanceAccepted": false,
+      "expectedOutcome": "genuinely-non-equivalent",
+      "expectedCode": "ORDERING_SEMANTICS_MISMATCH",
+      "expectedRoleId": "m7b.dev.role/preserve-order",
+      "expectedBoundary": "output-order",
+      "exactLocalization": true,
+      "safeGuidance": true,
+      "human": "ORDERING_SEMANTICS_MISMATCH | outcome=genuinely-non-equivalent | side=both | role=m7b.dev.role/preserve-order@1 | boundary=output-order | obligation=same-output-order | Operation role m7b.dev.role/preserve-order@1 produces semantically different results. | action=do-not-substitute | diagnostic=67908eaad62bbb44a941a6fdb0c039475338ecb92e00458022c6c900df359845",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "ORDERING_SEMANTICS_MISMATCH",
+        "outcome": "genuinely-non-equivalent",
+        "side": "both",
+        "role": {
+          "id": "m7b.dev.role/preserve-order",
+          "version": "1"
+        },
+        "boundary": "output-order",
+        "obligation": "same-output-order",
+        "explanation": "Operation role m7b.dev.role/preserve-order@1 produces semantically different results.",
+        "action": {
+          "kind": "do-not-substitute",
+          "mechanical": false,
+          "violatedObligation": "same-output-order",
+          "reason": "The catalogs are semantically different on the supplied domain. Do not align metadata or substitute operations."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+          "rightCatalogFingerprint": "05b673f2bd7c18294683c460da56ac2084df3099edd3eaaa67e9c36f2fa74c03",
+          "leftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+          "rightManifestDigest": "bf4e297f7d7d157ea0abdd274abdfa099039d20a23ccadcc0e8aff7ecd9f8fbc",
+          "fixtureDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+          "inputDigest": "a615eeaee21de5179de080de8c3052c8da901138406ba71c38c032845f7d54f4",
+          "leftValueDigest": "a615eeaee21de5179de080de8c3052c8da901138406ba71c38c032845f7d54f4",
+          "rightValueDigest": "30c8681f9b840aceee56b737f3b126ae67ec4eb71d2881db831f86014fba016d"
+        },
+        "diagnosticDigest": "67908eaad62bbb44a941a6fdb0c039475338ecb92e00458022c6c900df359845",
+        "recordDigest": "8b6c3663d4a2d869873fd689016d23553d8bdf3d2c4de5de2a0186fb170ba2f6"
+      }
+    },
+    {
+      "caseId": "m7b-dev-08-state-transition",
+      "conformanceAccepted": false,
+      "expectedOutcome": "genuinely-non-equivalent",
+      "expectedCode": "STATE_TRANSITION_MISMATCH",
+      "expectedRoleId": "m7b.dev.role/step",
+      "expectedBoundary": "state-transition-output",
+      "exactLocalization": true,
+      "safeGuidance": true,
+      "human": "STATE_TRANSITION_MISMATCH | outcome=genuinely-non-equivalent | side=both | role=m7b.dev.role/step@1 | boundary=state-transition-output | obligation=same-state-transition | Operation role m7b.dev.role/step@1 produces semantically different results. | action=do-not-substitute | diagnostic=dacde5468eb8c41f95cc33ef1e55f9c1f7691424db1f4789ec1ca2ec5d8f8e67",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "STATE_TRANSITION_MISMATCH",
+        "outcome": "genuinely-non-equivalent",
+        "side": "both",
+        "role": {
+          "id": "m7b.dev.role/step",
+          "version": "1"
+        },
+        "boundary": "state-transition-output",
+        "obligation": "same-state-transition",
+        "explanation": "Operation role m7b.dev.role/step@1 produces semantically different results.",
+        "action": {
+          "kind": "do-not-substitute",
+          "mechanical": false,
+          "violatedObligation": "same-state-transition",
+          "reason": "The catalogs are semantically different on the supplied domain. Do not align metadata or substitute operations."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+          "rightCatalogFingerprint": "7b3138f27f45adbc013c9dd2c6965ec5c5f033e3924c5eabdd1b798174e12a46",
+          "leftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+          "rightManifestDigest": "555522a029ff924cac0d004354f38ccf45d7cc97a01f782e459ff40a5a0aa741",
+          "fixtureDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+          "inputDigest": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+          "leftValueDigest": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "rightValueDigest": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+        },
+        "diagnosticDigest": "dacde5468eb8c41f95cc33ef1e55f9c1f7691424db1f4789ec1ca2ec5d8f8e67",
+        "recordDigest": "cd830d1823fd129e45bd89f88c26ca8a8eeb7b0dc755b3a4709c95f8b798c43c"
+      }
+    },
+    {
+      "caseId": "m7b-dev-09-output",
+      "conformanceAccepted": false,
+      "expectedOutcome": "genuinely-non-equivalent",
+      "expectedCode": "OUTPUT_SEMANTICS_MISMATCH",
+      "expectedRoleId": "m7b.dev.role/transform",
+      "expectedBoundary": "pointwise-output",
+      "exactLocalization": true,
+      "safeGuidance": true,
+      "human": "OUTPUT_SEMANTICS_MISMATCH | outcome=genuinely-non-equivalent | side=both | role=m7b.dev.role/transform@1 | boundary=pointwise-output | obligation=pointwise-output-equivalence | Operation role m7b.dev.role/transform@1 produces semantically different results. | action=do-not-substitute | diagnostic=058e29386cd43d140563b259793b7a0075a1c044b3b97b0eb03ecd4a36fabb38",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "OUTPUT_SEMANTICS_MISMATCH",
+        "outcome": "genuinely-non-equivalent",
+        "side": "both",
+        "role": {
+          "id": "m7b.dev.role/transform",
+          "version": "1"
+        },
+        "boundary": "pointwise-output",
+        "obligation": "pointwise-output-equivalence",
+        "explanation": "Operation role m7b.dev.role/transform@1 produces semantically different results.",
+        "action": {
+          "kind": "do-not-substitute",
+          "mechanical": false,
+          "violatedObligation": "pointwise-output-equivalence",
+          "reason": "The catalogs are semantically different on the supplied domain. Do not align metadata or substitute operations."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+          "rightCatalogFingerprint": "a5839eed3c8a0288a1f6ee2593fb90bddad9a2700b855d62eb891c87b472a44e",
+          "leftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+          "rightManifestDigest": "825be4576ede0a5c7bf6b187bf1ee42d962f416b48ebfce931a4a7bacf2b9bef",
+          "fixtureDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+          "inputDigest": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "leftValueDigest": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "rightValueDigest": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+        },
+        "diagnosticDigest": "058e29386cd43d140563b259793b7a0075a1c044b3b97b0eb03ecd4a36fabb38",
+        "recordDigest": "1de30bc7787914cc43a13d20c7f4ad3caf541777058d357a27cdcf4e5b45f668"
+      }
+    }
+  ],
+  "counts": {
+    "declarationRepairable": 2,
+    "genuinelyNonEquivalent": 6,
+    "insufficientEvidence": 1,
+    "falseEquivalence": 0,
+    "unsafeRepairDirections": 0,
+    "exactLocalizations": 9,
+    "classified": 9
+  },
+  "evolution": {
+    "irrelevantEvolutionDiagnosticStable": true,
+    "irrelevantEvolutionManifestChanged": true,
+    "substantiveEvolutionDiagnosticChanged": true,
+    "substantiveEvolutionManifestChanged": true,
+    "baselineDiagnosticDigest": "058e29386cd43d140563b259793b7a0075a1c044b3b97b0eb03ecd4a36fabb38",
+    "irrelevantDiagnosticDigest": "058e29386cd43d140563b259793b7a0075a1c044b3b97b0eb03ecd4a36fabb38",
+    "substantiveDiagnosticDigest": "0df53c3d9bd66c7ab785db4ec94385a8dcc994f908c047bc14a2aeae3ee16d6c",
+    "baselineManifestDigest": "825be4576ede0a5c7bf6b187bf1ee42d962f416b48ebfce931a4a7bacf2b9bef",
+    "irrelevantManifestDigest": "4f616dfc7aebc282bf45e03f47ffe1a44faddf9bbb25ed147a45b8ddc39393d6",
+    "substantiveManifestDigest": "bde9ab9c2ee1b05c1cf6a61a620584462ffdb09b26f65a53cd547f92bab4d6b0"
+  },
+  "gates": {
+    "zeroFalseEquivalence": true,
+    "zeroUnsafeRepair": true,
+    "completeClassification": true,
+    "exactLocalization": true,
+    "declarationGuidanceComplete": true,
+    "nonSubstitutionComplete": true,
+    "deterministicRendering": true,
+    "identityEvolutionCorrect": true
+  },
+  "decision": "GO",
+  "decisionScope": "freeze-m7c-protocol-only",
+  "nonclaims": [
+    "m7c-not-executed",
+    "no-live-inference-or-provider-calls",
+    "no-equivalence-rule-weakening",
+    "no-independent-author-evidence",
+    "no-m8-publishing-push-or-campaign"
+  ],
+  "reportDigest": "1dc71b40b919b69d177ed0986962f10f7b7311831dc63df0667891693a75b4c4"
+}
