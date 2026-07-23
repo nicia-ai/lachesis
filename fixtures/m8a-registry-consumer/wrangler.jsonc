@@ -1,0 +1,7 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "northstar-incident-catalog-portable-smoke",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-23",
+  "send_metrics": false,
+}

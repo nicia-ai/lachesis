@@ -13,6 +13,7 @@ export default tseslint.config(
       "**/.wrangler/**",
       "compat/node-smoke/smoke.mjs",
       "eslint.config.mjs",
+      "fixtures/m8a-registry-consumer/**",
       "prettier.config.mjs",
       "vitest.config.ts",
     ],

@@ -116,6 +116,14 @@ package selection, API reference, trust boundaries, record/replay semantics,
 TypeGraph integration, compatibility, security guidance, and alpha policy. Every
 example under [`examples/m5-alpha`](examples/m5-alpha) runs offline.
 
+For the current registry-only catalog-author path, use the
+[M8a getting-started guide](docs/m8a-getting-started.md). Its independent
+incident-response consumer installs alpha.3 from npm, declares semantic roles,
+compiles and runs with mock evidence, inspects citations/provenance, records and
+exactly replays, and gates catalog evolution with deterministic conformance
+diagnostics. M8a is `adoption-ready-with-docs-fixes`; it required no API change
+and makes no model-quality or compositional-generalization claim.
+
 ## Kernel CLI example
 
 ```bash

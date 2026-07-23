@@ -1,0 +1,45 @@
+{
+  "protocol": "lachesis-m8a-black-box-adoption/1",
+  "node": "v24.18.0",
+  "installSource": "https://registry.npmjs.org/",
+  "networkAfterInstall": "denied-by-sandbox",
+  "coldInstallMs": 3137,
+  "firstWorkflowMs": 4409,
+  "repeatedWorkflowMs": 4216,
+  "workersDryRunMs": 935,
+  "commandsRequired": 4,
+  "authoredFiles": 9,
+  "authoredLines": 1573,
+  "publicImports": [
+    "@nicia-ai/lachesis",
+    "@nicia-ai/lachesis-generator",
+    "@nicia-ai/lachesis-runtime"
+  ],
+  "installedBytes": 229464768,
+  "selectedPackageBytes": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "bytes": 321583
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "bytes": 1033323
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "bytes": 1308346
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "bytes": 53364
+    }
+  ],
+  "workerBundleBytes": 1732761,
+  "jsonReportSha256": "5ced38deb8ac89a19436f1a570aca36e4ffb191ee40b7a69356ba27c99b0d603",
+  "humanReportSha256": "3e3c08c0fd910d1923411db4382666dff3d0928993a8d1019842179fcb49c5f6",
+  "deterministicByteIdentity": true,
+  "negativeDiagnosticCoverage": "6/6",
+  "selectedLachesisPackages": 4,
+  "providerCalls": 0,
+  "result": "pass"
+}

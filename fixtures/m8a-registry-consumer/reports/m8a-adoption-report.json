@@ -1,0 +1,354 @@
+{
+  "protocol": "lachesis-m8a-registry-adoption-report/1",
+  "productVersion": "0.1.0-alpha.3",
+  "scenario": "northstar-incident-response",
+  "registryOnly": true,
+  "providerCalls": 0,
+  "operationCount": 9,
+  "publicImports": [
+    "@nicia-ai/lachesis",
+    "@nicia-ai/lachesis-generator",
+    "@nicia-ai/lachesis-runtime"
+  ],
+  "compile": {
+    "valid": true,
+    "planHash": "79260b72ec1781f82b8acf5bc7393d219a1da805157ca65a62775813e18f40e5",
+    "semanticContractHash": "8dd08413afcba77cd42b8a4dc7847e1e32768f1c265cbe0140a3ddd2f668abda",
+    "catalogFingerprint": "fad0ba672c93d6dc32644e3f8d3762132a28803dddd4c5b8a862463bc6132d24",
+    "maximumEffectCalls": {
+      "kind": "known",
+      "value": 1
+    },
+    "stateChangingOperations": [
+      {
+        "operation": "northstar.incident.v1/record-decision@1",
+        "stateChanging": {
+          "id": "northstar.incident.v1/record-decision",
+          "version": "1"
+        }
+      }
+    ],
+    "negatives": [
+      {
+        "caseId": "invalid-structural-plan",
+        "code": "BRANCH_TYPE_MISMATCH",
+        "message": "Schema northstar.incident.v1/decision-request@1 is not compatible with northstar.incident.v1/action@1.",
+        "location": {
+          "nodeId": "mismatched-branch"
+        },
+        "repair": {
+          "nodeId": "mismatched-branch"
+        },
+        "limit": null,
+        "localization": {
+          "operation": "select",
+          "role": "northstar.role/incident-decision-request",
+          "boundary": "mismatched-branch:whenTrue/whenFalse"
+        },
+        "guidance": "Align both select branches to the same registered output schema."
+      },
+      {
+        "caseId": "semantic-obligation-failure",
+        "code": "SEMANTIC_OBLIGATION_FAILED",
+        "message": "Plan does not satisfy semantic obligation requiresOperation.",
+        "location": {},
+        "repair": {
+          "path": [
+            "semanticObligations"
+          ]
+        },
+        "limit": null,
+        "localization": {
+          "operation": "northstar.incident.v1/canonical-action@1",
+          "role": "northstar.role/canonical-action",
+          "boundary": "root-dependency:requiresOperation"
+        },
+        "guidance": "Add the required operation to the root dependency graph or remove the obligation only if the public contract was wrong."
+      },
+      {
+        "caseId": "denied-capability",
+        "code": "DENIED_CAPABILITY",
+        "message": "Required capability incident.decision.mock is not allowed by trusted policy.",
+        "location": {},
+        "repair": null,
+        "limit": null,
+        "localization": {
+          "operation": "northstar.incident.v1/record-decision@1",
+          "role": "northstar.role/record-incident-decision",
+          "boundary": "capability:incident.decision.mock"
+        },
+        "guidance": "Grant only the named incident.decision.mock capability in trusted policy when this effect is intended."
+      },
+      {
+        "caseId": "insufficient-budget",
+        "code": "BUDGET_EXCEEDED",
+        "message": "Maximum effect calls 1 exceeds trusted limit 0.",
+        "location": {},
+        "repair": null,
+        "limit": {
+          "resource": "effect calls",
+          "actual": 1,
+          "limit": 0
+        },
+        "localization": {
+          "operation": "northstar.incident.v1/record-decision@1",
+          "role": "northstar.role/record-incident-decision",
+          "boundary": "budget:maxEffectCalls"
+        },
+        "guidance": "Raise maxEffectCalls to the analyzed requirement or simplify the plan; never hide an unknown or exceeded bound."
+      }
+    ]
+  },
+  "runtime": {
+    "answer": {
+      "outcome": "answered",
+      "values": [
+        "page-primary-oncall"
+      ]
+    },
+    "citations": [
+      {
+        "id": "citation-inc-482",
+        "source": "northstar-incident-registry",
+        "locator": "incidents/inc-482/revision-7",
+        "observedAt": "2026-07-23T00:00:00.000Z"
+      }
+    ],
+    "provenance": {
+      "answerValues": [
+        "page-primary-oncall"
+      ],
+      "supportingFactIds": [
+        "fact-inc-482-action"
+      ],
+      "edgeIds": [],
+      "citationIds": [
+        "citation-inc-482"
+      ],
+      "paths": [],
+      "links": [
+        {
+          "kind": "answer-supported-by-fact",
+          "answerIndex": 0,
+          "factId": "fact-inc-482-action"
+        },
+        {
+          "kind": "fact-cited-by",
+          "factId": "fact-inc-482-action",
+          "citationId": "citation-inc-482"
+        }
+      ],
+      "graphDigest": "8f908f03e0f89c818cc39943af5145900305cc63189738e869fd3067da42c276"
+    },
+    "artifactDigest": "ce5d61822b55c7e0a9c9a4cbc8cb68bd6641b63c747d90f12fc02714306b4b65",
+    "resultDigest": "2cded30b9b75e2aa3cdd38f652cfcb06b825cf66dfab07a430bf8d67a07f55fe",
+    "reconstructionDigest": "ca8f6fbb44526e5c65e95edde386663cec5f8411a8838603d2d073ada3d0fa74",
+    "planIdentity": {
+      "planHash": "79260b72ec1781f82b8acf5bc7393d219a1da805157ca65a62775813e18f40e5",
+      "semanticContractHash": "8dd08413afcba77cd42b8a4dc7847e1e32768f1c265cbe0140a3ddd2f668abda",
+      "catalogFingerprint": "fad0ba672c93d6dc32644e3f8d3762132a28803dddd4c5b8a862463bc6132d24"
+    },
+    "replay": {
+      "resultDigest": "2cded30b9b75e2aa3cdd38f652cfcb06b825cf66dfab07a430bf8d67a07f55fe",
+      "exactIdentityMatch": true,
+      "additionalEffectInvocations": 0
+    },
+    "mockEffectInvocations": 1
+  },
+  "evolution": {
+    "safeCompatible": {
+      "classification": "conformant",
+      "report": {
+        "protocol": "lachesis-cross-catalog-conformance-report/1",
+        "leftCatalogFingerprint": "fad0ba672c93d6dc32644e3f8d3762132a28803dddd4c5b8a862463bc6132d24",
+        "rightCatalogFingerprint": "396dba14bec2144264820d4012fbcf05a0b79af6901bb4bf0e69675065361af8",
+        "declarationsDigest": "87b481cb9f9a7bdbe3eaea9c5155219c5d328534048d9758495c8a6bac933176",
+        "fixtureDigest": "b26a9eed2e9b57f9c4acc1fb4c061ba5069907e4543a5271f538e6123db4af06",
+        "checkedSchemaRoles": 4,
+        "checkedOperationRoles": 9,
+        "checkedValues": 25,
+        "passed": true,
+        "reportDigest": "5c937865f370ccd39babd1020afcfedf9f4e883562fca534108a7c658307b711"
+      },
+      "reportVerified": true
+    },
+    "declarationRepairable": {
+      "classification": "declaration-repairable",
+      "stableCode": "ROLE_VERSION_MISMATCH",
+      "role": {
+        "id": "northstar.role/record-incident-decision",
+        "version": "1"
+      },
+      "boundary": "role-version:northstar.role/record-incident-decision",
+      "obligation": "exact-role-version",
+      "action": {
+        "kind": "review-declaration",
+        "mechanical": false,
+        "side": "both",
+        "operation": "align-role-version",
+        "role": {
+          "id": "northstar.role/record-incident-decision",
+          "version": "1"
+        },
+        "patchDescription": "Select the written role-contract version each catalog actually implements, update only a stale declaration, and regenerate both manifests.",
+        "safetyCondition": "If the versions intentionally denote different semantics, do not edit metadata and do not substitute."
+      },
+      "human": "ROLE_VERSION_MISMATCH | outcome=declaration-repairable | side=both | role=northstar.role/record-incident-decision@1 | boundary=role-version:northstar.role/record-incident-decision | obligation=exact-role-version | Role northstar.role/record-incident-decision declares versions 1 and 2. | action=review-declaration | diagnostic=f994fd2163fcd225aad7e87c5b8415e7bb6effb81c9629a4a35b3dc670b4689d",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "ROLE_VERSION_MISMATCH",
+        "outcome": "declaration-repairable",
+        "side": "both",
+        "role": {
+          "id": "northstar.role/record-incident-decision",
+          "version": "1"
+        },
+        "boundary": "role-version:northstar.role/record-incident-decision",
+        "obligation": "exact-role-version",
+        "explanation": "Role northstar.role/record-incident-decision declares versions 1 and 2.",
+        "action": {
+          "kind": "review-declaration",
+          "mechanical": false,
+          "side": "both",
+          "operation": "align-role-version",
+          "role": {
+            "id": "northstar.role/record-incident-decision",
+            "version": "1"
+          },
+          "patchDescription": "Select the written role-contract version each catalog actually implements, update only a stale declaration, and regenerate both manifests.",
+          "safetyCondition": "If the versions intentionally denote different semantics, do not edit metadata and do not substitute."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "fad0ba672c93d6dc32644e3f8d3762132a28803dddd4c5b8a862463bc6132d24",
+          "rightCatalogFingerprint": "6d763aaafd4cfaceca7a1db8e18958d23ea78a249e9a8ae66dd238e1ec2304ed",
+          "leftManifestDigest": "e55e8d3e50e00ff280285a913685d4370934fc407b81609a8056dd84354caf09",
+          "rightManifestDigest": "b25e1fd6ae1d827f0c0e2f478237d02b670b2c10025297c33180275a54141989",
+          "fixtureDigest": "b26a9eed2e9b57f9c4acc1fb4c061ba5069907e4543a5271f538e6123db4af06",
+          "inputDigest": null,
+          "leftValueDigest": null,
+          "rightValueDigest": null
+        },
+        "diagnosticDigest": "f994fd2163fcd225aad7e87c5b8415e7bb6effb81c9629a4a35b3dc670b4689d",
+        "recordDigest": "c29c175830947fff35a9c6f1e48a46b59e71d13e12ff398815689afe440f614f"
+      }
+    },
+    "genuinelyNonEquivalent": {
+      "classification": "genuinely-non-equivalent",
+      "stableCode": "CAPABILITY_MISMATCH",
+      "role": {
+        "id": "northstar.role/record-incident-decision",
+        "version": "1"
+      },
+      "boundary": "effect-capability",
+      "obligation": "same-capability",
+      "action": {
+        "kind": "do-not-substitute",
+        "mechanical": false,
+        "violatedObligation": "same-capability",
+        "reason": "The catalogs are semantically different on the supplied domain. Do not align metadata or substitute operations."
+      },
+      "human": "CAPABILITY_MISMATCH | outcome=genuinely-non-equivalent | side=both | role=northstar.role/record-incident-decision@1 | boundary=effect-capability | obligation=same-capability | Effect role northstar.role/record-incident-decision@1 requires different capabilities. | action=do-not-substitute | diagnostic=0360dd44ee95f718272d177f706650a75d233274af202f4b6d82da22062caa4c",
+      "diagnostic": {
+        "protocol": "lachesis-catalog-conformance-diagnostic/1",
+        "code": "CAPABILITY_MISMATCH",
+        "outcome": "genuinely-non-equivalent",
+        "side": "both",
+        "role": {
+          "id": "northstar.role/record-incident-decision",
+          "version": "1"
+        },
+        "boundary": "effect-capability",
+        "obligation": "same-capability",
+        "explanation": "Effect role northstar.role/record-incident-decision@1 requires different capabilities.",
+        "action": {
+          "kind": "do-not-substitute",
+          "mechanical": false,
+          "violatedObligation": "same-capability",
+          "reason": "The catalogs are semantically different on the supplied domain. Do not align metadata or substitute operations."
+        },
+        "evidence": {
+          "leftCatalogFingerprint": "fad0ba672c93d6dc32644e3f8d3762132a28803dddd4c5b8a862463bc6132d24",
+          "rightCatalogFingerprint": "9342496c98e8d7b05b41578b26f7f79353b11322001a4b1aada21e1127cc4315",
+          "leftManifestDigest": "e55e8d3e50e00ff280285a913685d4370934fc407b81609a8056dd84354caf09",
+          "rightManifestDigest": "acb6311b1e9baae8f5314c16232ad19ac241961c14cca72b82406f31467839f0",
+          "fixtureDigest": "b26a9eed2e9b57f9c4acc1fb4c061ba5069907e4543a5271f538e6123db4af06",
+          "inputDigest": null,
+          "leftValueDigest": "59e9c2b6575f46fe9146eb864791f0570532e4623394723369a1908ac4d4add1",
+          "rightValueDigest": "f9749400da806249ceb7ef2b8350bd742700a64233910dc20bd025f5d0b3f538"
+        },
+        "diagnosticDigest": "0360dd44ee95f718272d177f706650a75d233274af202f4b6d82da22062caa4c",
+        "recordDigest": "f679f391fad9eb874a2921e3f362ba1a3e4683f6178f0488995129f3562d57a3"
+      }
+    },
+    "manifests": {
+      "baseline": {
+        "catalog": {
+          "id": "northstar.incident/catalog",
+          "version": "1"
+        },
+        "catalogFingerprint": "fad0ba672c93d6dc32644e3f8d3762132a28803dddd4c5b8a862463bc6132d24",
+        "manifestDigest": "c500555f8074ef1afbe29de4d34d5ef849b310ef7722498fe420cf28d76b05d9",
+        "schemaCount": 4,
+        "operationCount": 9,
+        "roleCount": 13
+      },
+      "compatible": {
+        "catalog": {
+          "id": "northstar.incident/catalog",
+          "version": "2"
+        },
+        "catalogFingerprint": "396dba14bec2144264820d4012fbcf05a0b79af6901bb4bf0e69675065361af8",
+        "manifestDigest": "0b9a8d36a9d094f829ea3c4632fed9b6ed4a36ec6e7e236be097fd24e693dad0",
+        "schemaCount": 4,
+        "operationCount": 9,
+        "roleCount": 13
+      },
+      "declarationRepairable": {
+        "catalog": {
+          "id": "northstar.incident/catalog",
+          "version": "3"
+        },
+        "catalogFingerprint": "6d763aaafd4cfaceca7a1db8e18958d23ea78a249e9a8ae66dd238e1ec2304ed",
+        "manifestDigest": "0d27d478f7639df01605e8aa3b5df2e8162abc0c3732ed3a69a3a6c8efbf50c3",
+        "schemaCount": 4,
+        "operationCount": 9,
+        "roleCount": 13
+      },
+      "genuinelyNonEquivalent": {
+        "catalog": {
+          "id": "northstar.incident/catalog",
+          "version": "4"
+        },
+        "catalogFingerprint": "9342496c98e8d7b05b41578b26f7f79353b11322001a4b1aada21e1127cc4315",
+        "manifestDigest": "0aa6c4d3112381e6a9090c01fb8866b78978f217785a92e704d8822869f9314e",
+        "schemaCount": 4,
+        "operationCount": 9,
+        "roleCount": 13
+      },
+      "migration": {
+        "compatibleRequiresRecompile": true,
+        "priorManifestRetained": true,
+        "declarationRepairRequiresAuthorAttestation": true,
+        "nonEquivalentSubstitutionForbidden": true
+      }
+    }
+  },
+  "gates": {
+    "validCompileAndExecution": true,
+    "citationsAndProvenance": true,
+    "exactZeroEffectReplay": true,
+    "negativeFixturesClassified": true,
+    "deterministicConformance": true,
+    "declarationRepairGuidance": true,
+    "genuineDifferenceNonSubstitution": true
+  },
+  "decision": "adoption-ready-with-docs-fixes",
+  "nonclaims": [
+    "finite-offline-product-adoption-fixture",
+    "no-provider-or-model-call",
+    "no-compositional-generalization-evidence",
+    "no-graph-or-typegraph-quality-claim",
+    "no-operation-substitution-authority"
+  ],
+  "reportDigest": "35c0d4f17ee895c9f63c30d2f48610bea2f3033478bd8d4f198d7b1f58446163"
+}

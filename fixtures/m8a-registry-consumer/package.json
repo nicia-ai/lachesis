@@ -1,0 +1,28 @@
+{
+  "name": "northstar-incident-catalog",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
+    "run": "node dist/run.js",
+    "verify": "npm run typecheck && npm run build && npm run run",
+    "workers:dry-run": "wrangler deploy --dry-run --config wrangler.jsonc --outdir worker-dist"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "0.1.0-alpha.3",
+    "@nicia-ai/lachesis-evidence": "0.1.0-alpha.3",
+    "@nicia-ai/lachesis-generator": "0.1.0-alpha.3",
+    "@nicia-ai/lachesis-runtime": "0.1.0-alpha.3",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "6.0.3",
+    "wrangler": "4.110.0"
+  }
+}

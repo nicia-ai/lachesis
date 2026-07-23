@@ -112,3 +112,18 @@ See the immutable [M7 results and closure](m7-results.md), the
 [future independent-study proposal](future-independent-study-proposal.md) must
 start from a new external registration and clean infrastructure; it may not
 inherit M7c artifacts or identities.
+
+## M8: catalog authoring and conformance productization
+
+M8a is complete as `adoption-ready-with-docs-fixes`. A fresh external consumer
+installed the selected `0.1.0-alpha.3` packages from npm and completed the
+catalog → roles → compile → mock execution → provenance → record/replay →
+evolution → conformance → diagnostics path under strict TypeScript 6. No public
+API addition was required. See the [M8a results](m8a-results.md) and
+[registry-only getting started](m8a-getting-started.md).
+
+M8b is proposal-only. The [prioritized backlog](m8b-productization-backlog.md)
+focuses on a catalog-author CLI, CI reports, version/migration inspection,
+additional registry-only integrations, and external developer usability. It is
+not provider, graph-superiority, TypeGraph-quality, or compositional-
+generalization research.
