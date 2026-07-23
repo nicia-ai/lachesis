@@ -218,14 +218,16 @@ generalization claim.
 M7b hardens the rejected-pair diagnostic path without changing conformance
 acceptance. A fresh nine-case development corpus achieves zero false
 equivalence, zero unsafe repair directions, exact localization for every case,
-and explicit non-substitution for every genuine semantic mismatch. This is a
-narrow GO to freeze—but not execute—the independent M7c author-study protocol.
-See the [M7b results](docs/m7b-diagnostic-hardening.md) and the
-[final unexecuted M7c protocol](docs/m7c-protocol.md). M7c's primary population
-is fresh, isolated agent sessions; it is not human-developer evidence. The
-separately committed synchronized
-[alpha.3 release candidate](docs/m7c-alpha3-release-notes.md) remains
-unpublished.
+and explicit non-substitution for every genuine semantic mismatch. M7c never
+executed: operational-isolation gates stopped preparation before any author,
+adjudicator, analysis, provider, or model role ran. M7 is closed
+`complete-mixed`; M7a and M7b are finite offline passes, while M7c is
+`closed-unexecuted-operational-isolation-no-go`. See the
+[M7 closure](docs/m7-results.md),
+[M7b results](docs/m7b-diagnostic-hardening.md), and frozen
+[M7c protocol](docs/m7c-protocol.md). The synchronized alpha.3 packages were
+published with the diagnostic API unchanged; see the
+[public-alpha closure addendum](docs/public-alpha-m7-closure.md).
 
 ## Validation
 
@@ -244,17 +246,16 @@ git diff --check
 
 The project still excludes conventional or bounded-general CodeMode,
 model-facing graph-native traversal, joins, `boundedExplore`, optimizer
-rewrites, durable/distributed scheduling, general adaptive loops, package
-publication, and deployment. M3b.1 is closed as a protocol failure; its
-calibration and held-out identities were never executed. M3b.2 is frozen as a
-semantic-gate failure. M3b.3 passed its probe and is frozen as an immutable
-calibration failure; held-out was not authorized. M3b.4's stress probe and
-calibration are complete and immutable; calibration achieved 236/240
-first-attempt success and 240/240 final reliability. M3b.5 subsequently
-completed all 2,560 held-out records. Its negative-control and safety gates
-passed, but every universal structural superiority conclusion failed under the
-frozen provider-by-repetition rule. M3 is complete and may not be rerun or
-reinterpreted under relaxed gates.
+rewrites, durable/distributed scheduling, general adaptive loops, and
+deployment. M3b.1 is closed as a protocol failure; its calibration and held-out
+identities were never executed. M3b.2 is frozen as a semantic-gate failure.
+M3b.3 passed its probe and is frozen as an immutable calibration failure;
+held-out was not authorized. M3b.4's stress probe and calibration are complete
+and immutable; calibration achieved 236/240 first-attempt success and 240/240
+final reliability. M3b.5 subsequently completed all 2,560 held-out records. Its
+negative-control and safety gates passed, but every universal structural
+superiority conclusion failed under the frozen provider-by-repetition rule. M3
+is complete and may not be rerun or reinterpreted under relaxed gates.
 
 M4a/M4b and the optional M4c TypeGraph storage adapter provide an offline
 deterministic evidence-runtime substrate. The original M4 adaptive policy is

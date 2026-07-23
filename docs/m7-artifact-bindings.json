@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "kind": "lachesis-m7-immutable-artifact-bindings",
+  "m7aReportDigest": "8cc35372ec4f4f560180a2f26cf4edb46c9c298f49f21cc39f8df07cde19cf85",
+  "m7bReportDigest": "1dc71b40b919b69d177ed0986962f10f7b7311831dc63df0667891693a75b4c4",
+  "m7cPreregistrationDigest": "5daee83257122090ac02d4ff99d20baff15517df7345d9fa3368006687624133",
+  "m7c4DispositionDigest": "16ee48d6cdb90d90f3e05f92b47cb60ddb862ac9f2ecd68cb5abf28337a21c0b",
+  "m7c41FailureDigest": "e8a2ba934912d468b97e2b693c6438f391010feb069359f359ffc5225ed96aa2",
+  "release": {
+    "version": "0.1.0-alpha.3",
+    "sourceCommit": "e972400a2ff4e65e4b2fe68bc2585f5453e82a06",
+    "workflowCorrectionCommit": "f2a62fe583feca3a6ce7bc26fb77d2e2c3cd3c6b",
+    "annotatedTag": "v0.1.0-alpha.3",
+    "workflowRun": 29959989136,
+    "packages": [
+      {
+        "name": "@nicia-ai/lachesis",
+        "sha256": "0980ebbc94d07756544f40bfcb60cf8dc6f5f1b392b3742c845a51bca528a0d6"
+      },
+      {
+        "name": "@nicia-ai/lachesis-evidence",
+        "sha256": "00fbd999bc193d923ff483a12fd8cb3289f81c68c99f0ae795b5233636dea20a"
+      },
+      {
+        "name": "@nicia-ai/lachesis-evidence-typegraph",
+        "sha256": "3a03d8dccc660199a3b5ee41f27341be35fd37504899dec14bf7843d0014ef93"
+      },
+      {
+        "name": "@nicia-ai/lachesis-generator",
+        "sha256": "daf38e1d644ecdf7f5a4a094f813772aa422026c01b536a5bf1b7419ca723c66"
+      },
+      {
+        "name": "@nicia-ai/lachesis-runtime",
+        "sha256": "5fadcca6e114697e29b7794e2867bf6fe3ae18c5e56216754da09563dde43da4"
+      }
+    ]
+  },
+  "receiptVerificationKey": {
+    "identity": "m7c4-receipt-ed25519-2256c8e7ba0c36704e633df5",
+    "canonicalPublicKeySha256": "2256c8e7ba0c36704e633df5c326e0b79a991964eb54da99f4d3b5189845b959",
+    "custodyCommitment": "a78df1732562af4d820c328dbf54648f33535ff79455c8feb49bcc0163fda622",
+    "privateMaterialDestroyed": true,
+    "reusable": false
+  },
+  "immutability": {
+    "historicalArtifactsModified": false,
+    "retiredArtifactsReusable": false
+  }
+}

@@ -96,3 +96,19 @@ M6 is closed rather than advanced to a live run. A future prospective redesign
 must resolve the case-count and cost blockers before requesting separate live
 authorization. A smaller corpus must not be described as satisfying the frozen
 M6d design.
+
+## M7: independent catalog conformance
+
+M7 is closed as `complete-mixed`. M7a passed a finite offline public-package
+consumer slice. M7b passed a disjoint finite offline diagnostic-hardening corpus
+without weakening conformance decisions. M7c never executed and is closed as
+`closed-unexecuted-operational-isolation-no-go`: no author, adjudicator,
+analysis, provider, or model role ran, so no M7c scientific outcome or
+independent-author evidence exists.
+
+See the immutable [M7 results and closure](m7-results.md), the
+[failure taxonomy](m7-failure-taxonomy.md), and the
+[public-alpha closure addendum](public-alpha-m7-closure.md). The
+[future independent-study proposal](future-independent-study-proposal.md) must
+start from a new external registration and clean infrastructure; it may not
+inherit M7c artifacts or identities.
