@@ -1,0 +1,52 @@
+{
+  "protocol": "lachesis.m8b1a.stage1-supersession.v1",
+  "status": "active-alpha-compatibility-correction",
+  "historicalStage1": {
+    "commit": "919b6d7946e9959c77a237c93339a7e00042e753",
+    "checksumManifest": "docs/m8b1-stage1-results.sha256",
+    "checksumManifestSha256": "05563bfa4aca48b6ae793df6744fe897ad29645c928c9b2168777b46eade6a57",
+    "bytesRewritten": false,
+    "verification": "git-object-at-bound-commit"
+  },
+  "confirmedDefect": {
+    "kind": "canonical-identity-collision",
+    "affectedProperty": "__proto__",
+    "cause": "zod-record-reconstruction-silently-removed-own-property"
+  },
+  "protocolDecision": {
+    "identity": "lachesis-canonical-json/1",
+    "changed": false,
+    "classification": "alpha-compatibility-correction"
+  },
+  "currentCorrection": {
+    "sourceCommit": "git-commit-containing-this-record",
+    "sourceCommitParent": "919b6d7946e9959c77a237c93339a7e00042e753",
+    "checksumManifest": "docs/m8b1a-results.sha256",
+    "bindingRule": "the atomic Git commit containing this record and checksum manifest is the corrected source commit"
+  },
+  "evolvingFiles": [
+    "apps/cli/src/internal/zod-json-schema.ts",
+    "apps/cli/tests/canonical-hardening.test.ts",
+    "apps/cli/tests/report-contract.test.ts",
+    "package.json",
+    "packages/evidence/src/m3b.ts",
+    "packages/evidence/src/m5.ts",
+    "packages/evidence/src/zod-json-schema.ts",
+    "packages/kernel/src/canonical.ts",
+    "packages/kernel/src/catalog.ts",
+    "packages/kernel/src/json.ts",
+    "packages/kernel/src/manifest.ts",
+    "scripts/audit-historical-checksum.mjs",
+    "studies/m8b0-cli-contract/src/contract.ts",
+    "studies/m8b0-cli-contract/src/generate.ts",
+    "studies/m8b0-cli-contract/tests/contract.test.ts",
+    "vitest.config.ts"
+  ],
+  "nonclaims": [
+    "Stage 1 historical evidence is not rewritten",
+    "no Stage 2 command is implemented",
+    "no public export or command is added",
+    "no package version changes",
+    "no provider or research work occurs"
+  ]
+}

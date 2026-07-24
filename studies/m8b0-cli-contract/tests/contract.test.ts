@@ -7,7 +7,6 @@ import {
   catalogConformanceDiagnosticSchema,
 } from "@nicia-ai/lachesis-generator";
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
 
 import {
   type CommandReport,
@@ -15,6 +14,7 @@ import {
   deriveOutcomeExitCode,
   renderMigrationGuidance,
   serializeCommandReport,
+  snapshotZodJsonSchema,
   verifyCommandReport,
 } from "../src/contract.js";
 
@@ -98,9 +98,10 @@ describe("M8b.0 private command-report contract", () => {
     const checkedIn = await readJson(
       resolve(repositoryRoot, "docs/m8b0-machine-report.schema.json"),
     );
-    const generated = z.toJSONSchema(commandReportSchema, {
-      target: "draft-2020-12",
-    });
+    const generated = snapshotZodJsonSchema(
+      commandReportSchema,
+      "draft-2020-12",
+    );
     expect(canonicalizeJson(checkedIn)).toEqual(canonicalizeJson(generated));
   });
 

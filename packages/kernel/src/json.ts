@@ -1,20 +1,23 @@
 import { z } from "zod";
 
+import { canonicalizeJson } from "./canonical.js";
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
 import { err, ok, type Result } from "./result.js";
 import { type WirePlan, wirePlanSchema } from "./wire.js";
 
-const jsonValueSchema = z.json();
-type JsonValue = z.infer<typeof jsonValueSchema>;
+type JsonValue = z.infer<ReturnType<typeof z.json>>;
+
+function isJsonValue(value: unknown): value is JsonValue {
+  return canonicalizeJson(value).ok;
+}
 
 export function parseJson(text: string): Result<JsonValue, Diagnostic> {
   try {
     const value: unknown = JSON.parse(text);
-    const parsed = jsonValueSchema.safeParse(value);
-    if (!parsed.success) {
+    if (!isJsonValue(value)) {
       return err(diagnostic("MALFORMED_JSON", "Input is not a JSON value."));
     }
-    return ok(parsed.data);
+    return ok(value);
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Unknown JSON parser failure";
@@ -24,6 +27,27 @@ export function parseJson(text: string): Result<JsonValue, Diagnostic> {
       ]),
     );
   }
+}
+
+/**
+ * Takes a plain-data snapshot of output produced directly by Zod's JSON Schema
+ * generator. Structured cloning removes Zod's non-enumerable runtime metadata
+ * without invoking `toJSON`; strict canonical validation then rejects any
+ * unexpected enumerable non-JSON value. This is not a general input sanitizer.
+ */
+export function snapshotZodJsonSchema(
+  schema: z.ZodType,
+  target?: "draft-2020-12",
+): JsonValue {
+  const generated =
+    target === undefined
+      ? z.toJSONSchema(schema)
+      : z.toJSONSchema(schema, { target });
+  const snapshot: unknown = structuredClone(generated);
+  if (!isJsonValue(snapshot)) {
+    throw new Error("Zod generated a non-JSON schema snapshot.");
+  }
+  return snapshot;
 }
 
 /** Parses untrusted text and returns only a fully Zod-validated version-1 wire plan. */

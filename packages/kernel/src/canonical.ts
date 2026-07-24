@@ -1,42 +1,105 @@
-import { z } from "zod";
-
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
 import { err, ok, type Result } from "./result.js";
 import type { WirePlan } from "./wire.js";
 
-const jsonValueSchema = z.json();
-type JsonValue = z.infer<typeof jsonValueSchema>;
+function invalidJson(): Result<never, Diagnostic> {
+  return err(
+    diagnostic(
+      "RUNTIME_SCHEMA_VIOLATION",
+      "Value is not canonically serializable JSON.",
+    ),
+  );
+}
 
-function serializeJson(value: JsonValue): string {
-  if (value === null) return "null";
+function serializeJson(
+  value: unknown,
+  ancestors: ReadonlySet<object>,
+): Result<string, Diagnostic> {
+  if (value === null) return ok("null");
+  if (typeof value === "string" || typeof value === "boolean") {
+    return ok(JSON.stringify(value));
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? ok(JSON.stringify(value)) : invalidJson();
+  }
+  if (typeof value !== "object" || ancestors.has(value)) return invalidJson();
+
+  const isArray = Array.isArray(value);
+  const prototype = Reflect.getPrototypeOf(value);
   if (
-    typeof value === "string" ||
-    typeof value === "boolean" ||
-    typeof value === "number"
+    (isArray && prototype !== Array.prototype) ||
+    (!isArray && prototype !== Object.prototype && prototype !== null)
   ) {
-    return JSON.stringify(value);
+    return invalidJson();
   }
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => serializeJson(item)).join(",")}]`;
+
+  const ownKeys = Reflect.ownKeys(value);
+  if (ownKeys.some((key) => typeof key === "symbol")) return invalidJson();
+  const nextAncestors = new Set(ancestors).add(value);
+
+  if (isArray) {
+    const allowedKeys = new Set([
+      "length",
+      ...Array.from({ length: value.length }, (_, index) => String(index)),
+    ]);
+    if (
+      ownKeys.length !== allowedKeys.size ||
+      ownKeys.some((key) => typeof key !== "string" || !allowedKeys.has(key))
+    ) {
+      return invalidJson();
+    }
+
+    const serializedItems: Array<string> = [];
+    for (let index = 0; index < value.length; index += 1) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+      if (
+        descriptor === undefined ||
+        !descriptor.enumerable ||
+        !("value" in descriptor)
+      ) {
+        return invalidJson();
+      }
+      const serialized = serializeJson(descriptor.value, nextAncestors);
+      if (!serialized.ok) return serialized;
+      serializedItems.push(serialized.value);
+    }
+    return ok(`[${serializedItems.join(",")}]`);
   }
-  const entries = Object.entries(value).toSorted(([left], [right]) =>
+
+  const serializedEntries: Array<readonly [string, string]> = [];
+  for (const key of ownKeys) {
+    if (typeof key !== "string") return invalidJson();
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (
+      descriptor === undefined ||
+      !descriptor.enumerable ||
+      !("value" in descriptor)
+    ) {
+      return invalidJson();
+    }
+    const serialized = serializeJson(descriptor.value, nextAncestors);
+    if (!serialized.ok) return serialized;
+    serializedEntries.push([key, serialized.value]);
+  }
+  serializedEntries.sort(([left], [right]) =>
     left < right ? -1 : left > right ? 1 : 0,
   );
-  return `{${entries
-    .map(([key, item]) => `${JSON.stringify(key)}:${serializeJson(item)}`)
-    .join(",")}}`;
+  return ok(
+    `{${serializedEntries
+      .map(([key, item]) => `${JSON.stringify(key)}:${item}`)
+      .join(",")}}`,
+  );
 }
 
 export function canonicalizeJson(value: unknown): Result<string, Diagnostic> {
-  const parsed = jsonValueSchema.safeParse(value);
-  return parsed.success
-    ? ok(serializeJson(parsed.data))
-    : err(
-        diagnostic(
-          "RUNTIME_SCHEMA_VIOLATION",
-          "Value is not canonically serializable JSON.",
-        ),
-      );
+  try {
+    const serialized = serializeJson(value, new Set());
+    if (!serialized.ok) return serialized;
+    void structuredClone(value);
+    return serialized;
+  } catch {
+    return invalidJson();
+  }
 }
 
 /** Returns the syntactic canonical identity of an already validated plan. */

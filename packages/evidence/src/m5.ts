@@ -45,6 +45,7 @@ import {
   type M4d1OracleRequest,
   m4d1OracleRequestSchema,
 } from "./m4d1.js";
+import { snapshotZodJsonSchema } from "./zod-json-schema.js";
 
 const identifierSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]*$/u);
 const digestSchema = z.string().regex(/^[a-f0-9]{64}$/u);
@@ -713,13 +714,13 @@ export async function createM5OracleEffectIdentity(
   }>,
 ): Promise<Result<M5OracleEffectIdentity, M5RuntimeFailure>> {
   const requestSchemaDigest = await identified(
-    z.toJSONSchema(m4d1OracleRequestSchema),
+    snapshotZodJsonSchema(m4d1OracleRequestSchema),
     "input",
     "Reduced oracle request schema cannot be identified.",
   );
   if (!requestSchemaDigest.ok) return requestSchemaDigest;
   const outputSchemaDigest = await identified(
-    z.toJSONSchema(m4OracleAnswerSchema),
+    snapshotZodJsonSchema(m4OracleAnswerSchema),
     "input",
     "Reduced oracle output schema cannot be identified.",
   );

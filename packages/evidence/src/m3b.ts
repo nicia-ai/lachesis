@@ -58,6 +58,7 @@ import {
   type M3bStatisticalReport,
 } from "./m3b-statistics.js";
 import { createMatchedTextEvidenceSource } from "./text.js";
+import { snapshotZodJsonSchema } from "./zod-json-schema.js";
 
 export type M3bPhase =
   | "m3b-protocol-probe"
@@ -461,7 +462,7 @@ export async function createM3bSharedPlan(): Promise<
       ],
     };
   const outputSchemaDigest = await digestValue(
-    z.toJSONSchema(m3bOracleOutputSchema),
+    snapshotZodJsonSchema(m3bOracleOutputSchema),
   );
   const oracleProtocolDigest = await digestValue(M3B_ORACLE_PROMPT);
   const scorerProtocolDigest = await digestValue(M3B_SCORER_PROTOCOL);

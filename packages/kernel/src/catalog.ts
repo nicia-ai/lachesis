@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
+import { snapshotZodJsonSchema } from "./json.js";
 import { err, ok, type Result } from "./result.js";
 import {
   type CatalogSemanticRoles,
@@ -298,7 +299,7 @@ export function defineSchema<T>(
     id: schemaReference(definition.id, definition.version).id,
     version: definition.version,
     description: definition.description,
-    jsonSchema: z.json().parse(z.toJSONSchema(definition.validator)),
+    jsonSchema: snapshotZodJsonSchema(definition.validator),
     kind,
     parse,
   };
@@ -346,7 +347,7 @@ export function defineCollectionSchema<T>(
     id: schemaReference(definition.id, definition.version).id,
     version: definition.version,
     description: definition.description,
-    jsonSchema: z.json().parse(z.toJSONSchema(definition.validator)),
+    jsonSchema: snapshotZodJsonSchema(definition.validator),
     kind,
     parse,
   };

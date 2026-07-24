@@ -78,6 +78,7 @@ export default defineConfig({
         "apps/benchmark/src/protocol.ts",
         "apps/cli/src/example-catalog.ts",
         "apps/cli/src/internal/report-*.ts",
+        "apps/cli/src/internal/zod-json-schema.ts",
       ],
       thresholds: {
         branches: 80,

@@ -26,6 +26,7 @@ import {
   type CommandReportInput,
   commandReportSchema,
 } from "../src/internal/report-schema.js";
+import { snapshotZodJsonSchema } from "../src/internal/zod-json-schema.js";
 import { createExitFixture, semanticExitCodes } from "./report-fixtures.js";
 
 const repositoryRoot = resolve(import.meta.dirname, "../../..");
@@ -508,9 +509,31 @@ describe("private M8b.1 command-report contract", () => {
     const checkedIn = await parseFile(
       resolve(repositoryRoot, "docs/m8b0-machine-report.schema.json"),
     );
-    const generated = z.toJSONSchema(commandReportSchema, {
-      target: "draft-2020-12",
-    });
+    const generated = snapshotZodJsonSchema(
+      commandReportSchema,
+      "draft-2020-12",
+    );
     expect(canonicalizeJson(checkedIn)).toEqual(canonicalizeJson(generated));
+  });
+
+  it("limits trusted JSON Schema snapshots to direct Zod output", () => {
+    const schemaWithSpecialKey = z.strictObject({
+      ["__proto__"]: z.string(),
+    });
+    const snapshot = snapshotZodJsonSchema(
+      schemaWithSpecialKey,
+      "draft-2020-12",
+    );
+    const canonical = canonicalizeJson(snapshot);
+    if (!canonical.ok) throw new Error(canonical.error.message);
+    expect(canonical.value).toContain('"__proto__"');
+
+    const hidden = Object.defineProperty({}, "identity", {
+      enumerable: false,
+      value: "must-not-disappear",
+    });
+    expect(() => {
+      void Reflect.apply(snapshotZodJsonSchema, undefined, [hidden]);
+    }).toThrow();
   });
 });

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 
 import { canonicalizeJson, hashCanonicalJson } from "./canonical.js";
 import {
@@ -15,6 +15,7 @@ import {
   type ManifestDigest,
   manifestDigestSchema,
 } from "./identity.js";
+import { snapshotZodJsonSchema } from "./json.js";
 import { err, ok, type Result } from "./result.js";
 import {
   type CatalogReference,
@@ -209,7 +210,7 @@ export async function createPlanLanguageManifest(
   if (!fingerprint.ok) return fingerprint;
   const partial = {
     ...core,
-    planJsonSchema: z.json().parse(z.toJSONSchema(modelPlanProposalSchema)),
+    planJsonSchema: snapshotZodJsonSchema(modelPlanProposalSchema),
     catalogFingerprint: fingerprint.value,
     policy: {
       allowedCapabilities: [...policy.allowedCapabilities],

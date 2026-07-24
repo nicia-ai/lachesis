@@ -6,7 +6,6 @@ import {
   type CatalogConformanceDiagnostic,
   catalogConformanceDiagnosticSchema,
 } from "@nicia-ai/lachesis-generator";
-import { z } from "zod";
 
 import {
   type CommandReport,
@@ -15,6 +14,7 @@ import {
   createCommandReport,
   renderMigrationGuidance,
   serializeCommandReport,
+  snapshotZodJsonSchema,
 } from "./contract.js";
 
 type Failure = Readonly<{ code: string; message: string }>;
@@ -389,9 +389,7 @@ for (const [name, generated] of reports) {
   ]);
 }
 
-const jsonSchema = z.toJSONSchema(commandReportSchema, {
-  target: "draft-2020-12",
-});
+const jsonSchema = snapshotZodJsonSchema(commandReportSchema, "draft-2020-12");
 await writeFile(
   resolve(repositoryRoot, "docs/m8b0-machine-report.schema.json"),
   `${JSON.stringify(jsonSchema, null, 2)}\n`,
