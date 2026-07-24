@@ -30,6 +30,8 @@ package version, package export, or public API changed.
   offline.
 - Stage 5: detached report verification and tested CI contract — complete
   offline.
+- Stage 5.1: detached command-identity verification, nested-report closure, and
+  single-output transaction finalization — complete offline.
 - Stage 6: registry-only product gate — not started.
 
 Stage 1 does not authorize or imply any later stage, publication, provider

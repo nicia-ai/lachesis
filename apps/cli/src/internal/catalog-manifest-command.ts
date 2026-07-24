@@ -615,6 +615,8 @@ export async function runCatalogManifestCommand(
           "parent-identity-drift",
           "target-identity-drift",
           "temporary-identity-drift",
+          "transaction-commit-incomplete",
+          "transaction-rollback-failed",
           "unsafe-output",
           "unsafe-path",
         ].includes(error.message));

@@ -10,8 +10,10 @@ export type ReportContractFailure = Readonly<{
     | "STATUS_MISMATCH"
     | "EXIT_CODE_MISMATCH"
     | "REPORT_DIGEST_MISMATCH"
+    | "COMMAND_IDENTITY_MISMATCH"
     | "NESTED_IDENTITY_MISMATCH"
     | "ARTIFACT_BINDING_MISMATCH"
+    | "ARTIFACT_BINDING_INCOMPLETE"
     | "SEMANTIC_ORDER_MISMATCH";
   message: string;
 }>;

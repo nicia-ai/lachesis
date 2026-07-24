@@ -189,8 +189,31 @@ describe("private M8b.1 command-report contract", () => {
     const diagnosticBytes = new TextEncoder().encode(
       `${diagnosticCanonical.value}\n`,
     );
-    const nested = await createExitFixture(10);
-    const nestedText = serializeCommandReport(nested.report);
+    const nestedIdentity = await digestValue({
+      protocol: "lachesis-report-verify-command-identity/1",
+      inputChecksum: null,
+      reportDigest: null,
+      artifacts: [],
+    });
+    if (!nestedIdentity.ok) throw new Error(nestedIdentity.error.message);
+    const nestedResult = await createCommandReport({
+      ...reportInput((await createExitFixture(0)).report),
+      command: {
+        id: "report.verify",
+        version: "1",
+        commandIdentity: nestedIdentity.value,
+      },
+      inputs: [],
+      diagnostics: {
+        controller: [],
+        validationAttempts: [],
+        conformance: [],
+      },
+      migrations: [],
+      artifacts: [],
+    });
+    if (!nestedResult.ok) throw new Error(nestedResult.error.message);
+    const nestedText = serializeCommandReport(nestedResult.value);
     if (!nestedText.ok) throw new Error(nestedText.error.message);
     const nestedBytes = new TextEncoder().encode(nestedText.value);
     const checksum = async (bytes: Uint8Array): Promise<string> => {
@@ -230,7 +253,7 @@ describe("private M8b.1 command-report contract", () => {
           id: "nested-report",
           kind: "command-report",
           mediaType: "application/json",
-          digest: nested.report.reportDigest,
+          digest: nestedResult.value.reportDigest,
           checksum: {
             algorithm: "sha256",
             value: await checksum(nestedBytes),

@@ -30,6 +30,7 @@ export type SecureFileHooks = Readonly<{
     ((path: string, offset: number) => Promise<void>) | undefined;
   afterBoundRead?: ((path: string) => Promise<void>) | undefined;
   beforeCommit?: ((path: string) => Promise<void>) | undefined;
+  afterCommit?: ((path: string) => Promise<void>) | undefined;
 }>;
 
 export type AtomicPairHooks = SecureFileHooks &
@@ -224,6 +225,9 @@ type PairTransactionState =
   | "committed"
   | "rolled-back";
 
+type SingleTransactionState =
+  "staging" | "staged" | "installed" | "committed" | "rolled-back";
+
 function missing(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
@@ -367,9 +371,24 @@ async function restoreTarget(
       constants.O_NOFOLLOW,
     0o600,
   );
+  let rollbackStat;
+  try {
+    rollbackStat = await handle.stat();
+  } catch (error: unknown) {
+    await handle.close();
+    throw error;
+  }
+  if (!rollbackStat.isFile()) {
+    await handle.close();
+    throw new Error("temporary-identity-drift");
+  }
+  const rollbackIdentity = identity(rollbackStat);
   try {
     await handle.writeFile(write.original.bound.bytes);
     await handle.sync();
+  } catch (error: unknown) {
+    await cleanupOwnedPath(rollback, rollbackIdentity);
+    throw error;
   } finally {
     await handle.close();
   }
@@ -398,7 +417,7 @@ async function restoreTarget(
     )
       throw new Error("target-identity-drift");
   } finally {
-    await rm(rollback, { force: true });
+    await cleanupOwnedPath(rollback, rollbackIdentity);
   }
 }
 
@@ -426,37 +445,41 @@ async function detectInstalledTarget(
   throw new Error("target-identity-drift");
 }
 
-async function cleanupOwnedTemporary(write: StagedWrite): Promise<void> {
+async function cleanupOwnedPath(
+  path: string,
+  expected: FileIdentity,
+): Promise<void> {
   try {
-    const pathStat = await lstat(write.temporary);
+    const pathStat = await lstat(path);
     if (
       pathStat.isSymbolicLink() ||
       !pathStat.isFile() ||
-      !sameObject(write.staged.identity, identity(pathStat))
+      !sameObject(expected, identity(pathStat))
     )
       return;
-    const handle = await open(
-      write.temporary,
-      constants.O_RDONLY | constants.O_NOFOLLOW,
-    );
+    const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
     try {
       const descriptorStat = await handle.stat();
-      const currentPathStat = await lstat(write.temporary);
+      const currentPathStat = await lstat(path);
       if (
         !descriptorStat.isFile() ||
         currentPathStat.isSymbolicLink() ||
         !currentPathStat.isFile() ||
-        !sameObject(write.staged.identity, identity(descriptorStat)) ||
-        !sameObject(write.staged.identity, identity(currentPathStat))
+        !sameObject(expected, identity(descriptorStat)) ||
+        !sameObject(expected, identity(currentPathStat))
       )
         return;
-      await rm(write.temporary);
+      await rm(path);
     } finally {
       await handle.close();
     }
   } catch (error: unknown) {
     if (missing(error)) return;
   }
+}
+
+async function cleanupOwnedTemporary(write: StagedWrite): Promise<void> {
+  await cleanupOwnedPath(write.temporary, write.staged.identity);
 }
 
 export async function atomicWritePairBounded(
@@ -565,67 +588,82 @@ export async function atomicWriteBounded(
   hooks: SecureFileHooks = {},
 ): Promise<void> {
   if (bytes.byteLength > limit) throw new Error("output-too-large");
-  const parent = await ensureParent(root, path);
-  let targetIdentity: FileIdentity | undefined;
+  let write: StagedWrite | undefined;
+  let installed: BoundBytes | undefined;
+  let state: SingleTransactionState = "staging";
   try {
-    const existing = await lstat(path);
-    if (existing.isSymbolicLink() || !existing.isFile() || !replace)
-      throw new Error("unsafe-output");
-    targetIdentity = identity(existing);
-  } catch (error: unknown) {
-    if (!(error instanceof Error && "code" in error && error.code === "ENOENT"))
-      throw error;
-  }
-  const temporary = `${path}.lachesis-tmp`;
-  const handle = await open(
-    temporary,
-    constants.O_WRONLY |
-      constants.O_CREAT |
-      constants.O_EXCL |
-      constants.O_NOFOLLOW,
-    0o600,
-  );
-  let temporaryIdentity: FileIdentity | undefined;
-  try {
-    await handle.writeFile(bytes);
-    await handle.sync();
-    const temporaryStat = await handle.stat();
-    if (!temporaryStat.isFile()) throw new Error("temporary-identity-drift");
-    temporaryIdentity = identity(temporaryStat);
-  } finally {
-    await handle.close();
-  }
-  try {
-    await hooks.beforeCommit?.(path);
-    const currentParent = await lstat(parent.path);
+    const parent = await ensureParent(root, path);
+    const original = await snapshotTarget(path, limit, replace);
+    const temporary = `${path}.lachesis-tmp`;
+    const handle = await open(
+      temporary,
+      constants.O_WRONLY |
+        constants.O_CREAT |
+        constants.O_EXCL |
+        constants.O_NOFOLLOW,
+      0o600,
+    );
+    try {
+      await handle.writeFile(bytes);
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+    const staged = await readBoundedRegularFile(temporary, limit);
     if (
-      !currentParent.isDirectory() ||
-      currentParent.isSymbolicLink() ||
-      !sameObject(parent.identity, identity(currentParent)) ||
-      (await realpath(parent.path)) !== parent.path
-    )
-      throw new Error("parent-identity-drift");
-    const temporaryStat = await lstat(temporary);
-    if (
-      !temporaryStat.isFile() ||
-      temporaryStat.isSymbolicLink() ||
-      !sameIdentity(temporaryIdentity, identity(temporaryStat))
+      staged.bytes.byteLength !== bytes.byteLength ||
+      !staged.bytes.every((byte, index) => bytes[index] === byte)
     )
       throw new Error("temporary-identity-drift");
-    if (targetIdentity !== undefined) {
-      const currentTarget = await lstat(path);
-      if (
-        currentTarget.isSymbolicLink() ||
-        !sameIdentity(targetIdentity, identity(currentTarget))
-      )
-        throw new Error("target-identity-drift");
-      await rename(temporary, path);
-    } else {
-      await link(temporary, path);
-      await rm(temporary);
+    write = { root, path, parent, temporary, staged, original };
+    state = "staged";
+    await hooks.beforeCommit?.(path);
+    await verifyParent(write.parent);
+    await verifyTargetSnapshot(write.path, write.original, limit);
+    const currentTemporary = await readBoundedRegularFile(
+      write.temporary,
+      limit,
+    );
+    if (!sameBoundIdentity(write.staged, currentTemporary))
+      throw new Error("temporary-identity-drift");
+    if (write.original.bound === null) await link(write.temporary, write.path);
+    else await rename(write.temporary, write.path);
+    state = "installed";
+    await syncDirectory(write.parent.path);
+    installed = await readBoundedRegularFile(write.path, limit);
+    if (
+      installed.bytes.byteLength !== bytes.byteLength ||
+      !installed.bytes.every((byte, index) => bytes[index] === byte)
+    )
+      throw new Error("target-identity-drift");
+    const verified = await readBoundedRegularFile(write.path, limit);
+    if (!sameBoundIdentity(installed, verified))
+      throw new Error("target-identity-drift");
+    state = "committed";
+    try {
+      await hooks.afterCommit?.(path);
+    } catch {
+      // The verified output is already the sole commit marker.
     }
+  } catch (error: unknown) {
+    if (state === "committed") return;
+    if (
+      write !== undefined &&
+      (state === "installed" || installed !== undefined)
+    ) {
+      try {
+        installed ??= await detectInstalledTarget(write, limit);
+        if (installed !== undefined) {
+          await restoreTarget(write, installed, limit);
+          state = "rolled-back";
+        }
+      } catch {
+        throw new Error("transaction-rollback-failed");
+      }
+    }
+    throw new Error("transaction-commit-incomplete", { cause: error });
   } finally {
-    await rm(temporary, { force: true });
+    if (write !== undefined) await cleanupOwnedTemporary(write);
   }
 }
 

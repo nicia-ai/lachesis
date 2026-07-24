@@ -429,17 +429,20 @@ export async function runReportVerifyCommand(
       bindings,
     );
     if (!artifacts.ok) {
+      const incomplete = artifacts.error.code === "ARTIFACT_BINDING_INCOMPLETE";
       const result = await makeReport(
         inputChecksum,
         verified,
         artifactInputs,
         [
           controller(
-            "CHECKSUM_MISMATCH",
-            "A bound artifact failed checksum or semantic verification.",
+            incomplete ? "INCOMPLETE_EXECUTION" : "CHECKSUM_MISMATCH",
+            incomplete
+              ? "A nested report artifact binding is unavailable."
+              : "A bound artifact failed checksum or semantic verification.",
           ),
         ],
-        "complete",
+        incomplete ? "partial" : "complete",
       );
       return {
         parsed: true,
@@ -468,6 +471,8 @@ export async function runReportVerifyCommand(
           "parent-identity-drift",
           "target-identity-drift",
           "temporary-identity-drift",
+          "transaction-commit-incomplete",
+          "transaction-rollback-failed",
           "unsafe-output",
           "unsafe-path",
         ].includes(error.message));

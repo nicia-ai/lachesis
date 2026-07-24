@@ -503,8 +503,18 @@ async function verifySemanticArtifact(
           "Diagnostic artifact semantic identity does not match.",
         );
   }
-  const verified = await verifyCommandReport(value);
-  return verified.ok && verified.value.reportDigest === expectedDigest
+  const verified = await verifyDetachedCommandReport(value);
+  if (!verified.ok)
+    return contractFailure(
+      verified.error.code,
+      "Command report artifact failed full detached verification.",
+    );
+  if (verified.value.artifacts.length > 0)
+    return contractFailure(
+      "ARTIFACT_BINDING_INCOMPLETE",
+      "Nested command report artifacts are unavailable in the flat binding set.",
+    );
+  return verified.value.reportDigest === expectedDigest
     ? { ok: true, value: true }
     : contractFailure(
         "ARTIFACT_BINDING_MISMATCH",
@@ -714,6 +724,8 @@ export async function verifyDetachedCommandReport(
   const verified = await verifyCommandReport(value);
   if (!verified.ok) return verified;
   const report = verified.value;
+  const commandIdentity = await verifyDetachedCommandIdentity(report);
+  if (!commandIdentity.ok) return commandIdentity;
   const hasIncompleteDiagnostic = report.diagnostics.controller.some(
     (diagnostic) => diagnostic.code === "INCOMPLETE_EXECUTION",
   );
@@ -814,6 +826,235 @@ export async function verifyDetachedCommandReport(
     }
   }
   return verified;
+}
+
+type ReportInput = CommandReport["inputs"][number];
+
+function uniqueInputLabels(
+  inputs: ReadonlyArray<ReportInput>,
+): Result<ReadonlyMap<string, ReportInput>, ReportContractFailure> {
+  const byLabel = new Map<string, ReportInput>();
+  for (const input of inputs) {
+    if (byLabel.has(input.label))
+      return contractFailure(
+        "COMMAND_IDENTITY_MISMATCH",
+        "Command identity inputs contain a duplicate reserved label.",
+      );
+    byLabel.set(input.label, input);
+  }
+  return { ok: true, value: byLabel };
+}
+
+function exactInput(
+  inputs: ReadonlyMap<string, ReportInput>,
+  label: string,
+  kind: ReportInput["kind"],
+): ReportInput | undefined {
+  const input = inputs.get(label);
+  return input?.kind === kind ? input : undefined;
+}
+
+async function verifyManifestCommandIdentity(
+  report: CommandReport,
+): Promise<Result<true, ReportContractFailure>> {
+  const labels = uniqueInputLabels(report.inputs);
+  if (!labels.ok) return labels;
+  const allowed = new Set([
+    "catalog-module",
+    "catalog-export-locator",
+    "policy-module",
+    "policy-export-locator",
+  ]);
+  if ([...labels.value.keys()].some((label) => !allowed.has(label)))
+    return contractFailure(
+      "COMMAND_IDENTITY_MISMATCH",
+      "Manifest command identity contains an unknown reserved input.",
+    );
+  const catalogModule = exactInput(labels.value, "catalog-module", "catalog");
+  const catalog = exactInput(labels.value, "catalog-export-locator", "catalog");
+  const policyModule = exactInput(labels.value, "policy-module", "policy");
+  const policy = exactInput(labels.value, "policy-export-locator", "policy");
+  if (
+    (catalogModule === undefined) !== (catalog === undefined) ||
+    (policyModule === undefined) !== (policy === undefined) ||
+    labels.value.size !==
+      Number(catalog !== undefined) * 2 + Number(policy !== undefined) * 2
+  )
+    return contractFailure(
+      "COMMAND_IDENTITY_MISMATCH",
+      "Manifest command identity inputs are missing or contradictory.",
+    );
+  const identity = await digestValue({
+    protocol: "lachesis-catalog-manifest-command-identity/1",
+    catalog: catalog?.digest ?? null,
+    policy: policy?.digest ?? null,
+  });
+  return identity.ok && identity.value === report.command.commandIdentity
+    ? { ok: true, value: true }
+    : contractFailure(
+        "COMMAND_IDENTITY_MISMATCH",
+        "Manifest command identity does not match its reserved inputs.",
+      );
+}
+
+const compareCoreLabels = [
+  ["left-catalog", "catalog"],
+  ["left-policy", "policy"],
+  ["right-catalog", "catalog"],
+  ["right-policy", "policy"],
+] as const;
+
+function compareInputsAllowMode(
+  inputs: ReadonlyMap<string, ReportInput>,
+  mode: "structural-only" | "finite-semantic-conformance",
+): boolean {
+  const groups =
+    mode === "structural-only"
+      ? compareCoreLabels
+      : [
+          ...compareCoreLabels,
+          ["conformance-suite", "conformance-suite"] as const,
+        ];
+  const allowed = new Map<string, ReportInput["kind"]>();
+  for (const [label, kind] of groups) {
+    allowed.set(`${label}-module`, kind);
+    allowed.set(`${label}-export-locator`, kind);
+  }
+  allowed.set("left-manifest", "catalog-manifest");
+  allowed.set("right-manifest", "catalog-manifest");
+  if (mode === "finite-semantic-conformance")
+    allowed.set("validated-conformance-suite", "conformance-suite");
+  for (const [label, input] of inputs)
+    if (allowed.get(label) !== input.kind) return false;
+  const locatorCount = groups.reduce(
+    (count, [label]) =>
+      count +
+      Number(inputs.has(`${label}-module`)) +
+      Number(inputs.has(`${label}-export-locator`)),
+    0,
+  );
+  if (locatorCount !== 0 && locatorCount !== groups.length * 2) return false;
+  const manifestCount =
+    Number(inputs.has("left-manifest")) + Number(inputs.has("right-manifest"));
+  if (manifestCount !== 0 && manifestCount !== 2) return false;
+  if (manifestCount > 0 && locatorCount === 0) return false;
+  if (
+    inputs.has("validated-conformance-suite") &&
+    (mode !== "finite-semantic-conformance" || locatorCount === 0)
+  )
+    return false;
+  return (
+    inputs.size ===
+    locatorCount +
+      manifestCount +
+      Number(inputs.has("validated-conformance-suite"))
+  );
+}
+
+async function verifyCompareCommandIdentity(
+  report: CommandReport,
+): Promise<Result<true, ReportContractFailure>> {
+  const labels = uniqueInputLabels(report.inputs);
+  if (!labels.ok) return labels;
+  const normalized = report.inputs
+    .map(({ kind, label, digest }) => ({ kind, label, digest }))
+    .toSorted((left, right) => left.label.localeCompare(right.label));
+  const candidates: Array<string> = [];
+  for (const mode of [
+    "structural-only",
+    "finite-semantic-conformance",
+  ] as const) {
+    if (!compareInputsAllowMode(labels.value, mode)) continue;
+    const identity = await digestValue({
+      protocol: "lachesis-catalog-command-identity/1",
+      command: "catalog.compare",
+      version: "1",
+      inputs: normalized,
+      options: [mode],
+    });
+    if (identity.ok && identity.value === report.command.commandIdentity)
+      candidates.push(mode);
+  }
+  return candidates.length === 1
+    ? { ok: true, value: true }
+    : contractFailure(
+        "COMMAND_IDENTITY_MISMATCH",
+        "Compare command identity has no unique valid mode and input binding.",
+      );
+}
+
+async function verifyReportVerifyCommandIdentity(
+  report: CommandReport,
+): Promise<Result<true, ReportContractFailure>> {
+  const labels = uniqueInputLabels(report.inputs);
+  if (!labels.ok) return labels;
+  const artifactId = /^[A-Za-z0-9][A-Za-z0-9._-]*$/u;
+  const bytes = exactInput(labels.value, "command-report-bytes", "report");
+  const identity = exactInput(
+    labels.value,
+    "command-report-identity",
+    "report",
+  );
+  if (
+    (labels.value.has("command-report-bytes") && bytes === undefined) ||
+    (labels.value.has("command-report-identity") && identity === undefined) ||
+    (bytes !== undefined && identity !== undefined)
+  )
+    return contractFailure(
+      "COMMAND_IDENTITY_MISMATCH",
+      "Report verification source inputs are contradictory.",
+    );
+  const artifacts: Array<Readonly<{ id: string; digest: string }>> = [];
+  for (const [label, input] of labels.value) {
+    if (label === "command-report-bytes" || label === "command-report-identity")
+      continue;
+    if (
+      !label.startsWith("artifact:") ||
+      label.length === "artifact:".length ||
+      !artifactId.test(label.slice("artifact:".length)) ||
+      (input.kind !== "report" && input.kind !== "catalog-manifest")
+    )
+      return contractFailure(
+        "COMMAND_IDENTITY_MISMATCH",
+        "Report verification identity contains an unknown reserved input.",
+      );
+    artifacts.push({
+      id: label.slice("artifact:".length),
+      digest: input.digest,
+    });
+  }
+  if (identity === undefined && artifacts.length > 0)
+    return contractFailure(
+      "COMMAND_IDENTITY_MISMATCH",
+      "Artifact identities require a successfully parsed source report.",
+    );
+  const expected = await digestValue({
+    protocol: "lachesis-report-verify-command-identity/1",
+    inputChecksum: identity === undefined ? (bytes?.digest ?? null) : null,
+    reportDigest: identity?.digest ?? null,
+    artifacts: artifacts.toSorted((left, right) =>
+      left.id.localeCompare(right.id),
+    ),
+  });
+  return expected.ok && expected.value === report.command.commandIdentity
+    ? { ok: true, value: true }
+    : contractFailure(
+        "COMMAND_IDENTITY_MISMATCH",
+        "Report verification command identity does not match its inputs.",
+      );
+}
+
+async function verifyDetachedCommandIdentity(
+  report: CommandReport,
+): Promise<Result<true, ReportContractFailure>> {
+  switch (report.command.id) {
+    case "catalog.manifest":
+      return verifyManifestCommandIdentity(report);
+    case "catalog.compare":
+      return verifyCompareCommandIdentity(report);
+    case "report.verify":
+      return verifyReportVerifyCommandIdentity(report);
+  }
 }
 
 async function sha256Bytes(bytes: Uint8Array): Promise<string> {

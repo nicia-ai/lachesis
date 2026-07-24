@@ -1,5 +1,6 @@
 import {
   appendFile,
+  lstat,
   mkdir,
   mkdtemp,
   readFile,
@@ -180,6 +181,32 @@ async function rawSha256(bytes: Uint8Array): Promise<string> {
   return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+async function wrapCommandReportArtifact(
+  outer: CommandReport,
+  nested: CommandReport,
+): Promise<Readonly<{ report: CommandReport; bytes: Uint8Array }>> {
+  const serialized = serializeCommandReport(nested);
+  if (!serialized.ok) throw new Error(serialized.error.message);
+  const bytes = new TextEncoder().encode(serialized.value);
+  return {
+    report: await redigest(outer, {
+      artifacts: [
+        {
+          id: "nested-command-report",
+          kind: "command-report",
+          mediaType: "application/json",
+          digest: nested.reportDigest,
+          checksum: {
+            algorithm: "sha256",
+            value: await rawSha256(bytes),
+          },
+        },
+      ],
+    }),
+    bytes,
+  };
+}
+
 async function redigest(
   report: CommandReport,
   changes: object,
@@ -198,6 +225,187 @@ afterEach(async () => {
 });
 
 describe("private detached report verify command", () => {
+  it("recomputes every producer command identity even when the outer digest is self-consistent", async () => {
+    const root = await fixture();
+    const reports: Array<Readonly<{ name: string; report: CommandReport }>> =
+      [];
+    for (const [name, catalogExport] of [
+      ["manifest", "catalog"],
+      ["manifest-invalid", "missing"],
+    ] as const) {
+      let stdout = "";
+      await runCatalogManifestCommand(
+        [
+          "--catalog",
+          `./left.mjs#${catalogExport}`,
+          "--policy",
+          "./left.mjs#policy",
+          "--check",
+          "--report",
+          "-",
+          "--project-root",
+          root,
+        ],
+        {
+          stdout: (text) => {
+            stdout += text;
+          },
+          stderr: () => undefined,
+        },
+      );
+      reports.push({ name, report: await parsedReport(stdout) });
+    }
+    let partialManifestStdout = "";
+    await runCatalogManifestCommand(
+      [
+        "--catalog",
+        "./missing.mjs#catalog",
+        "--policy",
+        "./left.mjs#policy",
+        "--check",
+        "--report",
+        "-",
+        "--project-root",
+        root,
+      ],
+      {
+        stdout: (text) => {
+          partialManifestStdout += text;
+        },
+        stderr: () => undefined,
+      },
+    );
+    reports.push({
+      name: "manifest-partial",
+      report: await parsedReport(partialManifestStdout),
+    });
+    const structural = await compare(root, "catalog", undefined);
+    reports.push({
+      name: "structural",
+      report: await parsedReport(structural.stdout),
+    });
+    for (const [name, right, suite] of [
+      ["suite-conformant", "catalog", "exact"],
+      ["suite-repairable", "repairable", "exact"],
+      ["suite-genuine", "genuine", "exact"],
+      ["suite-insufficient", "catalog", "incomplete"],
+    ] as const) {
+      await compare(root, right, suite);
+      reports.push({
+        name,
+        report: await parsedReport(
+          await readFile(resolve(root, "source-report.json"), "utf8"),
+        ),
+      });
+    }
+    await writeFile(resolve(root, "structural-source.json"), structural.stdout);
+    const successfulVerify = await verify(root, [
+      "--input",
+      "structural-source.json",
+      "--report",
+      "-",
+    ]);
+    reports.push({
+      name: "verify-success",
+      report: await parsedReport(successfulVerify.stdout),
+    });
+    await writeFile(resolve(root, "malformed-source.json"), "{");
+    const unsuccessfulVerify = await verify(root, [
+      "--input",
+      "malformed-source.json",
+      "--report",
+      "-",
+    ]);
+    reports.push({
+      name: "verify-failure",
+      report: await parsedReport(unsuccessfulVerify.stdout),
+    });
+
+    for (const fixtureReport of reports) {
+      const mutated = await redigest(fixtureReport.report, {
+        command: {
+          ...fixtureReport.report.command,
+          commandIdentity: "0".repeat(64),
+        },
+      });
+      await writeReport(root, `${fixtureReport.name}-identity.json`, mutated);
+      expect(
+        (
+          await verify(root, [
+            "--input",
+            `${fixtureReport.name}-identity.json`,
+            "--report",
+            "-",
+          ])
+        ).code,
+      ).toBe(22);
+    }
+  });
+
+  it("rejects duplicate, reordered, and mode-confused reserved identity inputs", async () => {
+    const root = await fixture();
+    const structural = await compare(root, "catalog", undefined);
+    const report = await parsedReport(structural.stdout);
+    const first = report.inputs[0];
+    if (first === undefined) throw new Error("Missing structural inputs.");
+    const duplicate = await redigest(report, {
+      inputs: [
+        ...report.inputs,
+        {
+          kind: first.kind === "catalog" ? "policy" : "catalog",
+          label: first.label,
+          digest: first.digest,
+        },
+      ],
+    });
+    const reordered = await redigest(report, {
+      inputs: report.inputs.toReversed(),
+    });
+    await compare(root, "catalog", "exact");
+    const semantic = await parsedReport(
+      await readFile(resolve(root, "source-report.json"), "utf8"),
+    );
+    const confused = await redigest(semantic, {
+      inputs: semantic.inputs.filter(
+        (input) => !input.label.startsWith("conformance-suite"),
+      ),
+    });
+    await writeFile(resolve(root, "structural-input.json"), structural.stdout);
+    const verifier = await parsedReport(
+      (
+        await verify(root, [
+          "--input",
+          "structural-input.json",
+          "--report",
+          "-",
+        ])
+      ).stdout,
+    );
+    const sourceIdentity = verifier.inputs.find(
+      (input) => input.label === "command-report-identity",
+    );
+    if (sourceIdentity === undefined)
+      throw new Error("Missing verifier source identity.");
+    const contradictory = await redigest(verifier, {
+      inputs: verifier.inputs.map((input) =>
+        input.label === sourceIdentity.label
+          ? { ...input, kind: "policy" }
+          : input,
+      ),
+    });
+    for (const [name, candidate] of [
+      ["duplicate", duplicate],
+      ["reordered", reordered],
+      ["mode-confused", confused],
+      ["contradictory-source-kind", contradictory],
+    ] as const) {
+      await writeReport(root, `${name}.json`, candidate);
+      expect(
+        (await verify(root, ["--input", `${name}.json`, "--report", "-"])).code,
+      ).toBe(22);
+    }
+  });
+
   it("verifies manifest, structural, conformant, and rejected semantic reports without propagating their outcome", async () => {
     const root = await fixture();
     let manifestStdout = "";
@@ -448,6 +656,141 @@ describe("private detached report verify command", () => {
     ).toBe(22);
   });
 
+  it("fully verifies nested command reports and fails incomplete on unavailable nested artifacts", async () => {
+    const root = await fixture();
+    const structural = await compare(root, "catalog", undefined);
+    const outer = await parsedReport(structural.stdout);
+    const valid = await wrapCommandReportArtifact(outer, outer);
+    await writeReport(root, "outer-valid.json", valid.report);
+    await writeFile(resolve(root, "nested-valid.json"), valid.bytes);
+    expect(
+      (
+        await verify(root, [
+          "--input",
+          "outer-valid.json",
+          "--artifact",
+          "nested-command-report=nested-valid.json",
+          "--report",
+          "-",
+        ])
+      ).code,
+    ).toBe(0);
+
+    await runCatalogManifestCommand(
+      [
+        "--catalog",
+        "./left.mjs#catalog",
+        "--policy",
+        "./left.mjs#policy",
+        "--out",
+        "nested-manifest.json",
+        "--report",
+        "nested-manifest-report.json",
+        "--project-root",
+        root,
+      ],
+      { stdout: () => undefined, stderr: () => undefined },
+    );
+    const nestedWithArtifact = await parsedReport(
+      await readFile(resolve(root, "nested-manifest-report.json"), "utf8"),
+    );
+    const incomplete = await wrapCommandReportArtifact(
+      outer,
+      nestedWithArtifact,
+    );
+    await writeReport(root, "outer-incomplete.json", incomplete.report);
+    await writeFile(resolve(root, "nested-incomplete.json"), incomplete.bytes);
+    expect(
+      (
+        await verify(root, [
+          "--input",
+          "outer-incomplete.json",
+          "--artifact",
+          "nested-command-report=nested-incomplete.json",
+          "--report",
+          "-",
+        ])
+      ).code,
+    ).toBe(23);
+  });
+
+  it("rejects self-consistent nested command-identity and detailed-record mutations", async () => {
+    const root = await fixture();
+    const structural = await compare(root, "catalog", undefined);
+    const outer = await parsedReport(structural.stdout);
+    const fabricatedIdentity = await redigest(outer, {
+      command: { ...outer.command, commandIdentity: "0".repeat(64) },
+    });
+    const summary = await redigest(outer, {
+      summary: { ...outer.summary, migrationRecords: 1 },
+    });
+    const completeness = await redigest(outer, { completeness: "partial" });
+    const mutations: Array<Readonly<{ name: string; report: CommandReport }>> =
+      [
+        { name: "identity", report: fabricatedIdentity },
+        { name: "summary", report: summary },
+        { name: "completeness", report: completeness },
+      ];
+
+    await compare(root, "repairable", "exact");
+    const semantic = await parsedReport(
+      await readFile(resolve(root, "source-report.json"), "utf8"),
+    );
+    const conformance = semantic.diagnostics.conformance[0];
+    const migration = semantic.migrations[0];
+    if (conformance === undefined || migration === undefined)
+      throw new Error("Missing semantic fixture details.");
+    mutations.push(
+      {
+        name: "comparison",
+        report: await redigest(semantic, {
+          diagnostics: {
+            ...semantic.diagnostics,
+            conformance: [
+              { ...conformance, comparisonIdentity: "0".repeat(64) },
+            ],
+          },
+        }),
+      },
+      {
+        name: "assessment",
+        report: await redigest(semantic, {
+          migrations: [
+            {
+              ...migration,
+              outcomes: [
+                {
+                  ...migration.outcomes[0],
+                  assessmentIdentity: "0".repeat(64),
+                },
+              ],
+            },
+          ],
+        }),
+      },
+    );
+    for (const mutation of mutations) {
+      const wrapped = await wrapCommandReportArtifact(outer, mutation.report);
+      await writeReport(root, `outer-${mutation.name}.json`, wrapped.report);
+      await writeFile(
+        resolve(root, `nested-${mutation.name}.json`),
+        wrapped.bytes,
+      );
+      expect(
+        (
+          await verify(root, [
+            "--input",
+            `outer-${mutation.name}.json`,
+            "--artifact",
+            `nested-command-report=nested-${mutation.name}.json`,
+            "--report",
+            "-",
+          ])
+        ).code,
+      ).toBe(22);
+    }
+  });
+
   it("rejects missing, unexpected, corrupted, aliased, symlinked, and raced artifacts", async () => {
     const root = await fixture();
     await compare(root, "catalog", "exact");
@@ -636,6 +979,109 @@ describe("private detached report verify command", () => {
         ])
       ).code,
     ).toBe(23);
+  });
+
+  it("keeps a committed new output authoritative when a foreign temp directory appears", async () => {
+    const root = await fixture();
+    const source = await compare(root, "catalog", undefined);
+    await writeFile(resolve(root, "input.json"), source.stdout);
+    const result = await verify(
+      root,
+      ["--input", "input.json", "--report", "verified.json"],
+      {
+        afterCommit: async (path) => {
+          const temporary = `${path}.lachesis-tmp`;
+          await rm(temporary);
+          await mkdir(temporary);
+        },
+      },
+    );
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe("");
+    expect(
+      (await lstat(resolve(root, "verified.json.lachesis-tmp"))).isDirectory(),
+    ).toBe(true);
+    expect(
+      (
+        await verify(root, [
+          "--input",
+          "verified.json",
+          "--report",
+          "verified-again.json",
+        ])
+      ).code,
+    ).toBe(0);
+  });
+
+  it("keeps a committed replacement authoritative when a foreign temp symlink appears", async () => {
+    const root = await fixture();
+    const source = await compare(root, "catalog", undefined);
+    await writeFile(resolve(root, "input.json"), source.stdout);
+    expect(
+      (
+        await verify(root, [
+          "--input",
+          "input.json",
+          "--report",
+          "verified.json",
+        ])
+      ).code,
+    ).toBe(0);
+    const result = await verify(
+      root,
+      ["--input", "input.json", "--report", "verified.json", "--replace"],
+      {
+        afterCommit: async (path) => {
+          await symlink("input.json", `${path}.lachesis-tmp`);
+        },
+      },
+    );
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe("");
+    expect(
+      (
+        await lstat(resolve(root, "verified.json.lachesis-tmp"))
+      ).isSymbolicLink(),
+    ).toBe(true);
+    expect(
+      (
+        await verify(root, [
+          "--input",
+          "verified.json",
+          "--report",
+          "verified-again.json",
+        ])
+      ).code,
+    ).toBe(0);
+  });
+
+  it("rolls back single-output failures before commit without mutating prior state", async () => {
+    const root = await fixture();
+    const source = await compare(root, "catalog", undefined);
+    await writeFile(resolve(root, "input.json"), source.stdout);
+    const fail = {
+      beforeCommit: async () => Promise.reject(new Error("stop")),
+    };
+    const fresh = await verify(
+      root,
+      ["--input", "input.json", "--report", "fresh.json"],
+      fail,
+    );
+    expect(fresh.code).toBe(23);
+    expect(fresh.stdout.trim().split("\n")).toHaveLength(1);
+    await expect(lstat(resolve(root, "fresh.json"))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+
+    await writeFile(resolve(root, "prior.json"), "prior\n");
+    const replacement = await verify(
+      root,
+      ["--input", "input.json", "--report", "prior.json", "--replace"],
+      fail,
+    );
+    expect(replacement.code).toBe(23);
+    expect(replacement.stdout.trim().split("\n")).toHaveLength(1);
+    expect(await readFile(resolve(root, "prior.json"), "utf8")).toBe("prior\n");
   });
 
   it("is byte deterministic, property-order independent, and emits one outcome", async () => {

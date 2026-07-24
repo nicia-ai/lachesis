@@ -1,0 +1,31 @@
+{
+  "protocol": "lachesis.m8b1.stage5.1.supersession.v1",
+  "parentCommit": "1b0592db50a4d2d8443fa35048b6213353caac11",
+  "supersededEvidence": {
+    "path": "docs/m8b1-stage5-results.sha256",
+    "sha256": "4f4c8a738f2a570b828f4e137ea189990d0c2a247eea060315bf665441798f61",
+    "bytesRewritten": false
+  },
+  "supersededClaims": [
+    {
+      "claim": "canonicalReportIdentityRecomputed",
+      "reason": "Stage 5 recomputed the outer report digest but did not recompute the command-specific commandIdentity."
+    },
+    {
+      "claim": "command-report artifact semantic identity fully verified",
+      "reason": "Stage 5 used the base report verifier for nested command-report artifacts and did not close their detached identity or child-artifact boundary."
+    },
+    {
+      "claim": "single-output transaction finalization preserves exactly one outcome",
+      "reason": "Post-install temporary cleanup could still throw after the final report was authoritative."
+    }
+  ],
+  "preservedClaims": [
+    "frozen report schemas and exit codes",
+    "detached no-execution boundary",
+    "artifact checksum and kind-specific semantic verification",
+    "Stage 4.1 two-artifact terminal committed-state behavior",
+    "CI semantic and integrity gate separation"
+  ],
+  "replacementEvidence": "docs/m8b1-stage5.1-correction.json"
+}

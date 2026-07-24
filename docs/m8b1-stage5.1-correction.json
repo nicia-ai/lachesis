@@ -1,0 +1,81 @@
+{
+  "protocol": "lachesis.m8b1.stage5.1.correction.v1",
+  "status": "complete-offline-pass",
+  "parentCommit": "1b0592db50a4d2d8443fa35048b6213353caac11",
+  "scope": "detached-verification-and-single-output-transaction-correction",
+  "commandIdentityVerification": {
+    "catalog.manifest": "lachesis-catalog-manifest-command-identity/1",
+    "catalog.compare": "lachesis-catalog-command-identity/1",
+    "report.verify": "lachesis-report-verify-command-identity/1",
+    "mismatchExit": 22,
+    "reservedLabelsFailClosed": true,
+    "compareModeCandidates": ["structural-only", "finite-semantic-conformance"],
+    "modeInferredFromClaimedOutcome": false
+  },
+  "nestedCommandReports": {
+    "fullDetachedVerification": true,
+    "implicitArtifactDiscovery": false,
+    "recursiveFilesystemTraversal": false,
+    "artifactBearingNestedReportWithoutFlatBytes": "incomplete-exit-23",
+    "artifactFreeNestedReport": "verified"
+  },
+  "singleOutputTransaction": {
+    "terminalState": "committed",
+    "commitPoint": "installed-output-identity-verified",
+    "preCommitFailure": "rollback-or-terminal-rollback-failure",
+    "postCommitCleanupChangesOutcome": false,
+    "cleanupIdentityBound": true,
+    "foreignSymlinkDirectoryOrInodeRemoved": false,
+    "exactlyOneMachineOutcome": true
+  },
+  "compatibility": {
+    "publicExportsChanged": false,
+    "dependenciesChanged": false,
+    "packageVersionsChanged": false,
+    "reportSchemasChanged": false,
+    "protocolIdentitiesChanged": false,
+    "exitCodesChanged": false,
+    "stage6Started": false
+  },
+  "verification": {
+    "focusedDetachedTestFiles": 2,
+    "focusedDetachedTests": 41,
+    "cliTestFiles": 8,
+    "cliTests": 121,
+    "repositoryCoverageTestFiles": 32,
+    "repositoryCoverageTests": 443,
+    "coverage": {
+      "statementsPercent": 90.04,
+      "branchesPercent": 80.36,
+      "functionsPercent": 97.17,
+      "linesPercent": 94.06
+    },
+    "strictTypeScript": "pass",
+    "lint": "pass",
+    "formatting": "pass",
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersDryRun": "pass",
+    "packedWorkspaceFreeConsumer": "pass",
+    "publicApiInventory": "unchanged",
+    "sourceSafety": "pass",
+    "historicalChecksums": "pass",
+    "defaultParallelTestAttempts": {
+      "attempts": 2,
+      "eachPassed": 442,
+      "eachFailed": 1,
+      "unchangedFailure": "M2 provider-pool test exceeded its existing 5000ms timeout"
+    },
+    "isolatedDefaultTimeoutAttempt": "same unchanged 5000ms timeout",
+    "singleWorkerCoverageRerun": "443/443 pass"
+  },
+  "boundaries": {
+    "catalogImportsByVerifier": 0,
+    "generatorLoadsByVerifier": 0,
+    "providerCalls": 0,
+    "networkRequired": false,
+    "credentialAccess": false,
+    "published": false,
+    "pushed": false
+  }
+}

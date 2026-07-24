@@ -48,8 +48,11 @@
     "test:m8b1-stage4": "pnpm build && pnpm exec vitest run apps/cli/tests/catalog-conformance-command.test.ts apps/cli/tests/catalog-compare-command.test.ts apps/cli/tests/catalog-manifest-command.test.ts apps/cli/tests/report-contract.test.ts apps/cli/tests/canonical-hardening.test.ts examples/m7b-diagnostics/tests/m8b1-stage4a1-manifest-binding.test.ts && node scripts/test-m8b1-stage4-packed.mjs",
     "audit:m8b1-stage4-results": "node scripts/audit-historical-checksum.mjs f70b7636fa4ee8faa3720c94991b20cee978ca07 docs/m8b1-stage4-results.sha256 da64fc779d3aeeabb4be623df3e3cde5086980dc854a0a36adc96d0e83a9e322",
     "verify:m8b1-stage4": "pnpm test:m8b1-stage4 && pnpm audit:m8b-history && pnpm audit:m8b1-stage2-results && pnpm audit:m8b1-stage2a-results && pnpm audit:m8b1-stage3-results && shasum -a 256 -c docs/m8b1-stage4a-results.sha256 && shasum -a 256 -c docs/m8b1-stage4a1-results.sha256 && pnpm audit:m8b1-stage4-results",
-    "audit:m8b1-stage4.1-results": "shasum -a 256 -c docs/m8b1-stage4.1-results.sha256",
+    "audit:m8b1-stage4.1-results": "node scripts/audit-historical-checksum.mjs 0633b576bd254237c1befa5762c8997387bf0ffb docs/m8b1-stage4.1-results.sha256 17567acba2f09c46a91cb5aadef1d92e91610b59a46fa9c5caebe2df5ec5becf",
     "verify:m8b1-stage4.1": "pnpm verify:m8b1-stage4 && pnpm audit:m8b1-stage4.1-results",
+    "audit:m8b1-stage5-results": "node scripts/audit-historical-checksum.mjs 1b0592db50a4d2d8443fa35048b6213353caac11 docs/m8b1-stage5-results.sha256 4f4c8a738f2a570b828f4e137ea189990d0c2a247eea060315bf665441798f61",
+    "audit:m8b1-stage5.1-results": "shasum -a 256 -c docs/m8b1-stage5.1-results.sha256",
+    "verify:m8b1-stage5.1": "pnpm verify:m8b1-stage4.1 && pnpm audit:m8b1-stage5-results && pnpm audit:m8b1-stage5.1-results",
     "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "smoke": "pnpm --filter @nicia-ai/lachesis-generator smoke && pnpm --filter @nicia-ai/lachesis-evidence smoke && pnpm --filter @nicia-ai/lachesis-evidence-typegraph smoke && pnpm --filter @nicia-ai/lachesis-benchmark smoke && pnpm --filter @nicia-ai/lachesis-node-smoke test && pnpm --filter @nicia-ai/lachesis-worker-smoke test"
   },
