@@ -18,6 +18,7 @@ import {
 import { z } from "zod";
 
 import { createExampleCatalog, examplePolicy } from "./example-catalog.js";
+import { runCatalogCompareCommand } from "./internal/catalog-compare-command.js";
 import { runCatalogManifestCommand } from "./internal/catalog-manifest-command.js";
 
 const nonTransformingJsonObjectSchema = z.custom<
@@ -154,6 +155,17 @@ async function loadReplay(
 }
 
 async function main(args: ReadonlyArray<string>): Promise<number> {
+  if (args[0] === "catalog" && args[1] === "compare") {
+    const result = await runCatalogCompareCommand(args.slice(2), {
+      stdout: (text) => process.stdout.write(text),
+      stderr: (text) => process.stderr.write(text),
+    });
+    if (!result.parsed)
+      process.stderr.write(
+        "Usage: lachesis catalog compare --left-catalog <file#export> --left-policy <file#export> --right-catalog <file#export> --right-policy <file#export> [--left-manifest <file>] [--right-manifest <file>] --report <file|-> [--replace]\n",
+      );
+    return result.exitCode;
+  }
   if (args[0] === "catalog" && args[1] === "manifest") {
     const result = await runCatalogManifestCommand(args.slice(2), {
       stdout: (text) => process.stdout.write(text),

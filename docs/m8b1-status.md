@@ -25,7 +25,7 @@ package version, package export, or public API changed.
 - Stage 2: private catalog manifest command — complete offline.
 - Stage 2a: descriptor, source-binding, and output-path hardening — complete
   offline.
-- Stage 3: structural catalog comparison — not started.
+- Stage 3: private structural catalog comparison — complete offline.
 - Stage 4: semantic conformance wiring — not started.
 - Stage 5: report verification and CI commands — not started.
 - Stage 6: registry-only product gate — not started.

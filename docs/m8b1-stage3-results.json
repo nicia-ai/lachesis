@@ -1,0 +1,17 @@
+{
+  "protocol": "lachesis.m8b1.stage3.results.v1",
+  "status": "complete-offline-pass",
+  "parentCommit": "f1a53cb7118a5a7eb0b0ed50be27f8bb8e9feb1c",
+  "command": "catalog.compare",
+  "mode": "structural-only",
+  "exactMatchExit": 0,
+  "reviewRequiredExit": 10,
+  "sourceBoundManifestVerification": true,
+  "reportProtocol": "lachesis-catalog-command-report/1",
+  "canonicalization": "lachesis-canonical-json/1",
+  "publicExportsAdded": 0,
+  "generatorDependencyAdded": false,
+  "providerCalls": 0,
+  "semanticCompatibilityClaim": false,
+  "stage4Started": false
+}

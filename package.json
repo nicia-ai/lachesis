@@ -39,9 +39,12 @@
     "verify:m8b1b": "pnpm exec vitest run apps/cli/tests/canonical-hardening.test.ts apps/cli/tests/kernel.test.ts && pnpm audit:m8b-history",
     "test:m8b1-stage2": "pnpm build && pnpm exec vitest run apps/cli/tests/catalog-manifest-command.test.ts apps/cli/tests/report-contract.test.ts apps/cli/tests/canonical-hardening.test.ts && node scripts/test-m8b1-stage2-packed.mjs",
     "audit:m8b1-stage2-results": "node scripts/audit-historical-checksum.mjs 8c1a5e596511ccd35ff08e3da08c00e6061089fd docs/m8b1-stage2-results.sha256 d6b1be22b81fe3f62cbc4eec248285d14bf13ff1e5f4fc58a97069c6558aa71a",
-    "audit:m8b1-stage2a-results": "shasum -a 256 -c docs/m8b1-stage2a-results.sha256",
+    "audit:m8b1-stage2a-results": "node scripts/audit-historical-checksum.mjs f1a53cb7118a5a7eb0b0ed50be27f8bb8e9feb1c docs/m8b1-stage2a-results.sha256 efcc049b1195321822a771ba0e28a4726f34112db57b6d7d9341d18a9322855e",
     "verify:m8b1-stage2": "pnpm test:m8b1-stage2 && pnpm audit:m8b-history && pnpm audit:m8b1-stage2-results",
     "verify:m8b1-stage2a": "pnpm test:m8b1-stage2 && pnpm audit:m8b-history && pnpm audit:m8b1-stage2-results && pnpm audit:m8b1-stage2a-results",
+    "test:m8b1-stage3": "pnpm build && pnpm exec vitest run apps/cli/tests/catalog-compare-command.test.ts apps/cli/tests/catalog-manifest-command.test.ts apps/cli/tests/report-contract.test.ts apps/cli/tests/canonical-hardening.test.ts && node scripts/test-m8b1-stage3-packed.mjs",
+    "audit:m8b1-stage3-results": "shasum -a 256 -c docs/m8b1-stage3-results.sha256",
+    "verify:m8b1-stage3": "pnpm test:m8b1-stage3 && pnpm audit:m8b-history && pnpm audit:m8b1-stage2-results && pnpm audit:m8b1-stage2a-results && pnpm audit:m8b1-stage3-results",
     "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "smoke": "pnpm --filter @nicia-ai/lachesis-generator smoke && pnpm --filter @nicia-ai/lachesis-evidence smoke && pnpm --filter @nicia-ai/lachesis-evidence-typegraph smoke && pnpm --filter @nicia-ai/lachesis-benchmark smoke && pnpm --filter @nicia-ai/lachesis-node-smoke test && pnpm --filter @nicia-ai/lachesis-worker-smoke test"
   },

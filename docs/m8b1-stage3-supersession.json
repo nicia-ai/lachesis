@@ -1,0 +1,22 @@
+{
+  "protocol": "lachesis.m8b1.stage3.supersession.v1",
+  "historicalStage2a": {
+    "commit": "f1a53cb7118a5a7eb0b0ed50be27f8bb8e9feb1c",
+    "checksumManifest": "docs/m8b1-stage2a-results.sha256",
+    "checksumManifestSha256": "efcc049b1195321822a771ba0e28a4726f34112db57b6d7d9341d18a9322855e",
+    "bytesRewritten": false
+  },
+  "disposition": "extended-by-private-structural-comparison",
+  "currentBinding": {
+    "commit": "git-commit-containing-this-record",
+    "checksumManifest": "docs/m8b1-stage3-results.sha256"
+  },
+  "unchanged": [
+    "lachesis-canonical-json/1",
+    "lachesis-catalog-command-report/1",
+    "exit-code-contract",
+    "public-api-inventory",
+    "package-versions",
+    "stage2a-security-boundaries"
+  ]
+}
