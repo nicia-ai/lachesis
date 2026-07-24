@@ -118,6 +118,17 @@ export function renderCommandReport(report: CommandReport): string {
         break;
     }
   }
+  if (
+    report.diagnostics.conformance.some(
+      (record) => record.result === "conformant",
+    ) &&
+    report.migrations.some(
+      (migration) => migration.category === "declaration-review",
+    )
+  )
+    lines.push(
+      "FINITE SUITE PASSED; COMPILATION POLICY REVIEW REMAINS. No compatibility or substitution claim is made.",
+    );
   for (const migration of report.migrations) {
     switch (migration.guidance.kind) {
       case "recompile-and-retain":

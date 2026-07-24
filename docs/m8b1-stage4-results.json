@@ -1,0 +1,87 @@
+{
+  "protocol": "lachesis.m8b1.stage4.results.v1",
+  "status": "complete-offline-pass",
+  "parentCommit": "3bb6455573f8dcb2ed4bacbce3075345f37f3324",
+  "frozenProtocol": {
+    "stage4aCommit": "6412f30c7c98c4e301f8da0992d4f4973c6ab1a7",
+    "stage4aChecksumManifestSha256": "f2c6e3bdccc157d64adc531795f57eeaadc1f05df54e4c3b4cbd577721e67940",
+    "stage4a1Commit": "3bb6455573f8dcb2ed4bacbce3075345f37f3324",
+    "stage4a1ChecksumManifestSha256": "eb86722a482026ec5506afb58c792c32b9c6e6a32777361bd2982494146a0d07"
+  },
+  "implementation": {
+    "command": "lachesis catalog compare",
+    "suiteAndConformanceOutMutuallyRequired": true,
+    "suiteModeRequiresFileReport": true,
+    "generatorLoad": "dynamic-once-after-preload-gates",
+    "diagnosisCallsPerInvocation": 1,
+    "automaticRepairs": 0,
+    "nativeAssessmentsPerReport": 1,
+    "initialOutcomeOnly": true,
+    "structuralModeGeneratorLoads": 0,
+    "publicExportsAdded": 0,
+    "reportProtocolWidened": false
+  },
+  "nativeVerification": {
+    "conformantVerifier": "verifyCatalogConformanceReport",
+    "rejectedVerifier": "verifyCatalogConformanceDiagnostic",
+    "catalogFingerprintsReconciled": true,
+    "fixtureDigestReconciled": true,
+    "cliManifestDigestsRetainedIndependently": true,
+    "diagnosticManifestDigestsComparedWithCliManifestDigests": false
+  },
+  "policySafety": {
+    "policyDifferencesDerivedFrom": "supplied-cli-policies",
+    "conformantSuiteWithPolicyDifferenceExit": 10,
+    "semanticExitPrecedence": [11, 12, 13],
+    "finiteSuiteCanSuppressPolicyReview": false,
+    "warning": "FINITE SUITE PASSED; COMPILATION POLICY REVIEW REMAINS. No compatibility or substitution claim is made."
+  },
+  "artifactTransaction": {
+    "order": ["conformance-artifact", "command-report-commit-marker"],
+    "stagedAndVerifiedInMemory": true,
+    "descriptorBoundPriorCopies": true,
+    "verifiedRollbackExit": 23,
+    "rollbackFailureExit": 70,
+    "rejectedOutcomeTouchesConformanceTarget": false,
+    "precommitFailureReport": "stdout-only-without-artifact-claim",
+    "staleMaterial": "fail-closed"
+  },
+  "verification": {
+    "focusedTestFiles": 6,
+    "focusedTests": 61,
+    "repositoryTestFiles": 30,
+    "repositoryTests": 421,
+    "coverage": {
+      "statementsPercent": 90.1,
+      "branchesPercent": 80.2,
+      "functionsPercent": 97.25,
+      "linesPercent": 94.15
+    },
+    "packedConsumer": {
+      "node": "v24.18.0",
+      "typescript": "6.0.3",
+      "skipLibCheck": false,
+      "workspaceImports": false,
+      "structuralExit": 0,
+      "semanticExit": 0
+    },
+    "workersDryRun": "pass",
+    "sourceSafety": "pass",
+    "publicApiInventory": "unchanged",
+    "historicalM8Audits": "pass",
+    "stage4aAndStage4a1Checksums": "pass",
+    "providerCalls": 0
+  },
+  "knownHistoricalReleaseCondition": {
+    "alpha3WorkflowOnlyChecksumMismatch": "preserved",
+    "releaseArtifactsModified": false
+  },
+  "boundaries": {
+    "stage5Started": false,
+    "stage6Started": false,
+    "published": false,
+    "pushed": false,
+    "packageVersionsChanged": false
+  },
+  "decision": "stage4-complete"
+}

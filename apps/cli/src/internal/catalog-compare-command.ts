@@ -15,6 +15,10 @@ import {
   planBudgetSchema,
   readCatalog,
 } from "@nicia-ai/lachesis";
+import type {
+  CatalogConformanceDiagnostic,
+  CatalogConformanceReport,
+} from "@nicia-ai/lachesis-generator";
 import { z } from "zod";
 
 import {
@@ -28,12 +32,13 @@ import type {
   ReportExitCode,
 } from "./report-schema.js";
 import {
+  type AtomicPairHooks,
   atomicWriteBounded,
+  atomicWritePairBounded,
   type BoundBytes,
   readBoundedRegularFile,
   resolveProjectPath,
   sameBoundIdentity,
-  type SecureFileHooks,
 } from "./secure-files.js";
 
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
@@ -55,6 +60,13 @@ const catalogSchema = z.custom<Catalog>().superRefine((value, context) => {
 const moduleNamespaceSchema = z.custom<Readonly<Record<string, unknown>>>(
   (value) => value !== null && typeof value === "object",
 );
+const suiteExportGateSchema = z.custom<Readonly<Record<string, unknown>>>(
+  (value) =>
+    value !== null &&
+    typeof value === "object" &&
+    Object.prototype.hasOwnProperty.call(value, "protocol") &&
+    Object.prototype.hasOwnProperty.call(value, "fixtures"),
+);
 
 type ParsedArguments = Readonly<{
   leftCatalog: string;
@@ -63,6 +75,8 @@ type ParsedArguments = Readonly<{
   rightPolicy: string;
   leftManifest?: string | undefined;
   rightManifest?: string | undefined;
+  suite?: string | undefined;
+  conformanceOut?: string | undefined;
   projectRoot: string;
   report: string;
   replace: boolean;
@@ -91,6 +105,10 @@ type LoadedSide = Readonly<{
   manifest: PlanLanguageManifest;
   manifestText: string;
   manifestBytes: Uint8Array;
+}>;
+type SuiteContext = Readonly<{
+  locator: Locator;
+  digest: string;
 }>;
 type ChangeKind =
   | "catalog.identity"
@@ -150,13 +168,15 @@ type SemanticRoleDeclaration = Readonly<{
   schema?: Readonly<{ id: string; version: string }> | undefined;
   operation?: Readonly<{ id: string; version: string }> | undefined;
 }>;
+type ConformanceRecord =
+  CommandReportInput["diagnostics"]["conformance"][number];
 
 export type CatalogCompareCommandResult = Readonly<{
   exitCode: number;
   parsed: boolean;
 }>;
 
-export type CatalogCompareCommandTestHooks = SecureFileHooks &
+export type CatalogCompareCommandTestHooks = AtomicPairHooks &
   Readonly<{
     afterSourceAcquired?: ((path: string) => Promise<void>) | undefined;
     afterSourceDigest?: ((path: string) => Promise<void>) | undefined;
@@ -166,6 +186,9 @@ export type CatalogCompareCommandTestHooks = SecureFileHooks &
       ((path: string, exportName: string) => Promise<void>) | undefined;
     onSourceAcquisition?: ((path: string) => void) | undefined;
     onModuleExecution?: ((path: string) => void) | undefined;
+    onGeneratorLoad?: (() => void) | undefined;
+    onDiagnosis?: (() => void) | undefined;
+    transformNativeAssessment?: ((assessment: unknown) => unknown) | undefined;
   }>;
 
 function usageFailure(): CatalogCompareCommandResult {
@@ -201,6 +224,8 @@ function parseArguments(args: ReadonlyArray<string>): ParsedArguments | null {
     "--right-manifest",
     "--project-root",
     "--report",
+    "--suite",
+    "--conformance-out",
   ]);
   for (let index = 0; index < args.length; index += 1) {
     const flag = args[index];
@@ -221,13 +246,18 @@ function parseArguments(args: ReadonlyArray<string>): ParsedArguments | null {
   const rightCatalog = singletons.get("--right-catalog");
   const rightPolicy = singletons.get("--right-policy");
   const report = singletons.get("--report");
+  const suite = singletons.get("--suite");
+  const conformanceOut = singletons.get("--conformance-out");
   if (
     leftCatalog === undefined ||
     leftPolicy === undefined ||
     rightCatalog === undefined ||
     rightPolicy === undefined ||
     report === undefined ||
-    ![leftCatalog, leftPolicy, rightCatalog, rightPolicy].every(validLocator)
+    ![leftCatalog, leftPolicy, rightCatalog, rightPolicy].every(validLocator) ||
+    (suite !== undefined && !validLocator(suite)) ||
+    (suite === undefined) !== (conformanceOut === undefined) ||
+    (suite !== undefined && report === "-")
   )
     return null;
   return {
@@ -241,6 +271,8 @@ function parseArguments(args: ReadonlyArray<string>): ParsedArguments | null {
     ...(singletons.has("--right-manifest")
       ? { rightManifest: singletons.get("--right-manifest") }
       : {}),
+    ...(suite === undefined ? {} : { suite }),
+    ...(conformanceOut === undefined ? {} : { conformanceOut }),
     projectRoot: singletons.get("--project-root") ?? process.cwd(),
     report,
     replace,
@@ -875,6 +907,167 @@ async function migrations(
   );
 }
 
+async function comparisonIdentity(
+  leftManifestDigest: string,
+  rightManifestDigest: string,
+  suiteDigest: string,
+): Promise<string> {
+  const identity = await digestValue({
+    protocol: "lachesis-catalog-command-report/1",
+    command: "catalog.compare",
+    version: "1",
+    leftManifestDigest,
+    rightManifestDigest,
+    suiteDigest,
+    mode: "finite-semantic-conformance",
+  });
+  if (!identity.ok) throw new Error("comparison-identity-failed");
+  return identity.value;
+}
+
+async function assessmentIdentity(
+  comparison: string,
+  disposition:
+    | "declaration-repairable"
+    | "genuinely-non-equivalent"
+    | "invalid-or-unverifiable",
+): Promise<string> {
+  const identity = await digestValue({
+    protocol: "lachesis-catalog-semantic-assessment/1",
+    comparisonIdentity: comparison,
+    phase: "initial",
+    disposition,
+  });
+  if (!identity.ok) throw new Error("assessment-identity-failed");
+  return identity.value;
+}
+
+async function rejectedMigration(
+  comparison: string,
+  diagnostic: CatalogConformanceDiagnostic,
+): Promise<CommandReportInput["migrations"][number]> {
+  switch (diagnostic.outcome) {
+    case "declaration-repairable": {
+      if (diagnostic.action.kind !== "review-declaration")
+        throw new Error("native-cardinality-failed");
+      return {
+        comparisonIdentity: comparison,
+        category: "declaration-repairable",
+        outcomes: [
+          {
+            phase: "initial",
+            assessmentIdentity: await assessmentIdentity(
+              comparison,
+              "declaration-repairable",
+            ),
+            disposition: "declaration-repairable",
+          },
+        ],
+        guidance: {
+          kind: "review-declaration",
+          conditional: true,
+          autoAccepted: false,
+          explanation: diagnostic.action.patchDescription,
+          safetyCondition: diagnostic.action.safetyCondition,
+        },
+      };
+    }
+    case "genuinely-non-equivalent": {
+      if (diagnostic.action.kind !== "do-not-substitute")
+        throw new Error("native-cardinality-failed");
+      return {
+        comparisonIdentity: comparison,
+        category: "genuine-non-substitution",
+        outcomes: [
+          {
+            phase: "initial",
+            assessmentIdentity: await assessmentIdentity(
+              comparison,
+              "genuinely-non-equivalent",
+            ),
+            disposition: "genuinely-non-equivalent",
+          },
+        ],
+        guidance: {
+          kind: "do-not-substitute",
+          conditional: false,
+          autoAccepted: false,
+          explanation: diagnostic.action.reason,
+          violatedObligation: diagnostic.action.violatedObligation,
+        },
+      };
+    }
+    case "insufficient-evidence":
+      return {
+        comparisonIdentity: comparison,
+        category: "invalid-or-unverifiable",
+        outcomes: [
+          {
+            phase: "initial",
+            assessmentIdentity: await assessmentIdentity(
+              comparison,
+              "invalid-or-unverifiable",
+            ),
+            disposition: "invalid-or-unverifiable",
+          },
+        ],
+        guidance: {
+          kind: "invalid-or-unverifiable",
+          conditional: false,
+          autoAccepted: false,
+          explanation: diagnostic.explanation,
+        },
+      };
+  }
+}
+
+async function conformantRecord(
+  comparison: string,
+  report: CatalogConformanceReport,
+): Promise<ConformanceRecord> {
+  const identity = await digestValue({
+    protocol: "lachesis-catalog-conformance-record/1",
+    comparisonIdentity: comparison,
+    result: "conformant",
+    reportIdentity: report.reportDigest,
+  });
+  if (!identity.ok) throw new Error("native-cardinality-failed");
+  return {
+    recordIdentity: identity.value,
+    comparisonIdentity: comparison,
+    result: "conformant",
+    reportIdentity: report.reportDigest,
+    diagnostic: null,
+  };
+}
+
+function rejectedRecord(
+  comparison: string,
+  diagnostic: CatalogConformanceDiagnostic,
+): ConformanceRecord {
+  return {
+    recordIdentity: diagnostic.recordDigest,
+    comparisonIdentity: comparison,
+    result: "rejected",
+    reportIdentity: null,
+    diagnostic,
+  };
+}
+
+function nativeReportBytes(report: CatalogConformanceReport): Uint8Array {
+  const canonical = canonicalizeJson(report);
+  if (!canonical.ok) throw new Error("native-canonicalization-failed");
+  const bytes = new TextEncoder().encode(`${canonical.value}\n`);
+  if (bytes.byteLength > MAX_ARTIFACT_BYTES)
+    throw new Error("output-too-large");
+  return bytes;
+}
+
+async function loadGenerator(hooks: CatalogCompareCommandTestHooks) {
+  hooks.onGeneratorLoad?.();
+  return await import("@nicia-ai/lachesis-generator");
+}
+
 function controller(
   code: ControllerDiagnosticCode,
   message: string,
@@ -978,6 +1171,110 @@ async function makeReport(
   });
 }
 
+async function makeSuiteReport(
+  locators: ReadonlyArray<Locator>,
+  manifests: Readonly<
+    Array<Readonly<{ side: "left" | "right"; digest: string }>>
+  >,
+  suiteDigest: string | undefined,
+  diagnostics: CommandReportInput["diagnostics"]["controller"],
+  completeness: "complete" | "partial",
+  conformance: CommandReportInput["diagnostics"]["conformance"] = [],
+  migrationRecords: CommandReportInput["migrations"] = [],
+  artifacts: CommandReportInput["artifacts"] = [],
+) {
+  const inputs: Array<CommandReportInput["inputs"][number]> = [];
+  const labels = [
+    "left-catalog",
+    "left-policy",
+    "right-catalog",
+    "right-policy",
+    "conformance-suite",
+  ] as const;
+  for (const [index, locator] of locators.entries()) {
+    const label = labels[index];
+    if (label === undefined) continue;
+    const kind =
+      label === "conformance-suite"
+        ? "conformance-suite"
+        : label.endsWith("policy")
+          ? "policy"
+          : "catalog";
+    inputs.push(
+      {
+        kind,
+        label: `${label}-module`,
+        digest: locator.moduleDigest,
+      },
+      {
+        kind,
+        label: `${label}-export-locator`,
+        digest: locator.bindingDigest,
+      },
+    );
+  }
+  for (const manifest of manifests)
+    inputs.push({
+      kind: "catalog-manifest",
+      label: `${manifest.side}-manifest`,
+      digest: manifest.digest,
+    });
+  if (suiteDigest !== undefined)
+    inputs.push({
+      kind: "conformance-suite",
+      label: "validated-conformance-suite",
+      digest: suiteDigest,
+    });
+  const commandIdentity = await digestValue({
+    protocol: "lachesis-catalog-command-identity/1",
+    command: "catalog.compare",
+    version: "1",
+    inputs: inputs
+      .map((input) => ({
+        kind: input.kind,
+        label: input.label,
+        digest: input.digest,
+      }))
+      .toSorted((left, right) =>
+        left.label < right.label ? -1 : left.label > right.label ? 1 : 0,
+      ),
+    options: ["finite-semantic-conformance"],
+  });
+  if (!commandIdentity.ok) throw new Error("command-identity-failed");
+  return await createCommandReport({
+    protocol: "lachesis-catalog-command-report/1",
+    command: {
+      id: "catalog.compare",
+      version: "1",
+      commandIdentity: commandIdentity.value,
+    },
+    inputs,
+    completeness,
+    diagnostics: {
+      controller: diagnostics,
+      validationAttempts: [],
+      conformance,
+    },
+    migrations: migrationRecords,
+    artifacts,
+    redaction: {
+      policy: "lachesis-report-redaction/1",
+      applied: true,
+      omittedFields: [
+        "absolute-paths",
+        "environment",
+        "module-export-values",
+        "secrets",
+        "source-code",
+      ],
+    },
+    integrity: {
+      canonicalization: "lachesis-canonical-json/1",
+      digestAlgorithm: "sha256",
+    },
+  });
+}
+
 async function emitReport(
   parsed: ParsedArguments,
   reportTarget: ProjectTarget | undefined,
@@ -1000,6 +1297,52 @@ async function emitReport(
       hooks,
     );
   }
+  sink.stderr(renderCommandReport(report.value));
+  return report.value.outcomeExitCode;
+}
+
+async function emitSuitePair(
+  parsed: ParsedArguments,
+  reportTarget: ProjectTarget,
+  conformanceTarget: ProjectTarget,
+  report: Awaited<ReturnType<typeof makeSuiteReport>>,
+  nativeBytes: Uint8Array,
+  sink: MachineSink,
+  hooks: CatalogCompareCommandTestHooks,
+): Promise<ReportExitCode> {
+  if (!report.ok) return 70;
+  const conformance = report.value.diagnostics.conformance;
+  const record = conformance[0];
+  const artifact = report.value.artifacts[0];
+  if (
+    conformance.length !== 1 ||
+    record?.result !== "conformant" ||
+    record.reportIdentity === null ||
+    report.value.artifacts.length !== 1 ||
+    artifact?.kind !== "conformance-report" ||
+    artifact.digest !== record.reportIdentity ||
+    (await sha256(nativeBytes)) !== artifact.checksum.value
+  )
+    throw new Error("native-cardinality-failed");
+  const serialized = serializeCommandReport(report.value);
+  if (!serialized.ok) throw new Error("command-serialization-failed");
+  const reportBytes = new TextEncoder().encode(serialized.value);
+  await atomicWritePairBounded(
+    {
+      root: conformanceTarget.root,
+      path: conformanceTarget.path,
+      bytes: nativeBytes,
+      limit: MAX_ARTIFACT_BYTES,
+    },
+    {
+      root: reportTarget.root,
+      path: reportTarget.path,
+      bytes: reportBytes,
+      limit: MAX_ARTIFACT_BYTES,
+    },
+    parsed.replace,
+    hooks,
+  );
   sink.stderr(renderCommandReport(report.value));
   return report.value.outcomeExitCode;
 }
@@ -1042,10 +1385,23 @@ function incompleteError(error: unknown): boolean {
         "parent-identity-drift",
         "target-identity-drift",
         "temporary-identity-drift",
+        "transaction-commit-incomplete",
         "unsafe-output",
         "unsafe-path",
       ].includes(error.message))
   );
+}
+
+function emitReportFallback(
+  report: Awaited<ReturnType<typeof makeReport>>,
+  sink: MachineSink,
+): ReportExitCode {
+  if (!report.ok) return 70;
+  const serialized = serializeCommandReport(report.value);
+  if (!serialized.ok) return 70;
+  sink.stdout(serialized.value);
+  sink.stderr(renderCommandReport(report.value));
+  return report.value.outcomeExitCode;
 }
 
 export async function runCatalogCompareCommand(
@@ -1055,22 +1411,37 @@ export async function runCatalogCompareCommand(
 ): Promise<CatalogCompareCommandResult> {
   const parsed = parseArguments(args);
   if (parsed === null) return usageFailure();
+  const suiteMode = parsed.suite !== undefined;
   let reportTarget: ProjectTarget | undefined;
+  let conformanceTarget: ProjectTarget | undefined;
   let locators: ReadonlyArray<Locator> = [];
   let manifestInputs: ReadonlyArray<
     Readonly<{ side: "left" | "right"; digest: string }>
   > = [];
+  let suiteInput: SuiteContext | undefined;
   try {
-    const resolvedLocators = await Promise.all([
+    const baseResolvedLocators = await Promise.all([
       resolveLocatorPath(parsed.leftCatalog, parsed.projectRoot),
       resolveLocatorPath(parsed.leftPolicy, parsed.projectRoot),
       resolveLocatorPath(parsed.rightCatalog, parsed.projectRoot),
       resolveLocatorPath(parsed.rightPolicy, parsed.projectRoot),
     ]);
+    const suiteResolvedLocator =
+      parsed.suite === undefined
+        ? undefined
+        : await resolveLocatorPath(parsed.suite, parsed.projectRoot);
+    const resolvedLocators =
+      suiteResolvedLocator === undefined
+        ? baseResolvedLocators
+        : [...baseResolvedLocators, suiteResolvedLocator];
     reportTarget =
       parsed.report === "-"
         ? undefined
         : await resolveProjectPath(parsed.projectRoot, parsed.report);
+    conformanceTarget =
+      parsed.conformanceOut === undefined
+        ? undefined
+        : await resolveProjectPath(parsed.projectRoot, parsed.conformanceOut);
     const leftManifestTarget =
       parsed.leftManifest === undefined
         ? undefined
@@ -1084,30 +1455,38 @@ export async function runCatalogCompareCommand(
     );
     const artifactPaths = [
       reportTarget?.path,
+      conformanceTarget?.path,
       leftManifestTarget?.path,
       rightManifestTarget?.path,
     ].filter((path): path is string => path !== undefined);
-    if (
+    const leftSources = new Set(
+      baseResolvedLocators.slice(0, 2).map((locator) => locator.path),
+    );
+    const rightSources = new Set(
+      baseResolvedLocators.slice(2, 4).map((locator) => locator.path),
+    );
+    const invalidSuiteSourceAlias =
+      suiteResolvedLocator !== undefined &&
+      ([...leftSources].some((path) => rightSources.has(path)) ||
+        leftSources.has(suiteResolvedLocator.path) ||
+        rightSources.has(suiteResolvedLocator.path));
+    const invalidArtifactAlias =
       artifactPaths.some((path) => sourcePaths.has(path)) ||
-      new Set(artifactPaths).size !== artifactPaths.length
-    ) {
-      const report = await makeReport(
-        [],
-        [],
-        [
-          controller(
-            "INVALID_MANIFEST",
-            "Source, manifest, and report targets must be distinct.",
-          ),
-        ],
-        "complete",
-      );
-      if (!report.ok) return { parsed: true, exitCode: 70 };
-      const serialized = serializeCommandReport(report.value);
-      if (!serialized.ok) return { parsed: true, exitCode: 70 };
-      sink.stdout(serialized.value);
-      sink.stderr(renderCommandReport(report.value));
-      return { parsed: true, exitCode: report.value.outcomeExitCode };
+      new Set(artifactPaths).size !== artifactPaths.length;
+    if (invalidSuiteSourceAlias || invalidArtifactAlias) {
+      const diagnostic = [
+        controller(
+          "INVALID_MANIFEST",
+          "Source, manifest, conformance, and report targets must be distinct.",
+        ),
+      ];
+      const report = suiteMode
+        ? await makeSuiteReport([], [], undefined, diagnostic, "complete")
+        : await makeReport([], [], diagnostic, "complete");
+      return {
+        parsed: true,
+        exitCode: emitReportFallback(report, sink),
+      };
     }
     const acquisitions = new Map<string, Promise<BoundBytes>>();
     locators = await Promise.all(
@@ -1120,6 +1499,7 @@ export async function runCatalogCompareCommand(
     const leftPolicyLocator = locators[1];
     const rightCatalogLocator = locators[2];
     const rightPolicyLocator = locators[3];
+    const suiteLocator = locators[4];
     if (
       leftCatalogLocator === undefined ||
       leftPolicyLocator === undefined ||
@@ -1144,48 +1524,246 @@ export async function runCatalogCompareCommand(
         : verifySuppliedManifest(rightManifestTarget, right, hooks),
     ]);
     if (supplied.includes("invalid")) {
-      const report = await makeReport(
-        locators,
-        manifestInputs,
-        [
-          controller(
-            "INVALID_MANIFEST",
-            "A supplied catalog manifest is invalid.",
-            "catalog-manifest",
-          ),
-        ],
-        "complete",
-      );
+      const diagnostic = [
+        controller(
+          "INVALID_MANIFEST",
+          "A supplied catalog manifest is invalid.",
+          "catalog-manifest",
+        ),
+      ];
+      const report = suiteMode
+        ? await makeSuiteReport(
+            locators,
+            manifestInputs,
+            undefined,
+            diagnostic,
+            "complete",
+          )
+        : await makeReport(locators, manifestInputs, diagnostic, "complete");
       return {
         parsed: true,
-        exitCode: await emitReport(parsed, reportTarget, report, sink, hooks),
+        exitCode: suiteMode
+          ? emitReportFallback(report, sink)
+          : await emitReport(parsed, reportTarget, report, sink, hooks),
       };
     }
     if (supplied.includes("mismatch")) {
+      const diagnostic = [
+        controller(
+          "IDENTITY_MISMATCH",
+          "A supplied catalog manifest does not match its bound source.",
+          "catalog-manifest",
+        ),
+      ];
+      const report = suiteMode
+        ? await makeSuiteReport(
+            locators,
+            manifestInputs,
+            undefined,
+            diagnostic,
+            "complete",
+          )
+        : await makeReport(locators, manifestInputs, diagnostic, "complete");
+      return {
+        parsed: true,
+        exitCode: suiteMode
+          ? emitReportFallback(report, sink)
+          : await emitReport(parsed, reportTarget, report, sink, hooks),
+      };
+    }
+    if (!suiteMode) {
+      const records = await migrations(await structuralChanges(left, right));
       const report = await makeReport(
         locators,
         manifestInputs,
-        [
-          controller(
-            "IDENTITY_MISMATCH",
-            "A supplied catalog manifest does not match its bound source.",
-            "catalog-manifest",
-          ),
-        ],
+        [],
         "complete",
+        records,
       );
       return {
         parsed: true,
         exitCode: await emitReport(parsed, reportTarget, report, sink, hooks),
       };
     }
-    const records = await migrations(await structuralChanges(left, right));
-    const report = await makeReport(
+    if (
+      suiteLocator === undefined ||
+      conformanceTarget === undefined ||
+      reportTarget === undefined
+    )
+      throw new Error("locator-invariant-failed");
+    const suiteExport = await exported(suiteLocator, modules, hooks);
+    const suiteGate = suiteExportGateSchema.safeParse(suiteExport);
+    if (!suiteGate.success) {
+      const report = await makeSuiteReport(
+        locators,
+        manifestInputs,
+        undefined,
+        [
+          controller(
+            "INVALID_SUITE",
+            "The conformance suite export is invalid.",
+            "conformance-suite",
+          ),
+        ],
+        "complete",
+      );
+      return {
+        parsed: true,
+        exitCode: emitReportFallback(report, sink),
+      };
+    }
+    let generator: Awaited<ReturnType<typeof loadGenerator>>;
+    try {
+      generator = await loadGenerator(hooks);
+    } catch {
+      throw new Error("generator-load-failed");
+    }
+    const validatedSuite = generator.catalogConformanceSuiteSchema.safeParse(
+      suiteGate.data,
+    );
+    if (!validatedSuite.success) {
+      const report = await makeSuiteReport(
+        locators,
+        manifestInputs,
+        undefined,
+        [
+          controller(
+            "INVALID_SUITE",
+            "The conformance suite is schema-invalid.",
+            "conformance-suite",
+          ),
+        ],
+        "complete",
+      );
+      return {
+        parsed: true,
+        exitCode: emitReportFallback(report, sink),
+      };
+    }
+    const suiteDigest = await digestValue(validatedSuite.data);
+    if (!suiteDigest.ok) throw new Error("suite-digest-failed");
+    suiteInput = { locator: suiteLocator, digest: suiteDigest.value };
+    const policyMigrations = await migrations(
+      await comparePolicy(left.policy, right.policy),
+    );
+    hooks.onDiagnosis?.();
+    const diagnosed = await generator.diagnoseCatalogsOffline({
+      left: left.catalog,
+      right: right.catalog,
+      suite: validatedSuite.data,
+    });
+    if (!diagnosed.ok) throw new Error("native-assessment-failed");
+    const transformed =
+      hooks.transformNativeAssessment?.(diagnosed.value) ?? diagnosed.value;
+    const assessment =
+      generator.catalogDiagnosticAssessmentSchema.safeParse(transformed);
+    if (!assessment.success) throw new Error("native-cardinality-failed");
+    const comparison = await comparisonIdentity(
+      left.manifest.manifestDigest,
+      right.manifest.manifestDigest,
+      suiteDigest.value,
+    );
+    if (assessment.data.kind === "conformant") {
+      const verified = await generator.verifyCatalogConformanceReport(
+        assessment.data.report,
+      );
+      const native = assessment.data.report;
+      if (
+        !verified.ok ||
+        native.leftCatalogFingerprint !== left.manifest.catalogFingerprint ||
+        native.rightCatalogFingerprint !== right.manifest.catalogFingerprint ||
+        native.fixtureDigest !== suiteDigest.value
+      ) {
+        const report = await makeSuiteReport(
+          locators,
+          manifestInputs,
+          suiteDigest.value,
+          [
+            controller(
+              "IDENTITY_MISMATCH",
+              "The native conformance result does not match its bound inputs.",
+              "native-conformance-report",
+            ),
+          ],
+          "complete",
+        );
+        return {
+          parsed: true,
+          exitCode: emitReportFallback(report, sink),
+        };
+      }
+      const nativeBytes = nativeReportBytes(native);
+      const checksum = await sha256(nativeBytes);
+      const record = await conformantRecord(comparison, native);
+      const report = await makeSuiteReport(
+        locators,
+        manifestInputs,
+        suiteDigest.value,
+        [],
+        "complete",
+        [record],
+        policyMigrations,
+        [
+          {
+            id: "native-conformance-report",
+            kind: "conformance-report",
+            mediaType: "application/json",
+            digest: native.reportDigest,
+            checksum: { algorithm: "sha256", value: checksum },
+          },
+        ],
+      );
+      return {
+        parsed: true,
+        exitCode: await emitSuitePair(
+          parsed,
+          reportTarget,
+          conformanceTarget,
+          report,
+          nativeBytes,
+          sink,
+          hooks,
+        ),
+      };
+    }
+    const native = assessment.data.diagnostic;
+    const verified = await generator.verifyCatalogConformanceDiagnostic(native);
+    if (
+      !verified.ok ||
+      native.evidence.leftCatalogFingerprint !==
+        left.manifest.catalogFingerprint ||
+      native.evidence.rightCatalogFingerprint !==
+        right.manifest.catalogFingerprint ||
+      native.evidence.fixtureDigest !== suiteDigest.value
+    ) {
+      const report = await makeSuiteReport(
+        locators,
+        manifestInputs,
+        suiteDigest.value,
+        [
+          controller(
+            "IDENTITY_MISMATCH",
+            "The native conformance diagnostic does not match its bound inputs.",
+            "native-conformance-diagnostic",
+          ),
+        ],
+        "complete",
+      );
+      return {
+        parsed: true,
+        exitCode: emitReportFallback(report, sink),
+      };
+    }
+    const record = rejectedRecord(comparison, native);
+    const semanticMigration = await rejectedMigration(comparison, native);
+    const report = await makeSuiteReport(
       locators,
       manifestInputs,
+      suiteDigest.value,
       [],
       "complete",
-      records,
+      [record],
+      [...policyMigrations, semanticMigration],
     );
     return {
       parsed: true,
@@ -1200,48 +1778,69 @@ export async function runCatalogCompareCommand(
       "command-identity-failed",
       "comparison-digest-failed",
       "comparison-identity-failed",
+      "command-serialization-failed",
+      "generator-load-failed",
       "locator-binding-failed",
       "locator-invariant-failed",
       "manifest-artifact-digest-failed",
       "manifest-canonicalization-failed",
       "manifest-generation-failed",
       "manifest-invariant-failed",
+      "native-assessment-failed",
+      "native-canonicalization-failed",
+      "native-cardinality-failed",
+      "suite-digest-failed",
+      "transaction-rollback-failed",
     ].includes(errorMessage);
-    const report = await makeReport(
-      locators,
-      manifestInputs,
-      [
-        controller(
-          internal
-            ? "INTERNAL_CONTROLLER_FAILURE"
-            : incomplete
-              ? "INCOMPLETE_EXECUTION"
-              : invalidPolicy
-                ? "INVALID_POLICY"
-                : "INVALID_CATALOG",
-          incomplete
-            ? "A bounded file operation could not be completed."
-            : internal
-              ? "The structural comparison controller failed an invariant."
-              : invalidPolicy
-                ? "A policy export is invalid."
-                : "A catalog module, export, or declaration is invalid.",
-        ),
-      ],
-      incomplete ? "partial" : "complete",
-    );
+    const diagnostic = [
+      controller(
+        internal
+          ? "INTERNAL_CONTROLLER_FAILURE"
+          : incomplete
+            ? "INCOMPLETE_EXECUTION"
+            : invalidPolicy
+              ? "INVALID_POLICY"
+              : "INVALID_CATALOG",
+        incomplete
+          ? "A bounded file operation could not be completed."
+          : internal
+            ? suiteMode
+              ? "The semantic conformance controller failed an invariant."
+              : "The structural comparison controller failed an invariant."
+            : invalidPolicy
+              ? "A policy export is invalid."
+              : "A catalog module, export, or declaration is invalid.",
+      ),
+    ];
+    const report = suiteMode
+      ? await makeSuiteReport(
+          locators,
+          manifestInputs,
+          suiteInput?.digest,
+          diagnostic,
+          incomplete ? "partial" : "complete",
+        )
+      : await makeReport(
+          locators,
+          manifestInputs,
+          diagnostic,
+          incomplete ? "partial" : "complete",
+        );
+    if (suiteMode)
+      return {
+        parsed: true,
+        exitCode: emitReportFallback(report, sink),
+      };
     try {
       return {
         parsed: true,
         exitCode: await emitReport(parsed, reportTarget, report, sink, hooks),
       };
     } catch {
-      if (!report.ok) return { parsed: true, exitCode: 70 };
-      const serialized = serializeCommandReport(report.value);
-      if (!serialized.ok) return { parsed: true, exitCode: 70 };
-      sink.stdout(serialized.value);
-      sink.stderr(renderCommandReport(report.value));
-      return { parsed: true, exitCode: report.value.outcomeExitCode };
+      return {
+        parsed: true,
+        exitCode: emitReportFallback(report, sink),
+      };
     }
   }
 }

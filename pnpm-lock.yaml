@@ -89,6 +89,9 @@ importers:
       "@nicia-ai/lachesis":
         specifier: workspace:*
         version: link:../../packages/kernel
+      "@nicia-ai/lachesis-generator":
+        specifier: workspace:*
+        version: link:../../packages/generator
       zod:
         specifier: 4.4.3
         version: 4.4.3

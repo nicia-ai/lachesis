@@ -162,7 +162,7 @@ async function main(args: ReadonlyArray<string>): Promise<number> {
     });
     if (!result.parsed)
       process.stderr.write(
-        "Usage: lachesis catalog compare --left-catalog <file#export> --left-policy <file#export> --right-catalog <file#export> --right-policy <file#export> [--left-manifest <file>] [--right-manifest <file>] --report <file|-> [--replace]\n",
+        "Usage: lachesis catalog compare --left-catalog <file#export> --left-policy <file#export> --right-catalog <file#export> --right-policy <file#export> [--left-manifest <file>] [--right-manifest <file>] [--suite <file#export> --conformance-out <file>] --report <file|-> [--replace]\n",
       );
     return result.exitCode;
   }

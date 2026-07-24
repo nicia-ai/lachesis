@@ -1,0 +1,34 @@
+{
+  "protocol": "lachesis.m8b1.stage4.supersession.v1",
+  "status": "append-only",
+  "historicalEvidence": [
+    {
+      "milestone": "M8b.1 Stage 3",
+      "commit": "b296694460037e8c196c8376cf42183c5a02c7d4",
+      "checksumManifest": "docs/m8b1-stage3-results.sha256",
+      "checksumManifestSha256": "7c7d091d9c93b5acc975a0bba5d315dd03dbafaad2c8f7fc0a7fc3c581c628ee",
+      "disposition": "verified-from-immutable-commit"
+    },
+    {
+      "milestone": "M8b.1 Stage 4a",
+      "commit": "6412f30c7c98c4e301f8da0992d4f4973c6ab1a7",
+      "checksumManifest": "docs/m8b1-stage4a-results.sha256",
+      "checksumManifestSha256": "f2c6e3bdccc157d64adc531795f57eeaadc1f05df54e4c3b4cbd577721e67940",
+      "disposition": "preserved-byte-for-byte"
+    },
+    {
+      "milestone": "M8b.1 Stage 4a.1",
+      "commit": "3bb6455573f8dcb2ed4bacbce3075345f37f3324",
+      "checksumManifest": "docs/m8b1-stage4a1-results.sha256",
+      "checksumManifestSha256": "eb86722a482026ec5506afb58c792c32b9c6e6a32777361bd2982494146a0d07",
+      "disposition": "preserved-byte-for-byte"
+    }
+  ],
+  "currentImplementation": {
+    "stage": "M8b.1 Stage 4",
+    "parentCommit": "3bb6455573f8dcb2ed4bacbce3075345f37f3324",
+    "implementsFrozenStage4a": true,
+    "implementsStage4a1Correction": true,
+    "rewritesHistoricalEvidence": false
+  }
+}

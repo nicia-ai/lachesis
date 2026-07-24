@@ -32,6 +32,21 @@ export type SecureFileHooks = Readonly<{
   beforeCommit?: ((path: string) => Promise<void>) | undefined;
 }>;
 
+export type AtomicPairHooks = SecureFileHooks &
+  Readonly<{
+    beforePairStage?:
+      | ((role: "artifact" | "report", path: string) => Promise<void>)
+      | undefined;
+    afterPairStage?:
+      | ((role: "artifact" | "report", path: string) => Promise<void>)
+      | undefined;
+    beforeArtifactInstall?: ((path: string) => Promise<void>) | undefined;
+    afterArtifactInstall?: ((path: string) => Promise<void>) | undefined;
+    beforeReportInstall?: ((path: string) => Promise<void>) | undefined;
+    afterReportInstall?: ((path: string) => Promise<void>) | undefined;
+    beforePairRollback?: (() => Promise<void>) | undefined;
+  }>;
+
 function identity(stat: {
   dev: number;
   ino: number;
@@ -177,6 +192,320 @@ async function ensureParent(
   if (!stat.isDirectory() || stat.isSymbolicLink())
     throw new Error("unsafe-path");
   return { path: parent, identity: identity(stat) };
+}
+
+async function syncDirectory(path: string): Promise<void> {
+  const handle = await open(path, constants.O_RDONLY);
+  try {
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+}
+
+type TargetSnapshot = Readonly<{
+  bound: BoundBytes | null;
+}>;
+
+type StagedWrite = Readonly<{
+  root: string;
+  path: string;
+  parent: Readonly<{ path: string; identity: FileIdentity }>;
+  temporary: string;
+  staged: BoundBytes;
+  original: TargetSnapshot;
+}>;
+
+function missing(error: unknown): boolean {
+  return error instanceof Error && "code" in error && error.code === "ENOENT";
+}
+
+async function snapshotTarget(
+  path: string,
+  limit: number,
+  replace: boolean,
+): Promise<TargetSnapshot> {
+  try {
+    const bound = await readBoundedRegularFile(path, limit);
+    if (!replace) throw new Error("unsafe-output");
+    return { bound };
+  } catch (error: unknown) {
+    if (missing(error)) return { bound: null };
+    throw new Error("transaction-commit-incomplete", { cause: error });
+  }
+}
+
+async function verifyParent(
+  parent: Readonly<{ path: string; identity: FileIdentity }>,
+): Promise<void> {
+  const current = await lstat(parent.path);
+  if (
+    !current.isDirectory() ||
+    current.isSymbolicLink() ||
+    !sameObject(parent.identity, identity(current)) ||
+    (await realpath(parent.path)) !== parent.path
+  )
+    throw new Error("parent-identity-drift");
+}
+
+async function verifyTargetSnapshot(
+  path: string,
+  snapshot: TargetSnapshot,
+  limit: number,
+): Promise<void> {
+  if (snapshot.bound === null) {
+    try {
+      await lstat(path);
+      throw new Error("target-identity-drift");
+    } catch (error: unknown) {
+      if (missing(error)) return;
+      throw error;
+    }
+  }
+  const current = await readBoundedRegularFile(path, limit);
+  if (!sameBoundIdentity(snapshot.bound, current))
+    throw new Error("target-identity-drift");
+}
+
+async function stageWrite(
+  root: string,
+  path: string,
+  bytes: Uint8Array,
+  limit: number,
+  replace: boolean,
+  role: "artifact" | "report",
+  hooks: AtomicPairHooks,
+): Promise<StagedWrite> {
+  if (bytes.byteLength > limit) throw new Error("output-too-large");
+  const parent = await ensureParent(root, path);
+  const original = await snapshotTarget(path, limit, replace);
+  const temporary = `${path}.lachesis-${role}-txn`;
+  await hooks.beforePairStage?.(role, path);
+  const handle = await open(
+    temporary,
+    constants.O_WRONLY |
+      constants.O_CREAT |
+      constants.O_EXCL |
+      constants.O_NOFOLLOW,
+    0o600,
+  );
+  try {
+    await handle.writeFile(bytes);
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+  const staged = await readBoundedRegularFile(temporary, limit);
+  if (
+    staged.bytes.byteLength !== bytes.byteLength ||
+    !staged.bytes.every((byte, index) => bytes[index] === byte)
+  )
+    throw new Error("temporary-identity-drift");
+  await hooks.afterPairStage?.(role, path);
+  return { root, path, parent, temporary, staged, original };
+}
+
+async function installStaged(
+  write: StagedWrite,
+  limit: number,
+): Promise<BoundBytes> {
+  await verifyParent(write.parent);
+  await verifyTargetSnapshot(write.path, write.original, limit);
+  const staged = await readBoundedRegularFile(write.temporary, limit);
+  if (!sameBoundIdentity(write.staged, staged))
+    throw new Error("temporary-identity-drift");
+  if (write.original.bound === null) {
+    await link(write.temporary, write.path);
+    await rm(write.temporary);
+  } else {
+    await rename(write.temporary, write.path);
+  }
+  await syncDirectory(write.parent.path);
+  const installed = await readBoundedRegularFile(write.path, limit);
+  if (
+    installed.bytes.byteLength !== write.staged.bytes.byteLength ||
+    !installed.bytes.every((byte, index) => write.staged.bytes[index] === byte)
+  )
+    throw new Error("target-identity-drift");
+  return installed;
+}
+
+async function restoreTarget(
+  write: StagedWrite,
+  installed: BoundBytes,
+  limit: number,
+): Promise<void> {
+  await verifyParent(write.parent);
+  const current = await readBoundedRegularFile(write.path, limit);
+  if (!sameBoundIdentity(installed, current))
+    throw new Error("target-identity-drift");
+  if (write.original.bound === null) {
+    await rm(write.path);
+    await syncDirectory(write.parent.path);
+    try {
+      await lstat(write.path);
+      throw new Error("target-identity-drift");
+    } catch (error: unknown) {
+      if (!missing(error)) throw error;
+    }
+    return;
+  }
+  const rollback = `${write.path}.lachesis-rollback-txn`;
+  const handle = await open(
+    rollback,
+    constants.O_WRONLY |
+      constants.O_CREAT |
+      constants.O_EXCL |
+      constants.O_NOFOLLOW,
+    0o600,
+  );
+  try {
+    await handle.writeFile(write.original.bound.bytes);
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+  try {
+    const rollbackBytes = await readBoundedRegularFile(rollback, limit);
+    if (
+      rollbackBytes.bytes.byteLength !==
+        write.original.bound.bytes.byteLength ||
+      !rollbackBytes.bytes.every(
+        (byte, index) => write.original.bound?.bytes[index] === byte,
+      )
+    )
+      throw new Error("temporary-identity-drift");
+    await verifyParent(write.parent);
+    const beforeRename = await readBoundedRegularFile(write.path, limit);
+    if (!sameBoundIdentity(installed, beforeRename))
+      throw new Error("target-identity-drift");
+    await rename(rollback, write.path);
+    await syncDirectory(write.parent.path);
+    const restored = await readBoundedRegularFile(write.path, limit);
+    if (
+      restored.bytes.byteLength !== write.original.bound.bytes.byteLength ||
+      !restored.bytes.every(
+        (byte, index) => write.original.bound?.bytes[index] === byte,
+      )
+    )
+      throw new Error("target-identity-drift");
+  } finally {
+    await rm(rollback, { force: true });
+  }
+}
+
+async function detectInstalledTarget(
+  write: StagedWrite,
+  limit: number,
+): Promise<BoundBytes | undefined> {
+  let current: BoundBytes;
+  try {
+    current = await readBoundedRegularFile(write.path, limit);
+  } catch (error: unknown) {
+    if (missing(error) && write.original.bound === null) return undefined;
+    throw error;
+  }
+  if (
+    write.original.bound !== null &&
+    sameBoundIdentity(write.original.bound, current)
+  )
+    return undefined;
+  if (
+    current.bytes.byteLength === write.staged.bytes.byteLength &&
+    current.bytes.every((byte, index) => write.staged.bytes[index] === byte)
+  )
+    return current;
+  throw new Error("target-identity-drift");
+}
+
+export async function atomicWritePairBounded(
+  artifact: Readonly<{
+    root: string;
+    path: string;
+    bytes: Uint8Array;
+    limit: number;
+  }>,
+  report: Readonly<{
+    root: string;
+    path: string;
+    bytes: Uint8Array;
+    limit: number;
+  }>,
+  replace: boolean,
+  hooks: AtomicPairHooks = {},
+): Promise<void> {
+  let artifactWrite: StagedWrite | undefined;
+  let reportWrite: StagedWrite | undefined;
+  let installedArtifact: BoundBytes | undefined;
+  let installedReport: BoundBytes | undefined;
+  try {
+    artifactWrite = await stageWrite(
+      artifact.root,
+      artifact.path,
+      artifact.bytes,
+      artifact.limit,
+      replace,
+      "artifact",
+      hooks,
+    );
+    reportWrite = await stageWrite(
+      report.root,
+      report.path,
+      report.bytes,
+      report.limit,
+      replace,
+      "report",
+      hooks,
+    );
+    await hooks.beforeArtifactInstall?.(artifact.path);
+    installedArtifact = await installStaged(artifactWrite, artifact.limit);
+    await hooks.afterArtifactInstall?.(artifact.path);
+    await hooks.beforeReportInstall?.(report.path);
+    installedReport = await installStaged(reportWrite, report.limit);
+    await hooks.afterReportInstall?.(report.path);
+    const [verifiedArtifact, verifiedReport] = await Promise.all([
+      readBoundedRegularFile(artifact.path, artifact.limit),
+      readBoundedRegularFile(report.path, report.limit),
+    ]);
+    if (
+      !sameBoundIdentity(installedArtifact, verifiedArtifact) ||
+      !sameBoundIdentity(installedReport, verifiedReport)
+    )
+      throw new Error("target-identity-drift");
+  } catch (error: unknown) {
+    try {
+      if (installedReport === undefined && reportWrite !== undefined)
+        installedReport = await detectInstalledTarget(
+          reportWrite,
+          report.limit,
+        );
+      if (installedArtifact === undefined && artifactWrite !== undefined)
+        installedArtifact = await detectInstalledTarget(
+          artifactWrite,
+          artifact.limit,
+        );
+    } catch {
+      throw new Error("transaction-rollback-failed");
+    }
+    if (installedArtifact !== undefined || installedReport !== undefined) {
+      try {
+        await hooks.beforePairRollback?.();
+        if (installedReport !== undefined && reportWrite !== undefined)
+          await restoreTarget(reportWrite, installedReport, report.limit);
+        if (installedArtifact !== undefined && artifactWrite !== undefined)
+          await restoreTarget(artifactWrite, installedArtifact, artifact.limit);
+      } catch {
+        throw new Error("transaction-rollback-failed");
+      }
+      throw new Error("transaction-commit-incomplete", { cause: error });
+    }
+    throw new Error("transaction-commit-incomplete", { cause: error });
+  } finally {
+    if (artifactWrite !== undefined)
+      await rm(artifactWrite.temporary, { force: true });
+    if (reportWrite !== undefined)
+      await rm(reportWrite.temporary, { force: true });
+  }
 }
 
 export async function atomicWriteBounded(
