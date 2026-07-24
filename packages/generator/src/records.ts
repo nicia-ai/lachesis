@@ -4,6 +4,8 @@ import {
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
+import { strictJsonValueSchema } from "./strict-json.js";
+
 const diagnosticLocationSchema = z
   .strictObject({
     nodeId: z.string().optional(),
@@ -143,7 +145,7 @@ export const attemptRecordSchema = z
     structuredOutputCanonical: z.string().nullable(),
     proposalCanonical: z.string().nullable(),
     abstentionReasons: z.array(z.string()).readonly(),
-    abstentionWitness: z.json().nullable().optional(),
+    abstentionWitness: strictJsonValueSchema.nullable().optional(),
     diagnostics: z.array(diagnosticRecordSchema).readonly(),
     adapterFailure: adapterFailureSchema.nullable(),
     dispatchEvidence: z

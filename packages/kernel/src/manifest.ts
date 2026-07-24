@@ -19,7 +19,7 @@ import { snapshotZodJsonSchema } from "./json.js";
 import { err, ok, type Result } from "./result.js";
 import {
   type CatalogReference,
-  modelPlanProposalSchema,
+  modelPlanProposalJsonDescriptionSchema,
   type OperationReference,
   operationReferenceSchema,
   type PlanBudget,
@@ -210,7 +210,9 @@ export async function createPlanLanguageManifest(
   if (!fingerprint.ok) return fingerprint;
   const partial = {
     ...core,
-    planJsonSchema: snapshotZodJsonSchema(modelPlanProposalSchema),
+    planJsonSchema: snapshotZodJsonSchema(
+      modelPlanProposalJsonDescriptionSchema,
+    ),
     catalogFingerprint: fingerprint.value,
     policy: {
       allowedCapabilities: [...policy.allowedCapabilities],

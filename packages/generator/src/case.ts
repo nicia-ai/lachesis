@@ -13,6 +13,10 @@ import {
   type PublicExample,
   taskInputSchema,
 } from "./model.js";
+import {
+  strictJsonRecordSchema,
+  strictJsonValueSchema,
+} from "./strict-json.js";
 
 export const exampleSchema = z
   .strictObject({
@@ -58,8 +62,8 @@ export const planPropertySchema = z.discriminatedUnion("kind", [
 export const deterministicEffectSchema = z
   .strictObject({
     effectName: z.string().min(1),
-    input: z.json(),
-    output: z.json(),
+    input: strictJsonValueSchema,
+    output: strictJsonValueSchema,
     replayResultId: z.string().min(1),
     usage: z
       .strictObject({
@@ -73,9 +77,9 @@ export const deterministicEffectSchema = z
 export const hiddenEvaluationSchema = z
   .strictObject({
     id: z.string().min(1),
-    inputs: z.record(z.string(), z.json()).readonly(),
+    inputs: strictJsonRecordSchema,
     effects: z.array(deterministicEffectSchema).readonly(),
-    expectedOutput: z.json(),
+    expectedOutput: strictJsonValueSchema,
   })
   .readonly();
 

@@ -1,6 +1,10 @@
+import { z } from "zod";
+
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
 import { err, ok, type Result } from "./result.js";
 import type { WirePlan } from "./wire.js";
+
+export type StrictJsonValue = z.infer<ReturnType<typeof z.json>>;
 
 function invalidJson(): Result<never, Diagnostic> {
   return err(
@@ -101,6 +105,16 @@ export function canonicalizeJson(value: unknown): Result<string, Diagnostic> {
     return invalidJson();
   }
 }
+
+/**
+ * Validates canonical JSON without reconstructing the input. Keep this schema
+ * private to package internals: it is a runtime identity boundary, not a
+ * general-purpose normalization API.
+ */
+export const strictJsonValueSchema = z.custom<StrictJsonValue>(
+  (value) => canonicalizeJson(value).ok,
+  "Expected a strict, non-transforming JSON value.",
+);
 
 /** Returns the syntactic canonical identity of an already validated plan. */
 export function canonicalizePlan(plan: WirePlan): Result<string, Diagnostic> {

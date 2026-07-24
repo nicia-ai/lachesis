@@ -14,6 +14,7 @@ import {
   defineEffect,
   diagnostic,
   type DiagnosticCode,
+  digestValue,
   type EffectHandler,
   type EffectRequest,
   type EffectResult,
@@ -24,7 +25,9 @@ import {
   parseJson,
   recordEffectResult,
   type ReplayEntry,
+  replayEntrySchema,
   type Result,
+  type RuntimeSchema,
   schemaReferenceSchema,
   wirePlanSchema,
 } from "@nicia-ai/lachesis";
@@ -92,6 +95,12 @@ function parseWireText(text: string) {
   return wirePlanSchema.parse(parsed.value);
 }
 
+function parseExactJson(text: string): unknown {
+  const parsed = parseJson(text);
+  if (!parsed.ok) throw new Error(parsed.error.message);
+  return parsed.value;
+}
+
 function catalogReplacing(
   replacement: (typeof exampleOperations)[number],
 ): Catalog {
@@ -101,6 +110,31 @@ function catalogReplacing(
     operations: exampleOperations.map((operation) =>
       operation.id === replacement.id ? replacement : operation,
     ),
+  });
+  if (!catalog.ok) throw new Error(catalog.error[0]?.message);
+  return catalog.value;
+}
+
+function strictJsonCatalog(): Catalog {
+  const reference = schemaReferenceSchema.parse({
+    id: "example/strict-json",
+    version: "1",
+  });
+  const schema: RuntimeSchema = {
+    id: reference.id,
+    version: reference.version,
+    description: "Strict non-transforming JSON for identity regressions.",
+    jsonSchema: {},
+    kind: { kind: "scalar" },
+    parse(value: unknown) {
+      const canonical = canonicalizeJson(value);
+      return canonical.ok ? { ok: true, value } : canonical;
+    },
+  };
+  const catalog = createCatalog({
+    identity: { id: "example/catalog", version: "1" },
+    schemas: [schema],
+    operations: [],
   });
   if (!catalog.ok) throw new Error(catalog.error[0]?.message);
   return catalog.value;
@@ -181,6 +215,91 @@ function firstCode<T>(
 }
 
 describe("unskippable compilation", () => {
+  it("preserves identity-bearing JSON through compile, execute, record, and replay", async () => {
+    const withProto = parseExactJson('{"__proto__":{"marker":true},"safe":1}');
+    const withoutProto = parseExactJson('{"safe":1}');
+    const constant = (value: unknown) => ({
+      id: "value",
+      op: "constant",
+      schema: { id: "example/strict-json", version: "1" },
+      value,
+    });
+    const catalog = strictJsonCatalog();
+    const preserved = await compileOrThrow(
+      planText([constant(withProto)], "value"),
+      catalog,
+    );
+    const omitted = await compileOrThrow(
+      planText([constant(withoutProto)], "value"),
+      catalog,
+    );
+    const preservedSummary = inspectExecutablePlan(preserved);
+    const omittedSummary = inspectExecutablePlan(omitted);
+    expect(preservedSummary?.canonicalPlan).toContain('"__proto__"');
+    expect(preservedSummary?.canonicalPlan).not.toBe(
+      omittedSummary?.canonicalPlan,
+    );
+    expect(preservedSummary?.planHash).not.toBe(omittedSummary?.planHash);
+
+    const executed = await executePlan(
+      preserved,
+      options(createReplayEffectHandler([]), new Map()),
+    );
+    expect(executed.ok).toBe(true);
+    if (!executed.ok) throw new Error(executed.error.diagnostics[0]?.message);
+    expect(executed.value.output).toEqual(withProto);
+    expect(
+      Object.prototype.hasOwnProperty.call(executed.value.output, "__proto__"),
+    ).toBe(true);
+
+    const effectPlan = await fixture("document-claims.valid.json");
+    const effectExecutable = await compileOrThrow(effectPlan);
+    let requestSeen: EffectRequest | undefined;
+    await executePlan(
+      effectExecutable,
+      options(
+        createMockEffectHandler((request) => {
+          requestSeen = request;
+          return {
+            ok: false,
+            error: diagnostic("MISSING_REPLAY_RESULT", "capture request"),
+          };
+        }),
+      ),
+    );
+    if (requestSeen === undefined) throw new Error("effect request missing");
+    const recorded = await recordEffectResult(requestSeen, {
+      value: withProto,
+      replayResultId: "recording/strict-json",
+      usage: { tokens: 1, wallClockMs: 2 },
+    });
+    expect(recorded.ok).toBe(true);
+    if (!recorded.ok) throw new Error(recorded.error.message);
+    expect(recorded.value.value).toEqual(withProto);
+    expect(
+      Object.prototype.hasOwnProperty.call(recorded.value.value, "__proto__"),
+    ).toBe(true);
+    const storedDigest = await digestValue(recorded.value.value);
+    expect(storedDigest).toEqual({
+      ok: true,
+      value: recorded.value.outputDigest,
+    });
+
+    const persistedJson = parseJson(JSON.stringify(recorded.value));
+    if (!persistedJson.ok) throw new Error(persistedJson.error.message);
+    const persisted = replayEntrySchema.parse(persistedJson.value);
+    expect(
+      Object.prototype.hasOwnProperty.call(persisted.value, "__proto__"),
+    ).toBe(true);
+    const replayed = await createReplayEffectHandler([persisted])(requestSeen);
+    expect(replayed.ok).toBe(true);
+    if (!replayed.ok) throw new Error(replayed.error.message);
+    expect(replayed.value.value).toEqual(withProto);
+    expect(
+      Object.prototype.hasOwnProperty.call(replayed.value.value, "__proto__"),
+    ).toBe(true);
+  });
+
   it("distinguishes malformed, unsupported, and invalid wire input", async () => {
     expect(
       firstCode(
@@ -911,6 +1030,10 @@ describe("language manifest and catalog contract", () => {
     expect(first).toEqual(second);
     if (!first.ok) throw new Error(first.error.message);
     expect(first.value.planJsonSchema).toMatchObject({ type: "object" });
+    expect(await digestValue(first.value.planJsonSchema)).toEqual({
+      ok: true,
+      value: "fe2063bb580e4e832f00eb9693d275fb32c477489cff7b33fd947b5fc3bd8e7c",
+    });
     expect(
       first.value.schemas.every((schema) => schema.description.length > 0),
     ).toBe(true);

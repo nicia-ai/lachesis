@@ -15,6 +15,7 @@ import {
   type ModelRequest,
   type ModelResponse,
 } from "./model.js";
+import { strictJsonValueSchema } from "./strict-json.js";
 
 const identitySchema = z
   .strictObject({
@@ -41,7 +42,7 @@ const responseSchema = z
     response: z
       .strictObject({
         rawResponse: z.string(),
-        structuredOutput: z.json().optional(),
+        structuredOutput: strictJsonValueSchema.optional(),
         usage: usageSchema,
         latencyMs: z.number().int().nonnegative(),
         dispatchEvidence: z

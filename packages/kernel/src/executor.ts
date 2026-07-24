@@ -4,6 +4,7 @@ import {
   canonicalizeJson,
   digestValue,
   hashCanonicalJson,
+  strictJsonValueSchema,
 } from "./canonical.js";
 import {
   type CatalogState,
@@ -880,7 +881,7 @@ export const replayEntrySchema = z
     effectName: z.string().min(1),
     inputDigest: valueDigestSchema,
     outputDigest: valueDigestSchema,
-    value: z.json(),
+    value: strictJsonValueSchema,
     replayResultId: z.string().min(1),
     usage: z
       .strictObject({

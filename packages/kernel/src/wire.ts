@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { strictJsonValueSchema } from "./canonical.js";
+
 const identifierSchema = z
   .string()
   .min(1)
@@ -44,7 +46,7 @@ const constantNodeSchema = z
     id: nodeIdSchema,
     op: z.literal("constant"),
     schema: schemaReferenceSchema,
-    value: z.json(),
+    value: strictJsonValueSchema,
   })
   .readonly();
 
@@ -157,6 +159,30 @@ export const modelPlanNodeSchema = z.discriminatedUnion("op", [
   boundedFixNodeSchema,
 ]);
 
+/*
+ * JSON Schema is already defined over JSON data. This description-only schema
+ * deliberately retains z.json() so the public plan-language manifest remains
+ * byte-compatible; it generates that description but never parses runtime
+ * data.
+ */
+const constantNodeJsonDescriptionSchema = constantNodeSchema
+  .unwrap()
+  .extend({ value: z.json() })
+  .readonly();
+
+const modelPlanNodeJsonDescriptionSchema = z.discriminatedUnion("op", [
+  modelInputNodeSchema,
+  constantNodeJsonDescriptionSchema,
+  invokeNodeSchema,
+  mapNodeSchema,
+  filterNodeSchema,
+  foldNodeSchema,
+  selectNodeSchema,
+  effectNodeSchema,
+  checkpointNodeSchema,
+  boundedFixNodeSchema,
+]);
+
 export const planBudgetSchema = z
   .strictObject({
     maxEffectCalls: z.number().int().nonnegative(),
@@ -192,6 +218,19 @@ export const modelPlanProposalSchema = wirePlanSchema
   .omit({ budget: true, allowedCapabilities: true })
   .extend({
     nodes: z.array(modelPlanNodeSchema).min(1).max(10_000).readonly(),
+  })
+  .readonly();
+
+/** Description-only companion that preserves the frozen manifest schema bytes. */
+export const modelPlanProposalJsonDescriptionSchema = wirePlanSchema
+  .unwrap()
+  .omit({ budget: true, allowedCapabilities: true, nodes: true })
+  .extend({
+    nodes: z
+      .array(modelPlanNodeJsonDescriptionSchema)
+      .min(1)
+      .max(10_000)
+      .readonly(),
   })
   .readonly();
 

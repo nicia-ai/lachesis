@@ -12,8 +12,11 @@ import { z } from "zod";
 
 import type { FrozenPlanGenerationCase } from "./case.js";
 import { type GenerationOutcome, generationOutcomeSchema } from "./model.js";
-
-type JsonValue = z.infer<ReturnType<typeof z.json>>;
+import {
+  strictJsonRecordSchema,
+  type StrictJsonValue,
+  strictJsonValueSchema,
+} from "./strict-json.js";
 
 export const PORTABLE_TRANSPORT_COMPILER_VERSION =
   "lachesis-portable-transport-schema/3";
@@ -29,7 +32,7 @@ export const structuredOutputTransportSchema = z
     compilerVersion: z.literal(PORTABLE_TRANSPORT_COMPILER_VERSION),
     manifestDigest: z.string().min(1),
     schemaDigest: z.string().min(1),
-    jsonSchema: z.json(),
+    jsonSchema: strictJsonValueSchema,
   })
   .readonly();
 
@@ -46,9 +49,9 @@ export type StructuredOutputCatalogResolver = (
   catalogId: string,
 ) => Result<Catalog, Diagnostic>;
 
-const schemaObjectSchema = z.record(z.string(), z.unknown());
+const schemaObjectSchema = strictJsonRecordSchema;
 const stringArraySchema = z.array(z.string());
-const jsonArraySchema = z.array(z.json());
+const jsonArraySchema = z.array(strictJsonValueSchema);
 
 const PORTABLE_SCHEMA_KEYS = new Set([
   "additionalProperties",
@@ -80,11 +83,9 @@ function deepFreeze(value: unknown): void {
 }
 
 function strictObject(
-  entries: ReadonlyArray<readonly [string, JsonValue]>,
-): JsonValue {
-  const properties = z
-    .record(z.string(), z.json())
-    .parse(Object.fromEntries(entries));
+  entries: ReadonlyArray<readonly [string, StrictJsonValue]>,
+): StrictJsonValue {
+  const properties = strictJsonRecordSchema.parse(Object.fromEntries(entries));
   return {
     type: "object",
     properties,
@@ -93,13 +94,13 @@ function strictObject(
   };
 }
 
-function nullable(schema: JsonValue): JsonValue {
+function nullable(schema: StrictJsonValue): StrictJsonValue {
   return { anyOf: [schema, { type: "null" }] };
 }
 
 function referenceSchema(
   references: ReadonlyArray<Readonly<{ id: string; version: string }>>,
-): JsonValue {
+): StrictJsonValue {
   return {
     anyOf: references.map((reference) =>
       strictObject([
@@ -114,7 +115,7 @@ function operationSchema(
   operations: ReadonlyArray<
     Readonly<{ kind: "function" | "effect"; id: string; version: string }>
   >,
-): JsonValue {
+): StrictJsonValue {
   return {
     anyOf: operations.map((operation) =>
       strictObject([
@@ -176,7 +177,7 @@ function optionalNumberKeyword(
 
 function enumKeyword(
   value: Readonly<Record<string, unknown>>,
-): Result<ReadonlyArray<JsonValue> | undefined, Diagnostic> {
+): Result<ReadonlyArray<StrictJsonValue> | undefined, Diagnostic> {
   if (value["enum"] === undefined) return { ok: true, value: undefined };
   const parsed = jsonArraySchema.min(1).safeParse(value["enum"]);
   return parsed.success
@@ -190,7 +191,7 @@ function enumKeyword(
 function compileDeclaredSchema(
   value: unknown,
   subject: string,
-): Result<JsonValue, Diagnostic> {
+): Result<StrictJsonValue, Diagnostic> {
   const parsed = schemaObjectSchema.safeParse(value);
   if (!parsed.success)
     return {
@@ -209,7 +210,9 @@ function compileDeclaredSchema(
   const enumeration = enumKeyword(raw);
   if (!enumeration.ok) return enumeration;
   const constant =
-    raw["const"] === undefined ? undefined : z.json().safeParse(raw["const"]);
+    raw["const"] === undefined
+      ? undefined
+      : strictJsonValueSchema.safeParse(raw["const"]);
   if (constant !== undefined && !constant.success)
     return {
       ok: false,
@@ -243,7 +246,7 @@ function compileDeclaredSchema(
     if (!maxLength.ok) return { ok: false, error: maxLength.error };
     return {
       ok: true,
-      value: z.json().parse({
+      value: strictJsonValueSchema.parse({
         type: type.data,
         ...(minimum.value === undefined ? {} : { minimum: minimum.value }),
         ...(maximum.value === undefined ? {} : { maximum: maximum.value }),
@@ -319,7 +322,7 @@ function compileDeclaredSchema(
         `${subject} optional object properties are not portable.`,
       ),
     };
-  const compiledEntries: Array<readonly [string, JsonValue]> = [];
+  const compiledEntries: Array<readonly [string, StrictJsonValue]> = [];
   for (const name of propertyNames) {
     const property = compileDeclaredSchema(
       properties.data[name],
@@ -421,7 +424,9 @@ export function validatePortableStructuredOutputSchema(
   return validatePortableNode(parsed.data, "structuredOutputSchema");
 }
 
-function nodeBase(op: string): ReadonlyArray<readonly [string, JsonValue]> {
+function nodeBase(
+  op: string,
+): ReadonlyArray<readonly [string, StrictJsonValue]> {
   return [
     ["id", { type: "string", minLength: 1, maxLength: 128 }],
     ["op", { type: "string", const: op }],
@@ -430,8 +435,8 @@ function nodeBase(op: string): ReadonlyArray<readonly [string, JsonValue]> {
 
 function planSchema(
   manifest: PlanLanguageManifest,
-  declaredSchemas: ReadonlyMap<string, JsonValue>,
-): JsonValue {
+  declaredSchemas: ReadonlyMap<string, StrictJsonValue>,
+): StrictJsonValue {
   const schemas = manifest.schemas.map((schema) => schema.reference);
   const collections = manifest.schemas
     .filter((schema) => schema.kind.kind === "collection")
@@ -456,7 +461,7 @@ function planSchema(
             )),
       )
       .map((operation) => operation.reference);
-  const nodes: Array<JsonValue> = [];
+  const nodes: Array<StrictJsonValue> = [];
   nodes.push(
     strictObject([
       ...nodeBase("input"),
@@ -601,7 +606,7 @@ function planSchema(
 export async function compileStructuredOutputTransport(
   manifest: PlanLanguageManifest,
 ): Promise<Result<StructuredOutputTransport, Diagnostic>> {
-  const declaredSchemas = new Map<string, JsonValue>();
+  const declaredSchemas = new Map<string, StrictJsonValue>();
   for (const schema of manifest.schemas) {
     const compiled = compileDeclaredSchema(
       schema.jsonSchema,
@@ -621,7 +626,7 @@ export async function compileStructuredOutputTransport(
       bounded,
     );
   }
-  const jsonSchema: JsonValue = strictObject([
+  const jsonSchema: StrictJsonValue = strictObject([
     [
       "outcome",
       {

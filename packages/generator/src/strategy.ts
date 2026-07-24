@@ -22,6 +22,8 @@ import {
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
+import { strictJsonValueSchema } from "./strict-json.js";
+
 const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 
 export const trajectoryShapeHashSchema =
@@ -147,7 +149,10 @@ const slottedConstantNodeSchema = wireNodeSchema.options[1]
   .extend({
     value: z.discriminatedUnion("kind", [
       z
-        .strictObject({ kind: z.literal("literal"), value: z.json() })
+        .strictObject({
+          kind: z.literal("literal"),
+          value: strictJsonValueSchema,
+        })
         .readonly(),
       z
         .strictObject({ kind: z.literal("slot"), slot: identifierSchema })

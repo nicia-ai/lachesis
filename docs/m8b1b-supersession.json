@@ -1,0 +1,68 @@
+{
+  "protocol": "lachesis.m8b1b.m8b1a-supersession.v1",
+  "status": "active-alpha-compatibility-correction",
+  "historicalM8b1a": {
+    "commit": "1f32d5a83021bf57ad1c45b7ee2449fd97e26485",
+    "checksumManifest": "docs/m8b1a-results.sha256",
+    "checksumManifestSha256": "2c5ca36e7f7015f974f79328c57a373194c03967f22503ec2d3c284def798452",
+    "bytesRewritten": false,
+    "verification": "git-object-at-bound-commit"
+  },
+  "confirmedDefect": {
+    "kind": "post-parse-identity-boundary-reconstruction",
+    "planBoundary": "constantNodeSchema.value",
+    "replayBoundary": "replayEntrySchema.value",
+    "affectedProperty": "__proto__"
+  },
+  "protocolDecision": {
+    "canonicalJson": "lachesis-canonical-json/1",
+    "wirePlan": "1",
+    "changed": false,
+    "classification": "alpha-compatibility-correction"
+  },
+  "currentCorrection": {
+    "sourceCommit": "git-commit-containing-this-record",
+    "sourceCommitParent": "1f32d5a83021bf57ad1c45b7ee2449fd97e26485",
+    "checksumManifest": "docs/m8b1b-results.sha256",
+    "bindingRule": "the atomic Git commit containing this record and checksum manifest is the corrected source commit"
+  },
+  "evolvingSourceAndTestFiles": [
+    "apps/cli/src/cli.ts",
+    "apps/cli/tests/canonical-hardening.test.ts",
+    "apps/cli/tests/kernel.test.ts",
+    "package.json",
+    "packages/evidence/src/m5.ts",
+    "packages/evidence/src/zod-json-schema.ts",
+    "packages/generator/src/case.ts",
+    "packages/generator/src/catalog-conformance.ts",
+    "packages/generator/src/model.ts",
+    "packages/generator/src/recorded-adapter.ts",
+    "packages/generator/src/records.ts",
+    "packages/generator/src/strategy.ts",
+    "packages/generator/src/strict-json.ts",
+    "packages/generator/src/transport.ts",
+    "packages/generator/tests/generator.test.ts",
+    "packages/kernel/src/canonical.ts",
+    "packages/kernel/src/catalog.ts",
+    "packages/kernel/src/executor.ts",
+    "packages/kernel/src/json.ts",
+    "packages/kernel/src/manifest.ts",
+    "packages/kernel/src/wire.ts"
+  ],
+  "immutableRecords": [
+    "docs/m8b1-stage1-results.md",
+    "docs/m8b1-stage1-results.json",
+    "docs/m8b1-stage1-results.sha256",
+    "docs/m8b1a-canonicalization-debug.md",
+    "docs/m8b1a-regression-evidence.json",
+    "docs/m8b1a-results.sha256",
+    "docs/m8b1a-supersession.json"
+  ],
+  "nonclaims": [
+    "historical evidence is not rewritten",
+    "no catalog manifest command is implemented",
+    "no public export or command is added",
+    "no package version changes",
+    "no provider or research work occurs"
+  ]
+}

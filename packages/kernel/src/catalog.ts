@@ -1,5 +1,6 @@
-import { z } from "zod";
+import type { z } from "zod";
 
+import { strictJsonValueSchema } from "./canonical.js";
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
 import { snapshotZodJsonSchema } from "./json.js";
 import { err, ok, type Result } from "./result.js";
@@ -280,7 +281,7 @@ export function defineSchema<T>(
         ),
       );
     }
-    return z.json().safeParse(parsed.data).success
+    return strictJsonValueSchema.safeParse(parsed.data).success
       ? ok(parsed.data)
       : err(
           runtimeValidationDiagnostic(
@@ -334,7 +335,7 @@ export function defineCollectionSchema<T>(
         ),
       );
     }
-    return z.json().safeParse(parsed.data).success
+    return strictJsonValueSchema.safeParse(parsed.data).success
       ? ok(parsed.data)
       : err(
           runtimeValidationDiagnostic(

@@ -232,7 +232,8 @@ describe("M8b.1a canonicalization hardening", () => {
       enumerable: true,
       value: 1,
     });
-    const sparse = Array.from({ length: 2 });
+    const sparse = new Array<unknown>(2);
+    sparse[1] = 1;
     const extraArrayProperty = Object.defineProperty([1], "extra", {
       enumerable: true,
       value: 2,

@@ -12,7 +12,13 @@ import {
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
-const conformanceValuesSchema = z.array(z.json()).min(1).max(10_000).readonly();
+import { strictJsonValueSchema } from "./strict-json.js";
+
+const conformanceValuesSchema = z
+  .array(strictJsonValueSchema)
+  .min(1)
+  .max(10_000)
+  .readonly();
 
 const schemaFixtureSchema = z
   .strictObject({
@@ -41,7 +47,7 @@ const reducerFixtureSchema = z
   .strictObject({
     kind: z.literal("reducer"),
     role: semanticRoleReferenceSchema,
-    values: z.array(z.json()).min(3).max(10_000).readonly(),
+    values: z.array(strictJsonValueSchema).min(3).max(10_000).readonly(),
   })
   .readonly();
 

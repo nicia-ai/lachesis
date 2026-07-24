@@ -19,6 +19,14 @@ import { z } from "zod";
 
 import { createExampleCatalog, examplePolicy } from "./example-catalog.js";
 
+const nonTransformingJsonObjectSchema = z.custom<
+  Readonly<Record<string, unknown>>
+>(
+  (value) =>
+    value !== null && typeof value === "object" && !Array.isArray(value),
+  "Expected a JSON object.",
+);
+
 function jsonOutput(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, undefined, 2)}\n`);
 }
@@ -105,7 +113,7 @@ async function loadInputs(
   if (!text.ok) return text;
   const json = parseJson(text.value);
   if (!json.ok) return { ok: false, error: [json.error] };
-  const parsed = z.record(z.string(), z.json()).safeParse(json.value);
+  const parsed = nonTransformingJsonObjectSchema.safeParse(json.value);
   return parsed.success
     ? { ok: true, value: new Map(Object.entries(parsed.data)) }
     : {

@@ -45,14 +45,15 @@ import {
   type M4d1OracleRequest,
   m4d1OracleRequestSchema,
 } from "./m4d1.js";
-import { snapshotZodJsonSchema } from "./zod-json-schema.js";
+import {
+  snapshotZodJsonSchema,
+  strictJsonValueSchema,
+} from "./zod-json-schema.js";
 
 const identifierSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]*$/u);
 const digestSchema = z.string().regex(/^[a-f0-9]{64}$/u);
 const isoInstantSchema = z.iso.datetime();
-const jsonValueSchema = z.json();
-
-export type M5InputValue = z.infer<typeof jsonValueSchema>;
+export type M5InputValue = z.infer<typeof strictJsonValueSchema>;
 
 export const M5A_RUNTIME_PROTOCOL = Object.freeze({
   id: "lachesis-production-evidence-runtime",
@@ -436,7 +437,7 @@ export type M5RuntimeTrace = z.infer<typeof m5RuntimeTraceSchema>;
 export type M5RuntimeResult = z.infer<typeof m5RuntimeResultSchema>;
 
 const m5InputEntrySchema = z
-  .strictObject({ name: identifierSchema, value: jsonValueSchema })
+  .strictObject({ name: identifierSchema, value: strictJsonValueSchema })
   .readonly();
 
 const m5OracleRecordingSchema = z

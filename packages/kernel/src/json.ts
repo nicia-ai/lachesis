@@ -1,23 +1,18 @@
 import { z } from "zod";
 
-import { canonicalizeJson } from "./canonical.js";
+import { type StrictJsonValue, strictJsonValueSchema } from "./canonical.js";
 import { type Diagnostic, diagnostic } from "./diagnostic.js";
 import { err, ok, type Result } from "./result.js";
 import { type WirePlan, wirePlanSchema } from "./wire.js";
 
-type JsonValue = z.infer<ReturnType<typeof z.json>>;
-
-function isJsonValue(value: unknown): value is JsonValue {
-  return canonicalizeJson(value).ok;
-}
-
-export function parseJson(text: string): Result<JsonValue, Diagnostic> {
+export function parseJson(text: string): Result<StrictJsonValue, Diagnostic> {
   try {
     const value: unknown = JSON.parse(text);
-    if (!isJsonValue(value)) {
+    const parsed = strictJsonValueSchema.safeParse(value);
+    if (!parsed.success) {
       return err(diagnostic("MALFORMED_JSON", "Input is not a JSON value."));
     }
-    return ok(value);
+    return ok(parsed.data);
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Unknown JSON parser failure";
@@ -38,16 +33,17 @@ export function parseJson(text: string): Result<JsonValue, Diagnostic> {
 export function snapshotZodJsonSchema(
   schema: z.ZodType,
   target?: "draft-2020-12",
-): JsonValue {
+): StrictJsonValue {
   const generated =
     target === undefined
       ? z.toJSONSchema(schema)
       : z.toJSONSchema(schema, { target });
   const snapshot: unknown = structuredClone(generated);
-  if (!isJsonValue(snapshot)) {
+  const parsed = strictJsonValueSchema.safeParse(snapshot);
+  if (!parsed.success) {
     throw new Error("Zod generated a non-JSON schema snapshot.");
   }
-  return snapshot;
+  return parsed.data;
 }
 
 /** Parses untrusted text and returns only a fully Zod-validated version-1 wire plan. */

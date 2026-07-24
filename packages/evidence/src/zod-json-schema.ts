@@ -7,6 +7,12 @@ function isJsonValue(value: unknown): value is JsonValue {
   return canonicalizeJson(value).ok;
 }
 
+/** Private non-transforming boundary for identity-bearing arbitrary JSON. */
+export const strictJsonValueSchema = z.custom<JsonValue>(
+  isJsonValue,
+  "Expected a strict, non-transforming JSON value.",
+);
+
 /**
  * Takes a plain-data snapshot of output produced directly by Zod's JSON Schema
  * generator. Structured cloning removes Zod's non-enumerable runtime metadata

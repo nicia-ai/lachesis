@@ -10,6 +10,7 @@ import {
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
+import { strictJsonValueSchema } from "./strict-json.js";
 import type { StructuredOutputTransport } from "./transport.js";
 
 export type GenerationOutcome =
@@ -170,7 +171,7 @@ export const inferenceSettingsSchema = z
   .strictObject({
     temperature: z.number().min(0).nullable(),
     seed: z.number().int().nullable(),
-    reasoningSettings: z.json(),
+    reasoningSettings: strictJsonValueSchema,
     maxInputTokens: z.number().int().positive(),
     maxOutputTokens: z.number().int().positive(),
     structuredOutputMode: z.enum(["none", "json-schema", "provider-native"]),

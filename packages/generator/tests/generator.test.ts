@@ -383,13 +383,13 @@ describe("M1a frozen substrate", () => {
 
     for (const jsonSchema of [
       "not-a-schema-object",
-      z.json().parse({ type: "array" }),
-      z.json().parse({
+      { type: "array" },
+      {
         type: "object",
         properties: { value: { type: "string" } },
         required: [],
         additionalProperties: false,
-      }),
+      },
     ]) {
       const alteredManifest = {
         ...manifest,

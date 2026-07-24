@@ -1,0 +1,72 @@
+{
+  "protocol": "lachesis.m8b1b.identity-boundary-correction.v1",
+  "status": "complete-offline-pass",
+  "parentCommit": "1f32d5a83021bf57ad1c45b7ee2449fd97e26485",
+  "protocolIdentities": {
+    "canonicalJson": "lachesis-canonical-json/1",
+    "wirePlan": "1",
+    "changed": false
+  },
+  "confirmedFailures": [
+    {
+      "boundary": "constantNodeSchema.value",
+      "effect": "own-__proto__-removed-before-plan-canonicalization"
+    },
+    {
+      "boundary": "replayEntrySchema.value",
+      "effect": "own-__proto__-removed-after-output-digest"
+    }
+  ],
+  "endToEndRegression": {
+    "compilePreservesProperty": true,
+    "canonicalPlansDistinct": true,
+    "planHashesDistinct": true,
+    "executionPreservesProperty": true,
+    "recordingPreservesProperty": true,
+    "storedDigestMatchesStoredValue": true,
+    "persistedReplayPreservesProperty": true,
+    "replayReproducesProperty": true
+  },
+  "remainingZodJsonCalls": [
+    {
+      "path": "packages/kernel/src/wire.ts",
+      "disposition": "safe-description-only-never-parses-runtime-data"
+    },
+    {
+      "path": "apps/cli/tests/canonical-hardening.test.ts",
+      "disposition": "safe-test-only-alpha3-differential-oracle"
+    }
+  ],
+  "blockedUses": [],
+  "manifestCompatibility": {
+    "historicalCommit": "1f32d5a83021bf57ad1c45b7ee2449fd97e26485",
+    "historicalCanonicalPlanJsonSchemaSha256": "fe2063bb580e4e832f00eb9693d275fb32c477489cff7b33fd947b5fc3bd8e7c",
+    "correctedCanonicalPlanJsonSchemaSha256": "fe2063bb580e4e832f00eb9693d275fb32c477489cff7b33fd947b5fc3bd8e7c",
+    "byteIdentical": true
+  },
+  "fixedSeedCampaigns": {
+    "seedDecimal": 1832432033,
+    "parseCanonicalizeIdempotence": 100000,
+    "alpha3Differential": 100000,
+    "distinctUtf16KeyPairs": 50000,
+    "status": "pass"
+  },
+  "verification": {
+    "focusedTests": 46,
+    "testFiles": 26,
+    "tests": 392,
+    "coverage": {
+      "statements": 90.06,
+      "branches": 80.14,
+      "functions": 97.2,
+      "lines": 94.12
+    },
+    "providerCalls": 0
+  },
+  "nonclaims": [
+    "no Stage 2 command is implemented",
+    "no public export or command is added",
+    "no package version changes",
+    "no provider or research work occurs"
+  ]
+}
