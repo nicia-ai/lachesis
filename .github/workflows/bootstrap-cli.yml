@@ -21,7 +21,9 @@ env:
   RELEASE_VERSION: 0.1.0-alpha.4
   RELEASE_TAG: v0.1.0-alpha.4
   RELEASE_TITLE: Lachesis 0.1.0-alpha.4
+  DRAFT_RELEASE_ID: "359550250"
   RELEASE_NOTES: docs/m8b2b-alpha4-release-notes.md
+  RELEASE_NOTES_SHA256: bec6a90f3c7683e3d66d10607ebfb4891105abb25064c5feae14e59196fc1a02
   RELEASE_CHECKSUMS: docs/m8b2b-alpha4-release.sha256
   CLI_TARBALL_SHA256: f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638
   NPM_REGISTRY: https://registry.npmjs.org
@@ -65,20 +67,32 @@ jobs:
           test "$(git cat-file -t "$RELEASE_TAG")" = "tag"
           test "$(git rev-parse "$RELEASE_TAG^{}")" = "$RELEASE_COMMIT"
           test "$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG^{}" | cut -f1)" = "$RELEASE_COMMIT"
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+          gh api "repos/$GITHUB_REPOSITORY/releases/$DRAFT_RELEASE_ID" \
             > "$RUNNER_TEMP/draft-release.json"
-          node - "$RUNNER_TEMP/draft-release.json" "$RELEASE_NOTES" "$RELEASE_TITLE" <<'NODE'
+          node - "$RUNNER_TEMP/draft-release.json" "$RELEASE_NOTES" <<'NODE'
+          const crypto = require("node:crypto");
           const fs = require("node:fs");
-          const [releasePath, notesPath, expectedTitle] = process.argv.slice(2);
+          const [releasePath, notesPath] = process.argv.slice(2);
           const release = JSON.parse(fs.readFileSync(releasePath, "utf8"));
           const notes = fs.readFileSync(notesPath);
+          if (release.id !== Number(process.env.DRAFT_RELEASE_ID)) {
+            throw new Error("The GitHub draft release identity differs from the frozen identity.");
+          }
+          if (release.tag_name !== process.env.RELEASE_TAG) {
+            throw new Error("The GitHub release tag differs from the frozen tag.");
+          }
           if (release.draft !== true || release.prerelease !== true) {
             throw new Error("The GitHub release must remain a draft prerelease.");
           }
-          if (release.name !== expectedTitle) {
+          if (release.name !== process.env.RELEASE_TITLE) {
             throw new Error("The GitHub release title differs from the frozen title.");
           }
-          if (!Buffer.from(release.body, "utf8").equals(notes)) {
+          const releaseBody = Buffer.from(release.body, "utf8");
+          const bodyDigest = crypto.createHash("sha256").update(releaseBody).digest("hex");
+          if (bodyDigest !== process.env.RELEASE_NOTES_SHA256) {
+            throw new Error("The GitHub release body digest differs from the frozen digest.");
+          }
+          if (!releaseBody.equals(notes)) {
             throw new Error("The GitHub release body differs from the frozen release-note bytes.");
           }
           NODE
