@@ -277,6 +277,10 @@ const controllerDiagnosticSchema = z
   })
   .readonly();
 
+export type ControllerDiagnosticCode = z.infer<
+  typeof controllerDiagnosticCodeSchema
+>;
+
 const migrationGuidanceSchema = z.discriminatedUnion("kind", [
   z
     .strictObject({

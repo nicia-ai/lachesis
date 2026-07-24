@@ -1,0 +1,13 @@
+{
+  "protocol": "lachesis.m8b1.stage2.results.v1",
+  "status": "complete-offline-pass",
+  "parentCommit": "12d156e8a7db3a05a044de5eb665c8496c9d86da",
+  "command": "catalog.manifest",
+  "modes": ["check", "out", "verify"],
+  "canonicalization": "lachesis-canonical-json/1",
+  "exitCodes": [0, 20, 22, 23, 70],
+  "publicExportsAdded": 0,
+  "generatorDependencyAdded": false,
+  "providerCalls": 0,
+  "stage3Started": false
+}

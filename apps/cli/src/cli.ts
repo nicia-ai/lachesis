@@ -18,6 +18,7 @@ import {
 import { z } from "zod";
 
 import { createExampleCatalog, examplePolicy } from "./example-catalog.js";
+import { runCatalogManifestCommand } from "./internal/catalog-manifest-command.js";
 
 const nonTransformingJsonObjectSchema = z.custom<
   Readonly<Record<string, unknown>>
@@ -153,6 +154,17 @@ async function loadReplay(
 }
 
 async function main(args: ReadonlyArray<string>): Promise<number> {
+  if (args[0] === "catalog" && args[1] === "manifest") {
+    const result = await runCatalogManifestCommand(args.slice(2), {
+      stdout: (text) => process.stdout.write(text),
+      stderr: (text) => process.stderr.write(text),
+    });
+    if (!result.parsed)
+      process.stderr.write(
+        "Usage: lachesis catalog manifest --catalog <file#export> --policy <file#export> (--check|--out <file>|--verify <file>) --report <file|-> [--replace]\n",
+      );
+    return result.exitCode;
+  }
   const [command, planPath] = args;
   const asJson = args.includes("--json");
   if (

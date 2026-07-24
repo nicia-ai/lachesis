@@ -22,7 +22,7 @@ package version, package export, or public API changed.
 
 ## Later stages
 
-- Stage 2: catalog manifest command — not started.
+- Stage 2: private catalog manifest command — complete offline.
 - Stage 3: structural catalog comparison — not started.
 - Stage 4: semantic conformance wiring — not started.
 - Stage 5: report verification and CI commands — not started.
