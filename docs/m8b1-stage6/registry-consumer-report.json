@@ -1,0 +1,93 @@
+{
+  "protocol": "lachesis.m8b1.stage6.registry-consumer.v1",
+  "baseline": "0e76d35a6f9f397f0ed235ab12efe7b02f940a0c",
+  "status": "functional-pass-release-blocked",
+  "consumers": 2,
+  "environmentIsolation": {
+    "outsideRepository": true,
+    "gitMetadata": false,
+    "workspaceFile": false,
+    "sourceCheckout": false,
+    "privatePackageDependency": false,
+    "absolutePathDependency": false,
+    "relativeCliTarballException": true,
+    "strictTypeScript": true,
+    "skipLibCheck": false,
+    "hostOfflineAfterInstall": true,
+    "linuxNetworkNone": true
+  },
+  "workflow": {
+    "manifest": {
+      "check": "pass",
+      "out": "pass",
+      "sourceBoundVerify": "pass",
+      "noClobber": "pass",
+      "replace": "pass",
+      "invalid": "pass",
+      "identityMismatch": "pass"
+    },
+    "compare": {
+      "structuralExact": 0,
+      "structuralReview": 10,
+      "conformant": 0,
+      "declarationRepairable": 11,
+      "genuineNonEquivalence": 12,
+      "insufficientEvidence": 13,
+      "policyReviewAfterSuite": 10,
+      "rejectedArtifactAbsence": "pass",
+      "conformantTwoArtifactVerification": "pass"
+    },
+    "detachedVerify": {
+      "producedReportKinds": 8,
+      "semanticExitsVerifyAsIntegritySuccess": [10, 11, 12, 13],
+      "missingArtifact": 23,
+      "unexpectedArtifact": 22,
+      "tamperClassesRejected": [
+        "command-identity",
+        "nested-identity",
+        "checksum",
+        "semantic-digest",
+        "summary",
+        "exit",
+        "completeness",
+        "artifact-set"
+      ]
+    }
+  },
+  "determinism": {
+    "repeatedConsumerReportsByteIdentical": true,
+    "reorderedFlagsByteIdentical": true,
+    "packAttempts": [
+      {
+        "attempt": 1,
+        "sha256": "1cd3653a30f32e83b69d222b02e6fa5f29816c0fd8b4909eb918bb668abce3a5",
+        "bytes": 66655
+      },
+      {
+        "attempt": 2,
+        "sha256": "1cd3653a30f32e83b69d222b02e6fa5f29816c0fd8b4909eb918bb668abce3a5",
+        "bytes": 66655
+      },
+      {
+        "attempt": 3,
+        "sha256": "1cd3653a30f32e83b69d222b02e6fa5f29816c0fd8b4909eb918bb668abce3a5",
+        "bytes": 66655
+      }
+    ],
+    "tarballsByteIdentical": true
+  },
+  "linux": {
+    "image": "node:24.18.0-bookworm-slim",
+    "network": "none",
+    "readOnlyRoot": true,
+    "detachedVerification": "pass"
+  },
+  "decision": "blocked",
+  "blockers": [
+    "The packed CLI remains private and cannot be published as-is.",
+    "The packed README contains a repository-relative link that is broken for registry consumers.",
+    "The package description does not describe catalog conformance or detached verification.",
+    "The default-parallel repository test command reproducibly times out in the unchanged M2 provider-pool test at five seconds.",
+    "The baseline release-checksum audit compares the authorized corrected workflow against its older pre-correction frozen digest and cannot pass."
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "protocol": "lachesis.m8b1.stage6.security.v1",
+  "network": {
+    "hostCommands": "Node networking modules intercepted to fail closed",
+    "linuxCommand": "Docker --network none",
+    "attemptedProviderAccess": 0
+  },
+  "leakage": {
+    "reportsScanned": 27,
+    "tarballFilesScanned": [
+      "LICENSE",
+      "README.md",
+      "dist/cli.js",
+      "dist/cli.js.map",
+      "dist/example-catalog.js",
+      "dist/example-catalog.js.map",
+      "dist/internal/catalog-compare-command.js",
+      "dist/internal/catalog-compare-command.js.map",
+      "dist/internal/catalog-manifest-command.js",
+      "dist/internal/catalog-manifest-command.js.map",
+      "dist/internal/report-canonical.js",
+      "dist/internal/report-canonical.js.map",
+      "dist/internal/report-contract.js",
+      "dist/internal/report-contract.js.map",
+      "dist/internal/report-renderer.js",
+      "dist/internal/report-renderer.js.map",
+      "dist/internal/report-schema.js",
+      "dist/internal/report-schema.js.map",
+      "dist/internal/report-verify-command.js",
+      "dist/internal/report-verify-command.js.map",
+      "dist/internal/secure-files.js",
+      "dist/internal/secure-files.js.map",
+      "dist/internal/zod-json-schema.js",
+      "dist/internal/zod-json-schema.js.map",
+      "package.json"
+    ],
+    "findings": []
+  },
+  "lazyLoading": {
+    "generatorPackageRemovedDuringManifest": true,
+    "generatorPackageRemovedDuringStructuralCompare": true,
+    "generatorPackageRemovedDuringDetachedVerify": true,
+    "suiteModeWithGeneratorInstalled": true
+  },
+  "filesystemBoundary": {
+    "sameUidKernelAtomicIsolationClaimed": false,
+    "symlinkAliasOversizeStaleTempNoClobber": "pass",
+    "raceInterruptedReadRollbackPostCommit": "covered by private hostile tests in the complete repository matrix"
+  },
+  "credentialsPresent": false,
+  "sourceCheckoutInConsumer": false
+}

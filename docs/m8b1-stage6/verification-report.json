@@ -1,0 +1,63 @@
+{
+  "protocol": "lachesis.m8b1.stage6.verification.v1",
+  "baseline": "0e76d35a6f9f397f0ed235ab12efe7b02f940a0c",
+  "status": "complete-with-release-blockers",
+  "passes": {
+    "format": true,
+    "strictTypeScript": true,
+    "lint": true,
+    "build": true,
+    "sourceSafety": true,
+    "publicApiInventoryUnchanged": true,
+    "nodeSmoke": true,
+    "workersDryRun": true,
+    "offlineExamples": 7,
+    "focusedCliTests": {
+      "passed": 120,
+      "total": 120
+    },
+    "stage4FocusedTests": {
+      "passed": 63,
+      "total": 63
+    },
+    "singleWorkerCoverage": {
+      "passed": 443,
+      "total": 443,
+      "statementsPercent": 90.04,
+      "branchesPercent": 80.36,
+      "functionsPercent": 97.17,
+      "linesPercent": 94.06
+    },
+    "historicalM8bChecksumAuditsThroughStage5_1": true,
+    "publicPackagePackedConsumer": true,
+    "stage4WorkspaceFreePackedConsumer": true,
+    "m7cPreregistrationIntegrity": true,
+    "minimumFullStage6HarnessRuns": 3,
+    "hostConsumersPerHarnessRun": 2,
+    "linuxNetworkDisabledVerificationPerHarnessRun": 1,
+    "gitDiffCheck": true,
+    "jsonValidation": true
+  },
+  "expectedBlockingFailures": [
+    {
+      "gate": "pnpm test",
+      "classification": "contention-sensitive-default-parallel-timeout",
+      "passed": 442,
+      "total": 443,
+      "exit": 1
+    },
+    {
+      "gate": "pnpm audit:release-checksums",
+      "classification": "stale-current-tree-workflow-check",
+      "failedArtifact": ".github/workflows/release.yml",
+      "otherArtifactsPassed": 11,
+      "exit": 1
+    }
+  ],
+  "frozenEvidenceChanged": false,
+  "publicApiChanged": false,
+  "dependencyChanged": false,
+  "packageVersionChanged": false,
+  "providerCalls": 0,
+  "decision": "blocked"
+}

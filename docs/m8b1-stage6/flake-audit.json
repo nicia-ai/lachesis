@@ -1,0 +1,34 @@
+{
+  "protocol": "lachesis.m8b1.stage6.flake-audit.v1",
+  "baseline": "0e76d35a6f9f397f0ed235ab12efe7b02f940a0c",
+  "test": "apps/benchmark/tests/controller.test.ts > M2 paired representation protocol > exhausts an M2 provider pool through per-call conservative settlements",
+  "timeoutMs": 5000,
+  "implementationOrTimeoutChanged": false,
+  "stage6Observations": {
+    "defaultParallelFullRepository": {
+      "attempts": 1,
+      "passes": 0,
+      "timeouts": 1,
+      "passingTests": 442,
+      "totalTests": 443,
+      "observedTestDurationMs": 5004
+    },
+    "isolatedDefaultConfiguration": {
+      "attempts": 5,
+      "passes": 5,
+      "timeouts": 0,
+      "minimumTestDurationMs": 3160,
+      "maximumTestDurationMs": 3500
+    }
+  },
+  "boundStage5_1Observations": {
+    "defaultParallelFullRepositoryAttempts": 2,
+    "defaultParallelTimeouts": 2,
+    "singleWorkerCoverageTestsPassed": 443,
+    "singleWorkerCoverageTestsTotal": 443
+  },
+  "classification": "contention-sensitive-default-parallel-timeout",
+  "releaseWorkflowImpact": "verify:release invokes pnpm test with default parallelism, so the unchanged release gate can fail nondeterministically.",
+  "disposition": "release-readiness-blocker",
+  "recommendation": "Review a separate correction to the test's timing model or workload. Do not conceal the defect by globally serializing tests, increasing the timeout, or weakening coverage."
+}

@@ -1,0 +1,60 @@
+{
+  "protocol": "lachesis.m8b1.stage6.prospective-release-delta.v1",
+  "baseline": "0e76d35a6f9f397f0ed235ab12efe7b02f940a0c",
+  "implemented": false,
+  "decision": "blocked",
+  "packageRecommendation": {
+    "name": "@nicia-ai/lachesis-cli",
+    "becomesSixthPublicPackage": true,
+    "firstPublicVersion": "0.1.0-alpha.4",
+    "versionPolicy": "Synchronize the first CLI prerelease with the next repository alpha; do not establish an independent version line yet.",
+    "publicationSet": "Publish the CLI and only packages with actual source, dependency, or metadata changes. Do not republish all five alpha.3 packages solely for numeric synchronization.",
+    "classification": "experimental-public-alpha",
+    "moduleSystem": "ESM-only; CommonJS is unsupported.",
+    "nodeRange": ">=24 <25",
+    "bin": {
+      "lachesis": "./dist/cli.js"
+    },
+    "importSurface": "No supported JavaScript import surface and no public TypeScript declarations; the package is a binary-only product.",
+    "publicFiles": [
+      "dist/cli.js",
+      "dist/cli.js.map",
+      "dist/example-catalog.js",
+      "dist/example-catalog.js.map",
+      "dist/internal/*.js",
+      "dist/internal/*.js.map",
+      "README.md",
+      "LICENSE",
+      "CHANGELOG.md",
+      "package.json"
+    ],
+    "exactRuntimeDependenciesForCurrentCode": {
+      "@nicia-ai/lachesis": "0.1.0-alpha.3",
+      "@nicia-ai/lachesis-generator": "0.1.0-alpha.3",
+      "zod": "4.4.3"
+    }
+  },
+  "requiredMetadataAndDocumentationDelta": [
+    "Set private to false only during a separately reviewed release-preparation change.",
+    "Set version to 0.1.0-alpha.4 only during separately authorized release preparation.",
+    "Constrain engines.node to >=24 <25.",
+    "Replace the plan-inspector description with catalog manifest, comparison, conformance, and detached report-verification language.",
+    "Replace the private workspace README with a self-contained registry getting-started guide; remove repository-relative links.",
+    "Add the stable exit-code policy, POSIX and GitHub Actions examples, ESM-only/CommonJS statement, same-UID filesystem limitation, bounded-input behavior, and troubleshooting.",
+    "Add a CLI changelog covering the private-to-public transition and explicitly state that no Lachesis library API changed.",
+    "Retain exact alpha.3 dependency pins unless a dependency actually changes before release."
+  ],
+  "releaseBlockers": [
+    "The packed CLI manifest is private.",
+    "The packed README is workspace-oriented and contains a broken ../../README.md link.",
+    "The package description omits catalog conformance and detached verification.",
+    "The default-parallel release test gate has a reproduced contention-sensitive five-second timeout.",
+    "audit:release-checksums compares the current authorized workflow correction with the older frozen pre-correction workflow digest and therefore cannot pass on the baseline."
+  ],
+  "nonchanges": [
+    "No public library export is required.",
+    "No report schema, protocol, or exit code should change.",
+    "No provider, network, credential, or research capability is part of the CLI release.",
+    "No synchronized republication of unchanged alpha.3 packages is required."
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "protocol": "lachesis.m8b1.stage6.package-inventory.v1",
+  "baseline": "0e76d35a6f9f397f0ed235ab12efe7b02f940a0c",
+  "cli": {
+    "name": "@nicia-ai/lachesis-cli",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Command-line plan inspector and replay runner for Lachesis",
+    "type": "module",
+    "engines": { "node": ">=24" },
+    "bin": { "lachesis": "./dist/cli.js" },
+    "publishConfig": { "access": "public" },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/nicia-ai/lachesis.git",
+      "directory": "apps/cli"
+    },
+    "dependencies": {
+      "zod": "4.4.3",
+      "@nicia-ai/lachesis": "0.1.0-alpha.3",
+      "@nicia-ai/lachesis-generator": "0.1.0-alpha.3"
+    },
+    "files": [
+      "package/LICENSE",
+      "package/dist/internal/catalog-compare-command.js",
+      "package/dist/internal/catalog-manifest-command.js",
+      "package/dist/cli.js",
+      "package/dist/example-catalog.js",
+      "package/dist/internal/report-canonical.js",
+      "package/dist/internal/report-contract.js",
+      "package/dist/internal/report-renderer.js",
+      "package/dist/internal/report-schema.js",
+      "package/dist/internal/report-verify-command.js",
+      "package/dist/internal/secure-files.js",
+      "package/dist/internal/zod-json-schema.js",
+      "package/package.json",
+      "package/dist/internal/catalog-compare-command.js.map",
+      "package/dist/internal/catalog-manifest-command.js.map",
+      "package/dist/cli.js.map",
+      "package/dist/example-catalog.js.map",
+      "package/dist/internal/report-canonical.js.map",
+      "package/dist/internal/report-contract.js.map",
+      "package/dist/internal/report-renderer.js.map",
+      "package/dist/internal/report-schema.js.map",
+      "package/dist/internal/report-verify-command.js.map",
+      "package/dist/internal/secure-files.js.map",
+      "package/dist/internal/zod-json-schema.js.map",
+      "package/README.md"
+    ],
+    "tarballBytes": 66655,
+    "unpackedBytes": 355846,
+    "executableMode": "755",
+    "shebang": "#!/usr/bin/env node"
+  },
+  "graph": {
+    "scope": "Complete installed consumer graph, including CLI runtime dependencies and the strict TypeScript consumer toolchain.",
+    "directDependencies": 3,
+    "directDevDependencies": 2,
+    "uniqueInstalledPackages": 11,
+    "dependencyEdges": 12,
+    "packages": [
+      {
+        "name": "@babel/helper-string-parser",
+        "version": "7.29.7",
+        "origin": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.29.7.tgz"
+      },
+      {
+        "name": "@babel/helper-validator-identifier",
+        "version": "7.29.7",
+        "origin": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz"
+      },
+      {
+        "name": "@babel/parser",
+        "version": "7.29.7",
+        "origin": "https://registry.npmjs.org/@babel/parser/-/parser-7.29.7.tgz"
+      },
+      {
+        "name": "@babel/types",
+        "version": "7.29.7",
+        "origin": "https://registry.npmjs.org/@babel/types/-/types-7.29.7.tgz"
+      },
+      {
+        "name": "@nicia-ai/lachesis-cli",
+        "version": "0.1.0",
+        "origin": "local-packed-cli-artifact"
+      },
+      {
+        "name": "@nicia-ai/lachesis-generator",
+        "version": "0.1.0-alpha.3",
+        "origin": "https://registry.npmjs.org/@nicia-ai/lachesis-generator/-/lachesis-generator-0.1.0-alpha.3.tgz"
+      },
+      {
+        "name": "@nicia-ai/lachesis",
+        "version": "0.1.0-alpha.3",
+        "origin": "https://registry.npmjs.org/@nicia-ai/lachesis/-/lachesis-0.1.0-alpha.3.tgz"
+      },
+      {
+        "name": "@types/node",
+        "version": "24.13.3",
+        "origin": "https://registry.npmjs.org/@types/node/-/node-24.13.3.tgz"
+      },
+      {
+        "name": "typescript",
+        "version": "6.0.3",
+        "origin": "https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz"
+      },
+      {
+        "name": "undici-types",
+        "version": "7.18.2",
+        "origin": "https://registry.npmjs.org/undici-types/-/undici-types-7.18.2.tgz"
+      },
+      {
+        "name": "zod",
+        "version": "4.4.3",
+        "origin": "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz"
+      }
+    ],
+    "edges": [
+      "@babel/parser@7.29.7->@babel/types@7.29.7",
+      "@babel/types@7.29.7->@babel/helper-string-parser@7.29.7",
+      "@babel/types@7.29.7->@babel/helper-validator-identifier@7.29.7",
+      "@nicia-ai/lachesis-cli@0.1.0->@nicia-ai/lachesis-generator@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-cli@0.1.0->@nicia-ai/lachesis@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-cli@0.1.0->zod@4.4.3",
+      "@nicia-ai/lachesis-generator@0.1.0-alpha.3->@babel/parser@7.29.7",
+      "@nicia-ai/lachesis-generator@0.1.0-alpha.3->@babel/types@7.29.7",
+      "@nicia-ai/lachesis-generator@0.1.0-alpha.3->@nicia-ai/lachesis@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-generator@0.1.0-alpha.3->zod@4.4.3",
+      "@nicia-ai/lachesis@0.1.0-alpha.3->zod@4.4.3",
+      "@types/node@24.13.3->undici-types@7.18.2"
+    ],
+    "lockfileSha256": "f898713c38ed290c7fafd7af16db2ff93206551cca12ba4610bbf8014a59f861",
+    "registryIntegrities": [
+      "sha512-2ECZfSFQcsFmLNDQQpQFxJeMc7mt2yWZX2jEop4W9k7KIGk2T/q2h7daJYkePgQpNrCE+5uSVu7R7W+WGpmZHw==",
+      "sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==",
+      "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==",
+      "sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==",
+      "sha512-MTR7V/scgy0efMYlBWoC9FuwX8LII+WN9tCLpbvZSLp2MVO295jO8pFIIUXPX/lV5/c59GrOQIuSPJ6Tde9QVQ==",
+      "sha512-Pb5ijPrZ89GDH8223L4UP8i6QApWxs04RbPQJTeWDV0/keR2E36MeKnyr6LYmUUvqRRI+Iv87SuF1W6ErINzYw==",
+      "sha512-RcN7nN0OcsKhZ8ZpsKpUECiAHGl5keYNvAi/fDrhwS2l6n9p9F+9sq9mktXAHiwxK1t5iEBUw9gvy+JNho2Wyg==",
+      "sha512-hnORnjP/1P/zFEndoeX+n+t1RwWRJiJpM/jO7FW32Kn9r5+sJB2JWOdYo4L6k78j15eCwY3Gm/7364B1EMwtNg==",
+      "sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg==",
+      "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==",
+      "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ=="
+    ],
+    "localArtifactResolution": "Only the unpublished CLI tarball is a relative file dependency; every transitive dependency is registry-resolved.",
+    "forbiddenResolution": [],
+    "licenses": {
+      "Apache-2.0": [
+        { "name": "@nicia-ai/lachesis-cli", "versions": ["0.1.0"] },
+        {
+          "name": "@nicia-ai/lachesis-generator",
+          "versions": ["0.1.0-alpha.3"]
+        },
+        { "name": "@nicia-ai/lachesis", "versions": ["0.1.0-alpha.3"] },
+        { "name": "typescript", "versions": ["6.0.3"] }
+      ],
+      "MIT": [
+        { "name": "@babel/helper-string-parser", "versions": ["7.29.7"] },
+        {
+          "name": "@babel/helper-validator-identifier",
+          "versions": ["7.29.7"]
+        },
+        { "name": "@babel/parser", "versions": ["7.29.7"] },
+        { "name": "@babel/types", "versions": ["7.29.7"] },
+        { "name": "@types/node", "versions": ["24.13.3"] },
+        { "name": "undici-types", "versions": ["7.18.2"] },
+        { "name": "zod", "versions": ["4.4.3"] }
+      ]
+    }
+  }
+}

@@ -130,10 +130,21 @@ command, package version, or publication state changed. See the
 [M8b.0 results](m8b0-results.md) and
 [CLI product specification](m8b0-cli-product-spec.md).
 
-M8b.1 is approved only for staged internal implementation under the
-[M8b.0 implementation plan](m8b0-implementation-plan.md). Publishing the CLI,
-changing package visibility, bumping versions, or adding public exports remains
-separately gated. The [prioritized backlog](m8b-productization-backlog.md)
-continues to cover additional registry-only integrations and external developer
-usability. M8 is not provider, graph-superiority, TypeGraph-quality, or
+M8b.1 is closed as `blocked` at its registry-only product gate. The complete
+manifest, structural and finite semantic comparison, and detached verification
+workflow passed in two fresh host consumers and a network-disabled Linux
+container. Release preparation remains blocked by the CLI's private,
+workspace-oriented metadata and a reproduced contention-sensitive timeout in the
+default-parallel release test gate. The baseline release-checksum command also
+requires a commit-aware historical correction for the authorized workflow-only
+change. See the [M8b.1 Stage 6 results](m8b1-stage6-results.md).
+
+The next work, if separately authorized, is a narrow release-readiness
+correction: fix the flaky test under review, make the CLI registry documentation
+self-contained, and prepare the proposed sixth package without changing the
+report protocol or library API. Publishing, package visibility, versions, and
+release metadata remain separately gated. The
+[prioritized backlog](m8b-productization-backlog.md) continues to cover
+additional registry-only integrations and external developer usability. M8 is
+not provider, graph-superiority, TypeGraph-quality, or
 compositional-generalization research.

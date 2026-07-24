@@ -1,0 +1,74 @@
+{
+  "protocol": "lachesis.m8b1.stage6.performance.v1",
+  "nonContractual": true,
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "osRelease": "25.5.0",
+    "filesystem": "host temporary directory",
+    "node": "v24.18.0",
+    "pnpm": "10.33.0",
+    "measurement": "spawnSync wall-clock; first process reported separately; seven subsequent independent processes summarized by median and median absolute deviation"
+  },
+  "install": {
+    "firstCleanConsumerMs": 660.891,
+    "secondCleanConsumerMs": 604.855,
+    "fullInstalledBytes": 38394299
+  },
+  "startup": {
+    "usage": {
+      "coldFirstProcessMs": 68.27,
+      "warmProcesses": {
+        "samples": 7,
+        "medianMs": 68.616,
+        "medianAbsoluteDeviationMs": 0.446,
+        "minimumMs": 66.108,
+        "maximumMs": 70.318
+      }
+    },
+    "manifestCheck": {
+      "coldFirstProcessMs": 77.702,
+      "warmProcesses": {
+        "samples": 7,
+        "medianMs": 79.716,
+        "medianAbsoluteDeviationMs": 2.041,
+        "minimumMs": 77.675,
+        "maximumMs": 84.059
+      }
+    },
+    "structuralCompare": {
+      "coldFirstProcessMs": 87.067,
+      "warmProcesses": {
+        "samples": 7,
+        "medianMs": 83.487,
+        "medianAbsoluteDeviationMs": 0.87,
+        "minimumMs": 81.44,
+        "maximumMs": 84.958
+      }
+    },
+    "detachedVerify": {
+      "coldFirstProcessMs": 84.352,
+      "warmProcesses": {
+        "samples": 7,
+        "medianMs": 78.295,
+        "medianAbsoluteDeviationMs": 0.887,
+        "minimumMs": 77.408,
+        "maximumMs": 82.426
+      }
+    },
+    "suiteCompare": {
+      "coldFirstProcessMs": 168.091,
+      "warmProcesses": {
+        "samples": 7,
+        "medianMs": 165.354,
+        "medianAbsoluteDeviationMs": 2.972,
+        "minimumMs": 160.046,
+        "maximumMs": 169.787
+      }
+    }
+  },
+  "peakRss": {
+    "measured": false,
+    "reason": "Portable cross-platform peak-RSS capture was not sufficiently reliable for a checksum-bound product claim."
+  }
+}
