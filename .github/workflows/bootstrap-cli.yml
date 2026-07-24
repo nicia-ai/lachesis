@@ -219,6 +219,8 @@ jobs:
           shasum -a 256 -c "$RELEASE_CHECKSUMS"
 
       - uses: pnpm/action-setup@v5
+        with:
+          package_json_file: release-source/package.json
 
       - uses: actions/setup-node@v6
         with:
