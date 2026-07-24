@@ -1,0 +1,17 @@
+{
+  "protocol": "lachesis.m8b1.stage2a.results.v1",
+  "status": "complete-offline-pass",
+  "parentCommit": "8c1a5e596511ccd35ff08e3da08c00e6061089fd",
+  "corrections": [
+    "descriptor-bound-bounded-read",
+    "executed-module-source-binding",
+    "component-and-parent-identity-validation",
+    "artifact-report-alias-rejection"
+  ],
+  "canonicalization": "lachesis-canonical-json/1",
+  "reportProtocolChanged": false,
+  "exitContractChanged": false,
+  "publicExportsAdded": 0,
+  "providerCalls": 0,
+  "stage3Started": false
+}
