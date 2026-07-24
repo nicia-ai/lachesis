@@ -1,0 +1,42 @@
+{
+  "protocol": "lachesis-m8b0-design-result/1",
+  "milestone": "M8b.0",
+  "disposition": "design-complete-go-for-internal-m8b1",
+  "commandSurface": ["catalog.manifest", "catalog.compare", "report.verify"],
+  "reportProtocol": "lachesis-catalog-command-report/1",
+  "publicApiAdditions": 0,
+  "publicCommandsImplemented": 0,
+  "packageVersionsChanged": false,
+  "providerCalls": 0,
+  "verification": {
+    "prototypeTests": 6,
+    "workspaceTestFiles": 24,
+    "workspaceTests": 359,
+    "format": "passed",
+    "schema": "passed",
+    "goldenDeterminism": "passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "coverage": "passed",
+    "build": "passed",
+    "nodeSmoke": "passed",
+    "workersSmoke": "passed",
+    "examples": "passed",
+    "sourceSafety": "passed",
+    "publicApiAudit": "passed",
+    "packedPackageAudit": "passed",
+    "diffCheck": "passed"
+  },
+  "decision": {
+    "m8b1InternalImplementation": "GO",
+    "publication": "NO-GO-WITHOUT-SEPARATE-REVIEW",
+    "newPackage": "NO-GO",
+    "newPublicExport": "NO-GO"
+  },
+  "nonclaims": [
+    "No supported CLI command was implemented.",
+    "No CLI usability or release-readiness claim is made.",
+    "No semantic-equivalence or compositional-generalization claim is made.",
+    "No provider behavior was tested."
+  ]
+}

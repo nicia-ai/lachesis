@@ -1,0 +1,2 @@
+Lachesis catalog report: rejected (exit 12)
+DO NOT SUBSTITUTE 9bb6c1050914747d5e1739774f5d23108686521072c770f9d9c29fac42d7fb3b: Capabilities differ across the effect boundary; metadata changes cannot make these operations equivalent. Violated obligation: same-capability.

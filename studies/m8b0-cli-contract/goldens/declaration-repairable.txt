@@ -1,0 +1,2 @@
+Lachesis catalog report: review-required (exit 11)
+CONDITIONAL DECLARATION REPAIR 625c0233cc605fbaf7448fa0ef384e7fde245bfbf022f1cd7ecb863aca92e4c4: Review the written role version; metadata may change only if the declaration is stale. Safety condition: If role versions intentionally denote different semantics, preserve rejection and do not substitute. Not accepted automatically.

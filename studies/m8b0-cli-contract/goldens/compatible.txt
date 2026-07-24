@@ -1,0 +1,2 @@
+Lachesis catalog report: success (exit 0)
+IDENTITY-ONLY 02141da14059d280f2ddb25a9f733e7f6b07a57770a41e4e9cc026acf64e0089: The finite conformance suite passed; retain both manifests and recompile against the candidate fingerprint.

@@ -122,8 +122,18 @@ evolution → conformance → diagnostics path under strict TypeScript 6. No pub
 API addition was required. See the [M8a results](m8a-results.md) and
 [registry-only getting started](m8a-getting-started.md).
 
-M8b is proposal-only. The [prioritized backlog](m8b-productization-backlog.md)
-focuses on a catalog-author CLI, CI reports, version/migration inspection,
-additional registry-only integrations, and external developer usability. It is
-not provider, graph-superiority, TypeGraph-quality, or compositional-
-generalization research.
+M8b.0 is complete as an offline contract-design milestone. It recommends three
+commands in the existing private CLI, defines a versioned deterministic report
+envelope and stable exit codes, and proves the contract with private golden
+fixtures. The current alpha.3 public APIs are sufficient; no export, public
+command, package version, or publication state changed. See the
+[M8b.0 results](m8b0-results.md) and
+[CLI product specification](m8b0-cli-product-spec.md).
+
+M8b.1 is approved only for staged internal implementation under the
+[M8b.0 implementation plan](m8b0-implementation-plan.md). Publishing the CLI,
+changing package visibility, bumping versions, or adding public exports remains
+separately gated. The [prioritized backlog](m8b-productization-backlog.md)
+continues to cover additional registry-only integrations and external developer
+usability. M8 is not provider, graph-superiority, TypeGraph-quality, or
+compositional-generalization research.
