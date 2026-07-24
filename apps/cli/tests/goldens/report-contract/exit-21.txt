@@ -1,0 +1,4 @@
+Lachesis catalog report: rejected (exit 21)
+command=catalog.manifest identity=0d1aeebedfa519ce06c93cd5f7bd00fd851fd11207f1c1084d2c1bbed71e11ef
+BUDGET_EXCEEDED operation=reserve-carrier path=budget: The plan exceeds its effect-call budget.
+DENIED_CAPABILITY operation=reserve-carrier path=capability: The plan requests an unavailable capability.

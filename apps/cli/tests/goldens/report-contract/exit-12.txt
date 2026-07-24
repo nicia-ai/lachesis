@@ -1,0 +1,8 @@
+Lachesis catalog report: rejected (exit 12)
+command=catalog.compare identity=7c5ef58c3e851dbdb29b54290dd4cf19d14853aeb0bf7659114c47a5eb93adf4
+CAPABILITY_MISMATCH role=harbor.role/route-shipment@1 boundary=effect-capability obligation=same-capability
+  The operations require different effect capabilities.
+  DO NOT SUBSTITUTE
+  Metadata changes cannot manufacture capability equivalence.
+DO NOT SUBSTITUTE a65aa73476c692ee2cf5deac3086d3f29c12bcf07c032142c4dca7998d5b51b6: The capability obligation differs and metadata cannot repair it.
+  Violated obligation: same-capability

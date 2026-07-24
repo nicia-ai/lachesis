@@ -1,0 +1,4 @@
+Lachesis catalog report: success (exit 0)
+command=catalog.compare identity=7c5ef58c3e851dbdb29b54290dd4cf19d14853aeb0bf7659114c47a5eb93adf4
+IDENTITY-ONLY c9dfb3aa9f3227719584d502b2c8f1eb1cfa992e8111091b700952b839f03e78: The supplied finite conformance suite passed after an identity change.
+  This records a finite conformance result, not universal semantic compatibility.

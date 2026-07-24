@@ -1,0 +1,4 @@
+Lachesis catalog report: review-required (exit 10)
+command=catalog.compare identity=7c5ef58c3e851dbdb29b54290dd4cf19d14853aeb0bf7659114c47a5eb93adf4
+REVIEW REQUIRED dbfe2f6fd98c145fb008692dec580800f7263c0bc1ef797e90ec7dc7ff3ac407: Declarations changed without a bound conformance suite.
+  Not accepted automatically.

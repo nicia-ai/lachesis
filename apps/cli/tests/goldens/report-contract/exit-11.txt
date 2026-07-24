@@ -1,0 +1,10 @@
+Lachesis catalog report: rejected (exit 11)
+command=catalog.compare identity=7c5ef58c3e851dbdb29b54290dd4cf19d14853aeb0bf7659114c47a5eb93adf4
+ROLE_VERSION_MISMATCH role=harbor.role/route-shipment@1 boundary=role-version:harbor.role/route-shipment obligation=exact-role-version
+  The declarations name different versions of the route-shipment role.
+  CONDITIONAL DECLARATION REPAIR: Review which written role version each operation implements.
+  Safety condition: If the versions intentionally differ, preserve rejection and do not substitute.
+  Not accepted automatically.
+CONDITIONAL DECLARATION REPAIR a8426f0d834812a4b68d0fd853e0a4b10036e55732eb671a94e4e28e8265a3ea: Review the declared role version against the written contract.
+  Safety condition: Only change a stale declaration; otherwise preserve rejection.
+  Not accepted automatically.

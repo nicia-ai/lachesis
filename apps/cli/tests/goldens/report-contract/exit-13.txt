@@ -1,0 +1,7 @@
+Lachesis catalog report: rejected (exit 13)
+command=catalog.compare identity=7c5ef58c3e851dbdb29b54290dd4cf19d14853aeb0bf7659114c47a5eb93adf4
+UNRESOLVED_CONFORMANCE_FAILURE role=harbor.role/route-shipment@1 boundary=unresolved-conformance-boundary obligation=complete-diagnostic-evidence
+  The supplied fixtures cannot localize a safe equivalence decision.
+  NO SAFE REPAIR
+  Preserve rejection and collect independent fixture evidence.
+INVALID OR UNVERIFIABLE 2f2b08e89307e6409be9f2af9e4a8414826100b50467bf9013315dc3294f108d: The available evidence is insufficient for substitution.

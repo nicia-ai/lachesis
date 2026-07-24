@@ -1,0 +1,4 @@
+Lachesis catalog report: invalid (exit 22)
+command=report.verify identity=086e320e33a291010616bea5b670e914da999469b12b1c342e472635dd4bce85
+INTEGRITY FAILURE: report, nested identity, or artifact verification failed.
+CHECKSUM_MISMATCH artifact=candidate: The bound artifact checksum differs.

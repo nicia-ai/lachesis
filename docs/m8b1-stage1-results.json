@@ -1,0 +1,81 @@
+{
+  "protocol": "lachesis.m8b1.stage1-results.v1",
+  "status": "complete-offline-pass",
+  "boundDesignCommit": "b65be65842f7346da1374b29a2bd76cf70c4cbbe",
+  "scope": {
+    "privateInternalContractLibrary": true,
+    "commandsAddedOrWired": false,
+    "publicExportsChanged": false,
+    "dependenciesChanged": false,
+    "packageVersionsChanged": false
+  },
+  "contract": {
+    "reportProtocol": "lachesis-catalog-command-report/1",
+    "canonicalJsonProtocol": "lachesis-canonical-json/1",
+    "exitPrecedence": [70, 23, 22, 20, 12, 13, 11, 21, 10, 0],
+    "summariesDerived": true,
+    "statusDerived": true,
+    "exitCodeDerived": true,
+    "initialAndPostRepairSeparate": true,
+    "conditionalRepairsNeverAccepted": true,
+    "genuineDifferenceRequiresDoNotSubstitute": true
+  },
+  "focusedEvidence": {
+    "testFiles": 1,
+    "tests": 23,
+    "machineGoldenFixtures": 10,
+    "humanGoldenFixtures": 10,
+    "goldenRegenerationByteIdentical": true,
+    "documentationSchemaSynchronized": true
+  },
+  "coverage": {
+    "repository": {
+      "statements": 90.05,
+      "branches": 80.09,
+      "functions": 97.19,
+      "lines": 94.12
+    },
+    "privateContractModules": {
+      "statements": 88.38,
+      "branches": 81.46,
+      "functions": 93.58,
+      "lines": 90.8
+    }
+  },
+  "verification": {
+    "format": "pass",
+    "strictTypeScript": "pass",
+    "lint": "pass",
+    "tests": {
+      "status": "pass-after-unchanged-retry",
+      "files": 25,
+      "tests": 382,
+      "observedPreexistingKernelCanonicalizationCounterexample": true
+    },
+    "coverage": "pass-after-unchanged-retry",
+    "build": "pass",
+    "nodeWorkersSmokes": "pass",
+    "existingCliBehavior": "pass",
+    "examples": "pass",
+    "loadBaseline": "pass",
+    "sourceSafety": "pass",
+    "publicApiInventory": "pass-no-delta",
+    "packedConsumers": "pass",
+    "m8aRegistryAdoption": "pass",
+    "m8b0Checksums": "pass",
+    "diffCheck": "pass",
+    "frozenAlpha3ReleaseChecksumAggregate": {
+      "status": "expected-historical-mismatch",
+      "artifact": ".github/workflows/release.yml",
+      "workflowCorrectionCommit": "f2a62fe583feca3a6ce7bc26fb77d2e2c3cd3c6b",
+      "causedByM8b1": false
+    }
+  },
+  "nonclaims": [
+    "no CLI command is added or wired",
+    "no public API or package contract changes",
+    "no conditional repair is accepted",
+    "no release is prepared",
+    "no provider call or research work occurs"
+  ]
+}

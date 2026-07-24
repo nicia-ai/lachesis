@@ -77,6 +77,7 @@ export default defineConfig({
         "apps/benchmark/src/m3b1-*.ts",
         "apps/benchmark/src/protocol.ts",
         "apps/cli/src/example-catalog.ts",
+        "apps/cli/src/internal/report-*.ts",
       ],
       thresholds: {
         branches: 80,

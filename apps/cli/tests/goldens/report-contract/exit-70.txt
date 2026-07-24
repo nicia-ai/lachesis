@@ -1,0 +1,3 @@
+Lachesis catalog report: internal-error (exit 70)
+command=catalog.manifest identity=0d1aeebedfa519ce06c93cd5f7bd00fd851fd11207f1c1084d2c1bbed71e11ef
+INTERNAL_CONTROLLER_FAILURE artifact=candidate: The controller invariant failed.
