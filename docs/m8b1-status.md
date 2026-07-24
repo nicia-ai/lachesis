@@ -26,8 +26,10 @@ package version, package export, or public API changed.
 - Stage 2a: descriptor, source-binding, and output-path hardening — complete
   offline.
 - Stage 3: private structural catalog comparison — complete offline.
-- Stage 4: semantic conformance wiring — not started.
-- Stage 5: report verification and CI commands — not started.
+- Stage 4: semantic conformance wiring and transaction hardening — complete
+  offline.
+- Stage 5: detached report verification and tested CI contract — complete
+  offline.
 - Stage 6: registry-only product gate — not started.
 
 Stage 1 does not authorize or imply any later stage, publication, provider

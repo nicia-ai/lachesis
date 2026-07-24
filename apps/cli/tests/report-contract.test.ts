@@ -15,6 +15,7 @@ import {
   deriveReportExitCode,
   serializeCommandReport,
   verifyCommandReport,
+  verifyDetachedReportArtifactBindings,
   verifyReportArtifactBindings,
 } from "../src/internal/report-contract.js";
 import {
@@ -177,6 +178,75 @@ describe("private M8b.1 report canonicalization", () => {
 });
 
 describe("private M8b.1 command-report contract", () => {
+  it("strictly verifies detached diagnostic and command-report artifact identities", async () => {
+    const rejected = await createExitFixture(11);
+    const diagnostic = rejected.report.diagnostics.conformance[0]?.diagnostic;
+    if (diagnostic === undefined || diagnostic === null)
+      throw new Error("Missing diagnostic fixture.");
+    const diagnosticCanonical = canonicalizeJson(diagnostic);
+    if (!diagnosticCanonical.ok)
+      throw new Error(diagnosticCanonical.error.message);
+    const diagnosticBytes = new TextEncoder().encode(
+      `${diagnosticCanonical.value}\n`,
+    );
+    const nested = await createExitFixture(10);
+    const nestedText = serializeCommandReport(nested.report);
+    if (!nestedText.ok) throw new Error(nestedText.error.message);
+    const nestedBytes = new TextEncoder().encode(nestedText.value);
+    const checksum = async (bytes: Uint8Array): Promise<string> => {
+      const value = new Uint8Array(
+        await crypto.subtle.digest("SHA-256", bytes),
+      );
+      return [...value]
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("");
+    };
+    const baseFixture = await createExitFixture(20);
+    const baseInput = reportInput(baseFixture.report);
+    const wrapper = await createCommandReport({
+      ...baseInput,
+      command: {
+        ...baseInput.command,
+        id: "report.verify",
+      },
+      completeness: "complete",
+      diagnostics: {
+        controller: [],
+        validationAttempts: [],
+        conformance: [],
+      },
+      artifacts: [
+        {
+          id: "diagnostic",
+          kind: "diagnostic-record",
+          mediaType: "application/json",
+          digest: diagnostic.recordDigest,
+          checksum: {
+            algorithm: "sha256",
+            value: await checksum(diagnosticBytes),
+          },
+        },
+        {
+          id: "nested-report",
+          kind: "command-report",
+          mediaType: "application/json",
+          digest: nested.report.reportDigest,
+          checksum: {
+            algorithm: "sha256",
+            value: await checksum(nestedBytes),
+          },
+        },
+      ],
+    });
+    if (!wrapper.ok) throw new Error(wrapper.error.message);
+    await expect(
+      verifyDetachedReportArtifactBindings(wrapper.value, [
+        { id: "nested-report", bytes: nestedBytes },
+        { id: "diagnostic", bytes: diagnosticBytes },
+      ]),
+    ).resolves.toEqual({ ok: true, value: true });
+  });
+
   it("generates and verifies every semantic exit-class golden", async () => {
     if (process.env["UPDATE_M8B1_GOLDENS"] === "1")
       await mkdir(goldenRoot, { recursive: true });

@@ -1,4 +1,14 @@
-import { digestValue, parseJson, type Result } from "@nicia-ai/lachesis";
+import {
+  catalogReferenceSchema,
+  catalogSemanticRolesSchema,
+  digestValue,
+  operationReferenceSchema,
+  parseJson,
+  planBudgetSchema,
+  type Result,
+  schemaReferenceSchema,
+} from "@nicia-ai/lachesis";
+import { z } from "zod";
 
 import {
   canonicalizeReportValue,
@@ -299,6 +309,209 @@ async function verifyConformanceDiagnosticIdentity(
       );
 }
 
+const nativeConformanceReportSchema = z
+  .strictObject({
+    protocol: z.literal("lachesis-cross-catalog-conformance-report/1"),
+    leftCatalogFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+    rightCatalogFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+    declarationsDigest: z.string().regex(/^[a-f0-9]{64}$/),
+    fixtureDigest: z.string().regex(/^[a-f0-9]{64}$/),
+    checkedSchemaRoles: z.number().int().nonnegative(),
+    checkedOperationRoles: z.number().int().nonnegative(),
+    checkedValues: z.number().int().nonnegative(),
+    passed: z.literal(true),
+    reportDigest: z.string().regex(/^[a-f0-9]{64}$/),
+  })
+  .readonly();
+
+const manifestSchemaKindSchema = z.discriminatedUnion("kind", [
+  z.strictObject({
+    kind: z.literal("scalar"),
+    semantic: z.literal("boolean").optional(),
+  }),
+  z.strictObject({
+    kind: z.literal("collection"),
+    element: schemaReferenceSchema,
+    defaultMaxItems: z.number().int().positive().optional(),
+  }),
+]);
+const manifestOperationSchema = z
+  .strictObject({
+    reference: operationReferenceSchema,
+    kind: z.enum([
+      "function",
+      "predicate",
+      "reducer",
+      "effect",
+      "fixedPointStep",
+      "measure",
+    ]),
+    description: z.string(),
+    semantics: z.strictObject({ stateChanging: z.boolean() }),
+    input: schemaReferenceSchema.optional(),
+    output: schemaReferenceSchema.optional(),
+    element: schemaReferenceSchema.optional(),
+    accumulator: schemaReferenceSchema.optional(),
+    effect: z
+      .strictObject({
+        name: z.string(),
+        capability: z.string(),
+        replayable: z.boolean(),
+      })
+      .optional(),
+    bounds: z.strictObject({
+      maxOutputItems: z.number().int().nonnegative().optional(),
+      maxTokens: z.number().int().nonnegative().optional(),
+      maxWallClockMs: z.number().int().nonnegative().optional(),
+    }),
+    reducerLaws: z
+      .strictObject({
+        associative: z.boolean(),
+        commutative: z.boolean(),
+        idempotent: z.boolean(),
+      })
+      .optional(),
+  })
+  .readonly();
+const detachedManifestSchema = z
+  .strictObject({
+    formatVersion: z.literal("1"),
+    catalog: catalogReferenceSchema,
+    schemas: z
+      .array(
+        z.strictObject({
+          reference: schemaReferenceSchema,
+          kind: manifestSchemaKindSchema,
+          description: z.string(),
+          jsonSchema: z.unknown(),
+        }),
+      )
+      .readonly(),
+    operations: z.array(manifestOperationSchema).readonly(),
+    semanticRoles: catalogSemanticRolesSchema.optional(),
+    planJsonSchema: z.unknown(),
+    catalogFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+    policy: z.strictObject({
+      allowedCapabilities: z.array(z.string()).max(256).readonly(),
+      budget: planBudgetSchema,
+    }),
+    manifestDigest: z.string().regex(/^[a-f0-9]{64}$/),
+  })
+  .readonly();
+
+async function verifyManifestArtifact(
+  value: unknown,
+  expectedDigest: string,
+): Promise<Result<true, ReportContractFailure>> {
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value) ||
+    (Object.getPrototypeOf(value) !== null &&
+      Object.getPrototypeOf(value) !== Object.prototype)
+  )
+    return contractFailure(
+      "ARTIFACT_BINDING_MISMATCH",
+      "Catalog manifest is not a strict JSON object.",
+    );
+  const parsed = detachedManifestSchema.safeParse(value);
+  if (!parsed.success)
+    return contractFailure(
+      "ARTIFACT_BINDING_MISMATCH",
+      "Catalog manifest fields are invalid.",
+    );
+  const record = value;
+  const manifestDigest = parsed.data.manifestDigest;
+  const body = Object.fromEntries(
+    Object.entries(record).filter(([key]) => key !== "manifestDigest"),
+  );
+  Object.setPrototypeOf(body, null);
+  const catalogCore = Object.fromEntries(
+    Object.entries(record).filter(
+      ([key]) =>
+        ![
+          "catalogFingerprint",
+          "manifestDigest",
+          "planJsonSchema",
+          "policy",
+        ].includes(key),
+    ),
+  );
+  Object.setPrototypeOf(catalogCore, null);
+  const [inner, outer, fingerprint] = await Promise.all([
+    digestValue(body),
+    digestValue(value),
+    digestValue(catalogCore),
+  ]);
+  return inner.ok &&
+    outer.ok &&
+    fingerprint.ok &&
+    inner.value === manifestDigest &&
+    fingerprint.value === parsed.data.catalogFingerprint &&
+    outer.value === expectedDigest
+    ? { ok: true, value: true }
+    : contractFailure(
+        "ARTIFACT_BINDING_MISMATCH",
+        "Catalog manifest semantic identity does not match.",
+      );
+}
+
+async function verifySemanticArtifact(
+  kind: CommandReport["artifacts"][number]["kind"],
+  value: unknown,
+  expectedDigest: string,
+  report: CommandReport,
+): Promise<Result<true, ReportContractFailure>> {
+  if (kind === "catalog-manifest")
+    return verifyManifestArtifact(value, expectedDigest);
+  if (kind === "conformance-report") {
+    const parsed = nativeConformanceReportSchema.safeParse(value);
+    if (!parsed.success)
+      return contractFailure(
+        "ARTIFACT_BINDING_MISMATCH",
+        "Native conformance report is invalid.",
+      );
+    const { reportDigest, ...body } = parsed.data;
+    const digest = await digestValue(body);
+    const suiteDigest = report.inputs.find(
+      (input) =>
+        input.kind === "conformance-suite" &&
+        input.label === "validated-conformance-suite",
+    )?.digest;
+    return digest.ok &&
+      digest.value === reportDigest &&
+      reportDigest === expectedDigest &&
+      suiteDigest === parsed.data.fixtureDigest
+      ? { ok: true, value: true }
+      : contractFailure(
+          "ARTIFACT_BINDING_MISMATCH",
+          "Native conformance report semantic identity does not match.",
+        );
+  }
+  if (kind === "diagnostic-record") {
+    const parsed = catalogConformanceDiagnosticSchema.safeParse(value);
+    if (!parsed.success)
+      return contractFailure(
+        "ARTIFACT_BINDING_MISMATCH",
+        "Diagnostic artifact is invalid.",
+      );
+    const verified = await verifyConformanceDiagnosticIdentity(parsed.data);
+    return verified.ok && parsed.data.recordDigest === expectedDigest
+      ? { ok: true, value: true }
+      : contractFailure(
+          "ARTIFACT_BINDING_MISMATCH",
+          "Diagnostic artifact semantic identity does not match.",
+        );
+  }
+  const verified = await verifyCommandReport(value);
+  return verified.ok && verified.value.reportDigest === expectedDigest
+    ? { ok: true, value: true }
+    : contractFailure(
+        "ARTIFACT_BINDING_MISMATCH",
+        "Command report artifact semantic identity does not match.",
+      );
+}
+
 function verifyMigrationEvidence(
   body: CommandReportBody,
 ): Result<true, ReportContractFailure> {
@@ -495,6 +708,114 @@ export async function verifyCommandReport(
   return { ok: true, value: parsed.data };
 }
 
+export async function verifyDetachedCommandReport(
+  value: unknown,
+): Promise<Result<CommandReport, ReportContractFailure>> {
+  const verified = await verifyCommandReport(value);
+  if (!verified.ok) return verified;
+  const report = verified.value;
+  const hasIncompleteDiagnostic = report.diagnostics.controller.some(
+    (diagnostic) => diagnostic.code === "INCOMPLETE_EXECUTION",
+  );
+  if ((report.completeness === "partial") !== hasIncompleteDiagnostic)
+    return contractFailure(
+      "STATUS_MISMATCH",
+      "Completeness does not derive from the detailed controller records.",
+    );
+  const leftManifest = report.inputs.find(
+    (input) =>
+      input.kind === "catalog-manifest" && input.label === "left-manifest",
+  );
+  const rightManifest = report.inputs.find(
+    (input) =>
+      input.kind === "catalog-manifest" && input.label === "right-manifest",
+  );
+  const suite = report.inputs.find(
+    (input) =>
+      input.kind === "conformance-suite" &&
+      input.label === "validated-conformance-suite",
+  );
+  if (report.diagnostics.conformance.length > 0) {
+    if (
+      leftManifest === undefined ||
+      rightManifest === undefined ||
+      suite === undefined
+    )
+      return contractFailure(
+        "NESTED_IDENTITY_MISMATCH",
+        "Conformance records do not bind the required manifest and suite inputs.",
+      );
+    const comparison = await digestValue({
+      protocol: "lachesis-catalog-command-report/1",
+      command: "catalog.compare",
+      version: "1",
+      leftManifestDigest: leftManifest.digest,
+      rightManifestDigest: rightManifest.digest,
+      suiteDigest: suite.digest,
+      mode: "finite-semantic-conformance",
+    });
+    if (!comparison.ok)
+      return contractFailure(
+        "NESTED_IDENTITY_MISMATCH",
+        "Conformance comparison identity could not be derived.",
+      );
+    for (const record of report.diagnostics.conformance) {
+      if (record.comparisonIdentity !== comparison.value)
+        return contractFailure(
+          "NESTED_IDENTITY_MISMATCH",
+          "Conformance comparison identity does not match its bound inputs.",
+        );
+      if (
+        record.diagnostic !== null &&
+        record.diagnostic.evidence.fixtureDigest !== suite.digest
+      )
+        return contractFailure(
+          "NESTED_IDENTITY_MISMATCH",
+          "Diagnostic fixture identity does not match its bound suite.",
+        );
+      if (record.result === "conformant") {
+        const identity = await digestValue({
+          protocol: "lachesis-catalog-conformance-record/1",
+          comparisonIdentity: record.comparisonIdentity,
+          result: "conformant",
+          reportIdentity: record.reportIdentity,
+        });
+        if (!identity.ok || identity.value !== record.recordIdentity)
+          return contractFailure(
+            "NESTED_IDENTITY_MISMATCH",
+            "Conformance record identity does not match its native report.",
+          );
+      }
+    }
+    for (const migration of report.migrations) {
+      const initial = migration.outcomes[0];
+      if (
+        initial === undefined ||
+        migration.comparisonIdentity !== comparison.value
+      )
+        continue;
+      if (
+        initial.disposition === "declaration-repairable" ||
+        initial.disposition === "genuinely-non-equivalent" ||
+        initial.disposition === "invalid-or-unverifiable"
+      ) {
+        const identity = await digestValue({
+          protocol: "lachesis-catalog-semantic-assessment/1",
+          comparisonIdentity: migration.comparisonIdentity,
+          phase: "initial",
+          disposition: initial.disposition,
+        });
+        if (!identity.ok || identity.value !== initial.assessmentIdentity)
+          return contractFailure(
+            "NESTED_IDENTITY_MISMATCH",
+            "Semantic assessment identity does not match its detailed outcome.",
+          );
+      }
+    }
+  }
+  return verified;
+}
+
 async function sha256Bytes(bytes: Uint8Array): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -545,6 +866,55 @@ export async function verifyReportArtifactBindings(
         "ARTIFACT_BINDING_MISMATCH",
         `Artifact ${artifact.id} semantic digest does not match.`,
       );
+  }
+  return { ok: true, value: true };
+}
+
+export async function verifyDetachedReportArtifactBindings(
+  report: CommandReport,
+  bindings: ReadonlyArray<ArtifactBinding>,
+): Promise<Result<true, ReportContractFailure>> {
+  const byId = new Map(bindings.map((binding) => [binding.id, binding]));
+  if (byId.size !== bindings.length || byId.size !== report.artifacts.length)
+    return contractFailure(
+      "ARTIFACT_BINDING_MISMATCH",
+      "Artifact bindings are missing, duplicated, or unexpected.",
+    );
+  for (const artifact of report.artifacts) {
+    const binding = byId.get(artifact.id);
+    if (binding === undefined)
+      return contractFailure(
+        "ARTIFACT_BINDING_MISMATCH",
+        `Artifact ${artifact.id} is not bound.`,
+      );
+    const bytes = binding.bytes.slice();
+    if ((await sha256Bytes(bytes)) !== artifact.checksum.value)
+      return contractFailure(
+        "ARTIFACT_BINDING_MISMATCH",
+        `Artifact ${artifact.id} checksum does not match.`,
+      );
+    let decoded: string;
+    try {
+      decoded = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    } catch {
+      return contractFailure(
+        "ARTIFACT_BINDING_MISMATCH",
+        `Artifact ${artifact.id} is not UTF-8 JSON.`,
+      );
+    }
+    const parsed = parseJson(decoded);
+    if (!parsed.ok)
+      return contractFailure(
+        "ARTIFACT_BINDING_MISMATCH",
+        `Artifact ${artifact.id} is not valid JSON.`,
+      );
+    const semantic = await verifySemanticArtifact(
+      artifact.kind,
+      parsed.value,
+      artifact.digest,
+      report,
+    );
+    if (!semantic.ok) return semantic;
   }
   return { ok: true, value: true };
 }

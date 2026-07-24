@@ -20,6 +20,7 @@ import { z } from "zod";
 import { createExampleCatalog, examplePolicy } from "./example-catalog.js";
 import { runCatalogCompareCommand } from "./internal/catalog-compare-command.js";
 import { runCatalogManifestCommand } from "./internal/catalog-manifest-command.js";
+import { runReportVerifyCommand } from "./internal/report-verify-command.js";
 
 const nonTransformingJsonObjectSchema = z.custom<
   Readonly<Record<string, unknown>>
@@ -155,6 +156,17 @@ async function loadReplay(
 }
 
 async function main(args: ReadonlyArray<string>): Promise<number> {
+  if (args[0] === "report" && args[1] === "verify") {
+    const result = await runReportVerifyCommand(args.slice(2), {
+      stdout: (text) => process.stdout.write(text),
+      stderr: (text) => process.stderr.write(text),
+    });
+    if (!result.parsed)
+      process.stderr.write(
+        "Usage: lachesis report verify --input <command-report.json> [--artifact <artifact-id>=<path> ...] --report <path|-> [--replace]\n",
+      );
+    return result.exitCode;
+  }
   if (args[0] === "catalog" && args[1] === "compare") {
     const result = await runCatalogCompareCommand(args.slice(2), {
       stdout: (text) => process.stdout.write(text),

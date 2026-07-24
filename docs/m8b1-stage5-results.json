@@ -1,0 +1,107 @@
+{
+  "protocol": "lachesis.m8b1.stage5.results.v1",
+  "status": "complete-offline-pass",
+  "parentCommit": "0633b576bd254237c1befa5762c8997387bf0ffb",
+  "implementation": {
+    "command": "lachesis report verify",
+    "mode": "detached-integrity-only",
+    "catalogModulesImported": 0,
+    "generatorLoads": 0,
+    "suiteExecutions": 0,
+    "providerCalls": 0,
+    "networkRequired": false,
+    "credentialAccess": false,
+    "publicExportsAdded": 0,
+    "dependenciesAdded": 0,
+    "reportProtocolWidened": false
+  },
+  "verificationContract": {
+    "strictFrozenReportProtocol": true,
+    "canonicalReportIdentityRecomputed": true,
+    "summaryStatusAndExitDerivedFromDetailedRecords": true,
+    "nativeDiagnosticIdentityVerified": true,
+    "finiteAssessmentIdentityVerified": true,
+    "conformanceRecordIdentityVerified": true,
+    "artifactRawChecksumsVerified": true,
+    "artifactSemanticIdentitiesVerifiedByKind": true,
+    "normalizedPathAliasesRejected": true,
+    "descriptorBoundBoundedReads": true,
+    "sourceReportSemanticExitPropagated": false,
+    "verificationExitForValidSemanticRejection": 0
+  },
+  "ciContract": {
+    "semanticExitsAlwaysFail": [11, 12, 13],
+    "reviewExit": 10,
+    "reviewRequiresExplicitRepositoryPolicy": true,
+    "integrityAndSemanticGatesRemainSeparate": true,
+    "posixExampleTested": true,
+    "githubActionsExample": true
+  },
+  "securityBoundary": {
+    "frozenControllerMutationModel": "covered",
+    "sameOsUserKernelAtomicIsolationClaimed": false,
+    "recommendedExecution": "isolated-job-or-container"
+  },
+  "verification": {
+    "focusedTestFiles": 8,
+    "focusedTests": 76,
+    "repositoryTestFiles": 32,
+    "repositoryTests": 436,
+    "coverage": {
+      "statementsPercent": 90.04,
+      "branchesPercent": 80.3,
+      "functionsPercent": 97.2,
+      "linesPercent": 94.07
+    },
+    "strictTypeScript": "pass",
+    "skipLibCheck": false,
+    "lint": "pass",
+    "formatting": "pass",
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersDryRun": "pass",
+    "packedConsumer": {
+      "node": "v24.18.0",
+      "typescript": "6.0.3",
+      "skipLibCheck": false,
+      "workspaceImports": false,
+      "detachedVerification": true,
+      "providerCalls": 0,
+      "status": "pass"
+    },
+    "sourceSafety": "pass",
+    "publicApiInventory": "unchanged",
+    "historicalM8Audits": "pass",
+    "gitDiffCheck": "pass",
+    "unrelatedTimingFlakes": [
+      {
+        "test": "exhausts an M2 provider pool through per-call conservative settlements",
+        "coverageAttempt": "5000ms-timeout",
+        "isolatedUnchangedRerun": "pass-4.09s"
+      },
+      {
+        "test": "charges both attempts when an unknown-usage failure is retried and resumes without dispatch",
+        "coverageAttempt": "5000ms-timeout",
+        "isolatedUnchangedRerun": "pass-1.50s"
+      }
+    ]
+  },
+  "knownHistoricalReleaseCondition": {
+    "alpha3WorkflowOnlyChecksumMismatch": "preserved",
+    "releaseArtifactsModified": false
+  },
+  "preserved": {
+    "stage4_1TerminalCommittedState": true,
+    "stage4_1IdentityCheckedCleanup": true,
+    "stage4_1RollbackSemantics": true,
+    "historicalEvidenceRewritten": false,
+    "packageVersionsChanged": false
+  },
+  "boundaries": {
+    "stage6Started": false,
+    "published": false,
+    "pushed": false,
+    "providerCalls": 0,
+    "publicApiChanged": false
+  }
+}
