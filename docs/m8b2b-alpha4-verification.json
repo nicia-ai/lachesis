@@ -1,0 +1,84 @@
+{
+  "protocol": "lachesis.m8b2b.alpha4.verification.v1",
+  "releaseSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+  "workflowCorrectionCommit": "5e894a2df44cba074f8f9a1aa1cd2ce7240daa51",
+  "environment": {
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "typescript": "6.0.3"
+  },
+  "repository": {
+    "format": "pass",
+    "strictTypecheck": "pass",
+    "lint": "pass",
+    "defaultParallelTests": {
+      "testFiles": 32,
+      "tests": 443,
+      "passed": 443,
+      "durationSeconds": 95.12
+    },
+    "frozenDefaultParallelStabilityAudit": {
+      "sourceCommit": "5b2150c9dce49f67531589d81d186b941199c19e",
+      "runs": 10,
+      "passed": 10,
+      "checksumAudit": "pass"
+    },
+    "coverage": {
+      "tests": 443,
+      "statementsPercent": 90.04,
+      "branchesPercent": 80.36,
+      "functionsPercent": 97.17,
+      "linesPercent": 94.06,
+      "thresholds": "pass"
+    },
+    "nodeSmoke": "pass",
+    "workersDryRun": "pass",
+    "offlineExamples": "7/7 pass",
+    "sourceSafety": "pass",
+    "publicApiInventory": "pass",
+    "packedPackageAudit": "pass",
+    "historicalChecksumAudits": "pass",
+    "m7cFrozenDocumentation": "unchanged-pass",
+    "workflowStaticValidation": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "packages": {
+    "count": 6,
+    "versionsSynchronized": true,
+    "internalDependenciesExactAlpha4": true,
+    "packRunsPerPackage": 3,
+    "byteIdentical": true,
+    "publicLibraryExportsChanged": false,
+    "cliBinaryOnly": true,
+    "cliExecutableModeOctal": "0755"
+  },
+  "consumers": {
+    "freshHost": {
+      "strictTypeScriptSkipLibCheckFalse": "pass",
+      "threeCommandWorkflow": "pass",
+      "detachedVerification": "pass",
+      "workspaceImports": 0,
+      "alpha3Fallbacks": 0
+    },
+    "networkDisabledLinux": {
+      "image": "node:24.18.0-bookworm-slim",
+      "network": "none",
+      "rootFilesystem": "read-only",
+      "capabilities": "none",
+      "noNewPrivileges": true,
+      "status": "pass"
+    }
+  },
+  "registryPreflight": {
+    "alpha4AbsentForAllSix": true,
+    "existingLatestTags": "0.1.0-alpha.1",
+    "existingAlphaTags": "0.1.0-alpha.3",
+    "cliPackage": "absent"
+  },
+  "providerCalls": 0,
+  "credentialsAccessed": false,
+  "tagCreated": false,
+  "githubReleaseCreated": false,
+  "publicationPerformed": false,
+  "decision": "release-candidate-prepared-awaiting-separate-authorizations"
+}

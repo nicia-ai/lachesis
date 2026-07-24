@@ -1,0 +1,39 @@
+{
+  "protocol": "lachesis.m8b2b.alpha4.workflow-binding.v1",
+  "releaseSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+  "workflowCorrectionCommit": "5e894a2df44cba074f8f9a1aa1cd2ce7240daa51",
+  "workflowPath": ".github/workflows/release.yml",
+  "workflowSha256": "c6288195114390cbcb2369a0ae96f2573f8ccd4ab954950302496617dec822a1",
+  "release": {
+    "version": "0.1.0-alpha.4",
+    "annotatedTag": "v0.1.0-alpha.4",
+    "tagTarget": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "notesPath": "docs/m8b2b-alpha4-release-notes.md",
+    "releaseChecksumManifest": "docs/m8b2b-alpha4-release.sha256",
+    "releaseChecksumManifestSha256": "b6e0141eccd1f206680e8a0aee5af4ba93a473d0e5ba8048591cc11876a48038",
+    "tarballChecksumManifestSha256": "0eb8b0c880b71c00f08941ff3084b74acaa5009e6639f6b0ad805284f3d85411"
+  },
+  "packageAllowlist": [
+    "@nicia-ai/lachesis",
+    "@nicia-ai/lachesis-evidence",
+    "@nicia-ai/lachesis-generator",
+    "@nicia-ai/lachesis-runtime",
+    "@nicia-ai/lachesis-evidence-typegraph",
+    "@nicia-ai/lachesis-cli"
+  ],
+  "privatePackagePublicationPossible": false,
+  "existingPackageAuthentication": "oidc-trusted-publishing-only",
+  "cliAuthentication": "separately-authorized-one-time-token-bootstrap-before-oidc-binding",
+  "publicationTag": "alpha",
+  "existingLatestTag": "0.1.0-alpha.1",
+  "cliFirstPublicationLatestGate": [null, "0.1.0-alpha.4"],
+  "cleanRunnerBuild": {
+    "sourceCheckout": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "dependencyOrderedDeclarationBuild": true,
+    "completeRecursiveBuild": "pass",
+    "tarballsByteIdenticalToFrozenSet": true
+  },
+  "publicationPerformed": false
+}
