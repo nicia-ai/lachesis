@@ -1,0 +1,119 @@
+{
+  "protocol": "lachesis.m8b2b5.cli-bootstrap-reconciliation.v1",
+  "disposition": "complete-published-reconciled-credential-retired",
+  "publication": {
+    "package": "@nicia-ai/lachesis-cli",
+    "version": "0.1.0-alpha.4",
+    "runId": 30134246636,
+    "runAttempt": 1,
+    "runEvent": "workflow_dispatch",
+    "runConclusion": "failure",
+    "publicationStep": "success",
+    "registryReconciliation": "pass-after-workflow-window",
+    "releaseSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "workflowCommit": "db5c793c9b78c78ac4d7a3161f5ae06741b0c55e",
+    "workflowPath": ".github/workflows/bootstrap-cli.yml",
+    "workflowSha256": "aa318966d4cece6e65ecc482cd38b9b62f95bfd4c209aac60f00b971b76d25ff",
+    "tarballSha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+    "tarballSha1": "773a5e817753d4c48845aad86ad43402f5af24c5",
+    "tarballIntegrity": "sha512-aNcInixvJ9lQmTeNQapyohC2FWk6ZfjiuiOB9OP/x07bGrmYsGaxcrFWXadnC6JeI7V9c8YV4xrg+aOhTx2qtQ==",
+    "registryVersions": ["0.1.0-alpha.4"],
+    "distTags": {
+      "alpha": "0.1.0-alpha.4",
+      "latest": "0.1.0-alpha.4",
+      "latestDisposition": "unavoidable-first-publication-result"
+    },
+    "registryPropagation": {
+      "workflowAttempts": 24,
+      "pollIntervalSeconds": 5,
+      "workflowObserved": "HTTP 404 through the bounded verification window",
+      "laterIndependentObservation": "HTTP 200 with complete verified metadata",
+      "classification": "delayed-registry-propagation-after-successful-publish"
+    },
+    "noSecondDispatchAfterPublicationRun": true,
+    "noSecondPublication": true
+  },
+  "integrity": {
+    "registrySignature": {
+      "present": true,
+      "cryptographicallyVerified": true,
+      "count": 1,
+      "keyId": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+    },
+    "attestations": {
+      "cryptographicallyVerified": true,
+      "count": 2,
+      "publish": {
+        "predicateType": "https://github.com/npm/attestation/tree/main/specs/publish/v0.1",
+        "transparencyLogIndex": "2239969641"
+      },
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1",
+        "transparencyLogIndex": "2239969133",
+        "repository": "https://github.com/nicia-ai/lachesis",
+        "workflowPath": ".github/workflows/bootstrap-cli.yml",
+        "workflowCommit": "db5c793c9b78c78ac4d7a3161f5ae06741b0c55e",
+        "invocation": "https://github.com/nicia-ai/lachesis/actions/runs/30134246636/attempts/1"
+      }
+    }
+  },
+  "trustedPublisher": {
+    "package": "@nicia-ai/lachesis-cli",
+    "connectionCount": 1,
+    "provider": "GitHub Actions",
+    "organization": "nicia-ai",
+    "repository": "lachesis",
+    "workflowFilename": "release.yml",
+    "environment": null,
+    "allowedActions": ["npm publish"],
+    "npmStagePublishAllowed": false,
+    "saved": true,
+    "independentlyReverifiedAfterCredentialRevocation": true
+  },
+  "credentialRetirement": {
+    "npmToken": {
+      "name": "lachesis temp",
+      "recordId": "8c9e9afc-e20b-44f1-9a13-014632a261be",
+      "truncatedIdentity": "npm_FRrp......LILl",
+      "created": "2026-07-24",
+      "lastUsed": "2026-07-24",
+      "expires": "2026-07-31",
+      "packageAndScopeAccess": "@nicia-ai read/write",
+      "organizationAccess": "nicia-ai read/write",
+      "bypass2fa": true,
+      "revocationResult": "deleted-1-token",
+      "inventoryAfterRevocation": "absent",
+      "directIdentityAfterRevocation": "not-resolvable",
+      "secretValueAccessed": false
+    },
+    "githubActionsSecret": {
+      "repository": "nicia-ai/lachesis",
+      "name": "NPM_TOKEN",
+      "beforeDeletion": ["NPM_TOKEN"],
+      "deletionResult": "success",
+      "afterDeletion": [],
+      "secretValueAccessed": false
+    }
+  },
+  "preserved": {
+    "annotatedTag": "v0.1.0-alpha.4",
+    "annotatedTagPeelsTo": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "draftReleaseId": 359550250,
+    "draftReleaseState": "draft-prerelease-unchanged",
+    "existingFiveAlphaTags": "0.1.0-alpha.3",
+    "existingFiveLatestTags": "0.1.0-alpha.1",
+    "otherFiveAlpha4Versions": "absent",
+    "bootstrapWorkflow": "present-unchanged",
+    "distTagsChangedAfterPublication": false
+  },
+  "nonactions": [
+    "no-bootstrap-rerun",
+    "no-second-publication",
+    "no-other-package-publication",
+    "no-release-workflow-dispatch",
+    "no-bootstrap-workflow-removal",
+    "no-draft-release-modification",
+    "no-dist-tag-mutation",
+    "no-cleanup-push"
+  ]
+}
