@@ -1,0 +1,67 @@
+{
+  "protocol": "lachesis.m8b2b2.bootstrap-correction.v1",
+  "disposition": "prepared-unexecuted-awaiting-separate-authorizations",
+  "parentWorkflowCommit": "468349a7ac30934180650f41d83ccf7c68cfcda7",
+  "correctionCommit": "587b23d6b37ccb3f6a0f4ba0aba046638036f13b",
+  "failedRun": {
+    "databaseId": 30127417942,
+    "headSha": "468349a7ac30934180650f41d83ccf7c68cfcda7",
+    "conclusion": "failure",
+    "failedStep": "Verify source, tag, draft prerelease, and checksums",
+    "failure": "The releases/tags endpoint returned HTTP 404 for the draft release.",
+    "publicationStep": "skipped",
+    "registryMutation": false,
+    "classification": "pre-publication-infrastructure-failure"
+  },
+  "correction": {
+    "workflow": ".github/workflows/bootstrap-cli.yml",
+    "workflowSha256": "e5fb843e3e89b576d1a6cf27917b0c7e98dfff118c05c626b18b32d2f3e7ed82",
+    "authenticatedEndpoint": "repos/nicia-ai/lachesis/releases/359550250",
+    "credential": "workflow GITHUB_TOKEN",
+    "permission": "contents:read",
+    "draftReleaseId": 359550250,
+    "releaseTag": "v0.1.0-alpha.4",
+    "releaseTitle": "Lachesis 0.1.0-alpha.4",
+    "releaseBodySha256": "bec6a90f3c7683e3d66d10607ebfb4891105abb25064c5feae14e59196fc1a02",
+    "packageSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1"
+  },
+  "verification": {
+    "authenticatedDraftDiscovery": "pass",
+    "wrongReleaseId": "reject",
+    "wrongTag": "reject",
+    "wrongTitle": "reject",
+    "wrongBody": "reject",
+    "nonDraft": "reject",
+    "nonPrerelease": "reject",
+    "apiFailure": "reject",
+    "annotatedTagPeel": "pass",
+    "npmAlpha4Mutation": "absent-all-six",
+    "actionlint": "pass",
+    "bootstrapSafetyTest": "pass",
+    "format": "pass",
+    "lint": "pass",
+    "sourceSafety": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "preserved": {
+    "releaseWorkflowSha256": "c6288195114390cbcb2369a0ae96f2573f8ccd4ab954950302496617dec822a1",
+    "packageSource": true,
+    "packageVersions": true,
+    "tarballDigests": true,
+    "draftRelease": true,
+    "annotatedTag": true,
+    "solePublicationAllowlist": true,
+    "npmTokenHandling": true,
+    "provenanceRequirements": true,
+    "packageAndSourceFiles": true
+  },
+  "nonactions": [
+    "no-push",
+    "no-dispatch",
+    "no-npm-credential-access",
+    "no-publication",
+    "no-trusted-publisher-configuration",
+    "no-release-change",
+    "no-dist-tag-change"
+  ]
+}
