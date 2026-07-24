@@ -1,0 +1,190 @@
+name: Bootstrap Lachesis CLI
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: Exact frozen alpha.4 package-source commit
+        required: true
+        type: string
+
+concurrency:
+  group: bootstrap-lachesis-cli-0.1.0-alpha.4
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  RELEASE_COMMIT: 635521f1d2e753095fca4fdbbafbf7ed2287efe1
+  RELEASE_VERSION: 0.1.0-alpha.4
+  RELEASE_TAG: v0.1.0-alpha.4
+  RELEASE_TITLE: Lachesis 0.1.0-alpha.4
+  RELEASE_NOTES: docs/m8b2b-alpha4-release-notes.md
+  RELEASE_CHECKSUMS: docs/m8b2b-alpha4-release.sha256
+  CLI_TARBALL_SHA256: f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638
+  NPM_REGISTRY: https://registry.npmjs.org
+
+jobs:
+  bootstrap:
+    name: Publish first CLI version only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Validate immutable dispatch
+        env:
+          REQUESTED_COMMIT: ${{ inputs.release_commit }}
+        run: |
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$REQUESTED_COMMIT" = "$RELEASE_COMMIT"
+          test "${#REQUESTED_COMMIT}" -eq 40
+          test -z "$(printf '%s' "$REQUESTED_COMMIT" | tr -d '0123456789abcdef')"
+
+      - name: Check out bootstrap infrastructure
+        uses: actions/checkout@v6
+        with:
+          path: bootstrap-infrastructure
+          persist-credentials: false
+
+      - name: Check out detached frozen package source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+          fetch-depth: 0
+          path: release-source
+          persist-credentials: false
+
+      - name: Verify source, tag, draft prerelease, and checksums
+        working-directory: release-source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_COMMIT"
+          test -z "$(git status --porcelain)"
+          test "$(git cat-file -t "$RELEASE_TAG")" = "tag"
+          test "$(git rev-parse "$RELEASE_TAG^{}")" = "$RELEASE_COMMIT"
+          test "$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG^{}" | cut -f1)" = "$RELEASE_COMMIT"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+            > "$RUNNER_TEMP/draft-release.json"
+          node - "$RUNNER_TEMP/draft-release.json" "$RELEASE_NOTES" "$RELEASE_TITLE" <<'NODE'
+          const fs = require("node:fs");
+          const [releasePath, notesPath, expectedTitle] = process.argv.slice(2);
+          const release = JSON.parse(fs.readFileSync(releasePath, "utf8"));
+          const notes = fs.readFileSync(notesPath);
+          if (release.draft !== true || release.prerelease !== true) {
+            throw new Error("The GitHub release must remain a draft prerelease.");
+          }
+          if (release.name !== expectedTitle) {
+            throw new Error("The GitHub release title differs from the frozen title.");
+          }
+          if (!Buffer.from(release.body, "utf8").equals(notes)) {
+            throw new Error("The GitHub release body differs from the frozen release-note bytes.");
+          }
+          NODE
+          shasum -a 256 -c "$RELEASE_CHECKSUMS"
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: release-source/pnpm-lock.yaml
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Require provenance-capable npm
+        run: |
+          npm_version="$(npm --version)"
+          export npm_version
+          node - <<'NODE'
+          const [major, minor, patch] = process.env.npm_version.split(".").map(Number);
+          if (
+            major < 11 ||
+            (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))
+          ) {
+            throw new Error(`npm 11.5.1 or newer is required; found ${process.env.npm_version}`);
+          }
+          NODE
+
+      - name: Install and build frozen sources
+        working-directory: release-source
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @nicia-ai/lachesis build
+          pnpm --filter @nicia-ai/lachesis-evidence build
+          pnpm --filter @nicia-ai/lachesis-generator build
+          pnpm --filter @nicia-ai/lachesis-runtime build
+          pnpm --filter @nicia-ai/lachesis-evidence-typegraph build
+          pnpm --filter @nicia-ai/lachesis-cli build
+
+      - name: Verify the exact public package allowlist
+        env:
+          LACHESIS_JSON_MODULE:
+            ${{ github.workspace }}/release-source/packages/kernel/dist/json.js
+        run: |
+          node bootstrap-infrastructure/scripts/verify-cli-bootstrap.mjs \
+            package-set release-source
+
+      - name: Reproduce and verify the CLI tarball
+        working-directory: release-source
+        run: |
+          for attempt in 1 2 3
+          do
+            output="$RUNNER_TEMP/cli-pack-$attempt"
+            node scripts/prepare-alpha4-tarballs.mjs --output-dir "$output"
+            digest="$(shasum -a 256 "$output/nicia-ai-lachesis-cli-$RELEASE_VERSION.tgz" | cut -d ' ' -f1)"
+            test "$digest" = "$CLI_TARBALL_SHA256"
+          done
+          mkdir "$RUNNER_TEMP/cli-publish"
+          cp "$RUNNER_TEMP/cli-pack-1/nicia-ai-lachesis-cli-$RELEASE_VERSION.tgz" \
+            "$RUNNER_TEMP/cli-publish/"
+          test "$(find "$RUNNER_TEMP/cli-publish" -type f | wc -l | tr -d ' ')" = "1"
+
+      - name: Require all six alpha.4 versions to be absent
+        env:
+          LACHESIS_JSON_MODULE:
+            ${{ github.workspace }}/release-source/packages/kernel/dist/json.js
+        run: |
+          node bootstrap-infrastructure/scripts/verify-cli-bootstrap.mjs \
+            registry-snapshot "$NPM_REGISTRY" \
+            > "$RUNNER_TEMP/pre-bootstrap-registry.json"
+
+      - name: Publish exactly the first CLI version
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          test -n "$NPM_TOKEN"
+          set +x
+          NODE_AUTH_TOKEN="$NPM_TOKEN" npm publish \
+            "$RUNNER_TEMP/cli-publish/nicia-ai-lachesis-cli-$RELEASE_VERSION.tgz" \
+            --ignore-scripts \
+            --tag alpha \
+            --access public \
+            --provenance
+          unset NPM_TOKEN
+
+      - name: Verify the sole registry mutation
+        env:
+          LACHESIS_JSON_MODULE:
+            ${{ github.workspace }}/release-source/packages/kernel/dist/json.js
+        run: |
+          verified=false
+          for attempt in $(seq 1 24)
+          do
+            if node bootstrap-infrastructure/scripts/verify-cli-bootstrap.mjs \
+              registry-result "$NPM_REGISTRY" "$RELEASE_COMMIT" "$GITHUB_SHA" \
+              > "$RUNNER_TEMP/cli-bootstrap-verification.json"
+            then
+              verified=true
+              break
+            fi
+            echo "Waiting for CLI registry verification ($attempt/24)" >&2
+            sleep 5
+          done
+          test "$verified" = "true"
+          node bootstrap-infrastructure/scripts/verify-cli-bootstrap.mjs \
+            registry-unchanged "$NPM_REGISTRY" \
+            "$RUNNER_TEMP/pre-bootstrap-registry.json"
+          cat "$RUNNER_TEMP/cli-bootstrap-verification.json" >> "$GITHUB_STEP_SUMMARY"
