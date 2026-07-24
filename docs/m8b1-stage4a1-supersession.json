@@ -1,0 +1,31 @@
+{
+  "protocol": "lachesis.m8b1.stage4a1.supersession.v1",
+  "parentCommit": "6412f30c7c98c4e301f8da0992d4f4973c6ab1a7",
+  "historicalStage4a": {
+    "commit": "6412f30c7c98c4e301f8da0992d4f4973c6ab1a7",
+    "checksumManifest": "docs/m8b1-stage4a-results.sha256",
+    "checksumManifestSha256": "f2c6e3bdccc157d64adc531795f57eeaadc1f05df54e4c3b4cbd577721e67940",
+    "bytesRewritten": false
+  },
+  "superseded": [
+    {
+      "artifact": "docs/m8b1-stage4a-semantic-conformance-protocol.md",
+      "clause": "diagnostic manifest digests equal the regenerated manifest digests"
+    },
+    {
+      "artifact": "docs/m8b1-stage4a-decision.json",
+      "field": "bindings.manifestDigestsReconciled",
+      "priorValue": true
+    }
+  ],
+  "reason": "Generator-native diagnostic manifests bind the generator's private diagnostic policy, while CLI manifests bind the supplied compilation policies.",
+  "replacementBinding": "docs/m8b1-stage4a1-decision.json",
+  "preserved": [
+    "all-other-stage4a-protocol-clauses",
+    "artifact-transaction",
+    "native-cardinality",
+    "exit-precedence",
+    "policy-review-safety",
+    "nonclaims"
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "protocol": "lachesis.m8b1.stage4a1.diagnostic-manifest-binding.v1",
+  "status": "complete-offline-pass",
+  "parentCommit": "6412f30c7c98c4e301f8da0992d4f4973c6ab1a7",
+  "supersedes": {
+    "stage4aCommit": "6412f30c7c98c4e301f8da0992d4f4973c6ab1a7",
+    "stage4aChecksumManifestSha256": "f2c6e3bdccc157d64adc531795f57eeaadc1f05df54e4c3b4cbd577721e67940",
+    "scope": [
+      "diagnostic-manifest-digest-reconciliation-clause",
+      "bindings.manifestDigestsReconciled"
+    ]
+  },
+  "qualifiedBindings": {
+    "cliManifestInputBinding": {
+      "leftAndRightManifestDigestsRetainedAsCommandInputs": true,
+      "policies": "independently-supplied-cli-compilation-policies",
+      "comparedWithDiagnosticManifestDigests": false
+    },
+    "generatorNativeDiagnosticIdentity": {
+      "verifier": "verifyCatalogConformanceDiagnostic",
+      "completeDiagnosticVerified": true,
+      "manifestDigestMeaning": "generator-native-evidence-under-private-diagnostic-policy",
+      "privateDiagnosticPolicyDuplicatedByCli": false
+    },
+    "crossBoundaryReconciliation": {
+      "leftCatalogFingerprint": "cli-left-manifest.catalogFingerprint",
+      "rightCatalogFingerprint": "cli-right-manifest.catalogFingerprint",
+      "fixtureDigest": "validated-suite-digest"
+    }
+  },
+  "regression": {
+    "test": "examples/m7b-diagnostics/tests/m8b1-stage4a1-manifest-binding.test.ts",
+    "leftPolicyDigest": "e1c667a503bb81e6aa3a166eba1e232d1ad1a8e49010511719b99bb6d5af1e2f",
+    "rightPolicyDigest": "0fa5d28fdbb49170cc320e23c945de6534049a6227ad0c7423323a536d262cfb",
+    "cases": [
+      {
+        "caseId": "m7b-dev-01-missing-declarations",
+        "outcome": "declaration-repairable",
+        "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+        "rightCatalogFingerprint": "21f61eae08c940a5449081eed694e814ff6991044d4c660d54abd8b808a88970",
+        "suiteDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+        "cliLeftManifestDigest": "f3f0797723df5244498b0578b6a946ace9f6e7ca72c3537a6c351e49ba1c7397",
+        "generatorLeftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+        "cliRightManifestDigest": "0d25f2660340f5e07490e14eca7821b926f92d34f0ec87b06b914b7231303df5",
+        "generatorRightManifestDigest": "78991e6704ae4d7c541a2dcfcafe8312ba9ae259d39831879db172a4c1011a35"
+      },
+      {
+        "caseId": "m7b-dev-03-incomplete-evidence",
+        "outcome": "insufficient-evidence",
+        "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+        "rightCatalogFingerprint": "1976e5805ecc2ca8e292eace91e37bcefdcbf07bfb536d796adbd9beb8710374",
+        "suiteDigest": "b0c9055f41e32aa43a56765e7e17a670f255a54da8523ea6b94759121a889462",
+        "cliLeftManifestDigest": "f3f0797723df5244498b0578b6a946ace9f6e7ca72c3537a6c351e49ba1c7397",
+        "generatorLeftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+        "cliRightManifestDigest": "aff65768326282be7eb5e53e082badf76126a7c7f81e49bc72c873ef1e3aa341",
+        "generatorRightManifestDigest": "a88f02e8f4da4e3a386fc50f33812b4c873ba59272fee1c5db3a3baa6c4360b8"
+      },
+      {
+        "caseId": "m7b-dev-09-output",
+        "outcome": "genuinely-non-equivalent",
+        "leftCatalogFingerprint": "10abc4340bf5682844557253b5782ce3170949401f805f29f905bee48f539cc5",
+        "rightCatalogFingerprint": "a5839eed3c8a0288a1f6ee2593fb90bddad9a2700b855d62eb891c87b472a44e",
+        "suiteDigest": "226a11be64c0851def58218be143a064aee9c12e9eab3fb43e96132fcf2cff09",
+        "cliLeftManifestDigest": "f3f0797723df5244498b0578b6a946ace9f6e7ca72c3537a6c351e49ba1c7397",
+        "generatorLeftManifestDigest": "74d887c493cf285c8f7b1150142feffcd345cfb4180488a86c494574e5765b59",
+        "cliRightManifestDigest": "56f356cb6efe99f8e4d371c1002023b60d28bbb995f19e0808eead3106a34d20",
+        "generatorRightManifestDigest": "825be4576ede0a5c7bf6b187bf1ee42d962f416b48ebfce931a4a7bacf2b9bef"
+      }
+    ],
+    "allDiagnosticsVerified": true,
+    "allCatalogFingerprintsReconciled": true,
+    "allSuiteDigestsReconciled": true,
+    "allCliAndGeneratorManifestDigestsDiffer": true
+  },
+  "policySafety": {
+    "source": "supplied-cli-policies-only",
+    "differencesRemainReviewRequired": true,
+    "nativeMetadataCanSuppressReview": false
+  },
+  "preservedStage4aDecisions": [
+    "transaction",
+    "artifact-binding",
+    "native-cardinality",
+    "exit-precedence",
+    "conditional-repair",
+    "do-not-substitute",
+    "nonclaims"
+  ],
+  "stage4CommandImplemented": false,
+  "publicApiChanged": false,
+  "providerCalls": 0,
+  "implementationReadiness": "GO",
+  "implementationGate": "original-and-corrected-hostile-tests-must-pass"
+}
