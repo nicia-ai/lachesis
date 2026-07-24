@@ -1,0 +1,89 @@
+{
+  "protocol": "lachesis.m8b2b1.bootstrap-correction.v1",
+  "disposition": "prepared-unexecuted-awaiting-separate-authorizations",
+  "parentEvidenceCommit": "0b317769ef57cefec761f501e5dd35eb4a4512c2",
+  "correctionCommit": "468349a7ac30934180650f41d83ccf7c68cfcda7",
+  "packageSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+  "releaseWorkflowCorrection": "5e894a2df44cba074f8f9a1aa1cd2ce7240daa51",
+  "releaseVersion": "0.1.0-alpha.4",
+  "releaseTag": "v0.1.0-alpha.4",
+  "package": "@nicia-ai/lachesis-cli",
+  "cliTarballSha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+  "workflow": {
+    "path": ".github/workflows/bootstrap-cli.yml",
+    "sha256": "ec3f50296cf236364c5a5c34384c930956b23bc1b1e2247d42e1acdbbff1bc69",
+    "temporary": true,
+    "runner": "github-hosted-ubuntu-24.04",
+    "permissions": {
+      "contents": "read",
+      "id-token": "write"
+    },
+    "concurrency": "bootstrap-lachesis-cli-0.1.0-alpha.4",
+    "soleMutation": "publish-@nicia-ai/lachesis-cli@0.1.0-alpha.4"
+  },
+  "rootCause": {
+    "classification": "release-infrastructure",
+    "finding": "The M8b.2b bootstrap plan named a separately audited token bootstrap but supplied no executable workflow, no enforceable single-package publish path, and inaccurately suggested that a token could be package-scoped before the package existed."
+  },
+  "credentialBoundary": {
+    "secret": "NPM_TOKEN",
+    "tokenType": "granular-access-token",
+    "narrowestProspectiveScope": "@nicia-ai npm scope read-and-write",
+    "packageScopedBeforeExistence": false,
+    "maximumExpiration": "one-day",
+    "bypass2fa": true,
+    "trustAdministrationAllowed": false,
+    "cleanupSeparatelyAuthorized": true
+  },
+  "provenanceBoundary": {
+    "slsaWorkflow": ".github/workflows/bootstrap-cli.yml",
+    "slsaResolvedCommit": "workflow-infrastructure-commit-at-dispatch",
+    "packageSourceBinding": "detached checkout, annotated-tag peel, frozen release checksums, three exact tarball reproductions, and registry tarball equality",
+    "claimNotMade": "The npm SLSA statement does not encode the separately checked-out package-source commit as its workflow resolved dependency."
+  },
+  "preserved": {
+    "sixPackageVersions": true,
+    "sixTarballDigests": true,
+    "releaseNotes": true,
+    "publicApis": true,
+    "releaseWorkflow": true,
+    "fivePackageOidcPath": true
+  },
+  "verification": {
+    "actionlint": "pass",
+    "cleanDetachedSourceSimulation": "pass",
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "cliReproductionCount": 3,
+    "cliReproductionsByteIdentical": true,
+    "packageAllowlist": "pass-exactly-six",
+    "mockRegistryAbsenceGuards": "pass",
+    "duplicateDispatchConcurrency": "pass-static-single-group-contract",
+    "secretLeakAudit": "pass",
+    "solePublishPath": "pass",
+    "repositoryMatrix": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "laterSequence": [
+    "push-infrastructure-commit",
+    "create-annotated-tag-and-draft-prerelease",
+    "install-short-lived-bootstrap-secret",
+    "separately-authorize-and-dispatch-cli-bootstrap",
+    "configure-cli-trusted-publisher-for-release-yml",
+    "revoke-token-and-delete-npm-token-secret",
+    "remove-temporary-bootstrap-workflow-in-workflow-only-commit",
+    "separately-authorize-normal-five-package-oidc-release",
+    "publish-and-verify-prerelease-before-dispatch-required-by-existing-release-workflow"
+  ],
+  "nonactions": [
+    "no-push",
+    "no-tag",
+    "no-github-release",
+    "no-credential-access",
+    "no-secret-installation",
+    "no-trusted-publisher-configuration",
+    "no-npm-publication",
+    "no-dist-tag-change",
+    "no-m9"
+  ]
+}
