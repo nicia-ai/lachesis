@@ -89,6 +89,12 @@ jobs:
       - name: Run frozen release verification
         run: |
           pnpm format:check
+          pnpm --filter @nicia-ai/lachesis build
+          pnpm --filter @nicia-ai/lachesis-evidence build
+          pnpm --filter @nicia-ai/lachesis-generator build
+          pnpm --filter @nicia-ai/lachesis-runtime build
+          pnpm --filter @nicia-ai/lachesis-evidence-typegraph build
+          pnpm --filter @nicia-ai/lachesis-cli build
           pnpm build
           pnpm typecheck
           pnpm lint
