@@ -216,6 +216,14 @@ type StagedWrite = Readonly<{
   original: TargetSnapshot;
 }>;
 
+type PairTransactionState =
+  | "staging"
+  | "staged"
+  | "artifact-installed"
+  | "report-installed"
+  | "committed"
+  | "rolled-back";
+
 function missing(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
@@ -316,7 +324,7 @@ async function installStaged(
     throw new Error("temporary-identity-drift");
   if (write.original.bound === null) {
     await link(write.temporary, write.path);
-    await rm(write.temporary);
+    await cleanupOwnedTemporary(write);
   } else {
     await rename(write.temporary, write.path);
   }
@@ -418,6 +426,39 @@ async function detectInstalledTarget(
   throw new Error("target-identity-drift");
 }
 
+async function cleanupOwnedTemporary(write: StagedWrite): Promise<void> {
+  try {
+    const pathStat = await lstat(write.temporary);
+    if (
+      pathStat.isSymbolicLink() ||
+      !pathStat.isFile() ||
+      !sameObject(write.staged.identity, identity(pathStat))
+    )
+      return;
+    const handle = await open(
+      write.temporary,
+      constants.O_RDONLY | constants.O_NOFOLLOW,
+    );
+    try {
+      const descriptorStat = await handle.stat();
+      const currentPathStat = await lstat(write.temporary);
+      if (
+        !descriptorStat.isFile() ||
+        currentPathStat.isSymbolicLink() ||
+        !currentPathStat.isFile() ||
+        !sameObject(write.staged.identity, identity(descriptorStat)) ||
+        !sameObject(write.staged.identity, identity(currentPathStat))
+      )
+        return;
+      await rm(write.temporary);
+    } finally {
+      await handle.close();
+    }
+  } catch (error: unknown) {
+    if (missing(error)) return;
+  }
+}
+
 export async function atomicWritePairBounded(
   artifact: Readonly<{
     root: string;
@@ -438,6 +479,7 @@ export async function atomicWritePairBounded(
   let reportWrite: StagedWrite | undefined;
   let installedArtifact: BoundBytes | undefined;
   let installedReport: BoundBytes | undefined;
+  let state: PairTransactionState = "staging";
   try {
     artifactWrite = await stageWrite(
       artifact.root,
@@ -457,11 +499,14 @@ export async function atomicWritePairBounded(
       "report",
       hooks,
     );
+    state = "staged";
     await hooks.beforeArtifactInstall?.(artifact.path);
     installedArtifact = await installStaged(artifactWrite, artifact.limit);
+    state = "artifact-installed";
     await hooks.afterArtifactInstall?.(artifact.path);
     await hooks.beforeReportInstall?.(report.path);
     installedReport = await installStaged(reportWrite, report.limit);
+    state = "report-installed";
     await hooks.afterReportInstall?.(report.path);
     const [verifiedArtifact, verifiedReport] = await Promise.all([
       readBoundedRegularFile(artifact.path, artifact.limit),
@@ -472,6 +517,7 @@ export async function atomicWritePairBounded(
       !sameBoundIdentity(installedReport, verifiedReport)
     )
       throw new Error("target-identity-drift");
+    state = "committed";
   } catch (error: unknown) {
     try {
       if (installedReport === undefined && reportWrite !== undefined)
@@ -497,14 +543,16 @@ export async function atomicWritePairBounded(
       } catch {
         throw new Error("transaction-rollback-failed");
       }
+      state = "rolled-back";
       throw new Error("transaction-commit-incomplete", { cause: error });
     }
     throw new Error("transaction-commit-incomplete", { cause: error });
   } finally {
-    if (artifactWrite !== undefined)
-      await rm(artifactWrite.temporary, { force: true });
-    if (reportWrite !== undefined)
-      await rm(reportWrite.temporary, { force: true });
+    if (state !== "committed") {
+      if (artifactWrite !== undefined)
+        await cleanupOwnedTemporary(artifactWrite);
+      if (reportWrite !== undefined) await cleanupOwnedTemporary(reportWrite);
+    }
   }
 }
 

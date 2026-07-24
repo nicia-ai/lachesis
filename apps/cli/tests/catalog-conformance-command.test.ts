@@ -701,6 +701,67 @@ describe("private suite-backed catalog conformance command", () => {
     await fallbackReport(rawTamper.stdout);
   });
 
+  it("keeps a verified commit authoritative across foreign temp cleanup anomalies", async () => {
+    const newRoot = await fixture();
+    const directoryResult = await invoke(newRoot, semantic(), {
+      afterReportInstall: async (path) => {
+        await mkdir(`${path}.lachesis-report-txn`);
+      },
+    });
+    expect(directoryResult.code).toBe(0);
+    expect(directoryResult.stdout).toBe("");
+    expect(
+      (
+        await lstat(resolve(newRoot, "report.json.lachesis-report-txn"))
+      ).isDirectory(),
+    ).toBe(true);
+    await commandReport(newRoot);
+    const directoryNative = parseJson(
+      await readFile(resolve(newRoot, "conformance.json"), "utf8"),
+    );
+    expect(directoryNative.ok).toBe(true);
+    if (!directoryNative.ok) return;
+    expect(
+      (await verifyCatalogConformanceReport(directoryNative.value)).ok,
+    ).toBe(true);
+
+    const replaceRoot = await fixture();
+    expect((await invoke(replaceRoot, semantic())).code).toBe(0);
+    await writeFile(
+      resolve(replaceRoot, "foreign-temp-target"),
+      "foreign",
+      "utf8",
+    );
+    const symlinkResult = await invoke(
+      replaceRoot,
+      [...semantic("catalog", "changedPolicy"), "--replace"],
+      {
+        afterReportInstall: async (path) => {
+          await symlink("foreign-temp-target", `${path}.lachesis-report-txn`);
+        },
+      },
+    );
+    expect(symlinkResult.code).toBe(10);
+    expect(symlinkResult.stdout).toBe("");
+    expect(
+      (
+        await lstat(resolve(replaceRoot, "report.json.lachesis-report-txn"))
+      ).isSymbolicLink(),
+    ).toBe(true);
+    expect(
+      await readFile(resolve(replaceRoot, "foreign-temp-target"), "utf8"),
+    ).toBe("foreign");
+    await commandReport(replaceRoot);
+    const symlinkNative = parseJson(
+      await readFile(resolve(replaceRoot, "conformance.json"), "utf8"),
+    );
+    expect(symlinkNative.ok).toBe(true);
+    if (!symlinkNative.ok) return;
+    expect((await verifyCatalogConformanceReport(symlinkNative.value)).ok).toBe(
+      true,
+    );
+  });
+
   it("preserves no-clobber and replace behavior for prior-target combinations", async () => {
     const combinations = [
       [false, false],

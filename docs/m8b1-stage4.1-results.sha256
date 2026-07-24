@@ -1,0 +1,4 @@
+ac38f60635c43ac3564df71bf5fa167de25473588a6d40d385e2bf461fc6f245  apps/cli/src/internal/secure-files.ts
+69cbf7a463a5cbdd3ab9497016dde77b3ffb75ef4b8a27ab62c07f8cda41de15  apps/cli/tests/catalog-conformance-command.test.ts
+6ba7a8c4c99a906e0a010c46d92c67f5b0552d1f1861b97848ee187bbde06efe  package.json
+7b681437dfbdfc7c598818919c1864167a3a4b37f2f8dd65c21832862ac3c732  docs/m8b1-stage4.1-correction.json

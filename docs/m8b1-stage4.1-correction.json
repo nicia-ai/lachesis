@@ -1,0 +1,108 @@
+{
+  "protocol": "lachesis.m8b1.stage4.1.transaction-finalization-correction.v1",
+  "status": "complete-offline-pass",
+  "parentCommit": "f70b7636fa4ee8faa3720c94991b20cee978ca07",
+  "supersession": {
+    "stage4ChecksumManifest": "docs/m8b1-stage4-results.sha256",
+    "stage4ChecksumManifestSha256": "da64fc779d3aeeabb4be623df3e3cde5086980dc854a0a36adc96d0e83a9e322",
+    "scope": "transaction-finalization-only",
+    "historicalStage4EvidenceRewritten": false
+  },
+  "rootCause": {
+    "component": "atomicWritePairBounded",
+    "symptom": "temporary-path cleanup could throw after both authoritative final files were installed and verified",
+    "effect": "the command caller could emit a fallback failure report after a committed semantic outcome",
+    "violatedInvariants": [
+      "sole-command-report-commit-marker",
+      "exactly-one-machine-readable-outcome"
+    ]
+  },
+  "correction": {
+    "states": [
+      "staging",
+      "staged",
+      "artifact-installed",
+      "report-installed",
+      "committed",
+      "rolled-back"
+    ],
+    "commitPoint": "both final files installed and identity-verified",
+    "preCommitFailure": "existing fail-closed rollback",
+    "postCommitCleanupCanChangeOutcome": false,
+    "postCommitCleanupCanEmitFallback": false,
+    "temporaryCleanup": {
+      "descriptorAndPathIdentityBound": true,
+      "regularFilesOnly": true,
+      "symlinkFollowed": false,
+      "foreignDirectoryRemoved": false,
+      "foreignSymlinkRemoved": false,
+      "staleForeignMaterial": "left-for-later-fail-closed-detection"
+    }
+  },
+  "regressions": {
+    "test": "apps/cli/tests/catalog-conformance-command.test.ts",
+    "newOutputPair": {
+      "foreignReplacement": "directory",
+      "semanticExit": 0,
+      "fallbackReports": 0,
+      "finalReportVerified": true,
+      "finalConformanceArtifactVerified": true,
+      "foreignReplacementPreserved": true
+    },
+    "existingOutputPairReplace": {
+      "foreignReplacement": "symlink",
+      "semanticExit": 10,
+      "fallbackReports": 0,
+      "finalReportVerified": true,
+      "finalConformanceArtifactVerified": true,
+      "foreignReplacementPreserved": true
+    },
+    "preCommitRollbackCoveragePreserved": true,
+    "rollbackFailureCoveragePreserved": true
+  },
+  "verification": {
+    "focusedStage4TestFiles": 6,
+    "focusedStage4Tests": 62,
+    "repositoryTestFiles": 30,
+    "repositoryTests": 422,
+    "coverage": {
+      "statementsPercent": 90.1,
+      "branchesPercent": 80.18,
+      "functionsPercent": 97.25,
+      "linesPercent": 94.15
+    },
+    "strictTypeScript": "pass",
+    "lint": "pass",
+    "formatting": "pass",
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersDryRun": "pass",
+    "packedConsumer": "pass",
+    "sourceSafety": "pass",
+    "publicApiInventory": "unchanged",
+    "historicalM8Audits": "pass",
+    "providerCalls": 0,
+    "unrelatedFlake": {
+      "test": "exhausts an M2 provider pool through per-call conservative settlements",
+      "initialResult": "5000ms-timeout",
+      "isolatedUnchangedRerun": "pass-3.21s",
+      "completeUnchangedRerun": "pass"
+    }
+  },
+  "preserved": {
+    "nativeVerification": true,
+    "independentPolicyReview": true,
+    "rejectedOutcomeBehavior": true,
+    "reportSchemas": true,
+    "exitCodes": true,
+    "suiteOnlyGeneratorLoading": true,
+    "publicApis": true,
+    "packageVersions": true,
+    "protocolIdentities": true
+  },
+  "boundaries": {
+    "stage5Started": false,
+    "published": false,
+    "pushed": false
+  }
+}

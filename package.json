@@ -46,8 +46,10 @@
     "audit:m8b1-stage3-results": "node scripts/audit-historical-checksum.mjs b296694460037e8c196c8376cf42183c5a02c7d4 docs/m8b1-stage3-results.sha256 7c7d091d9c93b5acc975a0bba5d315dd03dbafaad2c8f7fc0a7fc3c581c628ee",
     "verify:m8b1-stage3": "pnpm test:m8b1-stage3 && pnpm audit:m8b-history && pnpm audit:m8b1-stage2-results && pnpm audit:m8b1-stage2a-results && pnpm audit:m8b1-stage3-results",
     "test:m8b1-stage4": "pnpm build && pnpm exec vitest run apps/cli/tests/catalog-conformance-command.test.ts apps/cli/tests/catalog-compare-command.test.ts apps/cli/tests/catalog-manifest-command.test.ts apps/cli/tests/report-contract.test.ts apps/cli/tests/canonical-hardening.test.ts examples/m7b-diagnostics/tests/m8b1-stage4a1-manifest-binding.test.ts && node scripts/test-m8b1-stage4-packed.mjs",
-    "audit:m8b1-stage4-results": "shasum -a 256 -c docs/m8b1-stage4-results.sha256",
+    "audit:m8b1-stage4-results": "node scripts/audit-historical-checksum.mjs f70b7636fa4ee8faa3720c94991b20cee978ca07 docs/m8b1-stage4-results.sha256 da64fc779d3aeeabb4be623df3e3cde5086980dc854a0a36adc96d0e83a9e322",
     "verify:m8b1-stage4": "pnpm test:m8b1-stage4 && pnpm audit:m8b-history && pnpm audit:m8b1-stage2-results && pnpm audit:m8b1-stage2a-results && pnpm audit:m8b1-stage3-results && shasum -a 256 -c docs/m8b1-stage4a-results.sha256 && shasum -a 256 -c docs/m8b1-stage4a1-results.sha256 && pnpm audit:m8b1-stage4-results",
+    "audit:m8b1-stage4.1-results": "shasum -a 256 -c docs/m8b1-stage4.1-results.sha256",
+    "verify:m8b1-stage4.1": "pnpm verify:m8b1-stage4 && pnpm audit:m8b1-stage4.1-results",
     "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "smoke": "pnpm --filter @nicia-ai/lachesis-generator smoke && pnpm --filter @nicia-ai/lachesis-evidence smoke && pnpm --filter @nicia-ai/lachesis-evidence-typegraph smoke && pnpm --filter @nicia-ai/lachesis-benchmark smoke && pnpm --filter @nicia-ai/lachesis-node-smoke test && pnpm --filter @nicia-ai/lachesis-worker-smoke test"
   },
