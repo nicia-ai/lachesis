@@ -1,0 +1,79 @@
+{
+  "protocol": "lachesis.m8b2b3.bootstrap-correction.v1",
+  "disposition": "prepared-unexecuted-awaiting-separate-authorizations",
+  "parentWorkflowCommit": "587b23d6b37ccb3f6a0f4ba0aba046638036f13b",
+  "correctionCommit": "ca6af65382682e4616cedb122a2338ca008c02ce",
+  "failedRun": {
+    "databaseId": 30130906678,
+    "headSha": "587b23d6b37ccb3f6a0f4ba0aba046638036f13b",
+    "conclusion": "failure",
+    "failedStep": "Verify source, tag, draft prerelease, and checksums",
+    "failure": "The authenticated draft-release lookup returned HTTP 403 Resource not accessible by integration.",
+    "npmSetup": "skipped",
+    "publicationStep": "skipped",
+    "registryMutation": false,
+    "classification": "zero-publication-control-plane-failure"
+  },
+  "correction": {
+    "workflow": ".github/workflows/bootstrap-cli.yml",
+    "workflowSha256": "9453f7951d5c182a6bb18638ed166249e12478d8e9ce89e3bbf5f7207a69c1cf",
+    "verificationJob": {
+      "name": "verify-draft",
+      "permission": "contents:write",
+      "idToken": false,
+      "npmCredential": false,
+      "githubApiMethods": ["GET"]
+    },
+    "publicationJob": {
+      "name": "bootstrap-cli",
+      "dependsOn": "verify-draft",
+      "permissions": ["contents:read", "id-token:write"],
+      "contentsWrite": false,
+      "npmTokenReferences": 1,
+      "npmTokenScope": "single-publish-step"
+    },
+    "draftReleaseId": 359550250,
+    "releaseTag": "v0.1.0-alpha.4",
+    "releaseTitle": "Lachesis 0.1.0-alpha.4",
+    "releaseBodySha256": "bec6a90f3c7683e3d66d10607ebfb4891105abb25064c5feae14e59196fc1a02",
+    "packageSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "cliTarballSha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638"
+  },
+  "verification": {
+    "privilegedJobCannotAccessNpmToken": "pass",
+    "publicationJobLacksContentsWrite": "pass",
+    "verificationJobGetOnly": "pass",
+    "writeAndNpmCredentialSeparation": "pass",
+    "failedVerificationBlocksPublicationJob": "pass",
+    "frozenBindingsUnchanged": "pass",
+    "actionlint": "pass",
+    "bootstrapSafetyTests": "pass",
+    "format": "pass",
+    "lint": "pass",
+    "sourceSafety": "pass",
+    "historicalChecksums": "pass",
+    "repositoryTests": "pass",
+    "buildAndSmoke": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "preserved": {
+    "releaseWorkflowSha256": "c6288195114390cbcb2369a0ae96f2573f8ccd4ab954950302496617dec822a1",
+    "packageSource": true,
+    "packageVersions": true,
+    "tarballDigests": true,
+    "draftRelease": true,
+    "annotatedTag": true,
+    "solePublicationAllowlist": true,
+    "provenanceRequirements": true,
+    "packageAndSourceFiles": true
+  },
+  "nonactions": [
+    "no-push",
+    "no-dispatch",
+    "no-npm-credential-access",
+    "no-publication",
+    "no-trusted-publisher-configuration",
+    "no-release-change",
+    "no-dist-tag-change"
+  ]
+}
