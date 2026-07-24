@@ -1,0 +1,86 @@
+{
+  "protocol": "lachesis.m8b2b4.bootstrap-correction.v1",
+  "disposition": "prepared-unexecuted-awaiting-separate-authorizations",
+  "parentWorkflowCommit": "ca6af65382682e4616cedb122a2338ca008c02ce",
+  "correctionCommit": "db5c793c9b78c78ac4d7a3161f5ae06741b0c55e",
+  "failedRun": {
+    "databaseId": 30133047029,
+    "headSha": "ca6af65382682e4616cedb122a2338ca008c02ce",
+    "conclusion": "failure",
+    "failedStep": "Run pnpm/action-setup@v5",
+    "failure": "The action examined the workspace-root package.json instead of release-source/package.json and found no pnpm version.",
+    "nodeSetup": "skipped",
+    "publicationStep": "skipped",
+    "registryMutation": false,
+    "classification": "zero-publication-setup-path-failure"
+  },
+  "correction": {
+    "workflow": ".github/workflows/bootstrap-cli.yml",
+    "workflowSha256": "aa318966d4cece6e65ecc482cd38b9b62f95bfd4c209aac60f00b971b76d25ff",
+    "action": "pnpm/action-setup@v5",
+    "input": {
+      "package_json_file": "release-source/package.json"
+    },
+    "pnpmVersionSource": "release-source/package.json#packageManager",
+    "pnpmVersion": "10.33.0",
+    "additionalVersionDeclaration": false
+  },
+  "pathAudit": {
+    "setupNodeCacheDependencyPath": "release-source/pnpm-lock.yaml",
+    "installWorkingDirectory": "release-source",
+    "buildWorkingDirectory": "release-source",
+    "packWorkingDirectory": "release-source",
+    "strictJsonModule": "release-source/packages/kernel/dist/json.js",
+    "packOutputRoot": "RUNNER_TEMP",
+    "registrySnapshotPath": "RUNNER_TEMP/pre-bootstrap-registry.json",
+    "status": "pass-no-additional-correction"
+  },
+  "simulation": {
+    "workspaceRootPackageJson": "absent",
+    "releaseSourcePackageJson": "present-frozen",
+    "preCorrectionRootLookup": "reject",
+    "correctedLookup": "pass",
+    "derivedPnpmVersion": "10.33.0",
+    "frozenInstall": "pass",
+    "sixPackageBuild": "pass",
+    "allowlist": "pass",
+    "deterministicPackRuns": 3,
+    "cliTarballSha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+    "mockedRegistryAbsence": "pass"
+  },
+  "verification": {
+    "actionlint": "pass",
+    "format": "pass",
+    "lint": "pass",
+    "sourceSafety": "pass",
+    "historicalChecksums": "pass",
+    "bootstrapSecurityTests": "pass",
+    "repositoryTests": "pass",
+    "coverage": "pass",
+    "buildAndSmoke": "pass",
+    "packedConsumers": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "preserved": {
+    "releaseWorkflowSha256": "c6288195114390cbcb2369a0ae96f2573f8ccd4ab954950302496617dec822a1",
+    "packageSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "releaseTag": "v0.1.0-alpha.4",
+    "draftReleaseId": 359550250,
+    "releaseBodySha256": "bec6a90f3c7683e3d66d10607ebfb4891105abb25064c5feae14e59196fc1a02",
+    "cliTarballSha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+    "packageVersions": true,
+    "npmToken": true,
+    "permissions": true,
+    "privilegeSeparation": true,
+    "registryGates": true
+  },
+  "nonactions": [
+    "no-push",
+    "no-dispatch",
+    "no-npm-credential-access",
+    "no-publication",
+    "no-trusted-publisher-configuration",
+    "no-release-change",
+    "no-dist-tag-change"
+  ]
+}
