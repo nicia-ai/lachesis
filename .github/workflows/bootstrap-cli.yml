@@ -12,10 +12,6 @@ concurrency:
   group: bootstrap-lachesis-cli-0.1.0-alpha.4
   cancel-in-progress: false
 
-permissions:
-  contents: read
-  id-token: write
-
 env:
   RELEASE_COMMIT: 635521f1d2e753095fca4fdbbafbf7ed2287efe1
   RELEASE_VERSION: 0.1.0-alpha.4
@@ -29,10 +25,19 @@ env:
   NPM_REGISTRY: https://registry.npmjs.org
 
 jobs:
-  bootstrap:
-    name: Publish first CLI version only
+  verify-draft:
+    name: Verify frozen draft release
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      cli-tarball-sha256: ${{ steps.bind.outputs.cli-tarball-sha256 }}
+      draft-release-id: ${{ steps.bind.outputs.draft-release-id }}
+      registry-absence: ${{ steps.bind.outputs.registry-absence }}
+      release-body-sha256: ${{ steps.bind.outputs.release-body-sha256 }}
+      release-commit: ${{ steps.bind.outputs.release-commit }}
+      release-tag: ${{ steps.bind.outputs.release-tag }}
     steps:
       - name: Validate immutable dispatch
         env:
@@ -60,14 +65,16 @@ jobs:
       - name: Verify source, tag, draft prerelease, and checksums
         working-directory: release-source
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           test "$(git rev-parse HEAD)" = "$RELEASE_COMMIT"
           test -z "$(git status --porcelain)"
           test "$(git cat-file -t "$RELEASE_TAG")" = "tag"
           test "$(git rev-parse "$RELEASE_TAG^{}")" = "$RELEASE_COMMIT"
           test "$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG^{}" | cut -f1)" = "$RELEASE_COMMIT"
-          gh api "repos/$GITHUB_REPOSITORY/releases/$DRAFT_RELEASE_ID" \
+          gh api \
+            --method GET \
+            "repos/$GITHUB_REPOSITORY/releases/$DRAFT_RELEASE_ID" \
             > "$RUNNER_TEMP/draft-release.json"
           node - "$RUNNER_TEMP/draft-release.json" "$RELEASE_NOTES" <<'NODE'
           const crypto = require("node:crypto");
@@ -96,6 +103,119 @@ jobs:
             throw new Error("The GitHub release body differs from the frozen release-note bytes.");
           }
           NODE
+          shasum -a 256 -c "$RELEASE_CHECKSUMS"
+
+      - name: Require all six alpha.4 versions to be absent
+        run: |
+          node - <<'NODE'
+          const packages = [
+            "@nicia-ai/lachesis",
+            "@nicia-ai/lachesis-evidence",
+            "@nicia-ai/lachesis-generator",
+            "@nicia-ai/lachesis-runtime",
+            "@nicia-ai/lachesis-evidence-typegraph",
+            "@nicia-ai/lachesis-cli",
+          ];
+          for (const packageName of packages) {
+            const encoded = encodeURIComponent(packageName).replace("%40", "@");
+            const response = await fetch(
+              `${process.env.NPM_REGISTRY}/${encoded}/${process.env.RELEASE_VERSION}`,
+              {
+                headers: { accept: "application/json" },
+                redirect: "error",
+              },
+            );
+            await response.arrayBuffer();
+            if (response.status !== 404) {
+              throw new Error(
+                `${packageName}@${process.env.RELEASE_VERSION} absence check returned HTTP ${response.status}`,
+              );
+            }
+          }
+          const cliResponse = await fetch(
+            `${process.env.NPM_REGISTRY}/@nicia-ai%2Flachesis-cli`,
+            {
+              headers: { accept: "application/json" },
+              redirect: "error",
+            },
+          );
+          await cliResponse.arrayBuffer();
+          if (cliResponse.status !== 404) {
+            throw new Error(
+              `First-publication CLI package check returned HTTP ${cliResponse.status}`,
+            );
+          }
+          NODE
+
+      - name: Bind verified public identities
+        id: bind
+        run: |
+          {
+            echo "cli-tarball-sha256=$CLI_TARBALL_SHA256"
+            echo "draft-release-id=$DRAFT_RELEASE_ID"
+            echo "registry-absence=alpha4-absent-all-six"
+            echo "release-body-sha256=$RELEASE_NOTES_SHA256"
+            echo "release-commit=$RELEASE_COMMIT"
+            echo "release-tag=$RELEASE_TAG"
+          } >> "$GITHUB_OUTPUT"
+
+  bootstrap-cli:
+    name: Publish first CLI version only
+    needs: verify-draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Validate immutable dispatch
+        env:
+          VERIFIED_CLI_TARBALL_SHA256:
+            ${{ needs.verify-draft.outputs.cli-tarball-sha256 }}
+          VERIFIED_DRAFT_RELEASE_ID:
+            ${{ needs.verify-draft.outputs.draft-release-id }}
+          VERIFIED_REGISTRY_ABSENCE:
+            ${{ needs.verify-draft.outputs.registry-absence }}
+          VERIFIED_RELEASE_BODY_SHA256:
+            ${{ needs.verify-draft.outputs.release-body-sha256 }}
+          VERIFIED_RELEASE_COMMIT:
+            ${{ needs.verify-draft.outputs.release-commit }}
+          VERIFIED_RELEASE_TAG: ${{ needs.verify-draft.outputs.release-tag }}
+          REQUESTED_COMMIT: ${{ inputs.release_commit }}
+        run: |
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$REQUESTED_COMMIT" = "$RELEASE_COMMIT"
+          test "${#REQUESTED_COMMIT}" -eq 40
+          test -z "$(printf '%s' "$REQUESTED_COMMIT" | tr -d '0123456789abcdef')"
+          test "$VERIFIED_CLI_TARBALL_SHA256" = "$CLI_TARBALL_SHA256"
+          test "$VERIFIED_DRAFT_RELEASE_ID" = "$DRAFT_RELEASE_ID"
+          test "$VERIFIED_REGISTRY_ABSENCE" = "alpha4-absent-all-six"
+          test "$VERIFIED_RELEASE_BODY_SHA256" = "$RELEASE_NOTES_SHA256"
+          test "$VERIFIED_RELEASE_COMMIT" = "$RELEASE_COMMIT"
+          test "$VERIFIED_RELEASE_TAG" = "$RELEASE_TAG"
+
+      - name: Check out bootstrap infrastructure
+        uses: actions/checkout@v6
+        with:
+          path: bootstrap-infrastructure
+          persist-credentials: false
+
+      - name: Check out detached frozen package source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+          fetch-depth: 0
+          path: release-source
+          persist-credentials: false
+
+      - name: Verify source, tag, and checksums
+        working-directory: release-source
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_COMMIT"
+          test -z "$(git status --porcelain)"
+          test "$(git cat-file -t "$RELEASE_TAG")" = "tag"
+          test "$(git rev-parse "$RELEASE_TAG^{}")" = "$RELEASE_COMMIT"
+          test "$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG^{}" | cut -f1)" = "$RELEASE_COMMIT"
           shasum -a 256 -c "$RELEASE_CHECKSUMS"
 
       - uses: pnpm/action-setup@v5
