@@ -1,0 +1,38 @@
+{
+  "protocol": "lachesis.m8b2a.technical-gate.v1",
+  "baseline": "9d414e0f3e695097457219e7a3c649bf813d7c57",
+  "supersedesDecisionOnly": {
+    "artifact": "docs/m8b1-stage6-results.md",
+    "priorDecision": "blocked",
+    "historicalEvidenceRewritten": false
+  },
+  "decision": "release-ready-with-docs-fixes",
+  "gates": {
+    "packageDelta": "pass",
+    "prospectiveLocalArtifacts": "pass",
+    "alpha3Fallbacks": 0,
+    "packDeterminism": "pass",
+    "prospectiveInstalledIntegrity": "pass",
+    "twoCleanHostConsumers": "pass",
+    "networkDisabledLinux": "pass",
+    "strictTypeScript6SkipLibCheckFalse": "pass",
+    "threeCommandWorkflow": "pass",
+    "detachedTamperVerification": "pass",
+    "hostileJsonIdentityBoundaries": "pass",
+    "dependencyOriginAndLeakage": "pass",
+    "alpha3BackwardApiCompatibilityOnly": "pass",
+    "defaultParallelTenRuns": "pass",
+    "historicalAlpha3Checksums": "pass",
+    "repositoryMatrix": "pass"
+  },
+  "remainingWork": [
+    "set the CLI public and align all six package versions",
+    "prepare changelogs, README/package descriptions, release notes, checksums, and ordinary release metadata",
+    "rerun release-candidate packing and clean registry-style consumers after version synchronization"
+  ],
+  "nonclaims": [
+    "No release was prepared, tagged, published, or authorized.",
+    "No provider call occurred.",
+    "Finite offline conformance evidence does not establish general semantic equivalence or compositional generalization."
+  ]
+}

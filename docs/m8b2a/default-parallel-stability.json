@@ -1,0 +1,88 @@
+{
+  "protocol": "lachesis.m8b2a.default-parallel-stability.v1",
+  "command": "pnpm exec vitest run",
+  "precondition": "workspace build completed before the ten-run sequence",
+  "defaultParallelism": true,
+  "globalTimeoutOrWorkerOverrides": false,
+  "m2TimeoutChanged": false,
+  "runsRequired": 10,
+  "runsPassed": 10,
+  "results": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "durationMs": 54200.959,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "durationMs": 55702.321,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "durationMs": 56899.397,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    },
+    {
+      "run": 4,
+      "exitCode": 0,
+      "durationMs": 55095.877,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    },
+    {
+      "run": 5,
+      "exitCode": 0,
+      "durationMs": 55269.993,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    },
+    {
+      "run": 6,
+      "exitCode": 0,
+      "durationMs": 75924.325,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    },
+    {
+      "run": 7,
+      "exitCode": 0,
+      "durationMs": 55085.698,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    },
+    {
+      "run": 8,
+      "exitCode": 0,
+      "durationMs": 54034.711,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    },
+    {
+      "run": 9,
+      "exitCode": 0,
+      "durationMs": 55030.957,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    },
+    {
+      "run": 10,
+      "exitCode": 0,
+      "durationMs": 60030.71,
+      "testFiles": { "passed": 32, "total": 32 },
+      "tests": { "passed": 443, "total": 443 }
+    }
+  ],
+  "durationSummaryMs": {
+    "minimum": 54034.711,
+    "maximum": 75924.325,
+    "total": 577274.948
+  },
+  "status": "pass"
+}

@@ -76,6 +76,7 @@ import {
   validateTransportProbeCaps,
 } from "../src/manifests.js";
 import {
+  type CampaignManifest,
   campaignManifestSchema,
   createCampaignManifest,
   createPhaseManifest,
@@ -139,6 +140,14 @@ function withoutPhaseDigest(
 ): Omit<PhaseManifest, "phaseManifestDigest"> {
   const { phaseManifestDigest, ...body } = manifest;
   expect(phaseManifestDigest.length).toBeGreaterThan(0);
+  return body;
+}
+
+function withoutCampaignDigest(
+  manifest: CampaignManifest,
+): Omit<CampaignManifest, "campaignDigest"> {
+  const { campaignDigest, ...body } = manifest;
+  expect(campaignDigest.length).toBeGreaterThan(0);
   return body;
 }
 
@@ -658,30 +667,60 @@ describe("M2 paired representation protocol", () => {
 
   it("exhausts an M2 provider pool through per-call conservative settlements", async () => {
     const heldout = await materializedM2("m2-heldout");
-    const ledger = unwrap(
-      await openCampaignLedger({
-        path: join(await temporaryDirectory(), "ledger.ndjson"),
-        campaign: heldout.campaign,
-      }),
-    );
-    const budget = ledger.budgetController(heldout.manifest);
-    const callsPerProvider = heldout.manifest.experiment.caps.maxCalls / 2;
     const provider = "openai";
+    const callsPerProvider = heldout.manifest.experiment.caps.maxCalls / 2;
     const theoreticalProviderCap = required(
       heldout.manifest.experiment.caps.providerCostCaps.find(
         (cap) => cap.billingProvider === provider,
       ),
       "Missing theoretical provider cap.",
     ).maxCostUsdMicros;
-    const operationalProviderCap = required(
-      heldout.campaign.budgetPools
-        .find((pool) => pool.id === "m2-heldout")
-        ?.providerCostCaps.find((cap) => cap.billingProvider === provider),
-      "Missing operational provider cap.",
-    ).maxCostUsdMicros;
     const maximumPerCall = theoreticalProviderCap / callsPerProvider;
     expect(Number.isSafeInteger(maximumPerCall)).toBe(true);
-    const acceptedCalls = Math.floor(operationalProviderCap / maximumPerCall);
+    const acceptedCalls = 3;
+    const testProviderCap = maximumPerCall * acceptedCalls;
+    const campaignBody = withoutCampaignDigest(heldout.campaign);
+    const testBudgetPools = campaignBody.budgetPools.map((pool) =>
+      pool.id === "m2-heldout"
+        ? {
+            ...pool,
+            maxCostUsdMicros: testProviderCap,
+            providerCostCaps: pool.providerCostCaps.map((cap) => ({
+              ...cap,
+              maxCostUsdMicros: testProviderCap,
+            })),
+          }
+        : pool,
+    );
+    const reboundCampaignBody = {
+      ...campaignBody,
+      maximumAuthorizedCostUsdMicros: testBudgetPools.reduce(
+        (total, pool) => total + pool.maxCostUsdMicros,
+        0,
+      ),
+      budgetPools: testBudgetPools,
+    };
+    const campaignDigest = unwrap(await digestValue(reboundCampaignBody));
+    const campaign = campaignManifestSchema.parse({
+      ...reboundCampaignBody,
+      campaignDigest,
+    });
+    const manifestBody = {
+      ...withoutPhaseDigest(heldout.manifest),
+      campaignDigest,
+    };
+    const phaseManifestDigest = unwrap(await digestValue(manifestBody));
+    const manifest = phaseManifestSchema.parse({
+      ...manifestBody,
+      phaseManifestDigest,
+    });
+    const ledger = unwrap(
+      await openCampaignLedger({
+        path: join(await temporaryDirectory(), "ledger.ndjson"),
+        campaign,
+      }),
+    );
+    const budget = ledger.budgetController(manifest);
     const expectedConservative = acceptedCalls * maximumPerCall;
     for (let index = 0; index < acceptedCalls; index += 1) {
       const value = reservation(
@@ -708,7 +747,7 @@ describe("M2 paired representation protocol", () => {
         )
       ).ok,
     ).toBe(false);
-    expect(ledger.status("m2-heldout")).toMatchObject({
+    expect(ledger.status(manifest.budgetPoolId)).toMatchObject({
       consumedUsdMicros: expectedConservative,
       authorizedConservativeUsdMicros: expectedConservative,
       observedProviderBillingUsdMicros: 0,

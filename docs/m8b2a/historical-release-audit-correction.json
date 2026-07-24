@@ -1,0 +1,22 @@
+{
+  "protocol": "lachesis.m8b2a.historical-release-audit-correction.v1",
+  "release": "0.1.0-alpha.3",
+  "releaseSource": "e972400a2ff4e65e4b2fe68bc2585f5453e82a06",
+  "manifestPath": "docs/m7c-alpha3-release.sha256",
+  "manifestSha256": "002d4e1184fff8759637c51308a94df20af32775281afac410c8561918d8d24a",
+  "historicalArtifactsVerified": 10,
+  "currentManifestRequiredByteIdenticalToHistorical": true,
+  "historicalWorkflowVerifiedFromReleaseCommit": true,
+  "currentCorrectedWorkflowPermittedToDiffer": true,
+  "localEntryPoint": "pnpm audit:release-checksums",
+  "releaseWorkflowEntryPoint": ".github/workflows/release.yml invokes pnpm audit:release-checksums",
+  "frozenManifestChanged": false,
+  "releaseTagChanged": false,
+  "additionalHistoricalAuditCorrection": {
+    "manifestPath": "docs/m8b1-stage5.1-results.sha256",
+    "sourceCommit": "0e76d35a6f9f397f0ed235ab12efe7b02f940a0c",
+    "manifestSha256": "adc47df320468d94235b63b20c2fbcede684bfb5970dee66d70a86a22e4e9f77",
+    "reason": "The immutable Stage 5.1 manifest binds root package.json. M8b.2a's authorized audit-command correction changes that current file, so historical verification must read all bound bytes from the Stage 5.1 commit."
+  },
+  "result": "pass"
+}

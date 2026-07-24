@@ -1,0 +1,68 @@
+{
+  "protocol": "lachesis.m8b2a.performance.v1",
+  "nonContractual": true,
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "node": "v24.18.0",
+    "pnpm": "10.33.0",
+    "samplesPerRepeatedPath": 7
+  },
+  "install": {
+    "prospectiveFirstMs": 1052.836,
+    "prospectiveSecondMs": 1085.598,
+    "alpha3CompatibilityMs": 681.312
+  },
+  "startup": {
+    "usage": {
+      "firstProcessMs": 72.238,
+      "repeated": {
+        "samples": 7,
+        "medianMs": 72.996,
+        "medianAbsoluteDeviationMs": 1.218,
+        "minimumMs": 70.047,
+        "maximumMs": 74.978
+      }
+    },
+    "manifest": {
+      "firstProcessMs": 82.444,
+      "repeated": {
+        "samples": 7,
+        "medianMs": 82.949,
+        "medianAbsoluteDeviationMs": 1.774,
+        "minimumMs": 79.483,
+        "maximumMs": 85.686
+      }
+    },
+    "structural": {
+      "firstProcessMs": 82.728,
+      "repeated": {
+        "samples": 7,
+        "medianMs": 85.819,
+        "medianAbsoluteDeviationMs": 2.331,
+        "minimumMs": 83.488,
+        "maximumMs": 90.726
+      }
+    },
+    "detached": {
+      "firstProcessMs": 83.19,
+      "repeated": {
+        "samples": 7,
+        "medianMs": 82.045,
+        "medianAbsoluteDeviationMs": 2.056,
+        "minimumMs": 77.039,
+        "maximumMs": 85.023
+      }
+    },
+    "suite": {
+      "firstProcessMs": 163.668,
+      "repeated": {
+        "samples": 7,
+        "medianMs": 160.32,
+        "medianAbsoluteDeviationMs": 3.234,
+        "minimumMs": 152.474,
+        "maximumMs": 165.554
+      }
+    }
+  }
+}

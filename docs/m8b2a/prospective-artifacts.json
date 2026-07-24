@@ -1,0 +1,689 @@
+{
+  "protocol": "lachesis.m8b2a.prospective-artifacts.v1",
+  "sourceCommit": "9d414e0f3e695097457219e7a3c649bf813d7c57",
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "version": "0.1.0-alpha.3",
+      "tarball": "nicia-ai-lachesis-0.1.0-alpha.3.tgz",
+      "sha256": "e5e9930c9b216a06495220e06bb3033d21063939f18d59a40138a408061eb0c7",
+      "bytes": 60317,
+      "payloadContentRootSha256": "5b102b35ad056ce2e100a0ab27945ff7253ad032f4efd3fcf6673af41134e70c",
+      "fileInventory": [
+        "package/CHANGELOG.md",
+        "package/LICENSE",
+        "package/README.md",
+        "package/dist/analyze.d.ts",
+        "package/dist/analyze.d.ts.map",
+        "package/dist/analyze.js",
+        "package/dist/analyze.js.map",
+        "package/dist/canonical.d.ts",
+        "package/dist/canonical.d.ts.map",
+        "package/dist/canonical.js",
+        "package/dist/canonical.js.map",
+        "package/dist/catalog.d.ts",
+        "package/dist/catalog.d.ts.map",
+        "package/dist/catalog.js",
+        "package/dist/catalog.js.map",
+        "package/dist/check.d.ts",
+        "package/dist/check.d.ts.map",
+        "package/dist/check.js",
+        "package/dist/check.js.map",
+        "package/dist/compiler.d.ts",
+        "package/dist/compiler.d.ts.map",
+        "package/dist/compiler.js",
+        "package/dist/compiler.js.map",
+        "package/dist/diagnostic.d.ts",
+        "package/dist/diagnostic.d.ts.map",
+        "package/dist/diagnostic.js",
+        "package/dist/diagnostic.js.map",
+        "package/dist/executable.d.ts",
+        "package/dist/executable.d.ts.map",
+        "package/dist/executable.js",
+        "package/dist/executable.js.map",
+        "package/dist/executor.d.ts",
+        "package/dist/executor.d.ts.map",
+        "package/dist/executor.js",
+        "package/dist/executor.js.map",
+        "package/dist/identity.d.ts",
+        "package/dist/identity.d.ts.map",
+        "package/dist/identity.js",
+        "package/dist/identity.js.map",
+        "package/dist/index.d.ts",
+        "package/dist/index.d.ts.map",
+        "package/dist/index.js",
+        "package/dist/index.js.map",
+        "package/dist/json.d.ts",
+        "package/dist/json.d.ts.map",
+        "package/dist/json.js",
+        "package/dist/json.js.map",
+        "package/dist/manifest.d.ts",
+        "package/dist/manifest.d.ts.map",
+        "package/dist/manifest.js",
+        "package/dist/manifest.js.map",
+        "package/dist/normalize.d.ts",
+        "package/dist/normalize.d.ts.map",
+        "package/dist/normalize.js",
+        "package/dist/normalize.js.map",
+        "package/dist/plan.d.ts",
+        "package/dist/plan.d.ts.map",
+        "package/dist/plan.js",
+        "package/dist/plan.js.map",
+        "package/dist/result.d.ts",
+        "package/dist/result.d.ts.map",
+        "package/dist/result.js",
+        "package/dist/result.js.map",
+        "package/dist/semantic-role.d.ts",
+        "package/dist/semantic-role.d.ts.map",
+        "package/dist/semantic-role.js",
+        "package/dist/semantic-role.js.map",
+        "package/dist/semantic.d.ts",
+        "package/dist/semantic.d.ts.map",
+        "package/dist/semantic.js",
+        "package/dist/semantic.js.map",
+        "package/dist/wire.d.ts",
+        "package/dist/wire.d.ts.map",
+        "package/dist/wire.js",
+        "package/dist/wire.js.map",
+        "package/package.json"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "sha256": "e5e9930c9b216a06495220e06bb3033d21063939f18d59a40138a408061eb0c7",
+          "bytes": 60317
+        },
+        {
+          "attempt": 2,
+          "sha256": "e5e9930c9b216a06495220e06bb3033d21063939f18d59a40138a408061eb0c7",
+          "bytes": 60317
+        },
+        {
+          "attempt": 3,
+          "sha256": "e5e9930c9b216a06495220e06bb3033d21063939f18d59a40138a408061eb0c7",
+          "bytes": 60317
+        }
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "version": "0.1.0-alpha.3",
+      "tarball": "nicia-ai-lachesis-evidence-0.1.0-alpha.3.tgz",
+      "sha256": "d69f2da983f570eab28bb93cd61e165192a3d1539277e641c8e6b991b1dc1192",
+      "bytes": 168828,
+      "payloadContentRootSha256": "2e3fcd659023cbdccd8c91448daa4bdb918b959c014c812c06c1dd9e618c5411",
+      "fileInventory": [
+        "package/CHANGELOG.md",
+        "package/LICENSE",
+        "package/README.md",
+        "package/dist/audit.d.ts",
+        "package/dist/audit.d.ts.map",
+        "package/dist/audit.js",
+        "package/dist/audit.js.map",
+        "package/dist/contract.d.ts",
+        "package/dist/contract.d.ts.map",
+        "package/dist/contract.js",
+        "package/dist/contract.js.map",
+        "package/dist/corpus.d.ts",
+        "package/dist/corpus.d.ts.map",
+        "package/dist/corpus.js",
+        "package/dist/corpus.js.map",
+        "package/dist/design.d.ts",
+        "package/dist/design.d.ts.map",
+        "package/dist/design.js",
+        "package/dist/design.js.map",
+        "package/dist/graph.d.ts",
+        "package/dist/graph.d.ts.map",
+        "package/dist/graph.js",
+        "package/dist/graph.js.map",
+        "package/dist/index.d.ts",
+        "package/dist/index.d.ts.map",
+        "package/dist/index.js",
+        "package/dist/index.js.map",
+        "package/dist/m3b-corpus.d.ts",
+        "package/dist/m3b-corpus.d.ts.map",
+        "package/dist/m3b-corpus.js",
+        "package/dist/m3b-corpus.js.map",
+        "package/dist/m3b-schedule.d.ts",
+        "package/dist/m3b-schedule.d.ts.map",
+        "package/dist/m3b-schedule.js",
+        "package/dist/m3b-schedule.js.map",
+        "package/dist/m3b-statistics.d.ts",
+        "package/dist/m3b-statistics.d.ts.map",
+        "package/dist/m3b-statistics.js",
+        "package/dist/m3b-statistics.js.map",
+        "package/dist/m3b.d.ts",
+        "package/dist/m3b.d.ts.map",
+        "package/dist/m3b.js",
+        "package/dist/m3b.js.map",
+        "package/dist/m3b4-calibration-corpus.d.ts",
+        "package/dist/m3b4-calibration-corpus.d.ts.map",
+        "package/dist/m3b4-calibration-corpus.js",
+        "package/dist/m3b4-calibration-corpus.js.map",
+        "package/dist/m3b5-heldout-corpus.d.ts",
+        "package/dist/m3b5-heldout-corpus.d.ts.map",
+        "package/dist/m3b5-heldout-corpus.js",
+        "package/dist/m3b5-heldout-corpus.js.map",
+        "package/dist/m4.d.ts",
+        "package/dist/m4.d.ts.map",
+        "package/dist/m4.js",
+        "package/dist/m4.js.map",
+        "package/dist/m4d0.d.ts",
+        "package/dist/m4d0.d.ts.map",
+        "package/dist/m4d0.js",
+        "package/dist/m4d0.js.map",
+        "package/dist/m4d1.d.ts",
+        "package/dist/m4d1.d.ts.map",
+        "package/dist/m4d1.js",
+        "package/dist/m4d1.js.map",
+        "package/dist/m5.d.ts",
+        "package/dist/m5.d.ts.map",
+        "package/dist/m5.js",
+        "package/dist/m5.js.map",
+        "package/dist/text.d.ts",
+        "package/dist/text.d.ts.map",
+        "package/dist/text.js",
+        "package/dist/text.js.map",
+        "package/dist/zod-json-schema.d.ts",
+        "package/dist/zod-json-schema.d.ts.map",
+        "package/dist/zod-json-schema.js",
+        "package/dist/zod-json-schema.js.map",
+        "package/package.json"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "sha256": "d69f2da983f570eab28bb93cd61e165192a3d1539277e641c8e6b991b1dc1192",
+          "bytes": 168828
+        },
+        {
+          "attempt": 2,
+          "sha256": "d69f2da983f570eab28bb93cd61e165192a3d1539277e641c8e6b991b1dc1192",
+          "bytes": 168828
+        },
+        {
+          "attempt": 3,
+          "sha256": "d69f2da983f570eab28bb93cd61e165192a3d1539277e641c8e6b991b1dc1192",
+          "bytes": 168828
+        }
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "version": "0.1.0-alpha.3",
+      "tarball": "nicia-ai-lachesis-generator-0.1.0-alpha.3.tgz",
+      "sha256": "ce099fedece522ef739bb11ab013889d3dc7763e7c8051a7f013f2806a292708",
+      "bytes": 220460,
+      "payloadContentRootSha256": "5e402a728ac5a6a1135b1040d49ccb327072c7cb6185e35d61a2518b467707de",
+      "fileInventory": [
+        "package/CHANGELOG.md",
+        "package/LICENSE",
+        "package/README.md",
+        "package/dist/benchmark.d.ts",
+        "package/dist/benchmark.d.ts.map",
+        "package/dist/benchmark.js",
+        "package/dist/benchmark.js.map",
+        "package/dist/case.d.ts",
+        "package/dist/case.d.ts.map",
+        "package/dist/case.js",
+        "package/dist/case.js.map",
+        "package/dist/catalog-conformance.d.ts",
+        "package/dist/catalog-conformance.d.ts.map",
+        "package/dist/catalog-conformance.js",
+        "package/dist/catalog-conformance.js.map",
+        "package/dist/catalog-diagnostic.d.ts",
+        "package/dist/catalog-diagnostic.d.ts.map",
+        "package/dist/catalog-diagnostic.js",
+        "package/dist/catalog-diagnostic.js.map",
+        "package/dist/codemode-model.d.ts",
+        "package/dist/codemode-model.d.ts.map",
+        "package/dist/codemode-model.js",
+        "package/dist/codemode-model.js.map",
+        "package/dist/codemode.d.ts",
+        "package/dist/codemode.d.ts.map",
+        "package/dist/codemode.js",
+        "package/dist/codemode.js.map",
+        "package/dist/corpus.d.ts",
+        "package/dist/corpus.d.ts.map",
+        "package/dist/corpus.js",
+        "package/dist/corpus.js.map",
+        "package/dist/experiment.d.ts",
+        "package/dist/experiment.d.ts.map",
+        "package/dist/experiment.js",
+        "package/dist/experiment.js.map",
+        "package/dist/fixtures.d.ts",
+        "package/dist/fixtures.d.ts.map",
+        "package/dist/fixtures.js",
+        "package/dist/fixtures.js.map",
+        "package/dist/index.d.ts",
+        "package/dist/index.d.ts.map",
+        "package/dist/index.js",
+        "package/dist/index.js.map",
+        "package/dist/m1c-corpus.d.ts",
+        "package/dist/m1c-corpus.d.ts.map",
+        "package/dist/m1c-corpus.js",
+        "package/dist/m1c-corpus.js.map",
+        "package/dist/m2-benchmark.d.ts",
+        "package/dist/m2-benchmark.d.ts.map",
+        "package/dist/m2-benchmark.js",
+        "package/dist/m2-benchmark.js.map",
+        "package/dist/m2-corpus.d.ts",
+        "package/dist/m2-corpus.d.ts.map",
+        "package/dist/m2-corpus.js",
+        "package/dist/m2-corpus.js.map",
+        "package/dist/m2-statistics.d.ts",
+        "package/dist/m2-statistics.d.ts.map",
+        "package/dist/m2-statistics.js",
+        "package/dist/m2-statistics.js.map",
+        "package/dist/m6-corpus.d.ts",
+        "package/dist/m6-corpus.d.ts.map",
+        "package/dist/m6-corpus.js",
+        "package/dist/m6-corpus.js.map",
+        "package/dist/m6c-corpus.d.ts",
+        "package/dist/m6c-corpus.d.ts.map",
+        "package/dist/m6c-corpus.js",
+        "package/dist/m6c-corpus.js.map",
+        "package/dist/m6d-design.d.ts",
+        "package/dist/m6d-design.d.ts.map",
+        "package/dist/m6d-design.js",
+        "package/dist/m6d-design.js.map",
+        "package/dist/model.d.ts",
+        "package/dist/model.d.ts.map",
+        "package/dist/model.js",
+        "package/dist/model.js.map",
+        "package/dist/node-store.d.ts",
+        "package/dist/node-store.d.ts.map",
+        "package/dist/node-store.js",
+        "package/dist/node-store.js.map",
+        "package/dist/pipeline.d.ts",
+        "package/dist/pipeline.d.ts.map",
+        "package/dist/pipeline.js",
+        "package/dist/pipeline.js.map",
+        "package/dist/pricing.d.ts",
+        "package/dist/pricing.d.ts.map",
+        "package/dist/pricing.js",
+        "package/dist/pricing.js.map",
+        "package/dist/recorded-adapter.d.ts",
+        "package/dist/recorded-adapter.d.ts.map",
+        "package/dist/recorded-adapter.js",
+        "package/dist/recorded-adapter.js.map",
+        "package/dist/records.d.ts",
+        "package/dist/records.d.ts.map",
+        "package/dist/records.js",
+        "package/dist/records.js.map",
+        "package/dist/repair-benchmark.d.ts",
+        "package/dist/repair-benchmark.d.ts.map",
+        "package/dist/repair-benchmark.js",
+        "package/dist/repair-benchmark.js.map",
+        "package/dist/strategy.d.ts",
+        "package/dist/strategy.d.ts.map",
+        "package/dist/strategy.js",
+        "package/dist/strategy.js.map",
+        "package/dist/strict-json.d.ts",
+        "package/dist/strict-json.d.ts.map",
+        "package/dist/strict-json.js",
+        "package/dist/strict-json.js.map",
+        "package/dist/transport.d.ts",
+        "package/dist/transport.d.ts.map",
+        "package/dist/transport.js",
+        "package/dist/transport.js.map",
+        "package/dist/validity.d.ts",
+        "package/dist/validity.d.ts.map",
+        "package/dist/validity.js",
+        "package/dist/validity.js.map",
+        "package/dist/witness.d.ts",
+        "package/dist/witness.d.ts.map",
+        "package/dist/witness.js",
+        "package/dist/witness.js.map",
+        "package/package.json"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "sha256": "ce099fedece522ef739bb11ab013889d3dc7763e7c8051a7f013f2806a292708",
+          "bytes": 220460
+        },
+        {
+          "attempt": 2,
+          "sha256": "ce099fedece522ef739bb11ab013889d3dc7763e7c8051a7f013f2806a292708",
+          "bytes": 220460
+        },
+        {
+          "attempt": 3,
+          "sha256": "ce099fedece522ef739bb11ab013889d3dc7763e7c8051a7f013f2806a292708",
+          "bytes": 220460
+        }
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "version": "0.1.0-alpha.3",
+      "tarball": "nicia-ai-lachesis-runtime-0.1.0-alpha.3.tgz",
+      "sha256": "99b95e46b308a5e1c8989463ff4752fc4fbe7d4c3fb8f4ff1d9b1cbb0e291ac7",
+      "bytes": 11228,
+      "payloadContentRootSha256": "2e2fbd9ed6f1b76d1184aafdff4698e00ed4f8a7a4b93979a7708e6b7648bbc4",
+      "fileInventory": [
+        "package/CHANGELOG.md",
+        "package/LICENSE",
+        "package/README.md",
+        "package/dist/index.d.ts",
+        "package/dist/index.d.ts.map",
+        "package/dist/index.js",
+        "package/dist/index.js.map",
+        "package/dist/node.d.ts",
+        "package/dist/node.d.ts.map",
+        "package/dist/node.js",
+        "package/dist/node.js.map",
+        "package/package.json"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "sha256": "99b95e46b308a5e1c8989463ff4752fc4fbe7d4c3fb8f4ff1d9b1cbb0e291ac7",
+          "bytes": 11228
+        },
+        {
+          "attempt": 2,
+          "sha256": "99b95e46b308a5e1c8989463ff4752fc4fbe7d4c3fb8f4ff1d9b1cbb0e291ac7",
+          "bytes": 11228
+        },
+        {
+          "attempt": 3,
+          "sha256": "99b95e46b308a5e1c8989463ff4752fc4fbe7d4c3fb8f4ff1d9b1cbb0e291ac7",
+          "bytes": 11228
+        }
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "version": "0.1.0-alpha.3",
+      "tarball": "nicia-ai-lachesis-evidence-typegraph-0.1.0-alpha.3.tgz",
+      "sha256": "1156c64ef2fe03727adfa19d64f7acf892c729dbf8bc1d1a2908bf0c928525a8",
+      "bytes": 16104,
+      "payloadContentRootSha256": "fae04ba6af0b6385af1dda1961ada34ef74d1694c0fc2f6af2590a21970d0170",
+      "fileInventory": [
+        "package/CHANGELOG.md",
+        "package/LICENSE",
+        "package/README.md",
+        "package/dist/contract.d.ts",
+        "package/dist/contract.d.ts.map",
+        "package/dist/contract.js",
+        "package/dist/contract.js.map",
+        "package/dist/index.d.ts",
+        "package/dist/index.d.ts.map",
+        "package/dist/index.js",
+        "package/dist/index.js.map",
+        "package/dist/m5.d.ts",
+        "package/dist/m5.d.ts.map",
+        "package/dist/m5.js",
+        "package/dist/m5.js.map",
+        "package/dist/sqlite.d.ts",
+        "package/dist/sqlite.d.ts.map",
+        "package/dist/sqlite.js",
+        "package/dist/sqlite.js.map",
+        "package/dist/store.d.ts",
+        "package/dist/store.d.ts.map",
+        "package/dist/store.js",
+        "package/dist/store.js.map",
+        "package/package.json"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "sha256": "1156c64ef2fe03727adfa19d64f7acf892c729dbf8bc1d1a2908bf0c928525a8",
+          "bytes": 16104
+        },
+        {
+          "attempt": 2,
+          "sha256": "1156c64ef2fe03727adfa19d64f7acf892c729dbf8bc1d1a2908bf0c928525a8",
+          "bytes": 16104
+        },
+        {
+          "attempt": 3,
+          "sha256": "1156c64ef2fe03727adfa19d64f7acf892c729dbf8bc1d1a2908bf0c928525a8",
+          "bytes": 16104
+        }
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "version": "0.1.0",
+      "tarball": "nicia-ai-lachesis-cli-0.1.0.tgz",
+      "sha256": "f8ed3b278c71ac10ba37d525615241c6b36a07087c6a439a95308b6e05f8f4b4",
+      "bytes": 65049,
+      "payloadContentRootSha256": "b1fbb644db512675a04feba9ce7e46686401afb975dec363c466399f940f8f5c",
+      "fileInventory": [
+        "package/LICENSE",
+        "package/README.md",
+        "package/dist/cli.js",
+        "package/dist/cli.js.map",
+        "package/dist/example-catalog.js",
+        "package/dist/example-catalog.js.map",
+        "package/dist/internal/catalog-compare-command.js",
+        "package/dist/internal/catalog-compare-command.js.map",
+        "package/dist/internal/catalog-manifest-command.js",
+        "package/dist/internal/catalog-manifest-command.js.map",
+        "package/dist/internal/report-canonical.js",
+        "package/dist/internal/report-canonical.js.map",
+        "package/dist/internal/report-contract.js",
+        "package/dist/internal/report-contract.js.map",
+        "package/dist/internal/report-renderer.js",
+        "package/dist/internal/report-renderer.js.map",
+        "package/dist/internal/report-schema.js",
+        "package/dist/internal/report-schema.js.map",
+        "package/dist/internal/report-verify-command.js",
+        "package/dist/internal/report-verify-command.js.map",
+        "package/dist/internal/secure-files.js",
+        "package/dist/internal/secure-files.js.map",
+        "package/dist/internal/zod-json-schema.js",
+        "package/dist/internal/zod-json-schema.js.map",
+        "package/package.json"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "sha256": "f8ed3b278c71ac10ba37d525615241c6b36a07087c6a439a95308b6e05f8f4b4",
+          "bytes": 65049
+        },
+        {
+          "attempt": 2,
+          "sha256": "f8ed3b278c71ac10ba37d525615241c6b36a07087c6a439a95308b6e05f8f4b4",
+          "bytes": 65049
+        },
+        {
+          "attempt": 3,
+          "sha256": "f8ed3b278c71ac10ba37d525615241c6b36a07087c6a439a95308b6e05f8f4b4",
+          "bytes": 65049
+        }
+      ]
+    }
+  ],
+  "installedIntegrity": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "version": "0.1.0-alpha.3",
+      "tarballSha256": "e5e9930c9b216a06495220e06bb3033d21063939f18d59a40138a408061eb0c7",
+      "payloadContentRootSha256": "5b102b35ad056ce2e100a0ab27945ff7253ad032f4efd3fcf6673af41134e70c",
+      "installedContentRootSha256": "5b102b35ad056ce2e100a0ab27945ff7253ad032f4efd3fcf6673af41134e70c",
+      "installedFiles": 76,
+      "verified": true
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "version": "0.1.0-alpha.3",
+      "tarballSha256": "d69f2da983f570eab28bb93cd61e165192a3d1539277e641c8e6b991b1dc1192",
+      "payloadContentRootSha256": "2e3fcd659023cbdccd8c91448daa4bdb918b959c014c812c06c1dd9e618c5411",
+      "installedContentRootSha256": "2e3fcd659023cbdccd8c91448daa4bdb918b959c014c812c06c1dd9e618c5411",
+      "installedFiles": 76,
+      "verified": true
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "version": "0.1.0-alpha.3",
+      "tarballSha256": "ce099fedece522ef739bb11ab013889d3dc7763e7c8051a7f013f2806a292708",
+      "payloadContentRootSha256": "5e402a728ac5a6a1135b1040d49ccb327072c7cb6185e35d61a2518b467707de",
+      "installedContentRootSha256": "5e402a728ac5a6a1135b1040d49ccb327072c7cb6185e35d61a2518b467707de",
+      "installedFiles": 120,
+      "verified": true
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "version": "0.1.0-alpha.3",
+      "tarballSha256": "99b95e46b308a5e1c8989463ff4752fc4fbe7d4c3fb8f4ff1d9b1cbb0e291ac7",
+      "payloadContentRootSha256": "2e2fbd9ed6f1b76d1184aafdff4698e00ed4f8a7a4b93979a7708e6b7648bbc4",
+      "installedContentRootSha256": "2e2fbd9ed6f1b76d1184aafdff4698e00ed4f8a7a4b93979a7708e6b7648bbc4",
+      "installedFiles": 12,
+      "verified": true
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "version": "0.1.0-alpha.3",
+      "tarballSha256": "1156c64ef2fe03727adfa19d64f7acf892c729dbf8bc1d1a2908bf0c928525a8",
+      "payloadContentRootSha256": "fae04ba6af0b6385af1dda1961ada34ef74d1694c0fc2f6af2590a21970d0170",
+      "installedContentRootSha256": "fae04ba6af0b6385af1dda1961ada34ef74d1694c0fc2f6af2590a21970d0170",
+      "installedFiles": 24,
+      "verified": true
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "version": "0.1.0",
+      "tarballSha256": "f8ed3b278c71ac10ba37d525615241c6b36a07087c6a439a95308b6e05f8f4b4",
+      "payloadContentRootSha256": "b1fbb644db512675a04feba9ce7e46686401afb975dec363c466399f940f8f5c",
+      "installedContentRootSha256": "b1fbb644db512675a04feba9ce7e46686401afb975dec363c466399f940f8f5c",
+      "installedFiles": 25,
+      "verified": true
+    }
+  ],
+  "dependencyGraph": {
+    "packages": [
+      {
+        "identity": "@babel/helper-string-parser@7.29.7",
+        "origin": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.29.7.tgz"
+      },
+      {
+        "identity": "@babel/helper-validator-identifier@7.29.7",
+        "origin": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz"
+      },
+      {
+        "identity": "@babel/parser@7.29.7",
+        "origin": "https://registry.npmjs.org/@babel/parser/-/parser-7.29.7.tgz"
+      },
+      {
+        "identity": "@babel/types@7.29.7",
+        "origin": "https://registry.npmjs.org/@babel/types/-/types-7.29.7.tgz"
+      },
+      {
+        "identity": "@nicia-ai/lachesis-cli@0.1.0",
+        "origin": "prospective-local-tarball"
+      },
+      {
+        "identity": "@nicia-ai/lachesis-evidence-typegraph@0.1.0-alpha.3",
+        "origin": "prospective-local-tarball"
+      },
+      {
+        "identity": "@nicia-ai/lachesis-evidence@0.1.0-alpha.3",
+        "origin": "prospective-local-tarball"
+      },
+      {
+        "identity": "@nicia-ai/lachesis-generator@0.1.0-alpha.3",
+        "origin": "prospective-local-tarball"
+      },
+      {
+        "identity": "@nicia-ai/lachesis-runtime@0.1.0-alpha.3",
+        "origin": "prospective-local-tarball"
+      },
+      {
+        "identity": "@nicia-ai/lachesis@0.1.0-alpha.3",
+        "origin": "prospective-local-tarball"
+      },
+      {
+        "identity": "@nicia-ai/typegraph@0.38.0",
+        "origin": "https://registry.npmjs.org/@nicia-ai/typegraph/-/typegraph-0.38.0.tgz"
+      },
+      {
+        "identity": "@types/node@24.13.3",
+        "origin": "https://registry.npmjs.org/@types/node/-/node-24.13.3.tgz"
+      },
+      {
+        "identity": "drizzle-orm@0.45.2",
+        "origin": "https://registry.npmjs.org/drizzle-orm/-/drizzle-orm-0.45.2.tgz"
+      },
+      {
+        "identity": "nanoid@5.1.16",
+        "origin": "https://registry.npmjs.org/nanoid/-/nanoid-5.1.16.tgz"
+      },
+      {
+        "identity": "typescript@6.0.3",
+        "origin": "https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz"
+      },
+      {
+        "identity": "undici-types@7.18.2",
+        "origin": "https://registry.npmjs.org/undici-types/-/undici-types-7.18.2.tgz"
+      },
+      {
+        "identity": "zod@4.4.3",
+        "origin": "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz"
+      }
+    ],
+    "edges": [
+      "@babel/parser@7.29.7->@babel/types@7.29.7",
+      "@babel/types@7.29.7->@babel/helper-string-parser@7.29.7",
+      "@babel/types@7.29.7->@babel/helper-validator-identifier@7.29.7",
+      "@nicia-ai/lachesis-cli@0.1.0->@nicia-ai/lachesis-generator@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-cli@0.1.0->@nicia-ai/lachesis@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-cli@0.1.0->zod@4.4.3",
+      "@nicia-ai/lachesis-evidence-typegraph@0.1.0-alpha.3->@nicia-ai/lachesis-evidence@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-evidence-typegraph@0.1.0-alpha.3->@nicia-ai/lachesis-runtime@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-evidence-typegraph@0.1.0-alpha.3->@nicia-ai/lachesis@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-evidence-typegraph@0.1.0-alpha.3->@nicia-ai/typegraph@0.38.0",
+      "@nicia-ai/lachesis-evidence-typegraph@0.1.0-alpha.3->zod@4.4.3",
+      "@nicia-ai/lachesis-evidence@0.1.0-alpha.3->@nicia-ai/lachesis@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-evidence@0.1.0-alpha.3->zod@4.4.3",
+      "@nicia-ai/lachesis-generator@0.1.0-alpha.3->@babel/parser@7.29.7",
+      "@nicia-ai/lachesis-generator@0.1.0-alpha.3->@babel/types@7.29.7",
+      "@nicia-ai/lachesis-generator@0.1.0-alpha.3->@nicia-ai/lachesis@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-generator@0.1.0-alpha.3->zod@4.4.3",
+      "@nicia-ai/lachesis-runtime@0.1.0-alpha.3->@nicia-ai/lachesis-evidence@0.1.0-alpha.3",
+      "@nicia-ai/lachesis-runtime@0.1.0-alpha.3->@nicia-ai/lachesis@0.1.0-alpha.3",
+      "@nicia-ai/lachesis@0.1.0-alpha.3->zod@4.4.3",
+      "@nicia-ai/typegraph@0.38.0->drizzle-orm@0.45.2",
+      "@nicia-ai/typegraph@0.38.0->nanoid@5.1.16",
+      "@nicia-ai/typegraph@0.38.0->zod@4.4.3",
+      "@types/node@24.13.3->undici-types@7.18.2"
+    ],
+    "lockfileSha256": "84db71764eb277530b8070d35126877bcb5f826a5770a060acc5fe1b1de3369b",
+    "allProspectivePackagesInstalledFromLocalTarballs": true,
+    "registryAlpha3Fallbacks": 0
+  },
+  "licenses": {
+    "Apache-2.0": [
+      { "name": "@nicia-ai/lachesis-cli", "versions": ["0.1.0"] },
+      {
+        "name": "@nicia-ai/lachesis-evidence-typegraph",
+        "versions": ["0.1.0-alpha.3"]
+      },
+      { "name": "@nicia-ai/lachesis-evidence", "versions": ["0.1.0-alpha.3"] },
+      { "name": "@nicia-ai/lachesis-generator", "versions": ["0.1.0-alpha.3"] },
+      { "name": "@nicia-ai/lachesis-runtime", "versions": ["0.1.0-alpha.3"] },
+      { "name": "@nicia-ai/lachesis", "versions": ["0.1.0-alpha.3"] },
+      { "name": "drizzle-orm", "versions": ["0.45.2"] },
+      { "name": "typescript", "versions": ["6.0.3"] }
+    ],
+    "MIT": [
+      { "name": "@babel/helper-string-parser", "versions": ["7.29.7"] },
+      { "name": "@babel/helper-validator-identifier", "versions": ["7.29.7"] },
+      { "name": "@babel/parser", "versions": ["7.29.7"] },
+      { "name": "@babel/types", "versions": ["7.29.7"] },
+      { "name": "@nicia-ai/typegraph", "versions": ["0.38.0"] },
+      { "name": "@types/node", "versions": ["24.13.3"] },
+      { "name": "nanoid", "versions": ["5.1.16"] },
+      { "name": "undici-types", "versions": ["7.18.2"] },
+      { "name": "zod", "versions": ["4.4.3"] }
+    ]
+  },
+  "leakage": {
+    "scannedCommandReports": true,
+    "scannedProspectivePackagePayloads": true,
+    "findings": []
+  }
+}

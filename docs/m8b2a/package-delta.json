@@ -1,0 +1,111 @@
+{
+  "protocol": "lachesis.m8b2a.package-delta.v1",
+  "comparison": {
+    "release": "0.1.0-alpha.3",
+    "releaseSource": "e972400a2ff4e65e4b2fe68bc2585f5453e82a06",
+    "currentSource": "9d414e0f3e695097457219e7a3c649bf813d7c57"
+  },
+  "publicApiInventory": {
+    "comparison": "current generated inventory against docs/public-api-inventory-alpha.3.json",
+    "allFivePublishedPackagesUnchanged": true,
+    "changedExports": []
+  },
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "sourceChanged": true,
+      "runtimeBehaviorChanged": true,
+      "publicApiChanged": false,
+      "dependencyMetadataChanged": false,
+      "documentationOnly": false,
+      "unchanged": false,
+      "publicationClass": "implementation-change",
+      "basis": [
+        "strict non-transforming JSON validation at identity-bearing boundaries",
+        "canonical own-key preservation including __proto__",
+        "plan, manifest, execution, effect-recording, and replay boundary corrections"
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "sourceChanged": true,
+      "runtimeBehaviorChanged": true,
+      "publicApiChanged": false,
+      "dependencyMetadataChanged": false,
+      "documentationOnly": false,
+      "unchanged": false,
+      "publicationClass": "implementation-change",
+      "basis": [
+        "strict non-transforming JSON validation replaces identity-bearing Zod reconstruction"
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "sourceChanged": true,
+      "runtimeBehaviorChanged": true,
+      "publicApiChanged": false,
+      "dependencyMetadataChanged": false,
+      "documentationOnly": false,
+      "unchanged": false,
+      "publicationClass": "implementation-change",
+      "basis": [
+        "strict JSON boundaries preserve hostile own keys and reject hidden JavaScript state",
+        "catalog-conformance and transport records use the corrected boundary"
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "sourceChanged": false,
+      "runtimeBehaviorChanged": true,
+      "publicApiChanged": false,
+      "dependencyMetadataChanged": false,
+      "documentationOnly": false,
+      "unchanged": false,
+      "publicationClass": "dependency-only-synchronized-republish",
+      "basis": [
+        "own implementation is unchanged",
+        "the prospective package must bind the corrected kernel and evidence versions rather than alpha.3"
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "sourceChanged": false,
+      "runtimeBehaviorChanged": true,
+      "publicApiChanged": false,
+      "dependencyMetadataChanged": false,
+      "documentationOnly": false,
+      "unchanged": false,
+      "publicationClass": "dependency-only-synchronized-republish",
+      "basis": [
+        "own implementation is unchanged",
+        "the prospective package must bind corrected kernel, evidence, and runtime versions rather than alpha.3"
+      ]
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "sourceChanged": true,
+      "runtimeBehaviorChanged": true,
+      "publicApiChanged": false,
+      "dependencyMetadataChanged": true,
+      "documentationOnly": false,
+      "unchanged": false,
+      "publicationClass": "first-public-candidate",
+      "basis": [
+        "private catalog manifest, structural and suite comparison, and detached report-verification commands added",
+        "@nicia-ai/lachesis-generator became a runtime dependency",
+        "no library export was added"
+      ]
+    }
+  ],
+  "proposedAlpha4PublicationSet": [
+    "@nicia-ai/lachesis",
+    "@nicia-ai/lachesis-evidence",
+    "@nicia-ai/lachesis-generator",
+    "@nicia-ai/lachesis-runtime",
+    "@nicia-ai/lachesis-evidence-typegraph",
+    "@nicia-ai/lachesis-cli"
+  ],
+  "publicationSetRationale": "The three corrected implementation packages and the CLI must publish their current behavior. Runtime and evidence-typegraph must be synchronized dependency-only republishes so no alpha.4 artifact resolves an alpha.3 Lachesis dependency.",
+  "versionsChangedByM8b2a": false,
+  "releasePreparedByM8b2a": false
+}

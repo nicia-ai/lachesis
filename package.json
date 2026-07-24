@@ -24,7 +24,7 @@
     "audit:public-api": "node scripts/audit-public-api.mjs",
     "audit:packages": "node scripts/audit-packed-packages.mjs",
     "audit:source-safety": "node scripts/audit-source-safety.mjs",
-    "audit:release-checksums": "shasum -a 256 -c docs/m6-results.sha256 && shasum -a 256 -c docs/m6c-release.sha256 && shasum -a 256 -c docs/m7c-alpha3-release.sha256",
+    "audit:release-checksums": "shasum -a 256 -c docs/m6-results.sha256 && shasum -a 256 -c docs/m6c-release.sha256 && node scripts/audit-historical-checksum.mjs e972400a2ff4e65e4b2fe68bc2585f5453e82a06 docs/m7c-alpha3-release.sha256 002d4e1184fff8759637c51308a94df20af32775281afac410c8561918d8d24a",
     "audit:m7c-preregistration": "node scripts/audit-m7c-preregistration.mjs",
     "audit:m8a-results": "shasum -a 256 -c docs/m8a-results.sha256",
     "audit:m8b0-results": "node scripts/audit-historical-checksum.mjs b65be65842f7346da1374b29a2bd76cf70c4cbbe docs/m8b0-results.sha256 dd91c0f3cb09f45b3b6eb436f3c1ec5023a720f77913c330349aa2d2530764b7",
@@ -51,7 +51,7 @@
     "audit:m8b1-stage4.1-results": "node scripts/audit-historical-checksum.mjs 0633b576bd254237c1befa5762c8997387bf0ffb docs/m8b1-stage4.1-results.sha256 17567acba2f09c46a91cb5aadef1d92e91610b59a46fa9c5caebe2df5ec5becf",
     "verify:m8b1-stage4.1": "pnpm verify:m8b1-stage4 && pnpm audit:m8b1-stage4.1-results",
     "audit:m8b1-stage5-results": "node scripts/audit-historical-checksum.mjs 1b0592db50a4d2d8443fa35048b6213353caac11 docs/m8b1-stage5-results.sha256 4f4c8a738f2a570b828f4e137ea189990d0c2a247eea060315bf665441798f61",
-    "audit:m8b1-stage5.1-results": "shasum -a 256 -c docs/m8b1-stage5.1-results.sha256",
+    "audit:m8b1-stage5.1-results": "node scripts/audit-historical-checksum.mjs 0e76d35a6f9f397f0ed235ab12efe7b02f940a0c docs/m8b1-stage5.1-results.sha256 adc47df320468d94235b63b20c2fbcede684bfb5970dee66d70a86a22e4e9f77",
     "verify:m8b1-stage5.1": "pnpm verify:m8b1-stage4.1 && pnpm audit:m8b1-stage5-results && pnpm audit:m8b1-stage5.1-results",
     "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "smoke": "pnpm --filter @nicia-ai/lachesis-generator smoke && pnpm --filter @nicia-ai/lachesis-evidence smoke && pnpm --filter @nicia-ai/lachesis-evidence-typegraph smoke && pnpm --filter @nicia-ai/lachesis-benchmark smoke && pnpm --filter @nicia-ai/lachesis-node-smoke test && pnpm --filter @nicia-ai/lachesis-worker-smoke test"

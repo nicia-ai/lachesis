@@ -1,0 +1,41 @@
+{
+  "protocol": "lachesis.m8b2a.m2-flake-correction.v1",
+  "test": "apps/benchmark/tests/controller.test.ts > exhausts an M2 provider pool through per-call conservative settlements",
+  "rootCause": {
+    "classification": "unnecessary-test-fixture-scale-amplified-by-shared-worker-contention",
+    "productionAlgorithm": "Every durable append reparses and revalidates the complete hash-chained ledger. The frozen held-out fixture performed 108 accepted reserve/settle cycles, so the test created 216 reservation events while repeatedly validating a growing ledger.",
+    "productionSemanticsChanged": false,
+    "historicalArtifactsChanged": false
+  },
+  "correction": {
+    "kind": "test-only-valid-rebound-campaign",
+    "acceptedCallsBefore": 108,
+    "acceptedCallsAfter": 3,
+    "maximumPerCallUsdMicros": 322880,
+    "testProviderCapUsdMicros": 968640,
+    "preservedAssertions": [
+      "each complete worst-case reservation succeeds until exact provider-pool exhaustion",
+      "each zero-observed-cost conservative settlement charges the complete reservation",
+      "the next reservation rejects",
+      "consumed, conservative, observed, and unknown-usage accounting remain exact"
+    ],
+    "m2TimeoutMs": 5000,
+    "m2TimeoutChanged": false,
+    "workerSerializationAdded": false
+  },
+  "additionalGateFinding": {
+    "test": "apps/benchmark/tests/m3b1.test.ts > derives fresh provider, pricing, transport, and phase identities",
+    "classification": "large-frozen-heldout-fixture-time-budget-under-worker-contention",
+    "isolatedObservedSeconds": [9.27, 8.99, 8.68],
+    "defaultParallelFailureMs": 20030,
+    "correction": "Preserve the complete held-out materialization and every assertion; increase only this integration test's local timeout from 20000 to 30000 ms.",
+    "productionSemanticsChanged": false
+  },
+  "focusedVerification": {
+    "testsPassed": 2,
+    "testsSelected": 2,
+    "result": "pass"
+  },
+  "defaultParallelStabilityArtifact": "docs/m8b2a/default-parallel-stability.json",
+  "status": "pass"
+}

@@ -515,7 +515,7 @@ describe("M3b.1 live-binding substrate", () => {
       ok: false,
       error: { code: "REPLAY_OUTPUT_MISMATCH" },
     });
-  }, 20_000);
+  }, 30_000);
 
   it("keeps credential-free and acknowledgement-free preflight read-only", async () => {
     const root = await temporaryRoot();

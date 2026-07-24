@@ -1,0 +1,69 @@
+{
+  "protocol": "lachesis.m8b2a.verification.v1",
+  "environment": {
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "typescript": "6.0.3",
+    "host": "darwin-arm64",
+    "linuxImage": "node:24.18.0-bookworm-slim",
+    "linuxNetwork": "none"
+  },
+  "repository": {
+    "format": "pass",
+    "strictTypecheck": "pass",
+    "lint": "pass",
+    "defaultParallelTests": {
+      "tests": 443,
+      "passed": 443,
+      "testFiles": 32,
+      "status": "pass"
+    },
+    "coverage": {
+      "tests": 443,
+      "passed": 443,
+      "statementsPercent": 90.04,
+      "branchesPercent": 80.36,
+      "functionsPercent": 97.17,
+      "linesPercent": 94.06,
+      "thresholds": "pass"
+    },
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersDryRun": "pass",
+    "offlineExamples": "7/7 pass",
+    "sourceSafety": "pass",
+    "publicApiInventory": "pass",
+    "packedPublicConsumer": "pass",
+    "m7cPreregistrationIntegrity": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "prospectiveRegistryConsumer": {
+    "cleanHostConsumers": 2,
+    "strictTypeScriptSkipLibCheckFalse": "pass",
+    "networkDisabledLinux": "pass",
+    "threeCommandWorkflow": "pass",
+    "detachedTamperMatrix": "pass",
+    "hostileIdentityBoundaries": "pass",
+    "threePacksPerPackage": "byte-identical",
+    "dependencyFallbacks": 0,
+    "workspaceImports": 0,
+    "providerCalls": 0
+  },
+  "compatibilityOnly": {
+    "prospectiveCliWithPublishedAlpha3Dependencies": "pass",
+    "countsAsProspectiveReleaseVerification": false
+  },
+  "historicalIntegrity": {
+    "alpha3ReleaseArtifacts": "10/10 pass at bound release commit",
+    "m8b0ThroughM8b1Stage5_1": "pass",
+    "m8b1Stage6EvidenceUnchanged": true
+  },
+  "defaultParallelStability": {
+    "runs": 10,
+    "passed": 10,
+    "testsPerRun": 443,
+    "minimumDurationMs": 54034.711,
+    "maximumDurationMs": 75924.325
+  },
+  "decision": "release-ready-with-docs-fixes"
+}

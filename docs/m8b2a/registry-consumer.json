@@ -1,0 +1,39 @@
+{
+  "protocol": "lachesis.m8b2a.registry-consumer.v1",
+  "sourceCommit": "9d414e0f3e695097457219e7a3c649bf813d7c57",
+  "supersedesMethodologyOnly": {
+    "artifact": "docs/m8b1-stage6/registry-consumer-report.json",
+    "reason": "Stage 6 installed registry alpha.3 library dependencies and therefore established compatibility rather than prospective post-alpha.3 behavior.",
+    "historicalArtifactRewritten": false
+  },
+  "prospectiveReleaseVerification": {
+    "packageArtifacts": 6,
+    "packsPerArtifact": 3,
+    "cleanHostConsumers": 2,
+    "byteIdenticalCrossConsumerReports": true,
+    "host": "pass",
+    "linuxNetworkNone": "pass",
+    "strictTypeScript": "pass",
+    "workflowExits": [0, 10, 11, 12, 13, 20, 22, 23],
+    "detachedTamperVerification": "pass",
+    "symlinkAliasOversizeAndStaleTempRejection": "pass",
+    "packageLeakageAudit": "pass",
+    "hostileIdentityRegression": {
+      "protocol": "lachesis.m8b2a.identity-regression.v1",
+      "rootProto": true,
+      "nestedProto": true,
+      "distinctCanonicalValues": true,
+      "distinctPlanHashes": true,
+      "manifestIdentity": true,
+      "compileExecuteRecordReplay": true,
+      "generatorStrictBoundary": true,
+      "unsupportedStateRejected": true
+    },
+    "providerCalls": 0
+  },
+  "backwardCompatibilityOnly": {
+    "prospectiveCliWithPublishedAlpha3Dependencies": "pass",
+    "prospectiveReleaseEvidence": false
+  },
+  "decision": "technical-pass"
+}
