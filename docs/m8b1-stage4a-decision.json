@@ -1,0 +1,88 @@
+{
+  "protocol": "lachesis.m8b1.stage4a.protocol-closure.v1",
+  "status": "complete-offline-design",
+  "parentCommit": "b296694460037e8c196c8376cf42183c5a02c7d4",
+  "command": "catalog.compare",
+  "mode": "finite-semantic-conformance",
+  "requiredFlags": [
+    "--left-catalog",
+    "--left-policy",
+    "--right-catalog",
+    "--right-policy",
+    "--suite",
+    "--conformance-out",
+    "--report"
+  ],
+  "suiteModeReportStdoutAllowed": false,
+  "conformanceArtifact": {
+    "id": "native-conformance-report",
+    "kind": "conformance-report",
+    "mediaType": "application/json",
+    "semanticDigest": "native-reportDigest",
+    "rawChecksum": "sha256-canonical-bytes-with-one-trailing-lf",
+    "rejectionSidecar": false
+  },
+  "transaction": {
+    "protocol": "artifact-first-report-commit-marker/1",
+    "stagedOutputs": 2,
+    "commitMarker": "command-report",
+    "postParseFailureReport": "stdout-only-when-no-new-report-committed",
+    "detectedFailureRollbackRequired": true,
+    "rollbackFailureExit": 70,
+    "physicalMultiFileAtomicityClaim": false,
+    "orphanArtifactAccepted": false
+  },
+  "policyRule": {
+    "suiteProvesPolicyEquivalence": false,
+    "structuralPolicyDifferenceDisposition": "review-required",
+    "conformantSuiteWithPolicyDifferenceExit": 10
+  },
+  "suiteValidity": {
+    "malformedOrSchemaInvalidExit": 20,
+    "validButInsufficientExit": 13,
+    "declarationRepairableExit": 11,
+    "genuinelyNonEquivalentExit": 12,
+    "conformantNoPolicyReviewExit": 0
+  },
+  "exitPrecedence": [70, 23, 22, 20, 12, 13, 11, 21, 10, 0],
+  "nativeCardinality": {
+    "assessmentsPerInvocation": 1,
+    "conformanceRecordsPerInvocation": 1,
+    "phases": ["initial"],
+    "automaticRepair": false
+  },
+  "bindings": {
+    "generatorLoad": "lazy-suite-only",
+    "suiteStrictlyValidatedBeforeDiagnosis": true,
+    "conformantVerifier": "verifyCatalogConformanceReport",
+    "rejectedVerifier": "verifyCatalogConformanceDiagnostic",
+    "catalogFingerprintsReconciled": true,
+    "manifestDigestsReconciled": true,
+    "suiteDigestReconciled": true
+  },
+  "sourceAliasing": {
+    "sameSideCatalogAndPolicyModuleAllowed": true,
+    "suiteAndCatalogSourceAliasAllowed": false,
+    "leftAndRightSourceAliasAllowed": false,
+    "artifactAndSourceAliasAllowed": false
+  },
+  "preserved": [
+    "lachesis-catalog-command-report/1",
+    "lachesis-canonical-json/1",
+    "stage2a-file-security",
+    "stage3-code-and-evidence",
+    "frozen-exit-precedence"
+  ],
+  "publicExportsAdded": 0,
+  "packageVersionsChanged": false,
+  "providerCalls": 0,
+  "stage4CommandImplemented": false,
+  "decision": "GO-for-separately-authorized-stage4-implementation",
+  "nonclaims": [
+    "No semantic equivalence beyond the supplied finite suite.",
+    "No compilation-policy equivalence.",
+    "No general substitutability or safe-migration claim.",
+    "No automatic repair acceptance.",
+    "No compositional-generalization claim."
+  ]
+}
