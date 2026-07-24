@@ -116,13 +116,13 @@ package selection, API reference, trust boundaries, record/replay semantics,
 TypeGraph integration, compatibility, security guidance, and alpha policy. Every
 example under [`examples/m5-alpha`](examples/m5-alpha) runs offline.
 
-For the current registry-only catalog-author path, use the
-[M8a getting-started guide](docs/m8a-getting-started.md). Its independent
-incident-response consumer installs alpha.3 from npm, declares semantic roles,
-compiles and runs with mock evidence, inspects citations/provenance, records and
-exactly replays, and gates catalog evolution with deterministic conformance
-diagnostics. M8a is `adoption-ready-with-docs-fixes`; it required no API change
-and makes no model-quality or compositional-generalization claim.
+The alpha.4 release candidate adds an experimental, binary-only catalog-author
+CLI. Its packed README is self-contained; the frozen release notes summarize the
+three-command manifest, finite conformance, and detached verification workflow.
+The CLI is ESM-only on Node 24 and has no supported JavaScript import or
+declaration surface. M8a's registry-only incident-response consumer remains the
+underlying adoption evidence. Neither finite conformance nor detached report
+verification is a model-quality or compositional-generalization claim.
 
 ## Kernel CLI example
 
@@ -164,7 +164,8 @@ mapped effects, and non-decreasing recursion under `fixtures/plans`.
 - `packages/evidence-typegraph` — optional public TypeGraph 0.38 adapter; its
   managed SQLite subpath is Node-only.
 - `apps/benchmark` — private Node-only M1b/M1c/M2 campaign controller and CLI.
-- `apps/cli` — private workspace CLI used by repository fixtures.
+- `apps/cli` — experimental public `lachesis` binary for offline catalog
+  manifests, finite conformance, and detached report verification.
 - `fixtures` — valid/invalid plans, inputs, and effect recordings.
 - `compat` — built-package Node and Workers consumers.
 - `docs` — architecture and material ADRs.

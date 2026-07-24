@@ -1,6 +1,6 @@
 {
   "name": "@nicia-ai/lachesis-evidence",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Substrate-neutral evidence selection contracts and deterministic reference substrates for Lachesis",
   "type": "module",
   "license": "Apache-2.0",
@@ -39,7 +39,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@nicia-ai/lachesis": "workspace:*",
+    "@nicia-ai/lachesis": "0.1.0-alpha.4",
     "zod": "4.4.3"
   }
 }

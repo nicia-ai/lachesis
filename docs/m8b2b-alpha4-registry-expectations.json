@@ -1,0 +1,55 @@
+{
+  "protocol": "lachesis.m8b2b.alpha4.registry-expectations.v1",
+  "observedDate": "2026-07-24",
+  "registry": "https://registry.npmjs.org",
+  "version": "0.1.0-alpha.4",
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "alpha4AtPreflight": "absent",
+      "expectedAlphaAfterRelease": "0.1.0-alpha.4",
+      "expectedLatestAfterRelease": "0.1.0-alpha.1",
+      "authentication": "oidc-trusted-publishing"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "alpha4AtPreflight": "absent",
+      "expectedAlphaAfterRelease": "0.1.0-alpha.4",
+      "expectedLatestAfterRelease": "0.1.0-alpha.1",
+      "authentication": "oidc-trusted-publishing"
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "alpha4AtPreflight": "absent",
+      "expectedAlphaAfterRelease": "0.1.0-alpha.4",
+      "expectedLatestAfterRelease": "0.1.0-alpha.1",
+      "authentication": "oidc-trusted-publishing"
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "alpha4AtPreflight": "absent",
+      "expectedAlphaAfterRelease": "0.1.0-alpha.4",
+      "expectedLatestAfterRelease": "0.1.0-alpha.1",
+      "authentication": "oidc-trusted-publishing"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "alpha4AtPreflight": "absent",
+      "expectedAlphaAfterRelease": "0.1.0-alpha.4",
+      "expectedLatestAfterRelease": "0.1.0-alpha.1",
+      "authentication": "oidc-trusted-publishing"
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "packageAtPreflight": "absent",
+      "alpha4AtPreflight": "absent",
+      "expectedAlphaAfterBootstrap": "0.1.0-alpha.4",
+      "acceptedLatestAfterBootstrap": [null, "0.1.0-alpha.4"],
+      "authentication": "separately-authorized-one-time-token-bootstrap-then-oidc"
+    }
+  ],
+  "publicationTag": "alpha",
+  "fabricatedStableCliVersion": false,
+  "credentialsAccessed": false,
+  "publicationPerformed": false
+}

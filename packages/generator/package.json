@@ -1,6 +1,6 @@
 {
   "name": "@nicia-ai/lachesis-generator",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Provider-neutral plan generation and resumable benchmark substrate for Lachesis",
   "type": "module",
   "license": "Apache-2.0",
@@ -45,7 +45,7 @@
   "dependencies": {
     "@babel/parser": "7.29.7",
     "@babel/types": "7.29.7",
-    "@nicia-ai/lachesis": "workspace:*",
+    "@nicia-ai/lachesis": "0.1.0-alpha.4",
     "zod": "4.4.3"
   },
   "devDependencies": {

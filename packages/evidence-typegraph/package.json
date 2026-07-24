@@ -1,6 +1,6 @@
 {
   "name": "@nicia-ai/lachesis-evidence-typegraph",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Optional TypeGraph storage, history, and provenance adapter for the Lachesis evidence runtime",
   "type": "module",
   "license": "Apache-2.0",
@@ -43,9 +43,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@nicia-ai/lachesis": "workspace:*",
-    "@nicia-ai/lachesis-evidence": "workspace:*",
-    "@nicia-ai/lachesis-runtime": "workspace:*",
+    "@nicia-ai/lachesis": "0.1.0-alpha.4",
+    "@nicia-ai/lachesis-evidence": "0.1.0-alpha.4",
+    "@nicia-ai/lachesis-runtime": "0.1.0-alpha.4",
     "@nicia-ai/typegraph": "0.38.0",
     "zod": "4.4.3"
   },

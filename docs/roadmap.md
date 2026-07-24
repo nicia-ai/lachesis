@@ -130,20 +130,20 @@ command, package version, or publication state changed. See the
 [M8b.0 results](m8b0-results.md) and
 [CLI product specification](m8b0-cli-product-spec.md).
 
-M8b.1 is closed as `blocked` at its registry-only product gate. The complete
-manifest, structural and finite semantic comparison, and detached verification
-workflow passed in two fresh host consumers and a network-disabled Linux
-container. Release preparation remains blocked by the CLI's private,
-workspace-oriented metadata and a reproduced contention-sensitive timeout in the
-default-parallel release test gate. The baseline release-checksum command also
-requires a commit-aware historical correction for the authorized workflow-only
-change. See the [M8b.1 Stage 6 results](m8b1-stage6-results.md).
+M8b.2a superseded the blocked Stage 6 technical gate. The default-parallel
+timeout was corrected at its test-fixture root cause, ten consecutive full runs
+passed, the registry-only workflow passed against a complete prospective
+six-package artifact set, and historical alpha.3 verification is now
+commit-aware. Its decision is `release-ready-with-docs-fixes`.
 
-The next work, if separately authorized, is a narrow release-readiness
-correction: fix the flaky test under review, make the CLI registry documentation
-self-contained, and prepare the proposed sixth package without changing the
-report protocol or library API. Publishing, package visibility, versions, and
-release metadata remain separately gated. The
+M8b.2b prepares—but does not publish—the synchronized alpha.4 release candidate.
+The five existing packages retain their documented library surfaces; the new CLI
+is an experimental Node 24 binary with no supported import surface. All internal
+Lachesis dependencies are exact alpha.4 edges, deterministic package artifacts
+and registry expectations are frozen, and the first CLI publication is
+separately gated because npm trusted-publisher configuration requires an
+existing package. Push, tag, GitHub release, CLI bootstrap, trusted-publisher
+configuration, and normal publication remain separate authorizations. The
 [prioritized backlog](m8b-productization-backlog.md) continues to cover
 additional registry-only integrations and external developer usability. M8 is
 not provider, graph-superiority, TypeGraph-quality, or

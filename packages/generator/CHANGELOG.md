@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-alpha.4
+
+- Corrects strict JSON handling across conformance fixtures, recorded adapters,
+  transport records, and other identity-bearing generator inputs.
+- Preserves the alpha.3 public export surface.
+
 ## 0.1.0-alpha.3
 
 - Adds portable, deterministic catalog-rejection diagnostics with stable codes,

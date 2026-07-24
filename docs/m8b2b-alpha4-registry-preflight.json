@@ -1,0 +1,63 @@
+{
+  "protocol": "lachesis.m8b2b.alpha4.registry-preflight.v1",
+  "observationDate": "2026-07-24",
+  "registry": "https://registry.npmjs.org",
+  "version": "0.1.0-alpha.4",
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "alpha4": "absent",
+      "package": "present",
+      "distTags": {
+        "alpha": "0.1.0-alpha.3",
+        "latest": "0.1.0-alpha.1"
+      }
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "alpha4": "absent",
+      "package": "present",
+      "distTags": {
+        "alpha": "0.1.0-alpha.3",
+        "latest": "0.1.0-alpha.1"
+      }
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "alpha4": "absent",
+      "package": "present",
+      "distTags": {
+        "alpha": "0.1.0-alpha.3",
+        "latest": "0.1.0-alpha.1"
+      }
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "alpha4": "absent",
+      "package": "present",
+      "distTags": {
+        "alpha": "0.1.0-alpha.3",
+        "latest": "0.1.0-alpha.1"
+      }
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "alpha4": "absent",
+      "package": "present",
+      "distTags": {
+        "alpha": "0.1.0-alpha.3",
+        "latest": "0.1.0-alpha.1"
+      }
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "alpha4": "absent",
+      "package": "absent",
+      "distTags": null
+    }
+  ],
+  "alpha4AbsentForAllSix": true,
+  "existingLatestTagsPreserved": true,
+  "credentialsAccessed": false,
+  "publicationPerformed": false
+}

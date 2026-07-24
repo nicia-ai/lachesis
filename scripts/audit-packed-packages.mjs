@@ -21,8 +21,9 @@ const packageDirectories = [
   "packages/generator",
   "packages/runtime",
   "packages/evidence-typegraph",
+  "apps/cli",
 ];
-const expectedReleaseVersion = "0.1.0-alpha.3";
+const expectedReleaseVersion = "0.1.0-alpha.4";
 
 if (process.versions.node.split(".")[0] !== "24")
   throw new Error(`Node 24 is required; found ${process.versions.node}.`);
@@ -94,11 +95,11 @@ try {
   );
   await command(
     process.execPath,
-    ["scripts/prepare-alpha3-tarballs.mjs", "--output-dir", packed],
+    ["scripts/prepare-alpha4-tarballs.mjs", "--output-dir", packed],
     { cwd: root },
   );
   const deterministicReport = await readManifest(
-    join(root, "docs/m7c-alpha3-tarball-digests.json"),
+    join(root, "docs/m8b2b-alpha4-tarball-inventory.json"),
   );
   for (const manifest of sourceManifests) {
     if (manifest.version !== expectedReleaseVersion)
@@ -123,16 +124,27 @@ try {
       .trim()
       .split("\n")
       .filter(Boolean);
-    for (const required of [
-      "package/package.json",
-      "package/README.md",
-      "package/CHANGELOG.md",
-      "package/LICENSE",
-      "package/dist/index.js",
-      "package/dist/index.js.map",
-      "package/dist/index.d.ts",
-      "package/dist/index.d.ts.map",
-    ]) {
+    const requiredFiles =
+      manifest.name === "@nicia-ai/lachesis-cli"
+        ? [
+            "package/package.json",
+            "package/README.md",
+            "package/CHANGELOG.md",
+            "package/LICENSE",
+            "package/dist/cli.js",
+            "package/dist/cli.js.map",
+          ]
+        : [
+            "package/package.json",
+            "package/README.md",
+            "package/CHANGELOG.md",
+            "package/LICENSE",
+            "package/dist/index.js",
+            "package/dist/index.js.map",
+            "package/dist/index.d.ts",
+            "package/dist/index.d.ts.map",
+          ];
+    for (const required of requiredFiles) {
       if (!listing.includes(required))
         throw new Error(`${manifest.name} pack is missing ${required}.`);
     }
@@ -162,7 +174,9 @@ try {
       packedManifest.publishConfig?.access !== "public"
     )
       throw new Error(`${manifest.name} packed metadata is not release-safe.`);
-    for (const target of exportTargets(packedManifest.exports)) {
+    for (const target of packedManifest.exports === undefined
+      ? []
+      : exportTargets(packedManifest.exports)) {
       if (
         !target.startsWith("./dist/") ||
         !listing.includes(`package/${target.slice(2)}`)
@@ -231,12 +245,13 @@ try {
     const tarballContents = await readFile(tarballPath);
     const metadata = await stat(tarballPath);
     const sha256 = createHash("sha256").update(tarballContents).digest("hex");
-    const expectedArtifact = deterministicReport.artifacts?.find(
+    const expectedArtifact = deterministicReport.packages?.find(
       (artifact) => artifact.tarball === tarball,
     );
     if (
       expectedArtifact?.sha256 !== sha256 ||
-      expectedArtifact.byteIdenticalAcrossTwoPacks !== true
+      deterministicReport.byteIdentical !== true ||
+      deterministicReport.packRuns !== 3
     )
       throw new Error(
         `${manifest.name} differs from its frozen tarball digest.`,

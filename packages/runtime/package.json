@@ -1,6 +1,6 @@
 {
   "name": "@nicia-ai/lachesis-runtime",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Cohesive public evidence-runtime API for Lachesis",
   "type": "module",
   "license": "Apache-2.0",
@@ -43,8 +43,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@nicia-ai/lachesis": "workspace:*",
-    "@nicia-ai/lachesis-evidence": "workspace:*"
+    "@nicia-ai/lachesis": "0.1.0-alpha.4",
+    "@nicia-ai/lachesis-evidence": "0.1.0-alpha.4"
   },
   "devDependencies": {
     "@types/node": "24.13.3"

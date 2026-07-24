@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "release": "m8b2b-alpha4",
+  "status": "prepared-not-published",
+  "sourceBaseCommit": "5b2150c9dce49f67531589d81d186b941199c19e",
+  "artifactSourcePolicy": "exact immutable release-candidate commit supplied to the workflow and matched by the annotated release tag",
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "fromVersion": "0.1.0-alpha.3",
+      "toVersion": "0.1.0-alpha.4",
+      "releaseKind": "behavior-correction",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "fromVersion": "0.1.0-alpha.3",
+      "toVersion": "0.1.0-alpha.4",
+      "releaseKind": "behavior-correction",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "fromVersion": "0.1.0-alpha.3",
+      "toVersion": "0.1.0-alpha.4",
+      "releaseKind": "behavior-correction",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "fromVersion": "0.1.0-alpha.3",
+      "toVersion": "0.1.0-alpha.4",
+      "releaseKind": "dependency-only-synchronized",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "fromVersion": "0.1.0-alpha.3",
+      "toVersion": "0.1.0-alpha.4",
+      "releaseKind": "dependency-only-synchronized",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "fromVersion": null,
+      "toVersion": "0.1.0-alpha.4",
+      "releaseKind": "first-experimental-public-alpha-binary",
+      "apiChanged": false
+    }
+  ],
+  "releaseNotes": "docs/m8b2b-alpha4-release-notes.md",
+  "publicApiInventory": "docs/public-api-inventory-alpha.4.json",
+  "packageDeltaAudit": "docs/m8b2b-alpha4-package-delta.json",
+  "tarballInventory": "docs/m8b2b-alpha4-tarball-inventory.json",
+  "tarballChecksums": "docs/m8b2b-alpha4-tarballs.sha256",
+  "releaseChecksums": "docs/m8b2b-alpha4-release.sha256"
+}

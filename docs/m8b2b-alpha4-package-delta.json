@@ -1,0 +1,59 @@
+{
+  "protocol": "lachesis.m8b2b.alpha4.package-delta.v1",
+  "fromVersion": "0.1.0-alpha.3",
+  "toVersion": "0.1.0-alpha.4",
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "classification": "behavior-correction",
+      "sourceChanged": true,
+      "packageMetadataChanged": true,
+      "documentationChanged": true,
+      "publicExportsChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "classification": "behavior-correction",
+      "sourceChanged": true,
+      "packageMetadataChanged": true,
+      "documentationChanged": true,
+      "publicExportsChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "classification": "behavior-correction",
+      "sourceChanged": true,
+      "packageMetadataChanged": true,
+      "documentationChanged": true,
+      "publicExportsChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "classification": "dependency-only-synchronized-republish",
+      "sourceChanged": false,
+      "packageMetadataChanged": true,
+      "documentationChanged": true,
+      "publicExportsChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "classification": "dependency-only-synchronized-republish",
+      "sourceChanged": false,
+      "packageMetadataChanged": true,
+      "documentationChanged": true,
+      "publicExportsChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "classification": "first-experimental-public-alpha-binary",
+      "sourceChanged": true,
+      "packageMetadataChanged": true,
+      "documentationChanged": true,
+      "publicExportsChanged": false
+    }
+  ],
+  "internalDependencyVersion": "0.1.0-alpha.4",
+  "alpha3DependencyAllowed": false,
+  "reportProtocolsChanged": false,
+  "exitCodesChanged": false
+}

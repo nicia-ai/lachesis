@@ -1,6 +1,6 @@
 {
   "name": "@nicia-ai/lachesis",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Typed measured-plan kernel for reliable agent programs",
   "type": "module",
   "license": "Apache-2.0",

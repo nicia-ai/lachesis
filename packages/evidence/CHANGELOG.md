@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-alpha.4
+
+- Corrects arbitrary-JSON evidence boundaries to validate without reconstructing
+  or silently removing identity-bearing own keys.
+- Preserves the alpha.3 public export surface.
+
 ## 0.1.0-alpha.3
 
 - Dependency-only synchronized release with `@nicia-ai/lachesis`; no evidence

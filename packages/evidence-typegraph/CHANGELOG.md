@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.4
+
+- Dependency-only synchronized release binding the alpha.4 kernel, evidence, and
+  runtime packages; no TypeGraph adapter export or implementation change.
+
 ## 0.1.0-alpha.3
 
 - Dependency-only synchronized release with the alpha.3 kernel, evidence, and

@@ -51,11 +51,17 @@ const publishable = [
       { name: "./node", source: "packages/generator/src/node-store.ts" },
     ],
   },
+  {
+    name: "@nicia-ai/lachesis-cli",
+    classification: "experimental-binary",
+    packagePath: "apps/cli/package.json",
+    entrypoints: [],
+    binaryOnly: true,
+  },
 ];
 
 const internalPackages = [
   "apps/benchmark/package.json",
-  "apps/cli/package.json",
   "compat/node-smoke/package.json",
   "compat/worker-smoke/package.json",
   "packages/generator-ai-sdk/package.json",
@@ -135,7 +141,6 @@ for (const item of publishable) {
   if (
     manifest.license !== "Apache-2.0" ||
     manifest.type !== "module" ||
-    manifest.sideEffects !== false ||
     manifest.publishConfig?.access !== "public" ||
     manifest.repository?.url !== "https://github.com/nicia-ai/lachesis.git" ||
     manifest.engines?.node !== ">=24 <25" ||
@@ -144,6 +149,16 @@ for (const item of publishable) {
     !manifest.files?.includes("LICENSE")
   )
     throw new Error(`${item.name} is missing frozen alpha package metadata.`);
+  if (
+    item.binaryOnly === true
+      ? manifest.private !== false ||
+        manifest.bin?.lachesis !== "./dist/cli.js" ||
+        manifest.exports !== undefined ||
+        manifest.main !== undefined ||
+        manifest.types !== undefined
+      : manifest.sideEffects !== false
+  )
+    throw new Error(`${item.name} has an invalid public surface.`);
   const entrypoints = [];
   for (const entrypoint of item.entrypoints) {
     const names = exportedNames(
@@ -197,6 +212,8 @@ const report = {
     stableAlpha: "supported under the documented alpha compatibility policy",
     experimental:
       "public for research and low-level integration; may change between alpha releases",
+    experimentalBinary:
+      "ESM-only Node command; no supported JavaScript import, declaration, or CommonJS surface",
     internal: "private workspace package; excluded from publication",
   },
   packages: inventory,
@@ -204,7 +221,7 @@ const report = {
 };
 const reportText = `${JSON.stringify(report, null, 2)}\n`;
 await writeFile(
-  resolve(root, "docs/public-api-inventory-alpha.3.json"),
+  resolve(root, "docs/public-api-inventory-alpha.4.json"),
   reportText,
   { encoding: "utf8", mode: 0o644 },
 );

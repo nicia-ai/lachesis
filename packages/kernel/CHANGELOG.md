@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-alpha.4
+
+- Corrects canonical JSON and identity-bearing plan, manifest, execution,
+  recording, and replay boundaries so valid own keys are never silently lost.
+- Preserves the alpha.3 public export surface and canonical protocol identity.
+
 ## 0.1.0-alpha.3
 
 - Adds public external-catalog author guidance for versioned semantic roles and

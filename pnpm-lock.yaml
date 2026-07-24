@@ -87,10 +87,10 @@ importers:
   apps/cli:
     dependencies:
       "@nicia-ai/lachesis":
-        specifier: workspace:*
+        specifier: 0.1.0-alpha.4
         version: link:../../packages/kernel
       "@nicia-ai/lachesis-generator":
-        specifier: workspace:*
+        specifier: 0.1.0-alpha.4
         version: link:../../packages/generator
       zod:
         specifier: 4.4.3
@@ -195,7 +195,7 @@ importers:
   packages/evidence:
     dependencies:
       "@nicia-ai/lachesis":
-        specifier: workspace:*
+        specifier: 0.1.0-alpha.4
         version: link:../kernel
       zod:
         specifier: 4.4.3
@@ -204,13 +204,13 @@ importers:
   packages/evidence-typegraph:
     dependencies:
       "@nicia-ai/lachesis":
-        specifier: workspace:*
+        specifier: 0.1.0-alpha.4
         version: link:../kernel
       "@nicia-ai/lachesis-evidence":
-        specifier: workspace:*
+        specifier: 0.1.0-alpha.4
         version: link:../evidence
       "@nicia-ai/lachesis-runtime":
-        specifier: workspace:*
+        specifier: 0.1.0-alpha.4
         version: link:../runtime
       "@nicia-ai/typegraph":
         specifier: 0.38.0
@@ -238,7 +238,7 @@ importers:
         specifier: 7.29.7
         version: 7.29.7
       "@nicia-ai/lachesis":
-        specifier: workspace:*
+        specifier: 0.1.0-alpha.4
         version: link:../kernel
       zod:
         specifier: 4.4.3
@@ -285,10 +285,10 @@ importers:
   packages/runtime:
     dependencies:
       "@nicia-ai/lachesis":
-        specifier: workspace:*
+        specifier: 0.1.0-alpha.4
         version: link:../kernel
       "@nicia-ai/lachesis-evidence":
-        specifier: workspace:*
+        specifier: 0.1.0-alpha.4
         version: link:../evidence
     devDependencies:
       "@types/node":

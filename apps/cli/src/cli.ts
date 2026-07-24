@@ -97,7 +97,14 @@ function analysisJson(analysis: PlanAnalysis): unknown {
 
 function usage(): void {
   process.stderr.write(
-    "Usage: lachesis <validate|analyze|canonicalize|run> <plan.json> [--inputs inputs.json --replay effects.json] [--json]\n",
+    [
+      "Usage:",
+      "  lachesis catalog manifest --catalog <module#export> --policy <module#export> <--check|--out file|--verify file> --report <file|->",
+      "  lachesis catalog compare --left-catalog <module#export> --left-policy <module#export> --right-catalog <module#export> --right-policy <module#export> [--suite <module#export> --conformance-out file] --report <file|->",
+      "  lachesis report verify --input <command-report.json> [--artifact id=path ...] --report <file|->",
+      "  lachesis <validate|analyze|canonicalize|run> <plan.json> [--inputs inputs.json --replay effects.json] [--json]",
+      "",
+    ].join("\n"),
   );
 }
 

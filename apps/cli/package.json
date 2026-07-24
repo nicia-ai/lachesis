@@ -1,14 +1,15 @@
 {
   "name": "@nicia-ai/lachesis-cli",
-  "version": "0.1.0",
-  "description": "Command-line plan inspector and replay runner for Lachesis",
+  "version": "0.1.0-alpha.4",
+  "description": "Offline catalog manifest, conformance, and report verification CLI for Lachesis",
   "type": "module",
   "license": "Apache-2.0",
   "author": "Nicia AI",
-  "private": true,
+  "private": false,
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "bin": {
@@ -23,16 +24,16 @@
     "directory": "apps/cli"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=24 <25"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/set-cli-bin-mode.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "start": "node dist/cli.js"
   },
   "dependencies": {
-    "@nicia-ai/lachesis": "workspace:*",
-    "@nicia-ai/lachesis-generator": "workspace:*",
+    "@nicia-ai/lachesis": "0.1.0-alpha.4",
+    "@nicia-ai/lachesis-generator": "0.1.0-alpha.4",
     "zod": "4.4.3"
   },
   "devDependencies": {

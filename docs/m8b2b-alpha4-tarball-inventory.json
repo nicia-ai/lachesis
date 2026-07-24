@@ -1,0 +1,2588 @@
+{
+  "protocol": "lachesis.m8b2b.alpha4.tarball-inventory.v1",
+  "version": "0.1.0-alpha.4",
+  "publication": "not-performed",
+  "packRuns": 3,
+  "byteIdentical": true,
+  "packages": [
+    {
+      "package": "@nicia-ai/lachesis",
+      "version": "0.1.0-alpha.4",
+      "tarball": "nicia-ai-lachesis-0.1.0-alpha.4.tgz",
+      "sha256": "298643284448324ad1a8a99e05364abc170cacb3ca839b9b32e95978cfec47cc",
+      "bytes": 60428,
+      "packRuns": [
+        {
+          "run": 1,
+          "sha256": "298643284448324ad1a8a99e05364abc170cacb3ca839b9b32e95978cfec47cc",
+          "bytes": 60428
+        },
+        {
+          "run": 2,
+          "sha256": "298643284448324ad1a8a99e05364abc170cacb3ca839b9b32e95978cfec47cc",
+          "bytes": 60428
+        },
+        {
+          "run": 3,
+          "sha256": "298643284448324ad1a8a99e05364abc170cacb3ca839b9b32e95978cfec47cc",
+          "bytes": 60428
+        }
+      ],
+      "npmPackageContents": [
+        {
+          "path": "CHANGELOG.md",
+          "bytes": 1026,
+          "mode": 420,
+          "sha256": "29348c19e6adde73f0604d5c5f584bef34d5df627f4339483b2b2c3c797d5b07"
+        },
+        {
+          "path": "dist/analyze.d.ts",
+          "bytes": 590,
+          "mode": 420,
+          "sha256": "b24b0956a17399a250808b534bd95c249563c18fda5f2ced277b3785bcd2663b"
+        },
+        {
+          "path": "dist/analyze.d.ts.map",
+          "bytes": 571,
+          "mode": 420,
+          "sha256": "1b98dc0fc9602175c0a8ac7fd55d793d04ced934b8866401921761f04448c2a6"
+        },
+        {
+          "path": "dist/analyze.js",
+          "bytes": 10521,
+          "mode": 420,
+          "sha256": "450dfd8a5e14c71a87d217e91731cd26afeceb011256a1ff1f3db0967d18ced4"
+        },
+        {
+          "path": "dist/analyze.js.map",
+          "bytes": 9219,
+          "mode": 420,
+          "sha256": "dd56c004b357f392121bc58e4a7535b8c8f99f99f748fd56e7458051c604ecef"
+        },
+        {
+          "path": "dist/canonical.d.ts",
+          "bytes": 1161,
+          "mode": 420,
+          "sha256": "6a1ddcafbe2b83d92324a470304143c906836d33bd84236b3c2fb3574f9c1fe7"
+        },
+        {
+          "path": "dist/canonical.d.ts.map",
+          "bytes": 875,
+          "mode": 420,
+          "sha256": "21a62fab5f2c9e13e61912f69e412e1679e4360d723f2f01028c7322c714affc"
+        },
+        {
+          "path": "dist/canonical.js",
+          "bytes": 4451,
+          "mode": 420,
+          "sha256": "5f3c03d92862d8966a6d84838e1f1047728ac432ee9f1502f984aca2804298b6"
+        },
+        {
+          "path": "dist/canonical.js.map",
+          "bytes": 4716,
+          "mode": 420,
+          "sha256": "831d2cc6b996221466250d52a940af4f8a8233d71cdceee69e64ff4a8873bcac"
+        },
+        {
+          "path": "dist/catalog.d.ts",
+          "bytes": 7704,
+          "mode": 420,
+          "sha256": "77409ea2d6319b3cf7f5ac59adc4843bf317f04f64ea511cdfdc90453f1f5f50"
+        },
+        {
+          "path": "dist/catalog.d.ts.map",
+          "bytes": 7631,
+          "mode": 420,
+          "sha256": "833f5d8618b706247044821b1a964dfd61cc6eafcc49bfe5bc148ef85b292fa5"
+        },
+        {
+          "path": "dist/catalog.js",
+          "bytes": 18113,
+          "mode": 420,
+          "sha256": "4f94b107aca93821633f15baf88138ff5c517c8539647347884ace854e338832"
+        },
+        {
+          "path": "dist/catalog.js.map",
+          "bytes": 16856,
+          "mode": 420,
+          "sha256": "441ec811f74525727fec2be4d59b644306e0ca222c75e30115e91611713df941"
+        },
+        {
+          "path": "dist/check.d.ts",
+          "bytes": 469,
+          "mode": 420,
+          "sha256": "d3515965ae4a28498621eec7bfb8fcfbbbf726f850e3818194b7cc43b30e8826"
+        },
+        {
+          "path": "dist/check.d.ts.map",
+          "bytes": 429,
+          "mode": 420,
+          "sha256": "618aec22bd4bff62b2527f69c4202457ee006bbd10454c227ecdfda42c40bb9c"
+        },
+        {
+          "path": "dist/check.js",
+          "bytes": 15620,
+          "mode": 420,
+          "sha256": "2f4583a16fadef2bf80f23aa99830d27120c8d2be6da4a33731ef7f1d49074ba"
+        },
+        {
+          "path": "dist/check.js.map",
+          "bytes": 13604,
+          "mode": 420,
+          "sha256": "610fbd0a3413fa168997fb2818ca758b299a7f317115587b68d5283d656eda77"
+        },
+        {
+          "path": "dist/compiler.d.ts",
+          "bytes": 645,
+          "mode": 420,
+          "sha256": "413c3b3aa345e07c5b8373bf5e2781be345d29d2a3b8738175d54c80bdf5e341"
+        },
+        {
+          "path": "dist/compiler.d.ts.map",
+          "bytes": 591,
+          "mode": 420,
+          "sha256": "b05fad44d12108132ca1265d1c6738df1626007c228e7578fa755792906f7d0d"
+        },
+        {
+          "path": "dist/compiler.js",
+          "bytes": 5869,
+          "mode": 420,
+          "sha256": "a5404c8b7e964fb84e7be18026968873c288f699906543ae7e0e78f5997be7c0"
+        },
+        {
+          "path": "dist/compiler.js.map",
+          "bytes": 5674,
+          "mode": 420,
+          "sha256": "14f50e0bbeea2d4ccc511781f82205dc68302010c754883b62b48a3f9f395b11"
+        },
+        {
+          "path": "dist/diagnostic.d.ts",
+          "bytes": 3860,
+          "mode": 420,
+          "sha256": "b9b283c5574d555a8d829f487718c78e2286c2a5f8ccd2b0c2cced6776bf3bf6"
+        },
+        {
+          "path": "dist/diagnostic.d.ts.map",
+          "bytes": 1895,
+          "mode": 420,
+          "sha256": "68c1c8c4f19381dd9d21c1286be5dda26bb63e107c4c9776020e127feeacdca4"
+        },
+        {
+          "path": "dist/diagnostic.js",
+          "bytes": 1117,
+          "mode": 420,
+          "sha256": "5a903a8fdd1398af281c1e67a5440f4b9287bb57377ce44ba30b33b380657c9a"
+        },
+        {
+          "path": "dist/diagnostic.js.map",
+          "bytes": 811,
+          "mode": 420,
+          "sha256": "5a25082575528cbd1a7338fb557ad08e98a36e1985493a84dffa9f87e6bc3730"
+        },
+        {
+          "path": "dist/executable.d.ts",
+          "bytes": 1627,
+          "mode": 420,
+          "sha256": "a29958acfb5857dbf77cb92d88327b86c1252465e83d110fc1472b41bcceb69d"
+        },
+        {
+          "path": "dist/executable.d.ts.map",
+          "bytes": 1427,
+          "mode": 420,
+          "sha256": "acf1979b3482d2d54405b7e0ea986965a7c52a45e2b504abce9d2b308694f615"
+        },
+        {
+          "path": "dist/executable.js",
+          "bytes": 2351,
+          "mode": 420,
+          "sha256": "860ea99e026895bfde41b308a955d6e2213b4d1ef2188964793820ea2efc85fc"
+        },
+        {
+          "path": "dist/executable.js.map",
+          "bytes": 2077,
+          "mode": 420,
+          "sha256": "c42621d94cbd8d3cc6203c06693d1723ac3c6068ff15835bd4b3d6bd251f9821"
+        },
+        {
+          "path": "dist/executor.d.ts",
+          "bytes": 4626,
+          "mode": 420,
+          "sha256": "948b8bef32b1bba5a9252ad52571e94c9870296aa51b5320a375fa27f3ac04b8"
+        },
+        {
+          "path": "dist/executor.d.ts.map",
+          "bytes": 3547,
+          "mode": 420,
+          "sha256": "54b27cd08a5b2d5fb16e708b536657b308943867055105a4c467567f9a8ffb42"
+        },
+        {
+          "path": "dist/executor.js",
+          "bytes": 29270,
+          "mode": 420,
+          "sha256": "e8076958c6f7f491cdcae62e8e19a22fb23e9aedb86f3799db30f95b50424156"
+        },
+        {
+          "path": "dist/executor.js.map",
+          "bytes": 23854,
+          "mode": 420,
+          "sha256": "913ba8e02529ee00231d85ff452ae44543d43a250828e4d387933fd4fca58e86"
+        },
+        {
+          "path": "dist/identity.d.ts",
+          "bytes": 1087,
+          "mode": 420,
+          "sha256": "8421cfb5e5cd3e085b90b48bca632375a32cac8070df2672f409e82a314bad7f"
+        },
+        {
+          "path": "dist/identity.d.ts.map",
+          "bytes": 766,
+          "mode": 420,
+          "sha256": "4794ad9c870b7d69c336b108339270a620f5f577cef0eb6d0ce111aaa63a4fa8"
+        },
+        {
+          "path": "dist/identity.js",
+          "bytes": 470,
+          "mode": 420,
+          "sha256": "5c45e746fab4add636e7c6d704ca1be1fd769dc1cafdfd79515f80541489ab8f"
+        },
+        {
+          "path": "dist/identity.js.map",
+          "bytes": 574,
+          "mode": 420,
+          "sha256": "77534ade743d7bf2992742ff1e248b92f3d2bacdad133263db56a611b6aecd93"
+        },
+        {
+          "path": "dist/index.d.ts",
+          "bytes": 2895,
+          "mode": 420,
+          "sha256": "2d8c09021743fa14c7bcb50e10fa924545378027db9d89ce3a93e5f2cb3ab208"
+        },
+        {
+          "path": "dist/index.d.ts.map",
+          "bytes": 2161,
+          "mode": 420,
+          "sha256": "9dc4122e0a741b5c4055b81a22647d4859ccfab2fcffce8f5cfbca01c0e86af6"
+        },
+        {
+          "path": "dist/index.js",
+          "bytes": 1505,
+          "mode": 420,
+          "sha256": "3c1e982fc21698ae56581ea0dcd708b829e8589ab4baea68e7794cf74a5b51f7"
+        },
+        {
+          "path": "dist/index.js.map",
+          "bytes": 1147,
+          "mode": 420,
+          "sha256": "40214e0a1bd6b85567a97dc78e4be7769bcb477a36536e16b50fe3ae8131ee5f"
+        },
+        {
+          "path": "dist/json.d.ts",
+          "bytes": 955,
+          "mode": 420,
+          "sha256": "4cde1257d9a5d2f450bd5bf9aa9b40f6f7243b76ef105e721bde3f9451fdc3fd"
+        },
+        {
+          "path": "dist/json.d.ts.map",
+          "bytes": 626,
+          "mode": 420,
+          "sha256": "9665542cb4ae3c1f70a769558b8cdb355a01a93295db6f8c01e5029b52c96088"
+        },
+        {
+          "path": "dist/json.js",
+          "bytes": 2475,
+          "mode": 420,
+          "sha256": "d6cbe61514172731ebe4dba23e0cc3072be6f630d97361937939cbcb57a1fb3e"
+        },
+        {
+          "path": "dist/json.js.map",
+          "bytes": 2443,
+          "mode": 420,
+          "sha256": "67fddaa23eaaa448a85e106f03894ef802e9cb20364a6874edb5a772b14a5145"
+        },
+        {
+          "path": "dist/manifest.d.ts",
+          "bytes": 2317,
+          "mode": 420,
+          "sha256": "0a19dffd59c18aafd743fb0236fd0e89efbb62b2bc5d81784d8068cc41f4bd9a"
+        },
+        {
+          "path": "dist/manifest.d.ts.map",
+          "bytes": 2314,
+          "mode": 420,
+          "sha256": "5024cb3268207a0444f9ff801bdbf71c77f3dd40dab3a377a4dd727e2376fc14"
+        },
+        {
+          "path": "dist/manifest.js",
+          "bytes": 4631,
+          "mode": 420,
+          "sha256": "08b937404529380fbfb0df422685d0d69bc3dfdf74caafeb43cf0e13ba21f6a3"
+        },
+        {
+          "path": "dist/manifest.js.map",
+          "bytes": 4458,
+          "mode": 420,
+          "sha256": "c37975503e186c0d981a79af0c6d74edfb03fee5233dbfa240bbe8ff9ae5859b"
+        },
+        {
+          "path": "dist/normalize.d.ts",
+          "bytes": 518,
+          "mode": 420,
+          "sha256": "8dd351733687a91f4c58050bdebd310d86390301baf67ef01a4e690aea495174"
+        },
+        {
+          "path": "dist/normalize.d.ts.map",
+          "bytes": 496,
+          "mode": 420,
+          "sha256": "5f03d53591abcd99dfe79af9b1f919714ff952ea427e16ba48636e3b2843ab9c"
+        },
+        {
+          "path": "dist/normalize.js",
+          "bytes": 3310,
+          "mode": 420,
+          "sha256": "e6203d3d4d0ec02d1776db696412ab5e815284804a5a6da1eafab98b9373a317"
+        },
+        {
+          "path": "dist/normalize.js.map",
+          "bytes": 3582,
+          "mode": 420,
+          "sha256": "cee0270d1986eb786c4664220e65cd9be0e82ea737eb4609d9042e7e82e3c55c"
+        },
+        {
+          "path": "dist/plan.d.ts",
+          "bytes": 1811,
+          "mode": 420,
+          "sha256": "c6904f0c470d88dc42cd347d41d1ec07e41604cf2fa9d53f66418ec1e5f9a49b"
+        },
+        {
+          "path": "dist/plan.d.ts.map",
+          "bytes": 1890,
+          "mode": 420,
+          "sha256": "e2c5a95ff6a75a5c549799d77970a0852bb2e00551a36c1f1360457b554052f8"
+        },
+        {
+          "path": "dist/plan.js",
+          "bytes": 43,
+          "mode": 420,
+          "sha256": "d27730f44c90179f0ced95242b39faf92dab8fe6ffa80d7cb4560b99ad6c0d2b"
+        },
+        {
+          "path": "dist/plan.js.map",
+          "bytes": 100,
+          "mode": 420,
+          "sha256": "ac7b2b73311274f92cec31e699f12981e47cf91b9bcbca274d19d370ad9a49ac"
+        },
+        {
+          "path": "dist/result.d.ts",
+          "bytes": 270,
+          "mode": 420,
+          "sha256": "c69059b9894dd34f304cd5c48bb0727642e7a0e5e0d6d155c98dcb590a006637"
+        },
+        {
+          "path": "dist/result.d.ts.map",
+          "bytes": 478,
+          "mode": 420,
+          "sha256": "f0ea9374390f55f990ee24b340259983dfb254be555a59016edafc40004aa188"
+        },
+        {
+          "path": "dist/result.js",
+          "bytes": 160,
+          "mode": 420,
+          "sha256": "78e2e0ddab7e0d3d0bf6527ebf3a230093f6d5ab5d3cd7a75ca489ccdcbc5b2b"
+        },
+        {
+          "path": "dist/result.js.map",
+          "bytes": 287,
+          "mode": 420,
+          "sha256": "7c7ca40ca16269f682ccf6024040db6269389e5618c699f9b6310a710530d316"
+        },
+        {
+          "path": "dist/semantic-role.d.ts",
+          "bytes": 10728,
+          "mode": 420,
+          "sha256": "2a7d32fd032a309e77bf8ffd12c0fbeddfe469305a39573b5308882d985a3883"
+        },
+        {
+          "path": "dist/semantic-role.d.ts.map",
+          "bytes": 874,
+          "mode": 420,
+          "sha256": "d84e42caf203da1ce6f0452046c654e66227391a394699f8bcd3a6615aefe871"
+        },
+        {
+          "path": "dist/semantic-role.js",
+          "bytes": 3358,
+          "mode": 420,
+          "sha256": "46539f65ea30bfbb462f63fe3e0c394c78fabda9782e4709e30b9359160d2521"
+        },
+        {
+          "path": "dist/semantic-role.js.map",
+          "bytes": 3183,
+          "mode": 420,
+          "sha256": "222851c4dfdb3113881d6a62bda1231e10fd26e6e252317d17da84255d0475c1"
+        },
+        {
+          "path": "dist/semantic.d.ts",
+          "bytes": 2483,
+          "mode": 420,
+          "sha256": "e61ed38813b6b28484afece95729f2ca19864fc2bdbbe4acbe544f77f0241a34"
+        },
+        {
+          "path": "dist/semantic.d.ts.map",
+          "bytes": 1316,
+          "mode": 420,
+          "sha256": "d2812a868dba6111fe2574457039514a834a866680e734d41a7d4465d5572ee2"
+        },
+        {
+          "path": "dist/semantic.js",
+          "bytes": 7347,
+          "mode": 420,
+          "sha256": "afea84c544bdd2aa8ff6f4506422d79b62a9fa98a60fd4780f8ce81a15f32737"
+        },
+        {
+          "path": "dist/semantic.js.map",
+          "bytes": 7174,
+          "mode": 420,
+          "sha256": "3f0a818fa70c47f5090d7db8088db2d95fd0239f1c01366e1f38caf382107a65"
+        },
+        {
+          "path": "dist/wire.d.ts",
+          "bytes": 24994,
+          "mode": 420,
+          "sha256": "60dcd5ecfe5b8ede4ddcb86445ed8d190181d55a18a0ffaf54ac2c25d8f8e13d"
+        },
+        {
+          "path": "dist/wire.d.ts.map",
+          "bytes": 1661,
+          "mode": 420,
+          "sha256": "7fe660c6d7f3261c89692d38f7b0e367dc39205f918ff5e8b23e3327b57852b4"
+        },
+        {
+          "path": "dist/wire.js",
+          "bytes": 6262,
+          "mode": 420,
+          "sha256": "037ccd3fd368dae86ee61cdf4bdd4d37d9e32477e4767106e1cb5847c38a3d6d"
+        },
+        {
+          "path": "dist/wire.js.map",
+          "bytes": 6079,
+          "mode": 420,
+          "sha256": "38b081ec61e6e1ff5bdff9372f611015d584c147230274b12c40c599f3102614"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 11338,
+          "mode": 420,
+          "sha256": "1f25afa5f2c0bb79817c2ab472af0db34641cb0a6428219ad7b44e01ee3792ac"
+        },
+        {
+          "path": "package.json",
+          "bytes": 938,
+          "mode": 420,
+          "sha256": "0c603828cd25b5e2185faa0f33dfa12999d3c02e3db5cc254a92745681f41aab"
+        },
+        {
+          "path": "README.md",
+          "bytes": 1846,
+          "mode": 420,
+          "sha256": "e7f20b5dd53cb6f6966cb97236078ae61b8e1e5680d0d7f156fe358a18d835d0"
+        }
+      ],
+      "dependencies": [
+        { "section": "dependencies", "name": "zod", "range": "4.4.3" }
+      ],
+      "sourceMaps": [
+        "dist/analyze.js.map",
+        "dist/canonical.js.map",
+        "dist/catalog.js.map",
+        "dist/check.js.map",
+        "dist/compiler.js.map",
+        "dist/diagnostic.js.map",
+        "dist/executable.js.map",
+        "dist/executor.js.map",
+        "dist/identity.js.map",
+        "dist/index.js.map",
+        "dist/json.js.map",
+        "dist/manifest.js.map",
+        "dist/normalize.js.map",
+        "dist/plan.js.map",
+        "dist/result.js.map",
+        "dist/semantic-role.js.map",
+        "dist/semantic.js.map",
+        "dist/wire.js.map"
+      ],
+      "declarations": [
+        "dist/analyze.d.ts",
+        "dist/canonical.d.ts",
+        "dist/catalog.d.ts",
+        "dist/check.d.ts",
+        "dist/compiler.d.ts",
+        "dist/diagnostic.d.ts",
+        "dist/executable.d.ts",
+        "dist/executor.d.ts",
+        "dist/identity.d.ts",
+        "dist/index.d.ts",
+        "dist/json.d.ts",
+        "dist/manifest.d.ts",
+        "dist/normalize.d.ts",
+        "dist/plan.d.ts",
+        "dist/result.d.ts",
+        "dist/semantic-role.d.ts",
+        "dist/semantic.d.ts",
+        "dist/wire.d.ts"
+      ],
+      "declarationMaps": [
+        "dist/analyze.d.ts.map",
+        "dist/canonical.d.ts.map",
+        "dist/catalog.d.ts.map",
+        "dist/check.d.ts.map",
+        "dist/compiler.d.ts.map",
+        "dist/diagnostic.d.ts.map",
+        "dist/executable.d.ts.map",
+        "dist/executor.d.ts.map",
+        "dist/identity.d.ts.map",
+        "dist/index.d.ts.map",
+        "dist/json.d.ts.map",
+        "dist/manifest.d.ts.map",
+        "dist/normalize.d.ts.map",
+        "dist/plan.d.ts.map",
+        "dist/result.d.ts.map",
+        "dist/semantic-role.d.ts.map",
+        "dist/semantic.d.ts.map",
+        "dist/wire.d.ts.map"
+      ],
+      "executableFiles": [],
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/nicia-ai/lachesis.git",
+        "directory": "packages/kernel"
+      },
+      "packageType": "module",
+      "engines": { "node": ">=24 <25" },
+      "bin": null,
+      "exports": {
+        ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+      }
+    },
+    {
+      "package": "@nicia-ai/lachesis-evidence",
+      "version": "0.1.0-alpha.4",
+      "tarball": "nicia-ai-lachesis-evidence-0.1.0-alpha.4.tgz",
+      "sha256": "eb0a83b7977db40a8175a786697dce745bf7a7422e49e69da7a7bf20b2719ee0",
+      "bytes": 168922,
+      "packRuns": [
+        {
+          "run": 1,
+          "sha256": "eb0a83b7977db40a8175a786697dce745bf7a7422e49e69da7a7bf20b2719ee0",
+          "bytes": 168922
+        },
+        {
+          "run": 2,
+          "sha256": "eb0a83b7977db40a8175a786697dce745bf7a7422e49e69da7a7bf20b2719ee0",
+          "bytes": 168922
+        },
+        {
+          "run": 3,
+          "sha256": "eb0a83b7977db40a8175a786697dce745bf7a7422e49e69da7a7bf20b2719ee0",
+          "bytes": 168922
+        }
+      ],
+      "npmPackageContents": [
+        {
+          "path": "CHANGELOG.md",
+          "bytes": 849,
+          "mode": 420,
+          "sha256": "e3e384b9f4bfa04993f056312c774aa1dd57efed96c6be28437290817cb36f5d"
+        },
+        {
+          "path": "dist/audit.d.ts",
+          "bytes": 2517,
+          "mode": 420,
+          "sha256": "0abecc249e91b1eb505adc13b37f4482604a1491e68beea8c0e3fd5d3c021b8b"
+        },
+        {
+          "path": "dist/audit.d.ts.map",
+          "bytes": 2262,
+          "mode": 420,
+          "sha256": "73995fb3138a325162f6e63ef24af9337bd0db17a0b0bedd2d626170502fa7d8"
+        },
+        {
+          "path": "dist/audit.js",
+          "bytes": 13612,
+          "mode": 420,
+          "sha256": "a89bf240e5355b7cdc42712c45302b8be7a2f2304167045b695cadeda4eefc8d"
+        },
+        {
+          "path": "dist/audit.js.map",
+          "bytes": 13875,
+          "mode": 420,
+          "sha256": "9333f0f1a7ec2832609719c4df613c1b9938f751cf996427878ec9a62f80e69a"
+        },
+        {
+          "path": "dist/contract.d.ts",
+          "bytes": 10985,
+          "mode": 420,
+          "sha256": "adc67ae95b32dd9a5994611b0d4feb2077591c29198acf41ca7e824a5939fe1c"
+        },
+        {
+          "path": "dist/contract.d.ts.map",
+          "bytes": 2552,
+          "mode": 420,
+          "sha256": "a77d7b4b8b3481aedcc74c45ec7e48c97e39bf1423a6827d90200d03ac56cfe1"
+        },
+        {
+          "path": "dist/contract.js",
+          "bytes": 11342,
+          "mode": 420,
+          "sha256": "2ee02105e58625414755ce7a1416e1d149082a58828d62d7b64e8cb70288cbc5"
+        },
+        {
+          "path": "dist/contract.js.map",
+          "bytes": 11977,
+          "mode": 420,
+          "sha256": "a96e2708bb9c8a2ef2b86af176e786edf23db6bf0c2ae97d118fb9c8b34e3582"
+        },
+        {
+          "path": "dist/corpus.d.ts",
+          "bytes": 12715,
+          "mode": 420,
+          "sha256": "7449c4771f4b7789365ef700637901f559bd77037b260fd237a1b4b49ce06260"
+        },
+        {
+          "path": "dist/corpus.d.ts.map",
+          "bytes": 913,
+          "mode": 420,
+          "sha256": "bd50ec4f1059f0917d0a63c9b2512950ac803ad21d918649cfe8b6763a07fce9"
+        },
+        {
+          "path": "dist/corpus.js",
+          "bytes": 31999,
+          "mode": 420,
+          "sha256": "1487ac2c140374d62d37721b5f2bed2beb0ee8875d7d6e7059505dc0be139a75"
+        },
+        {
+          "path": "dist/corpus.js.map",
+          "bytes": 24833,
+          "mode": 420,
+          "sha256": "7315b0ac8a12e11eee08d148884310af5046c5c84401f296fc4cf1795e9b72e4"
+        },
+        {
+          "path": "dist/design.d.ts",
+          "bytes": 2123,
+          "mode": 420,
+          "sha256": "6b213e8bd381475e61eb71116182260313420512079140d36bbc0b99961ea09d"
+        },
+        {
+          "path": "dist/design.d.ts.map",
+          "bytes": 216,
+          "mode": 420,
+          "sha256": "538cd2d0f4bb63db81f89a2c535cf53c7be37c47aadeb419fb5f7bf479462a74"
+        },
+        {
+          "path": "dist/design.js",
+          "bytes": 3283,
+          "mode": 420,
+          "sha256": "4355245c5c03d369e6ef6a110aec6108e50755b95f7c509bc5e9b41925459c30"
+        },
+        {
+          "path": "dist/design.js.map",
+          "bytes": 1490,
+          "mode": 420,
+          "sha256": "382316722ec1b82d696366e0dbf24b08382fd65f42ffd98e825cc531c44144be"
+        },
+        {
+          "path": "dist/graph.d.ts",
+          "bytes": 3269,
+          "mode": 420,
+          "sha256": "34332f7c2d6c6fc446a584288d9a164e8db3ff4d647542bcc5da388091ccf040"
+        },
+        {
+          "path": "dist/graph.d.ts.map",
+          "bytes": 1550,
+          "mode": 420,
+          "sha256": "74ebd075636bdc1e45af58fc4761f862b71b44289931a9007402676f226fdcb4"
+        },
+        {
+          "path": "dist/graph.js",
+          "bytes": 12113,
+          "mode": 420,
+          "sha256": "1f2f9f243ec842b16790464d1812b80415cf9b24373f00be27c1354d3cc9fb7b"
+        },
+        {
+          "path": "dist/graph.js.map",
+          "bytes": 13114,
+          "mode": 420,
+          "sha256": "d19766a697637c52a0283b708d19058aec56539fe237261667e27fd3e3fa4610"
+        },
+        {
+          "path": "dist/index.d.ts",
+          "bytes": 7745,
+          "mode": 420,
+          "sha256": "194b2217142efca31b14cda44bfc49e31f7bfdf261d47977b5660b3acc8fbba8"
+        },
+        {
+          "path": "dist/index.d.ts.map",
+          "bytes": 4844,
+          "mode": 420,
+          "sha256": "fa8262181e4646c1ed2b4831152f8f26bfb4f5903c44f8daade4f2d8fbf83ea4"
+        },
+        {
+          "path": "dist/index.js",
+          "bytes": 4718,
+          "mode": 420,
+          "sha256": "9b748da0861d0bfab9a72ed5e6517135fe0f71310918268f529c242d5d0fc798"
+        },
+        {
+          "path": "dist/index.js.map",
+          "bytes": 2663,
+          "mode": 420,
+          "sha256": "b37a0174d6d74a151a3b9a02c792dc6e456706b25da0e6a0b7ec42745e89f66d"
+        },
+        {
+          "path": "dist/m3b-corpus.d.ts",
+          "bytes": 3025,
+          "mode": 420,
+          "sha256": "dd7d2f7c8698d8f797475edf7c5f1b4331e1dfd6ba4db3a0d51e70a2cf30f516"
+        },
+        {
+          "path": "dist/m3b-corpus.d.ts.map",
+          "bytes": 1397,
+          "mode": 420,
+          "sha256": "34e1b621e20f32a3aad136d732390b9539629128847befc765c74c031dbb09d8"
+        },
+        {
+          "path": "dist/m3b-corpus.js",
+          "bytes": 15011,
+          "mode": 420,
+          "sha256": "91c4bc7eb69fcfaaa619efca50324314d7bde3b2b63c2c9fcf11455d0a1a58b9"
+        },
+        {
+          "path": "dist/m3b-corpus.js.map",
+          "bytes": 14380,
+          "mode": 420,
+          "sha256": "a90b1ac211a2538ec6628965c72261c0977a417ed7aeee9aee886afce1194ae0"
+        },
+        {
+          "path": "dist/m3b-schedule.d.ts",
+          "bytes": 5129,
+          "mode": 420,
+          "sha256": "6ba297b629ae7d1da46cb3513d15da78ed0bc83a50cb92b53b30bc2fda251f45"
+        },
+        {
+          "path": "dist/m3b-schedule.d.ts.map",
+          "bytes": 1510,
+          "mode": 420,
+          "sha256": "30f43a4a1e6af6f14e54e612d7e5a76e613bac67fc7c557d4b343d19c0fe125d"
+        },
+        {
+          "path": "dist/m3b-schedule.js",
+          "bytes": 6699,
+          "mode": 420,
+          "sha256": "caf9ae8eaadaaa3928a25f88be05a23d0d3d0fdaea84a0425a5fe0d74ad05cfb"
+        },
+        {
+          "path": "dist/m3b-schedule.js.map",
+          "bytes": 6669,
+          "mode": 420,
+          "sha256": "74834acf1476e097802cf789cac36818fe0dbca89a6d49aaa7e25150b986b631"
+        },
+        {
+          "path": "dist/m3b-statistics.d.ts",
+          "bytes": 7994,
+          "mode": 420,
+          "sha256": "7c931f10463046087f35ec7ebbec2f4828a470740b599c5594f4ce600f7ce09a"
+        },
+        {
+          "path": "dist/m3b-statistics.d.ts.map",
+          "bytes": 2796,
+          "mode": 420,
+          "sha256": "68acea31e4e30f9e6ba3f69a5b667abf8ed0a0c6c379168894c535b4c2b7313e"
+        },
+        {
+          "path": "dist/m3b-statistics.js",
+          "bytes": 14797,
+          "mode": 420,
+          "sha256": "54c1a82bb08ee91d04d17addfee50535008351723ae19b42220f6f1d0cfb6856"
+        },
+        {
+          "path": "dist/m3b-statistics.js.map",
+          "bytes": 12888,
+          "mode": 420,
+          "sha256": "3aec5fc6a6f63a63275643ff14b5c4873bec53c394b9a03dbe08e17c0284b593"
+        },
+        {
+          "path": "dist/m3b.d.ts",
+          "bytes": 46485,
+          "mode": 420,
+          "sha256": "5ff8b49ce80d678c8c606687d28c24384fb553a4282e911f1259f54ff7786300"
+        },
+        {
+          "path": "dist/m3b.d.ts.map",
+          "bytes": 8449,
+          "mode": 420,
+          "sha256": "6733b7a56acd48d37d2e888a32fb94d540a27ee2d632f1493562784cb2326953"
+        },
+        {
+          "path": "dist/m3b.js",
+          "bytes": 70888,
+          "mode": 420,
+          "sha256": "12a9718dcb73158457388311e46237395f0ee448467af02256d2902d60b103eb"
+        },
+        {
+          "path": "dist/m3b.js.map",
+          "bytes": 60841,
+          "mode": 420,
+          "sha256": "9ee3e53de2b861db9098a4b8efb1d732ef21351fa099010915ce0b9c0786cfb5"
+        },
+        {
+          "path": "dist/m3b4-calibration-corpus.d.ts",
+          "bytes": 1152,
+          "mode": 420,
+          "sha256": "e0b473813ceff36db3d8629ebc982b7ac5f8d4ce59e777ca094deb17924d6ae6"
+        },
+        {
+          "path": "dist/m3b4-calibration-corpus.d.ts.map",
+          "bytes": 302,
+          "mode": 420,
+          "sha256": "1d0457440aaab3a4aa29be7be3c41c5cfbf6537b2bdbb104cd0fc0c9e5c03077"
+        },
+        {
+          "path": "dist/m3b4-calibration-corpus.js",
+          "bytes": 23764,
+          "mode": 420,
+          "sha256": "755889f1447acd27423257447e88ab5c72906dd2aad4ba0ca13b0c0dbe56139b"
+        },
+        {
+          "path": "dist/m3b4-calibration-corpus.js.map",
+          "bytes": 17306,
+          "mode": 420,
+          "sha256": "d4860edd6f3c81d1bb0fa27b9f5fe53b5afe07bb5a773ec32e05428e6e66b0e4"
+        },
+        {
+          "path": "dist/m3b5-heldout-corpus.d.ts",
+          "bytes": 898,
+          "mode": 420,
+          "sha256": "097cdaa25b903d9620d9a7863ef41b2e3d08b26bc49902198fb313d0cf7ce431"
+        },
+        {
+          "path": "dist/m3b5-heldout-corpus.d.ts.map",
+          "bytes": 1012,
+          "mode": 420,
+          "sha256": "b590d5bc15ede93b0d29ed83a3759b616b3edc2ff744d8b8245a7a030d4f91e4"
+        },
+        {
+          "path": "dist/m3b5-heldout-corpus.js",
+          "bytes": 5997,
+          "mode": 420,
+          "sha256": "3e124dd0f10201bbc330745ad87e61df4116306ee553285ac589a9eccac7a93c"
+        },
+        {
+          "path": "dist/m3b5-heldout-corpus.js.map",
+          "bytes": 6840,
+          "mode": 420,
+          "sha256": "8647d500d7e68458680b964c3a3da8e077f820287b5b91fd2c1a9d0352c61e88"
+        },
+        {
+          "path": "dist/m4.d.ts",
+          "bytes": 40432,
+          "mode": 420,
+          "sha256": "9eb92ee8c822ac0616b7206691b69de727d0b96e751ca7d1e926934619c9e1f6"
+        },
+        {
+          "path": "dist/m4.d.ts.map",
+          "bytes": 3361,
+          "mode": 420,
+          "sha256": "c90384ba7273efa7ad2cae632ea8bd7e1103482fb24a79a7353ae5d6bba0eba3"
+        },
+        {
+          "path": "dist/m4.js",
+          "bytes": 42454,
+          "mode": 420,
+          "sha256": "6c86c4f915652e81ca9faa9e470ccb10d659a6f0719a86d87e3fa84a566b4ef0"
+        },
+        {
+          "path": "dist/m4.js.map",
+          "bytes": 38665,
+          "mode": 420,
+          "sha256": "6da3a92f8ea45196f2b652875ecf2ee66fc047eb9c3e0f4c200dbba9621fd410"
+        },
+        {
+          "path": "dist/m4d0.d.ts",
+          "bytes": 20689,
+          "mode": 420,
+          "sha256": "168ec58b96b3ee25cb2b1bc68ca19840385fb99e368f9fc883a9f90f67975954"
+        },
+        {
+          "path": "dist/m4d0.d.ts.map",
+          "bytes": 1426,
+          "mode": 420,
+          "sha256": "487b61618dbf6694a574f7174ed46344b3077ee3ee8f7dfaa7cc62eaf0b58c29"
+        },
+        {
+          "path": "dist/m4d0.js",
+          "bytes": 29305,
+          "mode": 420,
+          "sha256": "1aa91df72e09351c7db330d031a7d8c03a5bf16210cd718df60b14ffe0ca07d4"
+        },
+        {
+          "path": "dist/m4d0.js.map",
+          "bytes": 26961,
+          "mode": 420,
+          "sha256": "6e80110e470ccb85cad09cd8b5d1248d3e75ed2f38ab779bb2e200be23ab9f98"
+        },
+        {
+          "path": "dist/m4d1.d.ts",
+          "bytes": 40821,
+          "mode": 420,
+          "sha256": "3ff2043aa0a0319299750c576bcb4d44a968ec04a713d611412ef8e41956a414"
+        },
+        {
+          "path": "dist/m4d1.d.ts.map",
+          "bytes": 3997,
+          "mode": 420,
+          "sha256": "27e75eb1ced2c8b93b305403ca3b8fccda6b64cf4a217c7525c5e5858b223d45"
+        },
+        {
+          "path": "dist/m4d1.js",
+          "bytes": 25207,
+          "mode": 420,
+          "sha256": "877384b7190dbd3bc85c4aadbb7e5ea74619e10d0367b4149affa58970c32a7a"
+        },
+        {
+          "path": "dist/m4d1.js.map",
+          "bytes": 21665,
+          "mode": 420,
+          "sha256": "b0089144b1bc0a56f60528996d75f251c4d8e841c52201ab542dd6035c7b51ae"
+        },
+        {
+          "path": "dist/m5.d.ts",
+          "bytes": 88435,
+          "mode": 420,
+          "sha256": "0dcb4e23e038ad4796d8f99ec20492971315db00cf46b9dfa751db3e8add514b"
+        },
+        {
+          "path": "dist/m5.d.ts.map",
+          "bytes": 6609,
+          "mode": 420,
+          "sha256": "f2524232859b507a911546bc9be825c0a4bb31c15fbd9e7f95df2f2876188824"
+        },
+        {
+          "path": "dist/m5.js",
+          "bytes": 50750,
+          "mode": 420,
+          "sha256": "feaaea522785b3ec2efa8ba05048e3b73b19c36fc70a7a653842dd1df4d3e845"
+        },
+        {
+          "path": "dist/m5.js.map",
+          "bytes": 44544,
+          "mode": 420,
+          "sha256": "f8dac3fc9befb63b5abe442e5d3ecf68b5798d7e2f9e1b24fd7bb4f0e5a67870"
+        },
+        {
+          "path": "dist/text.d.ts",
+          "bytes": 706,
+          "mode": 420,
+          "sha256": "37ce96c508510c81efc2d732a70602539e9cf6e31d9f8de838245afc9c31fe84"
+        },
+        {
+          "path": "dist/text.d.ts.map",
+          "bytes": 570,
+          "mode": 420,
+          "sha256": "1d696642c812ba23caffd08df5aa33a3eae8b79142f0eb2c8f699084f13e1b56"
+        },
+        {
+          "path": "dist/text.js",
+          "bytes": 2986,
+          "mode": 420,
+          "sha256": "bdc0db71b9c018c0454d6b53221bb4c27e7475b22fb5a8cb98473561dcb0e6d8"
+        },
+        {
+          "path": "dist/text.js.map",
+          "bytes": 3155,
+          "mode": 420,
+          "sha256": "418eb661ec9d14f4e6b46bf879dacb677e5960a792c62657bd42f8093e59cfbb"
+        },
+        {
+          "path": "dist/zod-json-schema.d.ts",
+          "bytes": 712,
+          "mode": 420,
+          "sha256": "87302c89c169acefe73d01ead199ce414e2b6db24eda9a4bab6469eb69e9e04d"
+        },
+        {
+          "path": "dist/zod-json-schema.d.ts.map",
+          "bytes": 376,
+          "mode": 420,
+          "sha256": "35c8e81547c93ba555c66aff84274110755033f7650923357cc872d6a8729c95"
+        },
+        {
+          "path": "dist/zod-json-schema.js",
+          "bytes": 948,
+          "mode": 420,
+          "sha256": "1f9d6dde89461db9a331da4035f89521361347d9dcfe89eb2fe02e9e4023d479"
+        },
+        {
+          "path": "dist/zod-json-schema.js.map",
+          "bytes": 634,
+          "mode": 420,
+          "sha256": "40e4183bfb200931b81aa85688f2f822595f65725240ea967a969814509b1e74"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 623,
+          "mode": 420,
+          "sha256": "5bfd7389cff273c5e5764bec1df4cdb0e8d6d479b154e066d196115956a95785"
+        },
+        {
+          "path": "package.json",
+          "bytes": 2006,
+          "mode": 420,
+          "sha256": "639515b515b2089be5c74d15e97c5ca321f9276e9195f3cf9d13c4baaac8feb3"
+        },
+        {
+          "path": "README.md",
+          "bytes": 4658,
+          "mode": 420,
+          "sha256": "b1e5cda36320aff8dde57e925b5ec7680324bca738e9a762b5b6ed4fe8989a22"
+        }
+      ],
+      "dependencies": [
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/lachesis",
+          "range": "0.1.0-alpha.4"
+        },
+        { "section": "dependencies", "name": "zod", "range": "4.4.3" }
+      ],
+      "sourceMaps": [
+        "dist/audit.js.map",
+        "dist/contract.js.map",
+        "dist/corpus.js.map",
+        "dist/design.js.map",
+        "dist/graph.js.map",
+        "dist/index.js.map",
+        "dist/m3b-corpus.js.map",
+        "dist/m3b-schedule.js.map",
+        "dist/m3b-statistics.js.map",
+        "dist/m3b.js.map",
+        "dist/m3b4-calibration-corpus.js.map",
+        "dist/m3b5-heldout-corpus.js.map",
+        "dist/m4.js.map",
+        "dist/m4d0.js.map",
+        "dist/m4d1.js.map",
+        "dist/m5.js.map",
+        "dist/text.js.map",
+        "dist/zod-json-schema.js.map"
+      ],
+      "declarations": [
+        "dist/audit.d.ts",
+        "dist/contract.d.ts",
+        "dist/corpus.d.ts",
+        "dist/design.d.ts",
+        "dist/graph.d.ts",
+        "dist/index.d.ts",
+        "dist/m3b-corpus.d.ts",
+        "dist/m3b-schedule.d.ts",
+        "dist/m3b-statistics.d.ts",
+        "dist/m3b.d.ts",
+        "dist/m3b4-calibration-corpus.d.ts",
+        "dist/m3b5-heldout-corpus.d.ts",
+        "dist/m4.d.ts",
+        "dist/m4d0.d.ts",
+        "dist/m4d1.d.ts",
+        "dist/m5.d.ts",
+        "dist/text.d.ts",
+        "dist/zod-json-schema.d.ts"
+      ],
+      "declarationMaps": [
+        "dist/audit.d.ts.map",
+        "dist/contract.d.ts.map",
+        "dist/corpus.d.ts.map",
+        "dist/design.d.ts.map",
+        "dist/graph.d.ts.map",
+        "dist/index.d.ts.map",
+        "dist/m3b-corpus.d.ts.map",
+        "dist/m3b-schedule.d.ts.map",
+        "dist/m3b-statistics.d.ts.map",
+        "dist/m3b.d.ts.map",
+        "dist/m3b4-calibration-corpus.d.ts.map",
+        "dist/m3b5-heldout-corpus.d.ts.map",
+        "dist/m4.d.ts.map",
+        "dist/m4d0.d.ts.map",
+        "dist/m4d1.d.ts.map",
+        "dist/m5.d.ts.map",
+        "dist/text.d.ts.map",
+        "dist/zod-json-schema.d.ts.map"
+      ],
+      "executableFiles": [],
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/nicia-ai/lachesis.git",
+        "directory": "packages/evidence"
+      },
+      "packageType": "module",
+      "engines": { "node": ">=24 <25" },
+      "bin": null,
+      "exports": {
+        ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+      }
+    },
+    {
+      "package": "@nicia-ai/lachesis-generator",
+      "version": "0.1.0-alpha.4",
+      "tarball": "nicia-ai-lachesis-generator-0.1.0-alpha.4.tgz",
+      "sha256": "242c45f6e21fd376d58d27dc4f9764719f0368f49c31f2a26ca8e9a971072273",
+      "bytes": 220521,
+      "packRuns": [
+        {
+          "run": 1,
+          "sha256": "242c45f6e21fd376d58d27dc4f9764719f0368f49c31f2a26ca8e9a971072273",
+          "bytes": 220521
+        },
+        {
+          "run": 2,
+          "sha256": "242c45f6e21fd376d58d27dc4f9764719f0368f49c31f2a26ca8e9a971072273",
+          "bytes": 220521
+        },
+        {
+          "run": 3,
+          "sha256": "242c45f6e21fd376d58d27dc4f9764719f0368f49c31f2a26ca8e9a971072273",
+          "bytes": 220521
+        }
+      ],
+      "npmPackageContents": [
+        {
+          "path": "CHANGELOG.md",
+          "bytes": 1279,
+          "mode": 420,
+          "sha256": "8b6c1085980f24ead3be5f89a754124df234f056fdab348378a0129d9c3456cc"
+        },
+        {
+          "path": "dist/benchmark.d.ts",
+          "bytes": 23419,
+          "mode": 420,
+          "sha256": "604a4191d7e8f7770e62bd83b80807682ef495302e7ab19b9d0ff8a25b4838f0"
+        },
+        {
+          "path": "dist/benchmark.d.ts.map",
+          "bytes": 5065,
+          "mode": 420,
+          "sha256": "90b8e2fd1ff9c7ffe9e5f01bc9ebce040703b5a4011fe53219ed674eb597b120"
+        },
+        {
+          "path": "dist/benchmark.js",
+          "bytes": 56121,
+          "mode": 420,
+          "sha256": "f65dbbe180fd68efae77c78488d621125a6859c54b224ed64ea3a0dff37f5011"
+        },
+        {
+          "path": "dist/benchmark.js.map",
+          "bytes": 48271,
+          "mode": 420,
+          "sha256": "929517443979ed1034fe9f07590d39ff801fd56a1c104c4b14e240bbbf4df853"
+        },
+        {
+          "path": "dist/case.d.ts",
+          "bytes": 25019,
+          "mode": 420,
+          "sha256": "942075229a142454d01f0efb2a92de9e2451444202372f194cfb120f3ce6fe34"
+        },
+        {
+          "path": "dist/case.d.ts.map",
+          "bytes": 1764,
+          "mode": 420,
+          "sha256": "2b529db5f4e25caaba2e2b079d6bb69597834300f174a0123f1357e6634a1e1a"
+        },
+        {
+          "path": "dist/case.js",
+          "bytes": 6012,
+          "mode": 420,
+          "sha256": "8d32e5ea9c62c1b685b53b5a55af9b044f0a923f833464d98658674c79e1e344"
+        },
+        {
+          "path": "dist/case.js.map",
+          "bytes": 6417,
+          "mode": 420,
+          "sha256": "9ee8601e3572410eb5df2ac8e3321277c0807a98fcfe39b7835b126329e1f0bb"
+        },
+        {
+          "path": "dist/catalog-conformance.d.ts",
+          "bytes": 4690,
+          "mode": 420,
+          "sha256": "2838d45c96a60d5a89a1905c0efc750d5ff41dc2b81cd01d256596891e87cbb5"
+        },
+        {
+          "path": "dist/catalog-conformance.d.ts.map",
+          "bytes": 988,
+          "mode": 420,
+          "sha256": "55472107f01e324cc98fb54d14c0a0c71dfcd60079532a7cf0bc6bc2b4957a5c"
+        },
+        {
+          "path": "dist/catalog-conformance.js",
+          "bytes": 16421,
+          "mode": 420,
+          "sha256": "581cbee1072c1afafd61fed919028b259bf953aa81aa6bf2d798bc34cfd150c7"
+        },
+        {
+          "path": "dist/catalog-conformance.js.map",
+          "bytes": 15433,
+          "mode": 420,
+          "sha256": "b6f0d94d56594f3b86a214020104150cc3e37026431132d04e3e988a5e80a420"
+        },
+        {
+          "path": "dist/catalog-diagnostic.d.ts",
+          "bytes": 12619,
+          "mode": 420,
+          "sha256": "97ddb212dbdd1fb6775d3775423ab437c0aeea1c2d5644d8a6720e7d6fb9e853"
+        },
+        {
+          "path": "dist/catalog-diagnostic.d.ts.map",
+          "bytes": 1405,
+          "mode": 420,
+          "sha256": "db0d79fb901957f53ccda4c468f32595e3bd5499cd730822c36932154e2f58f4"
+        },
+        {
+          "path": "dist/catalog-diagnostic.js",
+          "bytes": 32409,
+          "mode": 420,
+          "sha256": "9caf6cbcb9d9387d796273a1a3bd35630c7baf9529c2b3bb38e3ba5687390a52"
+        },
+        {
+          "path": "dist/catalog-diagnostic.js.map",
+          "bytes": 25081,
+          "mode": 420,
+          "sha256": "0b4b2c7c2b68b9c627f2f951d3ab9d1cf4a07f1226b2e3c6a54555de27843fcb"
+        },
+        {
+          "path": "dist/codemode-model.d.ts",
+          "bytes": 17611,
+          "mode": 420,
+          "sha256": "679ae1a696ebd9f6daf8785558dced788f4dd9afb48b561ed44521c10d9a5b47"
+        },
+        {
+          "path": "dist/codemode-model.d.ts.map",
+          "bytes": 4010,
+          "mode": 420,
+          "sha256": "5a5257a28108955c6fef10c2181fee164e4d0f9b1b6f0bf7a1df9b43dff31c17"
+        },
+        {
+          "path": "dist/codemode-model.js",
+          "bytes": 20458,
+          "mode": 420,
+          "sha256": "c92285a91c05230432d582bf35fd9c0a00ad4bed8f46df4a3ab6c44dc5c5c2bd"
+        },
+        {
+          "path": "dist/codemode-model.js.map",
+          "bytes": 16666,
+          "mode": 420,
+          "sha256": "f219d8b7a2abda34058a82ad08d4e42a2a2289eefddab322c5662f5ccccb1c93"
+        },
+        {
+          "path": "dist/codemode.d.ts",
+          "bytes": 4910,
+          "mode": 420,
+          "sha256": "5e1bb826fce9622ccce3edc13730bad77364494986a6704e734f8dfa96263717"
+        },
+        {
+          "path": "dist/codemode.d.ts.map",
+          "bytes": 3054,
+          "mode": 420,
+          "sha256": "dcdd74fddc2f7484c5c9ab8fac8450322cff6533d9394e5ddab49a9d1168597e"
+        },
+        {
+          "path": "dist/codemode.js",
+          "bytes": 46420,
+          "mode": 420,
+          "sha256": "2c55cef2c518fdf71889456fcfa698611a09673ffd7d69cfccd9816450dd2aee"
+        },
+        {
+          "path": "dist/codemode.js.map",
+          "bytes": 39888,
+          "mode": 420,
+          "sha256": "5882824f0803fc5bca682f964e832ce2a3056e27e982252b9616f8699265e4be"
+        },
+        {
+          "path": "dist/corpus.d.ts",
+          "bytes": 1164,
+          "mode": 420,
+          "sha256": "12a2258cb8129629d1c25c46ccf602d09607f0194f21ef4a7595b78bc7269479"
+        },
+        {
+          "path": "dist/corpus.d.ts.map",
+          "bytes": 859,
+          "mode": 420,
+          "sha256": "6167aeb56b13fef2d7c86fadab17cf9896980e2b32e30fc2ec65836987259617"
+        },
+        {
+          "path": "dist/corpus.js",
+          "bytes": 32190,
+          "mode": 420,
+          "sha256": "dec92d2076db57bb37a479bc2a2d38ef3edf71b654a9a39534c8b66b8a899d28"
+        },
+        {
+          "path": "dist/corpus.js.map",
+          "bytes": 26193,
+          "mode": 420,
+          "sha256": "353b2a58257ed6bc9a882b1de6ce65e6fbfe041d2b96a7e31da242beb9a48f35"
+        },
+        {
+          "path": "dist/experiment.d.ts",
+          "bytes": 12052,
+          "mode": 420,
+          "sha256": "8f61231df060a965a49abc286db83c4a31303c5733ed8d4e505d8b176e202cb2"
+        },
+        {
+          "path": "dist/experiment.d.ts.map",
+          "bytes": 2204,
+          "mode": 420,
+          "sha256": "9e244c86fc8656f08642403cebe25b0c0c2677564ae127f1ca1d6f6b77bc4c17"
+        },
+        {
+          "path": "dist/experiment.js",
+          "bytes": 17968,
+          "mode": 420,
+          "sha256": "7d8db5ab7de23707ae350be833db9d6fc47e24e1b03750c51a611f8c8de3cfb4"
+        },
+        {
+          "path": "dist/experiment.js.map",
+          "bytes": 18313,
+          "mode": 420,
+          "sha256": "cc605329bd986a3daeb80ac8160b1381fc0cbedeca2f2f70d0b475830cd85250"
+        },
+        {
+          "path": "dist/fixtures.d.ts",
+          "bytes": 1122,
+          "mode": 420,
+          "sha256": "8fb57ba769f3f1f352be8edd133c4c8308d50caa7f2fd6a0c97dff5c0a45049f"
+        },
+        {
+          "path": "dist/fixtures.d.ts.map",
+          "bytes": 382,
+          "mode": 420,
+          "sha256": "f200ad6d4b473ce81351e0abc20f436f99ffcf77f428ca3861b419e92a6249ff"
+        },
+        {
+          "path": "dist/fixtures.js",
+          "bytes": 3557,
+          "mode": 420,
+          "sha256": "6bd936c2e86362e7edd06c9a8d647b34d7d3464d23fd8938858766d661c04d2a"
+        },
+        {
+          "path": "dist/fixtures.js.map",
+          "bytes": 3030,
+          "mode": 420,
+          "sha256": "faa01249286d15484da35ce6322696082233a0e9979e887074df57e11729d9fb"
+        },
+        {
+          "path": "dist/index.d.ts",
+          "bytes": 9451,
+          "mode": 420,
+          "sha256": "63337bb99e00674952daafac86238ef45391b4919fd7193d8f40644056777c95"
+        },
+        {
+          "path": "dist/index.d.ts.map",
+          "bytes": 5758,
+          "mode": 420,
+          "sha256": "4efb8208eb58fdc577f8b113a0dbc0a4dce66b38afe2eb365f88dcc32619c2b4"
+        },
+        {
+          "path": "dist/index.js",
+          "bytes": 5112,
+          "mode": 420,
+          "sha256": "5de0f1a5d81586fd5171f92aa12432edf5729cc7bc1eccd7c811c241efe34535"
+        },
+        {
+          "path": "dist/index.js.map",
+          "bytes": 2928,
+          "mode": 420,
+          "sha256": "e5029bbffac16e39ae7d742905efbfef9baa020a622a0e35caef467cceaee95c"
+        },
+        {
+          "path": "dist/m1c-corpus.d.ts",
+          "bytes": 966,
+          "mode": 420,
+          "sha256": "c890a1ec1dcf5f03e5d9cfb21dffbcb4935966398a87ab9592c66c77bd58896a"
+        },
+        {
+          "path": "dist/m1c-corpus.d.ts.map",
+          "bytes": 618,
+          "mode": 420,
+          "sha256": "a9bd0134f3f2af38bbb20d505576d60fd02ccaf19e3709fb9dc41d858e5f92e4"
+        },
+        {
+          "path": "dist/m1c-corpus.js",
+          "bytes": 17558,
+          "mode": 420,
+          "sha256": "61ad7b4668c67bcf9591c331af72e290dc5111bba8745201db076c9923e035ba"
+        },
+        {
+          "path": "dist/m1c-corpus.js.map",
+          "bytes": 13132,
+          "mode": 420,
+          "sha256": "6145df477df37f140bd40b66a0a1ea415653496434d123524118ff52a3369365"
+        },
+        {
+          "path": "dist/m2-benchmark.d.ts",
+          "bytes": 27688,
+          "mode": 420,
+          "sha256": "df246e8027f45968d3930fc52c3d799f1490cd3a795bbea8029935eabb88abbf"
+        },
+        {
+          "path": "dist/m2-benchmark.d.ts.map",
+          "bytes": 6869,
+          "mode": 420,
+          "sha256": "d4fc29bfc98a5253f2907f6c5dbd8feaf8263e30dcdc4d697433562cef9cdd27"
+        },
+        {
+          "path": "dist/m2-benchmark.js",
+          "bytes": 41882,
+          "mode": 420,
+          "sha256": "4e35d9506fff4e6f66f1e7eff7c5f07bca3762f6046d9271120f18aef75e7a0b"
+        },
+        {
+          "path": "dist/m2-benchmark.js.map",
+          "bytes": 34786,
+          "mode": 420,
+          "sha256": "b42509cb91416cdd008f5197671144b2f83c861b2f6f59387345f584ad2e6831"
+        },
+        {
+          "path": "dist/m2-corpus.d.ts",
+          "bytes": 1857,
+          "mode": 420,
+          "sha256": "a1c05aa370b29aa584427ee2f9a9937925cb03b81649620bfa021832c6457e0c"
+        },
+        {
+          "path": "dist/m2-corpus.d.ts.map",
+          "bytes": 1193,
+          "mode": 420,
+          "sha256": "825983b2aad9e1d768134a79cf7f11108987e795d47832fa65155fd3f5b3faf9"
+        },
+        {
+          "path": "dist/m2-corpus.js",
+          "bytes": 41835,
+          "mode": 420,
+          "sha256": "9ae271ba32a9ea0516dfcd0baf6da27db0728124873e74396dd39110ca62e724"
+        },
+        {
+          "path": "dist/m2-corpus.js.map",
+          "bytes": 31889,
+          "mode": 420,
+          "sha256": "0b71d00f8002c702cb8c346ee4849e7fd75287a5eaf365ad80bf0cf92ab3d0d8"
+        },
+        {
+          "path": "dist/m2-statistics.d.ts",
+          "bytes": 5239,
+          "mode": 420,
+          "sha256": "0ce432b4dfe8f2e4ccc46d4946a7360a86e200d710ab5fd496f788b385ae1908"
+        },
+        {
+          "path": "dist/m2-statistics.d.ts.map",
+          "bytes": 3108,
+          "mode": 420,
+          "sha256": "4450a3eec800fa10cf227f2d2fd800dda3a35d544daebbf662033317eb4f060b"
+        },
+        {
+          "path": "dist/m2-statistics.js",
+          "bytes": 18227,
+          "mode": 420,
+          "sha256": "830210d6d613b2ec73d8d2585261da4ce99b3e8c00fe1a717d3101fb23fd14a1"
+        },
+        {
+          "path": "dist/m2-statistics.js.map",
+          "bytes": 15118,
+          "mode": 420,
+          "sha256": "9749237335a59d1a3ffd938ecdb49951cacbba87cf66955c5df6f4fb2b1df78b"
+        },
+        {
+          "path": "dist/m6-corpus.d.ts",
+          "bytes": 2368,
+          "mode": 420,
+          "sha256": "c49665fe98ee01c73914a6671dbff2ce9cdb7825728cdae67f146754aecaf92b"
+        },
+        {
+          "path": "dist/m6-corpus.d.ts.map",
+          "bytes": 693,
+          "mode": 420,
+          "sha256": "e4be0b0e63646df68985efadba678b63726481f43e0964316f6913f9f06bc93f"
+        },
+        {
+          "path": "dist/m6-corpus.js",
+          "bytes": 5762,
+          "mode": 420,
+          "sha256": "c906c6f1da824b12e1d94e4f5941e08c48b93c11cc937c75b501d982740b23fb"
+        },
+        {
+          "path": "dist/m6-corpus.js.map",
+          "bytes": 4119,
+          "mode": 420,
+          "sha256": "c938ffc2aaf3135c6f749242efb8b9e3fa2ab5a6757cc44f307332a3f21c5252"
+        },
+        {
+          "path": "dist/m6c-corpus.d.ts",
+          "bytes": 1509,
+          "mode": 420,
+          "sha256": "d18a0fb94399cb5d7e323e25fda631d6bba2fe373577ed9a41bf15b32bffb716"
+        },
+        {
+          "path": "dist/m6c-corpus.d.ts.map",
+          "bytes": 676,
+          "mode": 420,
+          "sha256": "3abc46e88589f604d70e109dd6bbac46fc498c5136b617314739473c24246172"
+        },
+        {
+          "path": "dist/m6c-corpus.js",
+          "bytes": 3416,
+          "mode": 420,
+          "sha256": "a2ea393a5569c56b4db382bd3b2b93f026749dc589351559ea1eeba56d3c7cde"
+        },
+        {
+          "path": "dist/m6c-corpus.js.map",
+          "bytes": 2916,
+          "mode": 420,
+          "sha256": "d413973ce147693d2708d62c0d9747ce1cd9a193faf8ecf863a6b7eca27eab04"
+        },
+        {
+          "path": "dist/m6d-design.d.ts",
+          "bytes": 8629,
+          "mode": 420,
+          "sha256": "e827a25f133acdb457cd591bad4bd079657ec4dae4c5dc739a6d44cf534c8e88"
+        },
+        {
+          "path": "dist/m6d-design.d.ts.map",
+          "bytes": 1692,
+          "mode": 420,
+          "sha256": "85d2f14389946104770144e40f4cc0ea6d03d0744dd89eba1a1535af55b419c9"
+        },
+        {
+          "path": "dist/m6d-design.js",
+          "bytes": 14841,
+          "mode": 420,
+          "sha256": "35fcb36f4ef09ecfcf6a6efb7c396d0d9d8e9b52d6c7a6b15c74db0848c7657d"
+        },
+        {
+          "path": "dist/m6d-design.js.map",
+          "bytes": 11379,
+          "mode": 420,
+          "sha256": "8345b521f1cb8812f07db3c12398e4a477a394ba4201dd6246fddab58f6a00ee"
+        },
+        {
+          "path": "dist/model.d.ts",
+          "bytes": 13357,
+          "mode": 420,
+          "sha256": "75a95f31fdb74bd1b53b7e8a7c62ba8c43395d825eac8b11cd02e13005aeca39"
+        },
+        {
+          "path": "dist/model.d.ts.map",
+          "bytes": 3869,
+          "mode": 420,
+          "sha256": "cdd831c957628173c3d1ad11970bee4e028fcc25319a6fc39a6e0487e9c19fa9"
+        },
+        {
+          "path": "dist/model.js",
+          "bytes": 3262,
+          "mode": 420,
+          "sha256": "15ae2d8a2f8429751c4bbd976ef959bb22e0d78b4f61a47fa5c84dec538daf30"
+        },
+        {
+          "path": "dist/model.js.map",
+          "bytes": 3053,
+          "mode": 420,
+          "sha256": "113f352c95dfdcfb01ba893404b1f118ea30ac9cc2d75431f5faac0860880355"
+        },
+        {
+          "path": "dist/node-store.d.ts",
+          "bytes": 425,
+          "mode": 420,
+          "sha256": "b67a1296efbb221230af075a11b65ade4ed892b24b644974f5ad7b578bb17eb2"
+        },
+        {
+          "path": "dist/node-store.d.ts.map",
+          "bytes": 436,
+          "mode": 420,
+          "sha256": "e4d4b3ae608229a8f0c0c55d54d717c97bc5ee4e28862d7d60f7846c2bc10bd1"
+        },
+        {
+          "path": "dist/node-store.js",
+          "bytes": 7412,
+          "mode": 420,
+          "sha256": "242942cf7b45d2349783c01e876469968bdb6c90a9c25171ca7f90d88de19497"
+        },
+        {
+          "path": "dist/node-store.js.map",
+          "bytes": 7685,
+          "mode": 420,
+          "sha256": "d025f37bed17c9909c4d238c63d2ca09d5887ec61750b48c38b887f00f8ba399"
+        },
+        {
+          "path": "dist/pipeline.d.ts",
+          "bytes": 2003,
+          "mode": 420,
+          "sha256": "ade5f84093113d5b0e3878fdac5e8e3e15c83ff19adb95d496c2b87e0e5a9f65"
+        },
+        {
+          "path": "dist/pipeline.d.ts.map",
+          "bytes": 1784,
+          "mode": 420,
+          "sha256": "b7b88a2acdc8769d3fbd5dfbdad1283c90e97979435a48bcb384a6b860e1e677"
+        },
+        {
+          "path": "dist/pipeline.js",
+          "bytes": 25466,
+          "mode": 420,
+          "sha256": "9ea46a7b28f7ec474acbe4ee60cfbb0a108fe0f888df60f9de7abc2aba70977e"
+        },
+        {
+          "path": "dist/pipeline.js.map",
+          "bytes": 20973,
+          "mode": 420,
+          "sha256": "39474b9c50dd3dbfb058a2d4f8bf398c7b3b8a1aae5cf4cbefb84d581f873811"
+        },
+        {
+          "path": "dist/pricing.d.ts",
+          "bytes": 2309,
+          "mode": 420,
+          "sha256": "acd4db0f933b94fdc90384d9a5fdefa664a4fb1a7694fc0dd7ae30b9cae0eb9b"
+        },
+        {
+          "path": "dist/pricing.d.ts.map",
+          "bytes": 1127,
+          "mode": 420,
+          "sha256": "d962e435b09b89cc04bd78d9750373eba8251654a6b2116e4344b1f008b6bdfa"
+        },
+        {
+          "path": "dist/pricing.js",
+          "bytes": 5595,
+          "mode": 420,
+          "sha256": "489bfe10e14c07238792541c0e861914fd5526f73d16c439300b662fa6402832"
+        },
+        {
+          "path": "dist/pricing.js.map",
+          "bytes": 5931,
+          "mode": 420,
+          "sha256": "b1ba0186dbfbd35799cff9ba6987f61b4d55199fedb8bf5b0f517374c67383bb"
+        },
+        {
+          "path": "dist/recorded-adapter.d.ts",
+          "bytes": 5221,
+          "mode": 420,
+          "sha256": "355f586aea69c8abe3d91b4c51a281c36f164bfa2c7ac18a099efdbe0c6442d5"
+        },
+        {
+          "path": "dist/recorded-adapter.d.ts.map",
+          "bytes": 970,
+          "mode": 420,
+          "sha256": "c9f6ba0d64ecc7c15e6ba7112be74cbf1a5a105f3d4422260c72a8def30970d1"
+        },
+        {
+          "path": "dist/recorded-adapter.js",
+          "bytes": 5282,
+          "mode": 420,
+          "sha256": "1670cafbcc5178808735034ec8f515f4918c15e92a109c2dc91233f4f7a64569"
+        },
+        {
+          "path": "dist/recorded-adapter.js.map",
+          "bytes": 5415,
+          "mode": 420,
+          "sha256": "065f99bfcf0e026acaeeacce5c35826afc7658338b4f46a79a81edcf1ababc50"
+        },
+        {
+          "path": "dist/records.d.ts",
+          "bytes": 24642,
+          "mode": 420,
+          "sha256": "3a895c3d9c1cd4ce54f1976c1a5ba18f4ceae7daed0edc109aff369e4dd555a9"
+        },
+        {
+          "path": "dist/records.d.ts.map",
+          "bytes": 1101,
+          "mode": 420,
+          "sha256": "efd5625286fece1fe0ea6a3ac35af158306f2c3bf1c824294b0b72c9b51c3fd1"
+        },
+        {
+          "path": "dist/records.js",
+          "bytes": 5698,
+          "mode": 420,
+          "sha256": "5f3a844c1df8eb7b4a05355a3b18578e66c30a6009c0fbc340ffc2f9575e7aeb"
+        },
+        {
+          "path": "dist/records.js.map",
+          "bytes": 6109,
+          "mode": 420,
+          "sha256": "53920a24985aa7770e4d4524041b89d7669b75a5092020f4bea7a6807dc0ed74"
+        },
+        {
+          "path": "dist/repair-benchmark.d.ts",
+          "bytes": 1676,
+          "mode": 420,
+          "sha256": "6fb9f0d408d4e873c749609d737a2dad1df36168750f5954137f52368e442560"
+        },
+        {
+          "path": "dist/repair-benchmark.d.ts.map",
+          "bytes": 1224,
+          "mode": 420,
+          "sha256": "e2df9fc4093bbc217e1c1ef2f61d045c3c6e231f044814d2590ace0bccfcefc2"
+        },
+        {
+          "path": "dist/repair-benchmark.js",
+          "bytes": 4504,
+          "mode": 420,
+          "sha256": "00544b2c1136cd6ff0b19581f24a750eaf5c1326b32659db560d9b8de2fb89ea"
+        },
+        {
+          "path": "dist/repair-benchmark.js.map",
+          "bytes": 4270,
+          "mode": 420,
+          "sha256": "56443ccbdc11e658e2f318645b87d135f98541f6c3b278547a28c8f26d4508fb"
+        },
+        {
+          "path": "dist/strategy.d.ts",
+          "bytes": 28222,
+          "mode": 420,
+          "sha256": "32aec0d30a2a0c781c2a95dbd1e33687a3fcd4b4cf7d7d545101fe6e0caa645c"
+        },
+        {
+          "path": "dist/strategy.d.ts.map",
+          "bytes": 6876,
+          "mode": 420,
+          "sha256": "7a4ac161e88b8c7d02b3d3ffbb1d450e6157d9759436ec65d23f1d5949c80cbf"
+        },
+        {
+          "path": "dist/strategy.js",
+          "bytes": 42816,
+          "mode": 420,
+          "sha256": "de6c87354a4875bf82cea48c5a13340266e96f756997f32f6bf03ffbd554e567"
+        },
+        {
+          "path": "dist/strategy.js.map",
+          "bytes": 39240,
+          "mode": 420,
+          "sha256": "1c3890161ea69d2674f1d36ad1568d20fef485f2cc5ab9657755cff51233c9d1"
+        },
+        {
+          "path": "dist/strict-json.d.ts",
+          "bytes": 465,
+          "mode": 420,
+          "sha256": "1d9ca7e74112b8ef970084ab007c279358059b4b7bb9a166d5fbd9e1a1c51c61"
+        },
+        {
+          "path": "dist/strict-json.d.ts.map",
+          "bytes": 328,
+          "mode": 420,
+          "sha256": "82ad96aaf77f4c4281b0da130943d7d736bfd3651c1fa57c69f49d3ff6a1efe4"
+        },
+        {
+          "path": "dist/strict-json.js",
+          "bytes": 612,
+          "mode": 420,
+          "sha256": "b48a831d255d88e6f50dba9a60cae843cb5a711450d59b39b98fa204d4027793"
+        },
+        {
+          "path": "dist/strict-json.js.map",
+          "bytes": 593,
+          "mode": 420,
+          "sha256": "44e29c434c5dcd7e1e77b2fd191c295d3db9518c8b173ebd8fa4d2ca4bef7426"
+        },
+        {
+          "path": "dist/transport.d.ts",
+          "bytes": 1849,
+          "mode": 420,
+          "sha256": "dd9265bac60983d44ddd2ad6827c1400ef5c8939a5b6b0338720304cab6a01ee"
+        },
+        {
+          "path": "dist/transport.d.ts.map",
+          "bytes": 1144,
+          "mode": 420,
+          "sha256": "83c8671fd417babd555a118790b5e3a0463e11326eac9d7ef24085bad9f8f957"
+        },
+        {
+          "path": "dist/transport.js",
+          "bytes": 26631,
+          "mode": 420,
+          "sha256": "10580db450b009dbe3b18e96b835db80e3ea269564f1750fb4a8bccbf8c0171e"
+        },
+        {
+          "path": "dist/transport.js.map",
+          "bytes": 24003,
+          "mode": 420,
+          "sha256": "1ae1f76e952b3e9362a82e24a0d6b15c6d71b84f68f46b9faa2c6135512d9d9a"
+        },
+        {
+          "path": "dist/validity.d.ts",
+          "bytes": 1173,
+          "mode": 420,
+          "sha256": "eddbc952625af971c1fe1bd37105d4794213e28af02ec05e385c471a5e937bd8"
+        },
+        {
+          "path": "dist/validity.d.ts.map",
+          "bytes": 965,
+          "mode": 420,
+          "sha256": "21cc4a3adc478fdc63416ef21830754655c337b57e010f408cdd774a98c95a76"
+        },
+        {
+          "path": "dist/validity.js",
+          "bytes": 29319,
+          "mode": 420,
+          "sha256": "0b30ef78188e61f2ecac346d5dfe3454fc5000c29a101ad72f358a38faf802e3"
+        },
+        {
+          "path": "dist/validity.js.map",
+          "bytes": 25962,
+          "mode": 420,
+          "sha256": "1336a6c774096b5d9812833ec613a4890c793dee4e72add291ee7f3d5c796cfb"
+        },
+        {
+          "path": "dist/witness.d.ts",
+          "bytes": 451,
+          "mode": 420,
+          "sha256": "6782ba58e3b00231795bf2dbd2a46c69834b74fb4247e23edd2d815bfe6caa07"
+        },
+        {
+          "path": "dist/witness.d.ts.map",
+          "bytes": 418,
+          "mode": 420,
+          "sha256": "8928759465d4921e9a4045dadbdf92956f81c6a15b3de2489d05afd49d12a882"
+        },
+        {
+          "path": "dist/witness.js",
+          "bytes": 3172,
+          "mode": 420,
+          "sha256": "d62741bcc2650ed0037af0d8f3646e547f9046fde4a270f3044c86d7c164ada4"
+        },
+        {
+          "path": "dist/witness.js.map",
+          "bytes": 2951,
+          "mode": 420,
+          "sha256": "5a5b61e901a43a329087add77af02adc8439b5b4862972aeb7cd86482a0ce60d"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 707,
+          "mode": 420,
+          "sha256": "cb602b22ecb09db87b1e18b31f0fb7d6e265d694a0bda0b7db7ae6a935f79dd5"
+        },
+        {
+          "path": "package.json",
+          "bytes": 2425,
+          "mode": 420,
+          "sha256": "4e9754b9cc0a8a8050aa54c694270ed6fd899a58a6ab837e78356bb791610014"
+        },
+        {
+          "path": "README.md",
+          "bytes": 3589,
+          "mode": 420,
+          "sha256": "233742022365a1efab1e5fa1b0a7a868b2a8f0d4b4073149f25701902a1c47d0"
+        }
+      ],
+      "dependencies": [
+        {
+          "section": "dependencies",
+          "name": "@babel/parser",
+          "range": "7.29.7"
+        },
+        {
+          "section": "dependencies",
+          "name": "@babel/types",
+          "range": "7.29.7"
+        },
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/lachesis",
+          "range": "0.1.0-alpha.4"
+        },
+        { "section": "dependencies", "name": "zod", "range": "4.4.3" }
+      ],
+      "sourceMaps": [
+        "dist/benchmark.js.map",
+        "dist/case.js.map",
+        "dist/catalog-conformance.js.map",
+        "dist/catalog-diagnostic.js.map",
+        "dist/codemode-model.js.map",
+        "dist/codemode.js.map",
+        "dist/corpus.js.map",
+        "dist/experiment.js.map",
+        "dist/fixtures.js.map",
+        "dist/index.js.map",
+        "dist/m1c-corpus.js.map",
+        "dist/m2-benchmark.js.map",
+        "dist/m2-corpus.js.map",
+        "dist/m2-statistics.js.map",
+        "dist/m6-corpus.js.map",
+        "dist/m6c-corpus.js.map",
+        "dist/m6d-design.js.map",
+        "dist/model.js.map",
+        "dist/node-store.js.map",
+        "dist/pipeline.js.map",
+        "dist/pricing.js.map",
+        "dist/recorded-adapter.js.map",
+        "dist/records.js.map",
+        "dist/repair-benchmark.js.map",
+        "dist/strategy.js.map",
+        "dist/strict-json.js.map",
+        "dist/transport.js.map",
+        "dist/validity.js.map",
+        "dist/witness.js.map"
+      ],
+      "declarations": [
+        "dist/benchmark.d.ts",
+        "dist/case.d.ts",
+        "dist/catalog-conformance.d.ts",
+        "dist/catalog-diagnostic.d.ts",
+        "dist/codemode-model.d.ts",
+        "dist/codemode.d.ts",
+        "dist/corpus.d.ts",
+        "dist/experiment.d.ts",
+        "dist/fixtures.d.ts",
+        "dist/index.d.ts",
+        "dist/m1c-corpus.d.ts",
+        "dist/m2-benchmark.d.ts",
+        "dist/m2-corpus.d.ts",
+        "dist/m2-statistics.d.ts",
+        "dist/m6-corpus.d.ts",
+        "dist/m6c-corpus.d.ts",
+        "dist/m6d-design.d.ts",
+        "dist/model.d.ts",
+        "dist/node-store.d.ts",
+        "dist/pipeline.d.ts",
+        "dist/pricing.d.ts",
+        "dist/recorded-adapter.d.ts",
+        "dist/records.d.ts",
+        "dist/repair-benchmark.d.ts",
+        "dist/strategy.d.ts",
+        "dist/strict-json.d.ts",
+        "dist/transport.d.ts",
+        "dist/validity.d.ts",
+        "dist/witness.d.ts"
+      ],
+      "declarationMaps": [
+        "dist/benchmark.d.ts.map",
+        "dist/case.d.ts.map",
+        "dist/catalog-conformance.d.ts.map",
+        "dist/catalog-diagnostic.d.ts.map",
+        "dist/codemode-model.d.ts.map",
+        "dist/codemode.d.ts.map",
+        "dist/corpus.d.ts.map",
+        "dist/experiment.d.ts.map",
+        "dist/fixtures.d.ts.map",
+        "dist/index.d.ts.map",
+        "dist/m1c-corpus.d.ts.map",
+        "dist/m2-benchmark.d.ts.map",
+        "dist/m2-corpus.d.ts.map",
+        "dist/m2-statistics.d.ts.map",
+        "dist/m6-corpus.d.ts.map",
+        "dist/m6c-corpus.d.ts.map",
+        "dist/m6d-design.d.ts.map",
+        "dist/model.d.ts.map",
+        "dist/node-store.d.ts.map",
+        "dist/pipeline.d.ts.map",
+        "dist/pricing.d.ts.map",
+        "dist/recorded-adapter.d.ts.map",
+        "dist/records.d.ts.map",
+        "dist/repair-benchmark.d.ts.map",
+        "dist/strategy.d.ts.map",
+        "dist/strict-json.d.ts.map",
+        "dist/transport.d.ts.map",
+        "dist/validity.d.ts.map",
+        "dist/witness.d.ts.map"
+      ],
+      "executableFiles": [],
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/nicia-ai/lachesis.git",
+        "directory": "packages/generator"
+      },
+      "packageType": "module",
+      "engines": { "node": ">=24 <25" },
+      "bin": null,
+      "exports": {
+        ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+        "./node": {
+          "types": "./dist/node-store.d.ts",
+          "import": "./dist/node-store.js"
+        }
+      }
+    },
+    {
+      "package": "@nicia-ai/lachesis-runtime",
+      "version": "0.1.0-alpha.4",
+      "tarball": "nicia-ai-lachesis-runtime-0.1.0-alpha.4.tgz",
+      "sha256": "22ed70fa0490afa064c692b4f3285a672a1763618efbdc423f2a7b499e7809ef",
+      "bytes": 11273,
+      "packRuns": [
+        {
+          "run": 1,
+          "sha256": "22ed70fa0490afa064c692b4f3285a672a1763618efbdc423f2a7b499e7809ef",
+          "bytes": 11273
+        },
+        {
+          "run": 2,
+          "sha256": "22ed70fa0490afa064c692b4f3285a672a1763618efbdc423f2a7b499e7809ef",
+          "bytes": 11273
+        },
+        {
+          "run": 3,
+          "sha256": "22ed70fa0490afa064c692b4f3285a672a1763618efbdc423f2a7b499e7809ef",
+          "bytes": 11273
+        }
+      ],
+      "npmPackageContents": [
+        {
+          "path": "CHANGELOG.md",
+          "bytes": 892,
+          "mode": 420,
+          "sha256": "f6d2a477f5e0fcc4361500a879e7d8e2f7c12eddda93f9d9b6a1ea0e5123ae9d"
+        },
+        {
+          "path": "dist/index.d.ts",
+          "bytes": 3148,
+          "mode": 420,
+          "sha256": "cb8d83489f58ccbec1a2c842ae2be07ab8941b9889aa80547b27df9c1ade2bc6"
+        },
+        {
+          "path": "dist/index.d.ts.map",
+          "bytes": 1945,
+          "mode": 420,
+          "sha256": "897ace4c5eaaa48da529f2b117dc39aee03661d840c4781c5e8c009e591768d8"
+        },
+        {
+          "path": "dist/index.js",
+          "bytes": 1615,
+          "mode": 420,
+          "sha256": "1b9d3ee5bd5214fa325d75bf470ef099f9b180dde20d4a3002d5957a7f74fd4b"
+        },
+        {
+          "path": "dist/index.js.map",
+          "bytes": 905,
+          "mode": 420,
+          "sha256": "c264bf302c78e5367735203acf6cc29189fad71687d633860586077017076fa8"
+        },
+        {
+          "path": "dist/node.d.ts",
+          "bytes": 1902,
+          "mode": 420,
+          "sha256": "c8315cd4b34fec7610bac87927481744387009304977690c95c4202d687e0e32"
+        },
+        {
+          "path": "dist/node.d.ts.map",
+          "bytes": 1527,
+          "mode": 420,
+          "sha256": "52fc9bc570fbf44184eb13815fc8c9dea56b04769bba4d18f5f41a45ac7d851f"
+        },
+        {
+          "path": "dist/node.js",
+          "bytes": 20295,
+          "mode": 420,
+          "sha256": "145a515b1cdb75bdf1180ee5ab4507dfde1c34ceeff3940eac6fa2cde8a02cc1"
+        },
+        {
+          "path": "dist/node.js.map",
+          "bytes": 17297,
+          "mode": 420,
+          "sha256": "ff32cfac11b9d3632fe59fdba90a54c64cca0b3517e548c4a8625b80bab5eed2"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 674,
+          "mode": 420,
+          "sha256": "07fcee382a9bf4385f22faf891a9265501987939887a2c7183434a496e1629f9"
+        },
+        {
+          "path": "package.json",
+          "bytes": 1522,
+          "mode": 420,
+          "sha256": "c8929df62c5b4c7c9f966b0f89923f00809ff7d532432382735c27348856156b"
+        },
+        {
+          "path": "README.md",
+          "bytes": 1806,
+          "mode": 420,
+          "sha256": "7cf8d0c2754548ed1622c9e43d95c09d81f5c7d24f5201394c5abef4e85d265b"
+        }
+      ],
+      "dependencies": [
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/lachesis",
+          "range": "0.1.0-alpha.4"
+        },
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/lachesis-evidence",
+          "range": "0.1.0-alpha.4"
+        }
+      ],
+      "sourceMaps": ["dist/index.js.map", "dist/node.js.map"],
+      "declarations": ["dist/index.d.ts", "dist/node.d.ts"],
+      "declarationMaps": ["dist/index.d.ts.map", "dist/node.d.ts.map"],
+      "executableFiles": [],
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/nicia-ai/lachesis.git",
+        "directory": "packages/runtime"
+      },
+      "packageType": "module",
+      "engines": { "node": ">=24 <25" },
+      "bin": null,
+      "exports": {
+        ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+        "./node": { "types": "./dist/node.d.ts", "import": "./dist/node.js" }
+      }
+    },
+    {
+      "package": "@nicia-ai/lachesis-evidence-typegraph",
+      "version": "0.1.0-alpha.4",
+      "tarball": "nicia-ai-lachesis-evidence-typegraph-0.1.0-alpha.4.tgz",
+      "sha256": "26f6f3775f1d9eda210a86b9f4f17466e9dfec245ef38205d8e281b53c5f2cb5",
+      "bytes": 16131,
+      "packRuns": [
+        {
+          "run": 1,
+          "sha256": "26f6f3775f1d9eda210a86b9f4f17466e9dfec245ef38205d8e281b53c5f2cb5",
+          "bytes": 16131
+        },
+        {
+          "run": 2,
+          "sha256": "26f6f3775f1d9eda210a86b9f4f17466e9dfec245ef38205d8e281b53c5f2cb5",
+          "bytes": 16131
+        },
+        {
+          "run": 3,
+          "sha256": "26f6f3775f1d9eda210a86b9f4f17466e9dfec245ef38205d8e281b53c5f2cb5",
+          "bytes": 16131
+        }
+      ],
+      "npmPackageContents": [
+        {
+          "path": "CHANGELOG.md",
+          "bytes": 839,
+          "mode": 420,
+          "sha256": "a3e847581dc8da36b061effaf7d006dbc8065e8f40e53236fa7d3dd62f4a1236"
+        },
+        {
+          "path": "dist/contract.d.ts",
+          "bytes": 4112,
+          "mode": 420,
+          "sha256": "aec76fe56cce131549ff117b4ae945c9ae83be1db7016b626cdfa5d28181964c"
+        },
+        {
+          "path": "dist/contract.d.ts.map",
+          "bytes": 1694,
+          "mode": 420,
+          "sha256": "6a14be69f5d8fab5386260fb20133764ff67789dfb695677c167d3e2f76e27c5"
+        },
+        {
+          "path": "dist/contract.js",
+          "bytes": 2000,
+          "mode": 420,
+          "sha256": "328a6840078c2fecf2a4326948af0b4bda0eb0b23ea430912942705dd7681e73"
+        },
+        {
+          "path": "dist/contract.js.map",
+          "bytes": 1766,
+          "mode": 420,
+          "sha256": "5a381a9f253cd6456b41bca1ea6e838f11107be12aeb071227dbefb943326c04"
+        },
+        {
+          "path": "dist/index.d.ts",
+          "bytes": 721,
+          "mode": 420,
+          "sha256": "c42a62d982a8e8909437e54015cf96210291a4f0156de5388f4ef2b0654cbaec"
+        },
+        {
+          "path": "dist/index.d.ts.map",
+          "bytes": 476,
+          "mode": 420,
+          "sha256": "31e199d11497ff12c14144f2979a9ad65f910202d18e8cf1c5ac3544e2625195"
+        },
+        {
+          "path": "dist/index.js",
+          "bytes": 495,
+          "mode": 420,
+          "sha256": "70fc83c2d15fa2ad3120b21cbc023fd83e411a3bf23c82bf3d1cb60462aea42f"
+        },
+        {
+          "path": "dist/index.js.map",
+          "bytes": 348,
+          "mode": 420,
+          "sha256": "15ce426892e710cb365fa2ce365594821503cf94bf885d4e66f5f3fbc056b70f"
+        },
+        {
+          "path": "dist/m5.d.ts",
+          "bytes": 554,
+          "mode": 420,
+          "sha256": "87edabac1bee71f00fea0b2016b9573a16679b9964b1dbe12b70429133db57a5"
+        },
+        {
+          "path": "dist/m5.d.ts.map",
+          "bytes": 377,
+          "mode": 420,
+          "sha256": "658fbe18a56c697a8b77b365fb527dfb48c8d6377a34d6f8faf47bcd0355f5c3"
+        },
+        {
+          "path": "dist/m5.js",
+          "bytes": 2631,
+          "mode": 420,
+          "sha256": "3451909bf8b998f5b2731f38db20d31c337a54b14422277fefd60139b94488f7"
+        },
+        {
+          "path": "dist/m5.js.map",
+          "bytes": 2068,
+          "mode": 420,
+          "sha256": "7fea69d7faf61436b5afe9d6a5d7d47406ac25d387878253e1b5fcbadc43d0d0"
+        },
+        {
+          "path": "dist/sqlite.d.ts",
+          "bytes": 1435,
+          "mode": 420,
+          "sha256": "92a598e50f4c8a5d8b5168116ed309333cc6e4ea815692c28a4401779316d518"
+        },
+        {
+          "path": "dist/sqlite.d.ts.map",
+          "bytes": 1001,
+          "mode": 420,
+          "sha256": "625ef505150948338de36fec7385bf1626046f4c59f15fed6cecf2f60aac472b"
+        },
+        {
+          "path": "dist/sqlite.js",
+          "bytes": 3552,
+          "mode": 420,
+          "sha256": "fef8890184b178f407e72f006e8879edfd5940ae7b562f9e5ff89c8b54e8e3a3"
+        },
+        {
+          "path": "dist/sqlite.js.map",
+          "bytes": 3055,
+          "mode": 420,
+          "sha256": "d3c0e70798db0ee8a9b94e35b3679aecd63a58a1ff09e17f1e3f7df089d5c47d"
+        },
+        {
+          "path": "dist/store.d.ts",
+          "bytes": 8473,
+          "mode": 420,
+          "sha256": "d01670528d88bbee3cb54966490567a06520af3233fc0a9479a48c6d15fcf8bd"
+        },
+        {
+          "path": "dist/store.d.ts.map",
+          "bytes": 774,
+          "mode": 420,
+          "sha256": "7079896e23c92a011eb9233904be0a58e28f803febee4fa4146c0fe623700eaf"
+        },
+        {
+          "path": "dist/store.js",
+          "bytes": 18554,
+          "mode": 420,
+          "sha256": "768d75dbcc3e959f9e05057d00d2e8727202dd86bfde00147bbe35f895890bd2"
+        },
+        {
+          "path": "dist/store.js.map",
+          "bytes": 16595,
+          "mode": 420,
+          "sha256": "478ae72a8803ba9aba5b8126fab2b3e2c0fa354cf637a2b44cc62b830b9df8b2"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 713,
+          "mode": 420,
+          "sha256": "33fb64ee6e92c5b00c79f9f56b2fc7480b59d6bc3e13dbff5b9ecd6e2251c7a8"
+        },
+        {
+          "path": "package.json",
+          "bytes": 2038,
+          "mode": 420,
+          "sha256": "ecbdb3055aa986254b30565117eb13d99a4e7bc31f008159aa9d55061597b04e"
+        },
+        {
+          "path": "README.md",
+          "bytes": 1800,
+          "mode": 420,
+          "sha256": "7d0a7db704485d1dac721e37f412ad762acb31ed5aba9b74478065529a27d7cc"
+        }
+      ],
+      "dependencies": [
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/lachesis",
+          "range": "0.1.0-alpha.4"
+        },
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/lachesis-evidence",
+          "range": "0.1.0-alpha.4"
+        },
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/lachesis-runtime",
+          "range": "0.1.0-alpha.4"
+        },
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/typegraph",
+          "range": "0.38.0"
+        },
+        { "section": "dependencies", "name": "zod", "range": "4.4.3" },
+        {
+          "section": "peerDependencies",
+          "name": "better-sqlite3",
+          "range": ">=9.0.0 <13.0.0"
+        }
+      ],
+      "sourceMaps": [
+        "dist/contract.js.map",
+        "dist/index.js.map",
+        "dist/m5.js.map",
+        "dist/sqlite.js.map",
+        "dist/store.js.map"
+      ],
+      "declarations": [
+        "dist/contract.d.ts",
+        "dist/index.d.ts",
+        "dist/m5.d.ts",
+        "dist/sqlite.d.ts",
+        "dist/store.d.ts"
+      ],
+      "declarationMaps": [
+        "dist/contract.d.ts.map",
+        "dist/index.d.ts.map",
+        "dist/m5.d.ts.map",
+        "dist/sqlite.d.ts.map",
+        "dist/store.d.ts.map"
+      ],
+      "executableFiles": [],
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/nicia-ai/lachesis.git",
+        "directory": "packages/evidence-typegraph"
+      },
+      "packageType": "module",
+      "engines": { "node": ">=24 <25" },
+      "bin": null,
+      "exports": {
+        ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+        "./sqlite": {
+          "types": "./dist/sqlite.d.ts",
+          "import": "./dist/sqlite.js"
+        }
+      }
+    },
+    {
+      "package": "@nicia-ai/lachesis-cli",
+      "version": "0.1.0-alpha.4",
+      "tarball": "nicia-ai-lachesis-cli-0.1.0-alpha.4.tgz",
+      "sha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+      "bytes": 68725,
+      "packRuns": [
+        {
+          "run": 1,
+          "sha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+          "bytes": 68725
+        },
+        {
+          "run": 2,
+          "sha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+          "bytes": 68725
+        },
+        {
+          "run": 3,
+          "sha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+          "bytes": 68725
+        }
+      ],
+      "npmPackageContents": [
+        {
+          "path": "CHANGELOG.md",
+          "bytes": 345,
+          "mode": 420,
+          "sha256": "eda2486fb19c049a233dad597d2d5166e7bf56dda666487b57838fd098de500f"
+        },
+        {
+          "path": "dist/cli.js",
+          "bytes": 9492,
+          "mode": 493,
+          "sha256": "f8d62ee62e048c08141047eaedeb556ce6c61e907a42035d975155ab6f3b55a5"
+        },
+        {
+          "path": "dist/cli.js.map",
+          "bytes": 8731,
+          "mode": 420,
+          "sha256": "f9f4a688c0ff7bbb9bab5f51b587f1513bd933e477f02f757bc5d0a29809cb04"
+        },
+        {
+          "path": "dist/example-catalog.js",
+          "bytes": 6177,
+          "mode": 420,
+          "sha256": "e22f97da5473609a9ebe1ba3b00ff25f3165049b8568701f839470b6659cb86c"
+        },
+        {
+          "path": "dist/example-catalog.js.map",
+          "bytes": 5767,
+          "mode": 420,
+          "sha256": "3921a3d0de5914603620564f0a0bb6a7f184387be972f9cdfa2fc4dddc3aaf29"
+        },
+        {
+          "path": "dist/internal/catalog-compare-command.js",
+          "bytes": 50135,
+          "mode": 420,
+          "sha256": "ae9a96f67847ec84b98cf82927ddab501f36e262effcc901c83e4e5ccdc10eae"
+        },
+        {
+          "path": "dist/internal/catalog-compare-command.js.map",
+          "bytes": 43631,
+          "mode": 420,
+          "sha256": "ecd45a252ee01a71f83f8c9883a112e17ac7cafec93b2fbd02aa70e2ebb96e76"
+        },
+        {
+          "path": "dist/internal/catalog-manifest-command.js",
+          "bytes": 17955,
+          "mode": 420,
+          "sha256": "d059cda92cd450660823d17485219ff78487d7981a351deb8722e8edeca60481"
+        },
+        {
+          "path": "dist/internal/catalog-manifest-command.js.map",
+          "bytes": 16414,
+          "mode": 420,
+          "sha256": "6145c4327db2d4122f7ef2d85142993f414fb0368f951abec9fca1fd09453eb3"
+        },
+        {
+          "path": "dist/internal/report-canonical.js",
+          "bytes": 4161,
+          "mode": 420,
+          "sha256": "91a62102ac7e99c4ac36525fd3c53762297541c8f76f8a738aa4507c6fba09b3"
+        },
+        {
+          "path": "dist/internal/report-canonical.js.map",
+          "bytes": 4309,
+          "mode": 420,
+          "sha256": "307e32ed1e79aa033d2d90c0dc64082430d02097e37d5f8aeca66e71de34568c"
+        },
+        {
+          "path": "dist/internal/report-contract.js",
+          "bytes": 36527,
+          "mode": 420,
+          "sha256": "0fa174a050a0a2512ab0abbc2250498e3f18ea6aa981319c891f28a967e3f5ca"
+        },
+        {
+          "path": "dist/internal/report-contract.js.map",
+          "bytes": 32900,
+          "mode": 420,
+          "sha256": "e36e2dd0508c5afaaa111a6651110c5cb9b25df94846d27e027a4fbe9a70eb14"
+        },
+        {
+          "path": "dist/internal/report-renderer.js",
+          "bytes": 5566,
+          "mode": 420,
+          "sha256": "1dd8fecea03676dbf72d124d7a0aed06cd755ccc94f44508c53dc2728af6b480"
+        },
+        {
+          "path": "dist/internal/report-renderer.js.map",
+          "bytes": 4896,
+          "mode": 420,
+          "sha256": "da39fd9d0fd272771daa52986295a2359550c34fa68a04bc64df8dc3d9659afd"
+        },
+        {
+          "path": "dist/internal/report-schema.js",
+          "bytes": 16649,
+          "mode": 420,
+          "sha256": "35fbf69c939bd6fd75bb117f91f378c03f6718826a717da0eb5af6a0a0eef1ea"
+        },
+        {
+          "path": "dist/internal/report-schema.js.map",
+          "bytes": 15789,
+          "mode": 420,
+          "sha256": "358e41d622208590582e05015b7ce66f3f447192c720619ff382121738a60ad6"
+        },
+        {
+          "path": "dist/internal/report-verify-command.js",
+          "bytes": 13319,
+          "mode": 420,
+          "sha256": "3fae4ab9a08d2a89ccbc0652822b72ab5fcd99a2fdd05e2e4d31fd09f5486913"
+        },
+        {
+          "path": "dist/internal/report-verify-command.js.map",
+          "bytes": 12233,
+          "mode": 420,
+          "sha256": "b50f035a556ee60619e76862c4b064e5b6ebf95a29a7f92de271634de10d52d0"
+        },
+        {
+          "path": "dist/internal/secure-files.js",
+          "bytes": 18604,
+          "mode": 420,
+          "sha256": "e47bbb53d7cc82782c3223b86b229f15542aa196f46e57acbe992618041f5dd5"
+        },
+        {
+          "path": "dist/internal/secure-files.js.map",
+          "bytes": 19190,
+          "mode": 420,
+          "sha256": "35eb3e278ae56657151096934987e1ec8fc1c5e777e3987b8f1b9a7beafea235"
+        },
+        {
+          "path": "dist/internal/zod-json-schema.js",
+          "bytes": 876,
+          "mode": 420,
+          "sha256": "03fb290a2fa4c7bad87ed2fdb2c4f2a257dce4ab4bfd791ba20f549b0379a8cd"
+        },
+        {
+          "path": "dist/internal/zod-json-schema.js.map",
+          "bytes": 693,
+          "mode": 420,
+          "sha256": "c8a4b3fd078cedce53ea31f169025a9bc4b823180525bd0c9fe2675b39f95abc"
+        },
+        {
+          "path": "LICENSE",
+          "bytes": 11338,
+          "mode": 420,
+          "sha256": "1f25afa5f2c0bb79817c2ab472af0db34641cb0a6428219ad7b44e01ee3792ac"
+        },
+        {
+          "path": "package.json",
+          "bytes": 991,
+          "mode": 420,
+          "sha256": "99e140d95362144dd39f5aa6e392f50e8ef108be892e34358ad8cda57043bd72"
+        },
+        {
+          "path": "README.md",
+          "bytes": 9404,
+          "mode": 420,
+          "sha256": "d23d55b732bcdd5acb5fe9a640a6224a96d9a5cc406450af9900377490501fb8"
+        }
+      ],
+      "dependencies": [
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/lachesis",
+          "range": "0.1.0-alpha.4"
+        },
+        {
+          "section": "dependencies",
+          "name": "@nicia-ai/lachesis-generator",
+          "range": "0.1.0-alpha.4"
+        },
+        { "section": "dependencies", "name": "zod", "range": "4.4.3" }
+      ],
+      "sourceMaps": [
+        "dist/cli.js.map",
+        "dist/example-catalog.js.map",
+        "dist/internal/catalog-compare-command.js.map",
+        "dist/internal/catalog-manifest-command.js.map",
+        "dist/internal/report-canonical.js.map",
+        "dist/internal/report-contract.js.map",
+        "dist/internal/report-renderer.js.map",
+        "dist/internal/report-schema.js.map",
+        "dist/internal/report-verify-command.js.map",
+        "dist/internal/secure-files.js.map",
+        "dist/internal/zod-json-schema.js.map"
+      ],
+      "declarations": [],
+      "declarationMaps": [],
+      "executableFiles": [{ "path": "dist/cli.js", "mode": 493 }],
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/nicia-ai/lachesis.git",
+        "directory": "apps/cli"
+      },
+      "packageType": "module",
+      "engines": { "node": ">=24 <25" },
+      "bin": { "lachesis": "./dist/cli.js" },
+      "exports": null
+    }
+  ]
+}

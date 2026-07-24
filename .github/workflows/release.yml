@@ -18,10 +18,10 @@ permissions:
 
 env:
   RELEASE_COMMIT: ${{ inputs.release_commit }}
-  RELEASE_VERSION: 0.1.0-alpha.3
-  RELEASE_TAG: v0.1.0-alpha.3
-  RELEASE_NOTES: docs/m7c-alpha3-release-notes.md
-  RELEASE_CHECKSUMS: docs/m7c-alpha3-release.sha256
+  RELEASE_VERSION: 0.1.0-alpha.4
+  RELEASE_TAG: v0.1.0-alpha.4
+  RELEASE_NOTES: docs/m8b2b-alpha4-release-notes.md
+  RELEASE_CHECKSUMS: docs/m8b2b-alpha4-release.sha256
 
 jobs:
   release:
@@ -74,9 +74,12 @@ jobs:
           node - <<'NODE'
           const version = process.env.NPM_VERSION;
           if (version === undefined) throw new Error("npm version is unavailable");
-          const [major, minor] = version.split(".").map(Number);
-          if (major < 11 || (major === 11 && minor < 15)) {
-            throw new Error(`npm 11.15.0 or newer is required; found ${version}`);
+          const [major, minor, patch] = version.split(".").map(Number);
+          if (
+            major < 11 ||
+            (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))
+          ) {
+            throw new Error(`npm 11.5.1 or newer is required; found ${version}`);
           }
           NODE
 
@@ -89,55 +92,8 @@ jobs:
           pnpm build
           pnpm typecheck
           pnpm lint
-          parity_passed=false
-          for attempt in 1 2 3
-          do
-            if pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
-              --maxWorkers=1 \
-              --testNamePattern='preserves compiler, visible-view, validation, and reconstruction identities'
-            then
-              parity_passed=true
-              break
-            fi
-            echo "Parity timing gate did not complete on attempt $attempt" >&2
-          done
-          test "$parity_passed" = "true"
-          pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
-            --maxWorkers=1 \
-            --testNamePattern='^(?!.*preserves compiler, visible-view, validation, and reconstruction identities).*$'
-          pnpm exec vitest run --maxWorkers=1 \
-            --exclude=packages/evidence-typegraph/tests/parity.test.ts
-          mkdir -p .vitest-reports
-          cat > "$RUNNER_TEMP/vitest-release-shard.config.mjs" <<EOF
-          import base from "${GITHUB_WORKSPACE}/vitest.config.ts";
-          export default {
-            ...base,
-            test: {
-              ...base.test,
-              coverage: {
-                ...base.test?.coverage,
-                thresholds: { branches: 0, functions: 0, lines: 0, statements: 0 },
-              },
-            },
-          };
-          EOF
-          pnpm exec vitest run packages/evidence-typegraph/tests/parity.test.ts \
-            --maxWorkers=1 \
-            --testNamePattern='^(?!.*preserves compiler, visible-view, validation, and reconstruction identities).*$' \
-            --coverage \
-            --coverage.reportsDirectory="$RUNNER_TEMP/coverage-parity-rest" \
-            --config="$RUNNER_TEMP/vitest-release-shard.config.mjs" \
-            --reporter=blob \
-            --outputFile=.vitest-reports/parity-rest.json
-          pnpm exec vitest run \
-            --maxWorkers=1 \
-            --exclude=packages/evidence-typegraph/tests/parity.test.ts \
-            --coverage \
-            --coverage.reportsDirectory="$RUNNER_TEMP/coverage-rest" \
-            --config="$RUNNER_TEMP/vitest-release-shard.config.mjs" \
-            --reporter=blob \
-            --outputFile=.vitest-reports/rest.json
-          pnpm exec vitest run --merge-reports=.vitest-reports --coverage
+          pnpm test
+          pnpm test:coverage
           pnpm build
           pnpm smoke
           pnpm test:examples
@@ -145,6 +101,10 @@ jobs:
           pnpm audit:source-safety
           pnpm audit:public-api
           pnpm audit:release-checksums
+          node scripts/audit-historical-checksum.mjs \
+            5b2150c9dce49f67531589d81d186b941199c19e \
+            docs/m8b2a-results.sha256 \
+            b4ab2e772922c3091d3c52c7451596dd86f4595b4e4eb7885720507a7b50aff6
           mkdir -p "$RUNNER_TEMP/lachesis-pack-audit-prefetch"
           cat > "$RUNNER_TEMP/lachesis-pack-audit-prefetch/package.json" <<'EOF'
           {
@@ -180,6 +140,7 @@ jobs:
             ["packages/runtime/package.json", "@nicia-ai/lachesis-runtime"],
             ["packages/evidence-typegraph/package.json", "@nicia-ai/lachesis-evidence-typegraph"],
             ["packages/generator/package.json", "@nicia-ai/lachesis-generator"],
+            ["apps/cli/package.json", "@nicia-ai/lachesis-cli"],
           ]);
           const publicPackages = new Map();
           for (const root of ["packages", "apps", "compat", "examples"]) {
@@ -203,6 +164,23 @@ jobs:
             ) {
               throw new Error(`Unauthorized package metadata at ${manifestPath}`);
             }
+            for (const [dependency, version] of Object.entries(manifest.dependencies ?? {})) {
+              if (dependency.startsWith("@nicia-ai/lachesis") && version !== process.env.RELEASE_VERSION) {
+                throw new Error(`${manifest.name} has an unsynchronized dependency on ${dependency}`);
+              }
+            }
+          }
+          const cli = publicPackages.get("apps/cli/package.json");
+          if (
+            cli?.private !== false ||
+            cli.type !== "module" ||
+            cli.engines?.node !== ">=24 <25" ||
+            cli.bin?.lachesis !== "./dist/cli.js" ||
+            cli.exports !== undefined ||
+            cli.main !== undefined ||
+            cli.types !== undefined
+          ) {
+            throw new Error("CLI binary-only metadata is not frozen.");
           }
           NODE
 
@@ -225,14 +203,23 @@ jobs:
               absent=$((absent + 1))
             fi
           done
-          if test "$present" -eq 0
+          cli_present=false
+          if npm view "@nicia-ai/lachesis-cli@$RELEASE_VERSION" version >/dev/null 2>&1
           then
-            echo "state=absent" >> "$GITHUB_OUTPUT"
-          elif test "$absent" -eq 0
+            cli_present=true
+          fi
+          if test "$present" -eq 0 && test "$cli_present" = "true"
+          then
+            echo "state=cli-bootstrap-present" >> "$GITHUB_OUTPUT"
+          elif test "$absent" -eq 0 && test "$cli_present" = "true"
           then
             echo "state=present" >> "$GITHUB_OUTPUT"
+          elif test "$present" -eq 0 && test "$cli_present" = "false"
+          then
+            echo "The separately authorized CLI bootstrap must complete before this workflow." >&2
+            exit 1
           else
-            echo "Refusing a partial release: $present versions exist and $absent are absent" >&2
+            echo "Refusing an unexpected partial release: $present existing-package versions, CLI present=$cli_present" >&2
             exit 1
           fi
 
@@ -248,16 +235,23 @@ jobs:
             @nicia-ai/lachesis-generator
           do
             latest="$(npm view "$package_name" dist-tags.latest 2>/dev/null || true)"
+            test "$latest" = "0.1.0-alpha.1"
             printf '%s\t%s\n' "$package_name" "$latest" >> "$latest_snapshot"
           done
+          cli_latest="$(npm view @nicia-ai/lachesis-cli dist-tags.latest 2>/dev/null || true)"
+          test -z "$cli_latest" || test "$cli_latest" = "$RELEASE_VERSION"
+          printf '%s\t%s\n' "@nicia-ai/lachesis-cli" "$cli_latest" >> "$latest_snapshot"
 
       - name: Pack audited artifacts
         run: |
-          node scripts/prepare-alpha3-tarballs.mjs --output-dir .release-packages
-          shasum -a 256 -c docs/m7c-alpha3-tarballs.sha256
+          node scripts/prepare-alpha4-tarballs.mjs --output-dir .release-packages
+          (
+            cd .release-packages
+            shasum -a 256 -c ../docs/m8b2b-alpha4-tarballs.sha256
+          )
 
       - name: Publish public alpha
-        if: steps.registry.outputs.state == 'absent'
+        if: steps.registry.outputs.state == 'cli-bootstrap-present'
         env:
           NPM_CONFIG_PROVENANCE: "true"
         run: |
@@ -275,7 +269,8 @@ jobs:
             @nicia-ai/lachesis-evidence \
             @nicia-ai/lachesis-runtime \
             @nicia-ai/lachesis-evidence-typegraph \
-            @nicia-ai/lachesis-generator
+            @nicia-ai/lachesis-generator \
+            @nicia-ai/lachesis-cli
           do
             published=false
             for attempt in $(seq 1 24)
@@ -295,6 +290,83 @@ jobs:
             expected_latest="$(awk -F '\t' -v name="$package_name" '$1 == name { print $2 }' "$latest_snapshot")"
             test "$latest" = "$expected_latest"
           done
+
+      - name: Verify registry tarballs, signatures, provenance, and consumer
+        run: |
+          registry_root="$RUNNER_TEMP/lachesis-alpha4-registry"
+          mkdir -p "$registry_root/tarballs" "$registry_root/consumer"
+          for package_name in \
+            @nicia-ai/lachesis \
+            @nicia-ai/lachesis-evidence \
+            @nicia-ai/lachesis-runtime \
+            @nicia-ai/lachesis-evidence-typegraph \
+            @nicia-ai/lachesis-generator \
+            @nicia-ai/lachesis-cli
+          do
+            npm pack "$package_name@$RELEASE_VERSION" \
+              --pack-destination "$registry_root/tarballs"
+          done
+          (
+            cd "$registry_root/tarballs"
+            shasum -a 256 -c "$GITHUB_WORKSPACE/docs/m8b2b-alpha4-tarballs.sha256"
+          )
+          cat > "$registry_root/consumer/package.json" <<EOF
+          {
+            "name": "lachesis-alpha4-registry-consumer",
+            "private": true,
+            "type": "module",
+            "dependencies": {
+              "@nicia-ai/lachesis": "$RELEASE_VERSION",
+              "@nicia-ai/lachesis-cli": "$RELEASE_VERSION",
+              "@nicia-ai/lachesis-evidence": "$RELEASE_VERSION",
+              "@nicia-ai/lachesis-evidence-typegraph": "$RELEASE_VERSION",
+              "@nicia-ai/lachesis-generator": "$RELEASE_VERSION",
+              "@nicia-ai/lachesis-runtime": "$RELEASE_VERSION",
+              "zod": "4.4.3"
+            },
+            "devDependencies": {
+              "@types/node": "24.13.3",
+              "typescript": "6.0.3"
+            }
+          }
+          EOF
+          cat > "$registry_root/consumer/consumer.ts" <<'EOF'
+          import { canonicalizeJson } from "@nicia-ai/lachesis";
+          import type { CatalogConformanceSuite } from "@nicia-ai/lachesis-generator";
+          import type { RuntimeResult } from "@nicia-ai/lachesis-runtime";
+
+          const canonical = canonicalizeJson({ alpha: 4 });
+          export type RegistrySmoke = readonly [
+            string,
+            CatalogConformanceSuite,
+            RuntimeResult,
+          ];
+          void canonical;
+          EOF
+          cat > "$registry_root/consumer/tsconfig.json" <<'EOF'
+          {
+            "compilerOptions": {
+              "module": "NodeNext",
+              "moduleResolution": "NodeNext",
+              "target": "ES2024",
+              "strict": true,
+              "skipLibCheck": false,
+              "noEmit": true
+            },
+            "files": ["consumer.ts"]
+          }
+          EOF
+          npm --prefix "$registry_root/consumer" install --ignore-scripts
+          npm --prefix "$registry_root/consumer" exec -- tsc --noEmit
+          set +e
+          "$registry_root/consumer/node_modules/.bin/lachesis" >/dev/null 2>&1
+          cli_status="$?"
+          set -e
+          test "$cli_status" -eq 64
+          (
+            cd "$registry_root/consumer"
+            npm audit signatures
+          )
 
       - name: Return release to draft on failure
         if: failure()
