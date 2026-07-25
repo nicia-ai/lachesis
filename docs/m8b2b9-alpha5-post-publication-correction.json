@@ -1,0 +1,90 @@
+{
+  "protocol": "lachesis.m8b2b9.alpha5-post-publication-correction.v1",
+  "failedRun": {
+    "id": 30146905854,
+    "headCommit": "1b48a41eaee0936da5e264b7dfb85d7cf2c696bb",
+    "workflowConclusion": "failure",
+    "disposition": "publication-complete-post-verification-fail",
+    "publicationStep": "success",
+    "alphaDistTagStep": "success",
+    "failedStep": "Verify registry tarballs, signatures, provenance, and consumer",
+    "draftRestoration": "success",
+    "retryPerformed": false
+  },
+  "immutablePublication": {
+    "version": "0.1.0-alpha.5",
+    "packageCount": 6,
+    "allRegistryVersionsPresent": true,
+    "allFrozenTarballSha256Verified": true,
+    "allRegistrySignaturesVerified": true,
+    "allPublishAttestationsVerified": true,
+    "allSlsaProvenanceVerified": true,
+    "provenanceWorkflow": ".github/workflows/release.yml",
+    "provenanceCommit": "1b48a41eaee0936da5e264b7dfb85d7cf2c696bb",
+    "provenanceRun": 30146905854,
+    "internalDependenciesExactAlpha5": true,
+    "alphaTags": "0.1.0-alpha.5",
+    "libraryLatestTags": "0.1.0-alpha.1",
+    "cliLatestTag": "0.1.0-alpha.4",
+    "republished": false,
+    "distTagsMutatedAfterPublication": false
+  },
+  "rootCauses": [
+    {
+      "code": "POST_VERIFY_TYPESCRIPT_CWD",
+      "previous": "npm --prefix consumer exec -- tsc --noEmit",
+      "effect": "TypeScript printed help because the intended consumer project was not bound.",
+      "corrected": "cd consumer; npm exec -- tsc --noEmit --project tsconfig.json"
+    },
+    {
+      "code": "POST_VERIFY_CLI_USAGE_EXIT",
+      "previousExpectedExit": 64,
+      "publishedAndTestedExit": 2,
+      "correctedExpectedExit": 2,
+      "implementationChanged": false
+    }
+  ],
+  "workflowCorrection": {
+    "commit": "404c2a63341ed29d5b088feb6c7990bfd80a2d47",
+    "workflow": ".github/workflows/release.yml",
+    "sha256": "4f12024fcb0b17f4c1bb87bad9f06e882c4e99524475c63b5fae9d7105793e7f",
+    "changedFiles": [".github/workflows/release.yml"],
+    "changedChecks": [
+      "fresh-consumer-typescript-project-binding",
+      "cli-no-argument-exit"
+    ],
+    "packageSourceChanged": false,
+    "publicationPathChanged": false,
+    "publicApiChanged": false
+  },
+  "regressionCoverage": {
+    "previousTypeScriptHelpFailureReproduced": true,
+    "correctedTypeScriptProjectPasses": true,
+    "cliUsageExit2Passes": true,
+    "otherCliUsageExitsReject": true,
+    "allPresentSelectsVerifyOnly": true,
+    "verifyOnlyNpmPublishCalls": 0,
+    "sixArtifactAndIntegrityBindingsPass": true,
+    "successfulVerifyOnlyPublishesDraftWithoutNpmMutation": true,
+    "failedVerifyOnlyRemainsDraftWithoutNpmMutation": true,
+    "status": "pass"
+  },
+  "releaseState": {
+    "releaseId": 359683006,
+    "tag": "v0.1.0-alpha.5",
+    "tagPeelsTo": "1b48a41eaee0936da5e264b7dfb85d7cf2c696bb",
+    "draft": true,
+    "prerelease": true,
+    "bodySha256": "676e3176e9c3a8bd414196339091c5eebe200993b33ccaa7dbbd494d27ae3d6b"
+  },
+  "nonactions": [
+    "no-push",
+    "no-workflow-dispatch",
+    "no-package-publication",
+    "no-dist-tag-mutation",
+    "no-release-mutation",
+    "no-tag-mutation",
+    "no-credential-access"
+  ],
+  "decision": "workflow-correction-ready-for-separate-push-and-verify-only-authorization"
+}
