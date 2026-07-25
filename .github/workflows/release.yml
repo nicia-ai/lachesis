@@ -98,7 +98,6 @@ jobs:
           pnpm build
           pnpm typecheck
           pnpm lint
-          pnpm test
           pnpm test:coverage
           pnpm build
           pnpm smoke
