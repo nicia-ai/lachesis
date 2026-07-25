@@ -1,0 +1,75 @@
+{
+  "protocol": "lachesis.m8b2b9.parity-timeout-correction.v1",
+  "diagnosticCommit": "a2246913910fdb72dad6ae2e989ee43e12991c45",
+  "diagnosticManifestSha256": "8621ca862e2225921e931b2097210be3c56e5e0b3856b7d7cb6433a0fd18e9dc",
+  "correction": {
+    "path": "packages/evidence-typegraph/tests/parity.test.ts",
+    "test": "preserves compiler, visible-view, validation, and reconstruction identities",
+    "beforeTimeoutMs": 20000,
+    "afterTimeoutMs": 40000,
+    "sourceSha256": "50e89ab20c097e063f0ac2bf05630f5131377df2930a8fc30cb320c73192b2f0",
+    "changedSourceLines": 1,
+    "productCodeChanged": false,
+    "assertionsChanged": false,
+    "populationChanged": false,
+    "fixturesChanged": false
+  },
+  "focusedVerification": {
+    "uncontendedMs": [9721, 9727, 9758, 9773, 10163],
+    "constrainedMs": [18745, 19760, 20964],
+    "constrainedCondition": "13 CPU burners on a 14-core host; test process nice 15",
+    "passes": 8,
+    "failures": 0,
+    "maximumMs": 20964,
+    "remainingMarginMs": 19036,
+    "remainingMarginPercent": 90.8
+  },
+  "semanticCoverage": {
+    "developmentTasks": 30,
+    "providers": 2,
+    "taskProviderAssignments": 60,
+    "compileCalls": 120,
+    "provenanceReconstructionCalls": 120,
+    "status": "unchanged"
+  },
+  "repositoryVerification": {
+    "format": "pass",
+    "strictTypeScript6": "pass",
+    "lint": "pass",
+    "defaultParallelTests": {
+      "status": "pass",
+      "tests": 443,
+      "files": 32,
+      "durationSeconds": 62.86
+    },
+    "singleWorkerCoverage": {
+      "status": "pass",
+      "tests": 443,
+      "files": 32,
+      "durationSeconds": 192.24,
+      "statementsPercent": 90.04,
+      "branchesPercent": 80.36,
+      "functionsPercent": 97.17,
+      "linesPercent": 94.06
+    },
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersDryRun": "pass",
+    "offlineExamples": "pass",
+    "loadBaseline": "pass",
+    "sourceSafety": "pass",
+    "publicApiInventory": "pass-unchanged",
+    "historicalChecksums": "pass",
+    "m7cPreregistrationAudit": "pass",
+    "packedPackages": {
+      "status": "pass",
+      "packRuns": 3,
+      "byteIdentical": true,
+      "strictConsumer": "pass",
+      "node": "pass",
+      "workers": "pass"
+    }
+  },
+  "decision": "correction-verified",
+  "alpha5Preparation": "blocked-pending-separate-review"
+}

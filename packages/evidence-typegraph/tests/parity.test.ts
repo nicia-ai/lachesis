@@ -193,7 +193,7 @@ describe("M4c TypeGraph parity", () => {
         );
       }
     }
-  }, 20_000);
+  }, 40_000);
 
   it("preserves frozen M3 policy inputs, choices, and visible identities", async () => {
     const typeGraph = await repository(M3B_REFERENCE_GRAPH);
