@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "release": "m8b2b-alpha5",
+  "status": "prepared-not-published",
+  "sourceBaseCommit": "930a77fc13227f03b25a75efe06c00a94e93a8e5",
+  "artifactSourcePolicy": "exact immutable release-candidate commit supplied to the workflow and matched by the annotated release tag",
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "fromVersion": "0.1.0-alpha.4",
+      "toVersion": "0.1.0-alpha.5",
+      "releaseKind": "synchronized-unmodified-implementation",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "fromVersion": "0.1.0-alpha.4",
+      "toVersion": "0.1.0-alpha.5",
+      "releaseKind": "synchronized-unmodified-implementation",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "fromVersion": "0.1.0-alpha.4",
+      "toVersion": "0.1.0-alpha.5",
+      "releaseKind": "synchronized-unmodified-implementation",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "fromVersion": "0.1.0-alpha.4",
+      "toVersion": "0.1.0-alpha.5",
+      "releaseKind": "dependency-only-synchronized",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "fromVersion": "0.1.0-alpha.4",
+      "toVersion": "0.1.0-alpha.5",
+      "releaseKind": "dependency-and-test-infrastructure-only",
+      "apiChanged": false
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "fromVersion": "0.1.0-alpha.4",
+      "toVersion": "0.1.0-alpha.5",
+      "releaseKind": "dependency-only-synchronized",
+      "apiChanged": false
+    }
+  ],
+  "releaseNotes": "docs/m8b2b-alpha5-release-notes.md",
+  "publicApiInventory": "docs/public-api-inventory-alpha.5.json",
+  "packageDeltaAudit": "docs/m8b2b-alpha5-package-delta.json",
+  "tarballInventory": "docs/m8b2b-alpha5-tarball-inventory.json",
+  "tarballChecksums": "docs/m8b2b-alpha5-tarballs.sha256",
+  "releaseChecksums": "docs/m8b2b-alpha5-release.sha256"
+}

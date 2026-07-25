@@ -221,7 +221,7 @@ const report = {
 };
 const reportText = `${JSON.stringify(report, null, 2)}\n`;
 await writeFile(
-  resolve(root, "docs/public-api-inventory-alpha.4.json"),
+  resolve(root, "docs/public-api-inventory-alpha.5.json"),
   reportText,
   { encoding: "utf8", mode: 0o644 },
 );

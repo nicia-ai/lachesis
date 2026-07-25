@@ -1,0 +1,31 @@
+{
+  "protocol": "lachesis.m8b2b.alpha5.registry-expectations.v1",
+  "version": "0.1.0-alpha.5",
+  "publicationSet": [
+    "@nicia-ai/lachesis",
+    "@nicia-ai/lachesis-evidence",
+    "@nicia-ai/lachesis-generator",
+    "@nicia-ai/lachesis-runtime",
+    "@nicia-ai/lachesis-evidence-typegraph",
+    "@nicia-ai/lachesis-cli"
+  ],
+  "prePublication": {
+    "alpha5AbsentForAllSix": true,
+    "libraryAlpha": "0.1.0-alpha.3",
+    "libraryLatest": "0.1.0-alpha.1",
+    "cliAlpha": "0.1.0-alpha.4",
+    "cliLatest": "0.1.0-alpha.4"
+  },
+  "postPublication": {
+    "alphaForAllSix": "0.1.0-alpha.5",
+    "libraryLatest": "0.1.0-alpha.1",
+    "cliLatest": "0.1.0-alpha.4"
+  },
+  "authentication": {
+    "mechanism": "npm-trusted-publishing-oidc",
+    "workflow": "release.yml",
+    "npmToken": false,
+    "bootstrapWorkflow": false
+  },
+  "partialStatePolicy": "fail-closed"
+}

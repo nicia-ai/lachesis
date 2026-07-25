@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.5
+
+- Dependency-only synchronized release binding the alpha.5 kernel and evidence
+  packages; no runtime export or implementation change.
+
 ## 0.1.0-alpha.4
 
 - Dependency-only synchronized release binding the corrected alpha.4 kernel and

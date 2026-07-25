@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-alpha.5
+
+- Dependency-only synchronized release binding the alpha.5 kernel, evidence, and
+  runtime packages; no TypeGraph adapter export or implementation change.
+- Calibrates an unpacked repository-only parity-test timeout without changing
+  package contents or semantic coverage.
+
 ## 0.1.0-alpha.4
 
 - Dependency-only synchronized release binding the alpha.4 kernel, evidence, and

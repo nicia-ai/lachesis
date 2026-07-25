@@ -18,10 +18,10 @@ permissions:
 
 env:
   RELEASE_COMMIT: ${{ inputs.release_commit }}
-  RELEASE_VERSION: 0.1.0-alpha.4
-  RELEASE_TAG: v0.1.0-alpha.4
-  RELEASE_NOTES: docs/m8b2b-alpha4-release-notes.md
-  RELEASE_CHECKSUMS: docs/m8b2b-alpha4-release.sha256
+  RELEASE_VERSION: 0.1.0-alpha.5
+  RELEASE_TAG: v0.1.0-alpha.5
+  RELEASE_NOTES: docs/m8b2b-alpha5-release-notes.md
+  RELEASE_CHECKSUMS: docs/m8b2b-alpha5-release.sha256
 
 jobs:
   release:
@@ -199,7 +199,8 @@ jobs:
             @nicia-ai/lachesis-evidence \
             @nicia-ai/lachesis-runtime \
             @nicia-ai/lachesis-evidence-typegraph \
-            @nicia-ai/lachesis-generator
+            @nicia-ai/lachesis-generator \
+            @nicia-ai/lachesis-cli
           do
             if npm view "$package_name@$RELEASE_VERSION" version >/dev/null 2>&1
             then
@@ -208,23 +209,14 @@ jobs:
               absent=$((absent + 1))
             fi
           done
-          cli_present=false
-          if npm view "@nicia-ai/lachesis-cli@$RELEASE_VERSION" version >/dev/null 2>&1
+          if test "$present" -eq 0 && test "$absent" -eq 6
           then
-            cli_present=true
-          fi
-          if test "$present" -eq 0 && test "$cli_present" = "true"
-          then
-            echo "state=cli-bootstrap-present" >> "$GITHUB_OUTPUT"
-          elif test "$absent" -eq 0 && test "$cli_present" = "true"
+            echo "state=absent" >> "$GITHUB_OUTPUT"
+          elif test "$present" -eq 6 && test "$absent" -eq 0
           then
             echo "state=present" >> "$GITHUB_OUTPUT"
-          elif test "$present" -eq 0 && test "$cli_present" = "false"
-          then
-            echo "The separately authorized CLI bootstrap must complete before this workflow." >&2
-            exit 1
           else
-            echo "Refusing an unexpected partial release: $present existing-package versions, CLI present=$cli_present" >&2
+            echo "Refusing an unexpected partial release: $present present, $absent absent" >&2
             exit 1
           fi
 
@@ -244,19 +236,19 @@ jobs:
             printf '%s\t%s\n' "$package_name" "$latest" >> "$latest_snapshot"
           done
           cli_latest="$(npm view @nicia-ai/lachesis-cli dist-tags.latest 2>/dev/null || true)"
-          test -z "$cli_latest" || test "$cli_latest" = "$RELEASE_VERSION"
+          test "$cli_latest" = "0.1.0-alpha.4"
           printf '%s\t%s\n' "@nicia-ai/lachesis-cli" "$cli_latest" >> "$latest_snapshot"
 
       - name: Pack audited artifacts
         run: |
-          node scripts/prepare-alpha4-tarballs.mjs --output-dir .release-packages
+          node scripts/prepare-alpha5-tarballs.mjs --output-dir .release-packages
           (
             cd .release-packages
-            shasum -a 256 -c ../docs/m8b2b-alpha4-tarballs.sha256
+            shasum -a 256 -c ../docs/m8b2b-alpha5-tarballs.sha256
           )
 
       - name: Publish public alpha
-        if: steps.registry.outputs.state == 'cli-bootstrap-present'
+        if: steps.registry.outputs.state == 'absent'
         env:
           NPM_CONFIG_PROVENANCE: "true"
         run: |
@@ -265,6 +257,7 @@ jobs:
           npm publish ".release-packages/nicia-ai-lachesis-runtime-$RELEASE_VERSION.tgz" --tag alpha --access public
           npm publish ".release-packages/nicia-ai-lachesis-evidence-typegraph-$RELEASE_VERSION.tgz" --tag alpha --access public
           npm publish ".release-packages/nicia-ai-lachesis-generator-$RELEASE_VERSION.tgz" --tag alpha --access public
+          npm publish ".release-packages/nicia-ai-lachesis-cli-$RELEASE_VERSION.tgz" --tag alpha --access public
 
       - name: Verify alpha dist-tags
         run: |
@@ -298,7 +291,7 @@ jobs:
 
       - name: Verify registry tarballs, signatures, provenance, and consumer
         run: |
-          registry_root="$RUNNER_TEMP/lachesis-alpha4-registry"
+          registry_root="$RUNNER_TEMP/lachesis-alpha5-registry"
           mkdir -p "$registry_root/tarballs" "$registry_root/consumer"
           for package_name in \
             @nicia-ai/lachesis \
@@ -313,11 +306,11 @@ jobs:
           done
           (
             cd "$registry_root/tarballs"
-            shasum -a 256 -c "$GITHUB_WORKSPACE/docs/m8b2b-alpha4-tarballs.sha256"
+            shasum -a 256 -c "$GITHUB_WORKSPACE/docs/m8b2b-alpha5-tarballs.sha256"
           )
           cat > "$registry_root/consumer/package.json" <<EOF
           {
-            "name": "lachesis-alpha4-registry-consumer",
+            "name": "lachesis-alpha5-registry-consumer",
             "private": true,
             "type": "module",
             "dependencies": {
@@ -340,7 +333,7 @@ jobs:
           import type { CatalogConformanceSuite } from "@nicia-ai/lachesis-generator";
           import type { RuntimeResult } from "@nicia-ai/lachesis-runtime";
 
-          const canonical = canonicalizeJson({ alpha: 4 });
+          const canonical = canonicalizeJson({ alpha: 5 });
           export type RegistrySmoke = readonly [
             string,
             CatalogConformanceSuite,

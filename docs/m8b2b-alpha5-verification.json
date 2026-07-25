@@ -1,0 +1,122 @@
+{
+  "protocol": "lachesis.m8b2b.alpha5.verification.v1",
+  "preparationBaseCommit": "930a77fc13227f03b25a75efe06c00a94e93a8e5",
+  "alpha4ClosureCommit": "a2246913910fdb72dad6ae2e989ee43e12991c45",
+  "parityCorrectionCommit": "930a77fc13227f03b25a75efe06c00a94e93a8e5",
+  "environment": {
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  },
+  "alpha4Disposition": {
+    "status": "partial-bootstrap-only-verification-no-go",
+    "published": ["@nicia-ai/lachesis-cli@0.1.0-alpha.4"],
+    "absent": [
+      "@nicia-ai/lachesis@0.1.0-alpha.4",
+      "@nicia-ai/lachesis-evidence@0.1.0-alpha.4",
+      "@nicia-ai/lachesis-generator@0.1.0-alpha.4",
+      "@nicia-ai/lachesis-runtime@0.1.0-alpha.4",
+      "@nicia-ai/lachesis-evidence-typegraph@0.1.0-alpha.4"
+    ],
+    "tagMoved": false,
+    "draftReleaseModified": false,
+    "distTagsChanged": false,
+    "packageUnpublished": false
+  },
+  "parityRootCause": {
+    "classification": "empirically-invalid-20-second-bound",
+    "productRegression": false,
+    "redundantComputation": false,
+    "timeoutBeforeMs": 20000,
+    "timeoutAfterMs": 40000,
+    "assertionsChanged": false,
+    "populationChanged": false,
+    "implementationChanged": false,
+    "uncontendedBeforeCorrectionMs": [
+      8825.854, 8842.777, 8919.734, 8926.822, 10137.115
+    ],
+    "constrainedBeforeCorrectionMs": [
+      14079.356, 14781.304, 14806.105, 17446.546
+    ],
+    "uncontendedAfterCorrectionMs": [9721, 9727, 9758, 9773, 10163],
+    "constrainedAfterCorrectionMs": [18745, 19760, 20964],
+    "remainingMarginAtSlowestValidationMs": 19036
+  },
+  "repository": {
+    "format": "pass",
+    "strictTypecheck": "pass",
+    "lint": "pass",
+    "defaultParallelTests": {
+      "testFiles": 32,
+      "tests": 443,
+      "passed": 443,
+      "durationSeconds": 54.26
+    },
+    "singleWorkerCoverage": {
+      "testFiles": 32,
+      "tests": 443,
+      "passed": 443,
+      "statementsPercent": 90.04,
+      "branchesPercent": 80.36,
+      "functionsPercent": 97.17,
+      "linesPercent": 94.06,
+      "thresholds": "pass"
+    },
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersDryRun": "pass",
+    "offlineExamples": "7/7 pass",
+    "loadBaseline": "pass",
+    "sourceSafety": "pass",
+    "publicApiInventory": "pass-unchanged",
+    "historicalChecksumAudits": "pass",
+    "m7cPreregistrationAudit": "pass",
+    "packedPackageAudit": "pass",
+    "workflowStaticValidation": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "packages": {
+    "count": 6,
+    "version": "0.1.0-alpha.5",
+    "versionsSynchronized": true,
+    "internalDependenciesExact": true,
+    "packRunsPerPackage": 3,
+    "byteIdentical": true,
+    "publicExportsChangedFromAlpha4Candidate": false,
+    "bootstrapWorkflowPresent": false,
+    "npmTokenRequired": false,
+    "oidcTrustedPublishing": true
+  },
+  "consumers": {
+    "freshHost": {
+      "strictTypeScriptSkipLibCheckFalse": "pass",
+      "threeCommandWorkflow": "pass",
+      "detachedVerification": "pass",
+      "workspaceImports": 0,
+      "alpha3Fallbacks": 0
+    },
+    "networkDisabledLinux": {
+      "image": "node:24.18.0-bookworm-slim",
+      "network": "none",
+      "rootFilesystem": "read-only",
+      "capabilities": "none",
+      "noNewPrivileges": true,
+      "status": "pass"
+    }
+  },
+  "registryPreflight": {
+    "alpha5AbsentForAllSix": true,
+    "libraryAlphaTags": "0.1.0-alpha.3",
+    "libraryLatestTags": "0.1.0-alpha.1",
+    "cliAlphaTag": "0.1.0-alpha.4",
+    "cliLatestTag": "0.1.0-alpha.4"
+  },
+  "providerCalls": 0,
+  "credentialsAccessed": false,
+  "pushPerformed": false,
+  "tagCreated": false,
+  "githubReleaseCreated": false,
+  "publicationPerformed": false,
+  "decision": "release-candidate-prepared-not-authorized"
+}

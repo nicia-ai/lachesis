@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-alpha.5
+
+- Synchronizes the unchanged alpha.4 generator implementation into the complete
+  six-package release after the partial alpha.4 publication was closed.
+- Preserves all public exports, diagnostics, and conformance behavior.
+
 ## 0.1.0-alpha.4
 
 - Corrects strict JSON handling across conformance fixtures, recorded adapters,

@@ -136,14 +136,18 @@ passed, the registry-only workflow passed against a complete prospective
 six-package artifact set, and historical alpha.3 verification is now
 commit-aware. Its decision is `release-ready-with-docs-fixes`.
 
-M8b.2b prepares—but does not publish—the synchronized alpha.4 release candidate.
-The five existing packages retain their documented library surfaces; the new CLI
-is an experimental Node 24 binary with no supported import surface. All internal
-Lachesis dependencies are exact alpha.4 edges, deterministic package artifacts
-and registry expectations are frozen, and the first CLI publication is
-separately gated because npm trusted-publisher configuration requires an
-existing package. Push, tag, GitHub release, CLI bootstrap, trusted-publisher
-configuration, and normal publication remain separate authorizations. The
+The synchronized alpha.4 attempt closed
+`partial-bootstrap-only-verification-no-go`: the experimental Node 24 CLI was
+published, while all five alpha.4 libraries remained absent. M8b.2b.9 traced the
+release blocker to an uncalibrated aggregate test timeout rather than a product
+regression, preserved the full parity population, and verified a measured
+test-specific bound.
+
+Alpha.5 is the fresh synchronized six-package candidate. All internal Lachesis
+dependencies are exact alpha.5 edges, all six packages use the existing
+`release.yml` OIDC trusted-publisher bindings, and no bootstrap workflow or npm
+token is part of the release path. Push, tag, GitHub prerelease creation, and
+publication remain separate authorizations. The
 [prioritized backlog](m8b-productization-backlog.md) continues to cover
 additional registry-only integrations and external developer usability. M8 is
 not provider, graph-superiority, TypeGraph-quality, or

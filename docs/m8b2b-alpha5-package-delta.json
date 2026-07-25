@@ -1,0 +1,44 @@
+{
+  "protocol": "lachesis.m8b2b.alpha5.package-delta.v1",
+  "fromCandidate": "0.1.0-alpha.4",
+  "toVersion": "0.1.0-alpha.5",
+  "publicApiChanged": false,
+  "packageImplementationChanged": false,
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "classification": "synchronized-unmodified-implementation"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "classification": "synchronized-unmodified-implementation"
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "classification": "synchronized-unmodified-implementation"
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "classification": "dependency-only-synchronized"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "classification": "dependency-and-unpacked-test-infrastructure-only"
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "classification": "dependency-only-synchronized"
+    }
+  ],
+  "alpha4Published": ["@nicia-ai/lachesis-cli@0.1.0-alpha.4"],
+  "alpha4Absent": [
+    "@nicia-ai/lachesis@0.1.0-alpha.4",
+    "@nicia-ai/lachesis-evidence@0.1.0-alpha.4",
+    "@nicia-ai/lachesis-generator@0.1.0-alpha.4",
+    "@nicia-ai/lachesis-runtime@0.1.0-alpha.4",
+    "@nicia-ai/lachesis-evidence-typegraph@0.1.0-alpha.4"
+  ],
+  "internalDependencyVersion": "0.1.0-alpha.5",
+  "bootstrapRequired": false,
+  "trustedPublisherWorkflow": ".github/workflows/release.yml"
+}

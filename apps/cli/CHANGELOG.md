@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-alpha.5
+
+- Dependency-only synchronized release of the unchanged binary-only CLI against
+  the complete alpha.5 package set.
+- Preserves the command surface, report protocols, exit codes, and absence of a
+  supported JavaScript import surface.
+
 ## 0.1.0-alpha.4
 
 - First experimental public alpha of the binary-only `lachesis` CLI.

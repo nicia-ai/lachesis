@@ -1,0 +1,47 @@
+{
+  "protocol": "lachesis.m8b2b.alpha5.release-workflow-binding.v1",
+  "workflow": ".github/workflows/release.yml",
+  "workflowSha256": "7073a45d848bfe6711a32c2df720e9fd8981d1a2143101afefb395a44efd9618",
+  "releaseVersion": "0.1.0-alpha.5",
+  "releaseTag": "v0.1.0-alpha.5",
+  "sourceBinding": {
+    "input": "release_commit",
+    "checkout": "exact-input-commit",
+    "tagMustPeelToInput": true,
+    "releaseNotesMustMatch": true,
+    "releaseChecksumsMustPass": true
+  },
+  "packageAllowlist": [
+    "@nicia-ai/lachesis",
+    "@nicia-ai/lachesis-evidence",
+    "@nicia-ai/lachesis-generator",
+    "@nicia-ai/lachesis-runtime",
+    "@nicia-ai/lachesis-evidence-typegraph",
+    "@nicia-ai/lachesis-cli"
+  ],
+  "registryState": {
+    "allSixAbsent": "publish",
+    "allSixPresent": "verify-only",
+    "partial": "fail-closed"
+  },
+  "authentication": {
+    "mechanism": "npm-trusted-publishing-oidc",
+    "idToken": "write",
+    "npmToken": false,
+    "bootstrapWorkflow": false,
+    "provenance": true,
+    "access": "public",
+    "distTag": "alpha"
+  },
+  "verification": {
+    "all443Tests": true,
+    "coverage": true,
+    "deterministicPacking": true,
+    "registryTarballChecksums": true,
+    "signatures": true,
+    "provenance": true,
+    "strictRegistryConsumer": true,
+    "latestDistTagsPreserved": true
+  },
+  "publicationPerformed": false
+}

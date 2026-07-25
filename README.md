@@ -116,13 +116,15 @@ package selection, API reference, trust boundaries, record/replay semantics,
 TypeGraph integration, compatibility, security guidance, and alpha policy. Every
 example under [`examples/m5-alpha`](examples/m5-alpha) runs offline.
 
-The alpha.4 release candidate adds an experimental, binary-only catalog-author
-CLI. Its packed README is self-contained; the frozen release notes summarize the
-three-command manifest, finite conformance, and detached verification workflow.
-The CLI is ESM-only on Node 24 and has no supported JavaScript import or
-declaration surface. M8a's registry-only incident-response consumer remains the
-underlying adoption evidence. Neither finite conformance nor detached report
-verification is a model-quality or compositional-generalization claim.
+The alpha.5 release candidate completes the synchronized six-package
+catalog-author release after alpha.4 closed as a CLI-only partial publication.
+The experimental CLI remains ESM-only on Node 24 with no supported JavaScript
+import or declaration surface. Its packed README is self-contained, and the
+frozen release notes summarize the three-command manifest, finite conformance,
+and detached verification workflow. M8a's registry-only incident-response
+consumer remains the underlying adoption evidence. Neither finite conformance
+nor detached report verification is a model-quality or
+compositional-generalization claim.
 
 ## Kernel CLI example
 
