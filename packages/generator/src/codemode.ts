@@ -169,6 +169,24 @@ export type CompileCodeModeInput = Readonly<{
   semanticObligations: ReadonlyArray<SemanticObligationInput>;
 }>;
 
+/**
+ * Package-internal dialect controls used by experiments that compose the
+ * closed interpreter without changing the frozen M2 protocol.
+ */
+export type InternalCodeModeDialect = Readonly<{
+  allowEffectInvoke: boolean;
+  allowEffectMap: boolean;
+  enforceRecursionLimit: boolean;
+  requireKnownCollectionBounds: boolean;
+}>;
+
+const M2_CODEMODE_DIALECT: InternalCodeModeDialect = Object.freeze({
+  allowEffectInvoke: false,
+  allowEffectMap: false,
+  enforceRecursionLimit: false,
+  requireKnownCollectionBounds: false,
+});
+
 export type CodeModeRuntimeUsage = Readonly<{
   operationCalls: number;
   effectCalls: number;
@@ -660,6 +678,7 @@ function analyzeExpression(
   bindings: ReadonlyMap<string, BindingAnalysis>,
   catalog: ReturnType<typeof readCatalog>,
   policy: CompilationPolicy,
+  dialect: InternalCodeModeDialect,
 ): Result<BindingAnalysis, Diagnostic> {
   if (expression.kind === "select") {
     const condition = valueAnalysis(expression.condition, inputs, bindings);
@@ -732,7 +751,19 @@ function analyzeExpression(
   let effects = 0;
   let tokens = 0;
   let wallClock = 0;
+  let maximumItems = source.value.maximumItems;
   if (expression.kind === "boundedFix") {
+    if (
+      dialect.enforceRecursionLimit &&
+      expression.limit > policy.budget.maxRecursionDepth
+    )
+      return {
+        ok: false,
+        error: diagnostic(
+          "BUDGET_EXCEEDED",
+          `CodeMode boundedFix limit ${expression.limit} exceeds recursion budget ${policy.budget.maxRecursionDepth}.`,
+        ),
+      };
     const [step, measure] = operations;
     if (
       step?.kind !== "fixedPointStep" ||
@@ -766,7 +797,8 @@ function analyzeExpression(
           ? undefined
           : catalog.schemas.get(referenceKey(sourceSchema));
       if (
-        operation.kind !== "function" ||
+        (operation.kind !== "function" &&
+          !(dialect.allowEffectMap && operation.kind === "effect")) ||
         collection?.kind.kind !== "collection" ||
         referenceKey(collection.kind.element) !== referenceKey(operation.input)
       )
@@ -787,7 +819,32 @@ function analyzeExpression(
           ),
         };
       outputSchema = outputCollection;
+      if (
+        dialect.requireKnownCollectionBounds &&
+        source.value.maximumItems === null
+      )
+        return {
+          ok: false,
+          error: diagnostic(
+            "UNBOUNDED_CARDINALITY",
+            "CodeMode map requires a known collection bound.",
+          ),
+        };
       calls = source.value.maximumItems ?? 0;
+      maximumItems = source.value.maximumItems;
+      if (operation.kind === "effect") {
+        if (!policy.allowedCapabilities.includes(operation.capability))
+          return {
+            ok: false,
+            error: diagnostic(
+              "DENIED_CAPABILITY",
+              `CodeMode capability ${operation.capability} is not authorized.`,
+            ),
+          };
+        effects = calls;
+        tokens = operation.maxTokens * calls;
+        wallClock = operation.maxWallClockMs * calls;
+      }
     } else if (expression.method === "filter") {
       const collection =
         sourceSchema === null
@@ -854,7 +911,8 @@ function analyzeExpression(
       wallClock = operation.maxWallClockMs;
     } else {
       if (
-        operation.kind !== "function" ||
+        (operation.kind !== "function" &&
+          !(dialect.allowEffectInvoke && operation.kind === "effect")) ||
         !sameSchema(sourceSchema, operation.input)
       )
         return {
@@ -865,6 +923,35 @@ function analyzeExpression(
           ),
         };
       outputSchema = operation.output;
+      if (operation.kind === "effect") {
+        if (!policy.allowedCapabilities.includes(operation.capability))
+          return {
+            ok: false,
+            error: diagnostic(
+              "DENIED_CAPABILITY",
+              `CodeMode capability ${operation.capability} is not authorized.`,
+            ),
+          };
+        effects = 1;
+        tokens = operation.maxTokens;
+        wallClock = operation.maxWallClockMs;
+      }
+    }
+    const output = catalog.schemas.get(referenceKey(outputSchema));
+    if (output?.kind.kind === "collection" && expression.method !== "map") {
+      const declared =
+        operation.kind === "function" || operation.kind === "effect"
+          ? operation.maxOutputItems
+          : undefined;
+      if (dialect.requireKnownCollectionBounds && declared === undefined)
+        return {
+          ok: false,
+          error: diagnostic(
+            "UNBOUNDED_CARDINALITY",
+            `CodeMode operation ${referenceKey(operation)} must declare maxOutputItems.`,
+          ),
+        };
+      maximumItems = declared ?? source.value.maximumItems;
     }
   }
   const keys = new Set(references.map(referenceKey));
@@ -878,7 +965,7 @@ function analyzeExpression(
     ok: true,
     value: {
       schema: outputSchema,
-      maximumItems: source.value.maximumItems,
+      maximumItems,
       provenance: {
         inputs: source.value.provenance.inputs,
         operations: union<string>(source.value.provenance.operations, keys),
@@ -980,6 +1067,17 @@ function budgetDiagnostics(
 export async function compileCodeMode(
   input: CompileCodeModeInput,
 ): Promise<Result<CodeModeArtifact, ReadonlyArray<Diagnostic>>> {
+  return compileCodeModeWithDialect(input, M2_CODEMODE_DIALECT);
+}
+
+/**
+ * Internal experimental entry point. It is intentionally absent from the
+ * package root exports; callers must bind their own protocol identity.
+ */
+export async function compileCodeModeWithDialect(
+  input: CompileCodeModeInput,
+  dialect: InternalCodeModeDialect,
+): Promise<Result<CodeModeArtifact, ReadonlyArray<Diagnostic>>> {
   const parsed = parseProgram(input.source);
   if (!parsed.ok) return parsed;
   const catalog = readCatalog(input.catalog);
@@ -1033,8 +1131,17 @@ export async function compileCodeMode(
       bindings,
       catalog,
       input.policy,
+      dialect,
     );
     if (!analysis.ok) return { ok: false, error: [analysis.error] };
+    if (
+      dialect.requireKnownCollectionBounds &&
+      analysis.value.maximumItems !== null
+    )
+      maximumCollectionItems = Math.max(
+        maximumCollectionItems,
+        analysis.value.maximumItems,
+      );
     const direct =
       binding.expression.kind === "select"
         ? [
