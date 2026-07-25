@@ -1,0 +1,119 @@
+{
+  "protocol": "lachesis.m8b2b6.bootstrap-workflow-retirement.v1",
+  "disposition": "bootstrap-terminally-complete-workflow-retired",
+  "parentReconciliationCommit": "309c1bac2d7c84a8d369ced1b575c6a75a82330d",
+  "bootstrapWorkflow": {
+    "path": ".github/workflows/bootstrap-cli.yml",
+    "retired": true,
+    "preRetirementSha256": "aa318966d4cece6e65ecc482cd38b9b62f95bfd4c209aac60f00b971b76d25ff",
+    "terminalPublicationRun": 30134246636,
+    "terminalPublicationAttempt": 1,
+    "terminalDisposition": "published-reconciled-no-rerun"
+  },
+  "releaseWorkflow": {
+    "path": ".github/workflows/release.yml",
+    "sha256": "c6288195114390cbcb2369a0ae96f2573f8ccd4ab954950302496617dec822a1",
+    "byteIdentical": true,
+    "releaseSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "version": "0.1.0-alpha.4",
+    "publishCount": 5,
+    "publishPackages": [
+      "@nicia-ai/lachesis",
+      "@nicia-ai/lachesis-evidence",
+      "@nicia-ai/lachesis-runtime",
+      "@nicia-ai/lachesis-evidence-typegraph",
+      "@nicia-ai/lachesis-generator"
+    ],
+    "cliPublishCount": 0,
+    "cliPrerequisite": {
+      "package": "@nicia-ai/lachesis-cli",
+      "version": "0.1.0-alpha.4",
+      "requiredBeforeFivePackagePublish": true,
+      "unexpectedPartialReleaseFailsClosed": true,
+      "verifiedWithAllSixRegistryArtifactsAfterPublish": true
+    }
+  },
+  "cliRegistry": {
+    "package": "@nicia-ai/lachesis-cli",
+    "version": "0.1.0-alpha.4",
+    "versions": ["0.1.0-alpha.4"],
+    "tarballSha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+    "registrySignature": "cryptographically-verified",
+    "signatureCount": 1,
+    "attestations": [
+      "https://github.com/npm/attestation/tree/main/specs/publish/v0.1",
+      "https://slsa.dev/provenance/v1"
+    ],
+    "attestationsCryptographicallyVerified": true,
+    "bootstrapProvenanceWorkflow": ".github/workflows/bootstrap-cli.yml",
+    "bootstrapProvenanceWorkflowCommit": "db5c793c9b78c78ac4d7a3161f5ae06741b0c55e",
+    "releaseSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "distTags": {
+      "alpha": "0.1.0-alpha.4",
+      "latest": "0.1.0-alpha.4"
+    }
+  },
+  "otherFiveRegistryState": {
+    "version": "0.1.0-alpha.4",
+    "allAbsent": true,
+    "httpStatusByPackage": {
+      "@nicia-ai/lachesis": 404,
+      "@nicia-ai/lachesis-evidence": 404,
+      "@nicia-ai/lachesis-generator": 404,
+      "@nicia-ai/lachesis-runtime": 404,
+      "@nicia-ai/lachesis-evidence-typegraph": 404
+    }
+  },
+  "trustedPublisher": {
+    "package": "@nicia-ai/lachesis-cli",
+    "provider": "GitHub Actions",
+    "organization": "nicia-ai",
+    "repository": "lachesis",
+    "workflowFilename": "release.yml",
+    "allowedActions": ["npm publish"],
+    "npmStagePublishAllowed": false,
+    "connectionCount": 1,
+    "verified": true
+  },
+  "credentialState": {
+    "repositoryActionsSecrets": {
+      "scopeInspected": "repository-only",
+      "organizationSecretsInspected": false,
+      "names": [],
+      "npmTokenSecretAbsent": true,
+      "secretValuesAccessed": false
+    },
+    "bootstrapNpmToken": {
+      "name": "lachesis temp",
+      "recordId": "8c9e9afc-e20b-44f1-9a13-014632a261be",
+      "truncatedIdentity": "npm_FRrp......LILl",
+      "inventoryState": "absent",
+      "directIdentityState": "not-resolvable",
+      "revocationPreserved": true,
+      "secretValueAccessed": false
+    }
+  },
+  "preserved": {
+    "packageSource": true,
+    "packageVersions": true,
+    "tarballDigests": true,
+    "annotatedTag": "v0.1.0-alpha.4",
+    "annotatedTagPeelsTo": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "draftReleaseId": 359550250,
+    "draftRelease": true,
+    "prerelease": true,
+    "releaseBodySha256": "bec6a90f3c7683e3d66d10607ebfb4891105abb25064c5feae14e59196fc1a02",
+    "releaseNotes": true,
+    "trustedPublisherSettings": true,
+    "distTags": true
+  },
+  "nonactions": [
+    "no-push",
+    "no-workflow-dispatch",
+    "no-release-publication",
+    "no-package-publication",
+    "no-dist-tag-mutation",
+    "no-draft-release-modification",
+    "no-organization-secret-inspection"
+  ]
+}
