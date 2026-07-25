@@ -355,12 +355,16 @@ jobs:
           }
           EOF
           npm --prefix "$registry_root/consumer" install --ignore-scripts
-          npm --prefix "$registry_root/consumer" exec -- tsc --noEmit
+          consumer="$registry_root/consumer"
+          (
+            cd "$consumer"
+            npm exec -- tsc --noEmit --project tsconfig.json
+          )
           set +e
           "$registry_root/consumer/node_modules/.bin/lachesis" >/dev/null 2>&1
           cli_status="$?"
           set -e
-          test "$cli_status" -eq 64
+          test "$cli_status" -eq 2
           (
             cd "$registry_root/consumer"
             npm audit signatures
