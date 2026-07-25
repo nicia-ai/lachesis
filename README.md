@@ -116,15 +116,17 @@ package selection, API reference, trust boundaries, record/replay semantics,
 TypeGraph integration, compatibility, security guidance, and alpha policy. Every
 example under [`examples/m5-alpha`](examples/m5-alpha) runs offline.
 
-The alpha.5 release candidate completes the synchronized six-package
-catalog-author release after alpha.4 closed as a CLI-only partial publication.
-The experimental CLI remains ESM-only on Node 24 with no supported JavaScript
-import or declaration surface. Its packed README is self-contained, and the
-frozen release notes summarize the three-command manifest, finite conformance,
-and detached verification workflow. M8a's registry-only incident-response
-consumer remains the underlying adoption evidence. Neither finite conformance
-nor detached report verification is a model-quality or
-compositional-generalization claim.
+The synchronized six-package
+[alpha.5 release](https://github.com/nicia-ai/lachesis/releases/tag/v0.1.0-alpha.5)
+is complete after alpha.4 closed as a CLI-only partial publication. See the
+[release notes](docs/m8b2b-alpha5-release-notes.md) and
+[final closure](docs/m8b2b-alpha5-closure.md). The experimental CLI remains
+ESM-only on Node 24 with no supported JavaScript import or declaration surface.
+Its packed README is self-contained, and the frozen release notes summarize the
+three-command manifest, finite conformance, and detached verification workflow.
+M8a's registry-only incident-response consumer remains the underlying adoption
+evidence. Neither finite conformance nor detached report verification is a
+model-quality or compositional-generalization claim.
 
 ## Kernel CLI example
 

@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "kind": "lachesis-m8b-alpha5-final-closure",
+  "recordedOn": "2026-07-25",
+  "status": "complete-public-release-pass",
+  "milestone": {
+    "m8a": "adoption-ready-with-docs-fixes",
+    "m8b": "complete-public-release-pass"
+  },
+  "release": {
+    "version": "0.1.0-alpha.5",
+    "sourceCommit": "1b48a41eaee0936da5e264b7dfb85d7cf2c696bb",
+    "workflowCorrectionCommit": "404c2a63341ed29d5b088feb6c7990bfd80a2d47",
+    "workflowSha256": "4f12024fcb0b17f4c1bb87bad9f06e882c4e99524475c63b5fae9d7105793e7f",
+    "tag": "v0.1.0-alpha.5",
+    "tagPeelsTo": "1b48a41eaee0936da5e264b7dfb85d7cf2c696bb",
+    "githubRelease": {
+      "databaseId": 359683006,
+      "draft": false,
+      "prerelease": true,
+      "title": "Lachesis 0.1.0-alpha.5",
+      "bodySha256": "676e3176e9c3a8bd414196339091c5eebe200993b33ccaa7dbbd494d27ae3d6b",
+      "url": "https://github.com/nicia-ai/lachesis/releases/tag/v0.1.0-alpha.5"
+    },
+    "publicationRun": {
+      "databaseId": 30146905854,
+      "publication": "success",
+      "workflowConclusion": "failure",
+      "classification": "publication-complete-post-verification-fail"
+    },
+    "finalVerificationRun": {
+      "databaseId": 30164532908,
+      "headCommit": "404c2a63341ed29d5b088feb6c7990bfd80a2d47",
+      "releaseSource": "1b48a41eaee0936da5e264b7dfb85d7cf2c696bb",
+      "registryState": "all-six-present",
+      "mode": "verify-only",
+      "npmPublishCommands": 0,
+      "conclusion": "success"
+    }
+  },
+  "packages": [
+    {
+      "name": "@nicia-ai/lachesis",
+      "version": "0.1.0-alpha.5",
+      "tarballSha256": "324940c3610c9280141ac1825a73c87a24238d31ae359c212b2985a66db20730",
+      "alpha": "0.1.0-alpha.5",
+      "latest": "0.1.0-alpha.1"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence",
+      "version": "0.1.0-alpha.5",
+      "tarballSha256": "717c4627dbc3a6e8da985a46993dda7aaa0d648aa229c7c4bc87531b29381956",
+      "alpha": "0.1.0-alpha.5",
+      "latest": "0.1.0-alpha.1"
+    },
+    {
+      "name": "@nicia-ai/lachesis-generator",
+      "version": "0.1.0-alpha.5",
+      "tarballSha256": "c91f2b36d0a08a99209714df620cea331e3bb3562c4f6d45d8ead17c5949a3e6",
+      "alpha": "0.1.0-alpha.5",
+      "latest": "0.1.0-alpha.1"
+    },
+    {
+      "name": "@nicia-ai/lachesis-runtime",
+      "version": "0.1.0-alpha.5",
+      "tarballSha256": "93277274a06ea5da465f9ab0eb69dcffc45e06348b369ba7e960781b6ad3721b",
+      "alpha": "0.1.0-alpha.5",
+      "latest": "0.1.0-alpha.1"
+    },
+    {
+      "name": "@nicia-ai/lachesis-evidence-typegraph",
+      "version": "0.1.0-alpha.5",
+      "tarballSha256": "5e030b987f731e7429d680cf850fc8425b2609eb7beb1dc72ebdc8282bca7242",
+      "alpha": "0.1.0-alpha.5",
+      "latest": "0.1.0-alpha.1"
+    },
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "version": "0.1.0-alpha.5",
+      "tarballSha256": "34faca53164d9dedc3b09f348392654f58a129cf7abd56cbd530c994ebf9d1cd",
+      "alpha": "0.1.0-alpha.5",
+      "latest": "0.1.0-alpha.4"
+    }
+  ],
+  "registryIntegrity": {
+    "signatureCountPerPackage": 1,
+    "attestationCountPerPackage": 2,
+    "attestationPredicateTypes": [
+      "https://github.com/npm/attestation/tree/main/specs/publish/v0.1",
+      "https://slsa.dev/provenance/v1"
+    ],
+    "provenance": {
+      "authentication": "npm-trusted-publishing-oidc",
+      "workflow": ".github/workflows/release.yml",
+      "repository": "https://github.com/nicia-ai/lachesis",
+      "sourceCommit": "1b48a41eaee0936da5e264b7dfb85d7cf2c696bb"
+    },
+    "tarballInventorySha256": "407e8b9e195e238d5dc3bbd1554f8e146224c9bd2ff31bab6e7b258a270692e5",
+    "tarballManifestSha256": "9fe38bb62adccdb5936f82ac0525770c2a95a3bab533ea8aa2ba836e67fc6757"
+  },
+  "dependencyClosure": {
+    "allInternalRanges": "0.1.0-alpha.5",
+    "alpha3InternalResolutions": 0,
+    "edges": [
+      "@nicia-ai/lachesis-cli -> @nicia-ai/lachesis",
+      "@nicia-ai/lachesis-cli -> @nicia-ai/lachesis-generator",
+      "@nicia-ai/lachesis-evidence -> @nicia-ai/lachesis",
+      "@nicia-ai/lachesis-evidence-typegraph -> @nicia-ai/lachesis",
+      "@nicia-ai/lachesis-evidence-typegraph -> @nicia-ai/lachesis-evidence",
+      "@nicia-ai/lachesis-evidence-typegraph -> @nicia-ai/lachesis-runtime",
+      "@nicia-ai/lachesis-generator -> @nicia-ai/lachesis",
+      "@nicia-ai/lachesis-runtime -> @nicia-ai/lachesis",
+      "@nicia-ai/lachesis-runtime -> @nicia-ai/lachesis-evidence"
+    ]
+  },
+  "consumerVerification": {
+    "registryInstalled": true,
+    "workspaceImports": 0,
+    "typescript": "6.0.3",
+    "strict": true,
+    "skipLibCheck": false,
+    "cliNoArgumentExit": 2,
+    "node": "24.18.0",
+    "workersPortableDryRun": "pass"
+  },
+  "credentialBoundary": {
+    "repositoryActionsSecrets": 0,
+    "npmCredentialsUsedForAlpha5": 0,
+    "trustedPublishing": "oidc-only",
+    "npmAdministrationAccessedDuringFinalReconciliation": false
+  },
+  "alpha4": {
+    "disposition": "partial-bootstrap-only-verification-no-go",
+    "publishedPackage": "@nicia-ai/lachesis-cli@0.1.0-alpha.4",
+    "otherAlpha4PackagesAbsent": 5,
+    "historicalRecord": "docs/m8b2b9-alpha4-closure.json"
+  },
+  "failClosedInfrastructureTimeline": [
+    {
+      "run": 30127417942,
+      "outcome": "zero-publication-draft-discovery-fail",
+      "finding": "Tag-addressed public release lookup could not retrieve the draft release."
+    },
+    {
+      "run": 30130906678,
+      "outcome": "zero-publication-draft-permission-fail",
+      "finding": "The workflow token with contents:read could not retrieve the draft release."
+    },
+    {
+      "run": 30133047029,
+      "outcome": "zero-publication-detached-source-setup-path-fail",
+      "finding": "pnpm setup examined the workspace root instead of the detached release source."
+    },
+    {
+      "run": 30134246636,
+      "outcome": "cli-publication-complete-post-publication-propagation-window-fail",
+      "finding": "CLI alpha.4 publication succeeded, but registry visibility arrived after the bounded verification window."
+    },
+    {
+      "run": 30136489135,
+      "outcome": "zero-publication-frozen-verification-timeout",
+      "finding": "The evidence-TypeGraph parity identity test exceeded its uncalibrated 20-second bound under hosted contention."
+    },
+    {
+      "run": 30144568420,
+      "outcome": "zero-publication-hosted-verification-timeout",
+      "finding": "The isolated parity design remained unreliable under the unchanged 20-second bound."
+    },
+    {
+      "run": 30146905854,
+      "outcome": "publication-complete-post-verification-fail",
+      "finding": "All six alpha.5 packages published; the consumer TypeScript invocation lacked an explicit project and the next CLI assertion expected the wrong usage exit."
+    },
+    {
+      "run": 30164532908,
+      "outcome": "complete-verify-only-pass",
+      "finding": "The all-present path skipped publication and completed registry, provenance, dependency, consumer, and CLI verification."
+    }
+  ],
+  "historicalEvidence": {
+    "appendOnly": true,
+    "rewrittenRecords": 0,
+    "currentClosureSupersedesStatusOnly": [
+      "release-candidate-prepared-not-authorized",
+      "publication-complete-post-verification-fail"
+    ]
+  },
+  "nonclaims": [
+    "finite-conformance-is-not-general-semantic-equivalence",
+    "detached-verification-is-integrity-not-semantic-acceptance",
+    "no-model-quality-claim",
+    "no-provider-superiority-claim",
+    "no-typegraph-superiority-claim",
+    "no-compositional-generalization-claim"
+  ],
+  "nextReleaseAuthorized": false
+}

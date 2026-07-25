@@ -32,7 +32,10 @@ package version, package export, or public API changed.
   offline.
 - Stage 5.1: detached command-identity verification, nested-report closure, and
   single-output transaction finalization — complete offline.
-- Stage 6: registry-only product gate — not started.
+- Stage 6: registry-only product gate — complete.
+- M8b.2: synchronized public release — `complete-public-release-pass` at
+  `0.1.0-alpha.5`.
 
-Stage 1 does not authorize or imply any later stage, publication, provider
-operation, or research work.
+The published product path and its exact nonclaims are recorded in the
+[alpha.5 final closure](m8b2b-alpha5-closure.md). No later release, provider
+operation, or research work is authorized by that closure.

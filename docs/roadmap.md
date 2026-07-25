@@ -143,11 +143,14 @@ release blocker to an uncalibrated aggregate test timeout rather than a product
 regression, preserved the full parity population, and verified a measured
 test-specific bound.
 
-Alpha.5 is the fresh synchronized six-package candidate. All internal Lachesis
-dependencies are exact alpha.5 edges, all six packages use the existing
-`release.yml` OIDC trusted-publisher bindings, and no bootstrap workflow or npm
-token is part of the release path. Push, tag, GitHub prerelease creation, and
-publication remain separate authorizations. The
+Alpha.5 is closed `complete-public-release-pass`. All six synchronized packages
+were published from immutable source `1b48a41…` through the existing
+`release.yml` OIDC trusted-publisher bindings. Final run `30164532908` selected
+the all-present verify-only path, executed zero npm publication commands, and
+passed tarball, signature, attestation, provenance, dependency, strict-consumer,
+and CLI checks. See the [alpha.5 final closure](m8b2b-alpha5-closure.md).
+
+M8b is complete as `complete-public-release-pass`. The
 [prioritized backlog](m8b-productization-backlog.md) continues to cover
 additional registry-only integrations and external developer usability. M8 is
 not provider, graph-superiority, TypeGraph-quality, or
