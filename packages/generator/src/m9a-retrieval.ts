@@ -153,6 +153,42 @@ export const M9A_MODEL_RESERVATIONS = Object.freeze({
   }),
 });
 
+export type M9aInternalExecutionLimits = Readonly<{
+  maxOperationCalls: number;
+  maxRootModelCalls: number;
+  maxLeafModelCalls: number;
+  maxSearchCalls: number;
+  maxReadCalls: number;
+  maxReturnedSearchResults: number;
+  maxTotalReadBytes: number;
+  maxInputTokens: number;
+  maxOutputTokens: number;
+  maxCostUsdMicros: 0;
+}>;
+
+export type M9aInternalExecutionProfile = Readonly<{
+  catalogIdentity: Readonly<{ id: string; version: string }>;
+  resourceEnvelope: CompilationPolicy;
+  executionLimits: M9aInternalExecutionLimits;
+  rootModelReservation: M9aModelReservation;
+  leafModelReservation: M9aModelReservation;
+  oneShotModelReservation?: M9aModelReservation | undefined;
+  nonModelWallClockMs: number;
+}>;
+
+const M9A_INTERNAL_EXECUTION_PROFILE: M9aInternalExecutionProfile =
+  Object.freeze({
+    catalogIdentity: Object.freeze({
+      id: "lachesis.m9a.retrieval-capabilities",
+      version: "1.1.0",
+    }),
+    resourceEnvelope: M9A_DEFAULT_RESOURCE_ENVELOPE,
+    executionLimits: M9A_EXECUTION_LIMITS,
+    rootModelReservation: M9A_MODEL_RESERVATIONS.root,
+    leafModelReservation: M9A_MODEL_RESERVATIONS.leaf,
+    nonModelWallClockMs: 100,
+  });
+
 const taskValidator = z.string().min(1).max(2_048);
 const questionValidator = z.string().min(1).max(512);
 const questionsValidator = questionValidator.array().min(1).max(4).readonly();
@@ -275,175 +311,197 @@ const retrievalStateRegistration = defineSchema({
   validator: retrievalStateSchema,
 });
 
-const operations = Object.freeze([
-  defineFunction({
-    id: "task-as-question",
-    version: "1.0.0",
-    description:
-      "Explicitly convert the nominal task schema to the nominal question schema.",
-    input: taskSchema,
-    output: questionSchema,
-    implementation: (task) => task,
-  }),
-  defineEffect({
-    id: "decompose-query",
-    version: "1.0.0",
-    description: "Ask the offline model boundary for bounded subquestions.",
-    input: taskSchema,
-    output: questionsSchema,
-    effectName: "m9a.model.decompose",
-    capability: "m9a.model.decompose",
-    maxTokens:
-      M9A_MODEL_RESERVATIONS.root.maxInputTokens +
-      M9A_MODEL_RESERVATIONS.root.maxOutputTokens,
-    maxWallClockMs: 1_000,
-    replayable: true,
-    maxOutputItems: 4,
-  }),
-  defineEffect({
-    id: "search-corpus",
-    version: "1.0.0",
-    description: "Search the bound immutable corpus snapshot.",
-    input: questionSchema,
-    output: searchResultSchema,
-    effectName: "m9a.corpus.search",
-    capability: "m9a.corpus.search",
-    maxTokens: 0,
-    maxWallClockMs: 100,
-    replayable: true,
-  }),
-  defineEffect({
-    id: "read-search-results",
-    version: "1.0.0",
-    description: "Read only canonical chunks returned by search.",
-    input: searchResultSchema,
-    output: evidenceSchema,
-    effectName: "m9a.corpus.read",
-    capability: "m9a.corpus.read",
-    maxTokens: 0,
-    maxWallClockMs: 100,
-    replayable: true,
-  }),
-  defineEffect({
-    id: "answer-evidence-slice",
-    version: "1.0.0",
-    description: "Run leaf reasoning over exactly one assigned evidence slice.",
-    input: evidenceSchema,
-    output: partialSchema,
-    effectName: "m9a.model.answer",
-    capability: "m9a.model.answer",
-    maxTokens:
-      M9A_MODEL_RESERVATIONS.leaf.maxInputTokens +
-      M9A_MODEL_RESERVATIONS.leaf.maxOutputTokens,
-    maxWallClockMs: 2_000,
-    replayable: true,
-  }),
-  defineReducer({
-    id: "synthesize-citation-confined-answer",
-    version: "1.0.0",
-    description:
-      "Aggregate ordered leaf answers while preserving their confined citations.",
-    element: partialSchema,
-    accumulator: citationConfinedAnswerSchema,
-    identity: { answer: "", citations: [] },
-    laws: {
-      associative: false,
-      commutative: false,
-      idempotent: false,
-    },
-    implementation: (answer, partial) => ({
-      answer:
-        answer.answer.length === 0
-          ? partial.claim
-          : `${answer.answer}\n${partial.claim}`,
-      citations: [
-        ...new Map(
-          [...answer.citations, ...partial.citations].map((citation) => [
-            citation.id,
-            citation,
-          ]),
-        ).values(),
-      ].toSorted((left, right) => left.id.localeCompare(right.id)),
+function createOperations(profile: M9aInternalExecutionProfile) {
+  const baseOperations = [
+    defineFunction({
+      id: "task-as-question",
+      version: "1.0.0",
+      description:
+        "Explicitly convert the nominal task schema to the nominal question schema.",
+      input: taskSchema,
+      output: questionSchema,
+      implementation: (task) => task,
     }),
-  }),
-  defineEffect({
-    id: "submit-citation-confined-answer",
-    version: "1.0.0",
-    description:
-      "Validate citation visibility and submit without claiming semantic support.",
-    input: citationConfinedAnswerSchema,
-    output: citationConfinedAnswerSchema,
-    effectName: "m9a.answer.submit",
-    capability: "m9a.answer.submit",
-    maxTokens: 0,
-    maxWallClockMs: 100,
-    replayable: true,
-  }),
-  defineFunction({
-    id: "as-partial-list",
-    version: "1.0.0",
-    description: "Place one partial answer into a singleton collection.",
-    input: partialSchema,
-    output: partialsSchema,
-    implementation: (partial) => [partial],
-    maxOutputItems: 1,
-  }),
-  defineFunction({
-    id: "prepare-retrieval-state",
-    version: "1.0.0",
-    description: "Initialize a same-schema bounded query-refinement state.",
-    input: questionsSchema,
-    output: retrievalStateRegistration,
-    implementation: (questions) => ({
-      remaining: questions.length,
-      pending: questions,
-      refined: [],
+    defineEffect({
+      id: "decompose-query",
+      version: "1.0.0",
+      description: "Ask the offline model boundary for bounded subquestions.",
+      input: taskSchema,
+      output: questionsSchema,
+      effectName: "m9a.model.decompose",
+      capability: "m9a.model.decompose",
+      maxTokens:
+        profile.rootModelReservation.maxInputTokens +
+        profile.rootModelReservation.maxOutputTokens,
+      maxWallClockMs: profile.rootModelReservation.maxWallClockMs,
+      replayable: true,
+      maxOutputItems: 4,
     }),
-  }),
-  defineFixedPointStep({
-    id: "refine-next-query",
-    version: "1.0.0",
-    description:
-      "Refine one pending query without performing an implicit read.",
-    state: retrievalStateRegistration,
-    implementation: (state) => {
-      const next = state.pending.at(0);
-      if (next === undefined) return state;
-      const pending = state.pending.slice(1);
-      return {
-        remaining: pending.length,
-        pending,
-        refined: [...state.refined, `${next} evidence`],
-      };
-    },
-  }),
-  defineMeasure({
-    id: "remaining-retrieval-queries",
-    version: "1.0.0",
-    description: "Read the trusted nonnegative pending-query count.",
-    input: retrievalStateRegistration,
-    implementation: (state) => state.remaining,
-  }),
-  defineFunction({
-    id: "take-refined-queries",
-    version: "1.0.0",
-    description: "Extract bounded refined queries after boundedFix.",
-    input: retrievalStateRegistration,
-    output: questionsSchema,
-    implementation: (state) => state.refined,
-    maxOutputItems: 4,
-  }),
-]);
+    defineEffect({
+      id: "search-corpus",
+      version: "1.0.0",
+      description: "Search the bound immutable corpus snapshot.",
+      input: questionSchema,
+      output: searchResultSchema,
+      effectName: "m9a.corpus.search",
+      capability: "m9a.corpus.search",
+      maxTokens: 0,
+      maxWallClockMs: profile.nonModelWallClockMs,
+      replayable: true,
+    }),
+    defineEffect({
+      id: "read-search-results",
+      version: "1.0.0",
+      description: "Read only canonical chunks returned by search.",
+      input: searchResultSchema,
+      output: evidenceSchema,
+      effectName: "m9a.corpus.read",
+      capability: "m9a.corpus.read",
+      maxTokens: 0,
+      maxWallClockMs: profile.nonModelWallClockMs,
+      replayable: true,
+    }),
+    defineEffect({
+      id: "answer-evidence-slice",
+      version: "1.0.0",
+      description:
+        "Run leaf reasoning over exactly one assigned evidence slice.",
+      input: evidenceSchema,
+      output: partialSchema,
+      effectName: "m9a.model.answer",
+      capability: "m9a.model.answer",
+      maxTokens:
+        profile.leafModelReservation.maxInputTokens +
+        profile.leafModelReservation.maxOutputTokens,
+      maxWallClockMs: profile.leafModelReservation.maxWallClockMs,
+      replayable: true,
+    }),
+    defineReducer({
+      id: "synthesize-citation-confined-answer",
+      version: "1.0.0",
+      description:
+        "Aggregate ordered leaf answers while preserving their confined citations.",
+      element: partialSchema,
+      accumulator: citationConfinedAnswerSchema,
+      identity: { answer: "", citations: [] },
+      laws: {
+        associative: false,
+        commutative: false,
+        idempotent: false,
+      },
+      implementation: (answer, partial) => ({
+        answer:
+          answer.answer.length === 0
+            ? partial.claim
+            : `${answer.answer}\n${partial.claim}`,
+        citations: [
+          ...new Map(
+            [...answer.citations, ...partial.citations].map((citation) => [
+              citation.id,
+              citation,
+            ]),
+          ).values(),
+        ].toSorted((left, right) => left.id.localeCompare(right.id)),
+      }),
+    }),
+    defineEffect({
+      id: "submit-citation-confined-answer",
+      version: "1.0.0",
+      description:
+        "Validate citation visibility and submit without claiming semantic support.",
+      input: citationConfinedAnswerSchema,
+      output: citationConfinedAnswerSchema,
+      effectName: "m9a.answer.submit",
+      capability: "m9a.answer.submit",
+      maxTokens: 0,
+      maxWallClockMs: profile.nonModelWallClockMs,
+      replayable: true,
+    }),
+    defineFunction({
+      id: "as-partial-list",
+      version: "1.0.0",
+      description: "Place one partial answer into a singleton collection.",
+      input: partialSchema,
+      output: partialsSchema,
+      implementation: (partial) => [partial],
+      maxOutputItems: 1,
+    }),
+    defineFunction({
+      id: "prepare-retrieval-state",
+      version: "1.0.0",
+      description: "Initialize a same-schema bounded query-refinement state.",
+      input: questionsSchema,
+      output: retrievalStateRegistration,
+      implementation: (questions) => ({
+        remaining: questions.length,
+        pending: questions,
+        refined: [],
+      }),
+    }),
+    defineFixedPointStep({
+      id: "refine-next-query",
+      version: "1.0.0",
+      description:
+        "Refine one pending query without performing an implicit read.",
+      state: retrievalStateRegistration,
+      implementation: (state) => {
+        const next = state.pending.at(0);
+        if (next === undefined) return state;
+        const pending = state.pending.slice(1);
+        return {
+          remaining: pending.length,
+          pending,
+          refined: [...state.refined, `${next} evidence`],
+        };
+      },
+    }),
+    defineMeasure({
+      id: "remaining-retrieval-queries",
+      version: "1.0.0",
+      description: "Read the trusted nonnegative pending-query count.",
+      input: retrievalStateRegistration,
+      implementation: (state) => state.remaining,
+    }),
+    defineFunction({
+      id: "take-refined-queries",
+      version: "1.0.0",
+      description: "Extract bounded refined queries after boundedFix.",
+      input: retrievalStateRegistration,
+      output: questionsSchema,
+      implementation: (state) => state.refined,
+      maxOutputItems: 4,
+    }),
+  ];
+  const oneShotReservation = profile.oneShotModelReservation;
+  return Object.freeze(
+    oneShotReservation === undefined
+      ? baseOperations
+      : [
+          ...baseOperations,
+          defineEffect({
+            id: "answer-one-shot-evidence",
+            version: "1.0.0",
+            description:
+              "Run one-shot reasoning with the full matched arm-level model envelope.",
+            input: evidenceSchema,
+            output: partialSchema,
+            effectName: "m9a.model.answer",
+            capability: "m9a.model.answer",
+            maxTokens:
+              oneShotReservation.maxInputTokens +
+              oneShotReservation.maxOutputTokens,
+            maxWallClockMs: oneShotReservation.maxWallClockMs,
+            replayable: true,
+          }),
+        ],
+  );
+}
 
-export function createM9aCapabilityCatalog(): Result<
-  Catalog,
-  ReadonlyArray<Diagnostic>
-> {
+function createM9aCapabilityCatalogWithProfile(
+  profile: M9aInternalExecutionProfile,
+): Result<Catalog, ReadonlyArray<Diagnostic>> {
   return createCatalog({
-    identity: {
-      id: "lachesis.m9a.retrieval-capabilities",
-      version: "1.1.0",
-    },
+    identity: profile.catalogIdentity,
     schemas: [
       taskSchema.runtime,
       questionSchema.runtime,
@@ -457,8 +515,15 @@ export function createM9aCapabilityCatalog(): Result<
       citationConfinedAnswerSchema.runtime,
       retrievalStateRegistration.runtime,
     ],
-    operations,
+    operations: createOperations(profile),
   });
+}
+
+export function createM9aCapabilityCatalog(): Result<
+  Catalog,
+  ReadonlyArray<Diagnostic>
+> {
+  return createM9aCapabilityCatalogWithProfile(M9A_INTERNAL_EXECUTION_PROFILE);
 }
 
 export const m9aModelUsageSchema = z
@@ -667,12 +732,23 @@ type StoredArtifact = Readonly<{
   inner: CodeModeArtifact;
   source: string;
   summary: M9aRetrievalArtifactSummary;
+  executionProfile: M9aInternalExecutionProfile;
 }>;
 
 const artifacts = new WeakMap<M9aRetrievalArtifact, StoredArtifact>();
 
 export async function compileM9aRetrievalProgram(
   source: string,
+): Promise<Result<M9aRetrievalArtifact, ReadonlyArray<Diagnostic>>> {
+  return compileM9aRetrievalProgramWithProfile(
+    source,
+    M9A_INTERNAL_EXECUTION_PROFILE,
+  );
+}
+
+export async function compileM9aRetrievalProgramWithProfile(
+  source: string,
+  profile: M9aInternalExecutionProfile,
 ): Promise<Result<M9aRetrievalArtifact, ReadonlyArray<Diagnostic>>> {
   if (
     new TextEncoder().encode(source).byteLength >
@@ -687,13 +763,13 @@ export async function compileM9aRetrievalProgram(
         ),
       ],
     };
-  const catalog = createM9aCapabilityCatalog();
+  const catalog = createM9aCapabilityCatalogWithProfile(profile);
   if (!catalog.ok) return catalog;
   const inner = await compileCodeModeWithDialect(
     {
       source,
       catalog: catalog.value,
-      policy: M9A_DEFAULT_RESOURCE_ENVELOPE,
+      policy: profile.resourceEnvelope,
       taskInputs: [
         {
           name: "task",
@@ -729,14 +805,14 @@ export async function compileM9aRetrievalProgram(
     };
   if (
     innerSummary.analysis.maximumOperationCalls >
-    M9A_EXECUTION_LIMITS.maxOperationCalls
+    profile.executionLimits.maxOperationCalls
   )
     return {
       ok: false,
       error: [
         diagnostic(
           "BUDGET_EXCEEDED",
-          `M9a operation-call bound ${innerSummary.analysis.maximumOperationCalls} exceeds ${M9A_EXECUTION_LIMITS.maxOperationCalls}.`,
+          `M9a operation-call bound ${innerSummary.analysis.maximumOperationCalls} exceeds ${profile.executionLimits.maxOperationCalls}.`,
         ),
       ],
     };
@@ -748,8 +824,8 @@ export async function compileM9aRetrievalProgram(
   const semanticContractHash = await digestValue({
     protocol: M9A_RETRIEVAL_CODEMODE_PROTOCOL,
     sourceHash: sourceHash.value,
-    catalog: "lachesis.m9a.retrieval-capabilities@1.1.0",
-    resourceEnvelope: M9A_DEFAULT_RESOURCE_ENVELOPE,
+    catalog: `${profile.catalogIdentity.id}@${profile.catalogIdentity.version}`,
+    resourceEnvelope: profile.resourceEnvelope,
     obligations: innerSummary.semanticObligations,
   });
   if (!semanticContractHash.ok)
@@ -762,6 +838,7 @@ export async function compileM9aRetrievalProgram(
     Object.freeze({
       inner: inner.value,
       source,
+      executionProfile: profile,
       summary: Object.freeze({
         protocol: M9A_RETRIEVAL_CODEMODE_PROTOCOL,
         sourceHash: sourceHash.value,
@@ -854,17 +931,18 @@ function codeModeUsage(
 
 function reserveModelUsage(
   context: MutableExecutionContext,
+  limits: M9aInternalExecutionLimits,
   reservation: M9aModelReservation,
 ): Result<void, Diagnostic> {
   if (
     context.resources.inputTokens +
       context.modelReservations.inputTokens +
       reservation.maxInputTokens >
-      M9A_EXECUTION_LIMITS.maxInputTokens ||
+      limits.maxInputTokens ||
     context.resources.outputTokens +
       context.modelReservations.outputTokens +
       reservation.maxOutputTokens >
-      M9A_EXECUTION_LIMITS.maxOutputTokens
+      limits.maxOutputTokens
   )
     return { ok: false, error: admissionFailure("model token or cost") };
   context.modelReservations.inputTokens += reservation.maxInputTokens;
@@ -874,6 +952,7 @@ function reserveModelUsage(
 
 function reconcileModelUsage(
   context: MutableExecutionContext,
+  limits: M9aInternalExecutionLimits,
   reservation: M9aModelReservation,
   usage: M9aModelUsage,
 ): Result<void, Diagnostic> {
@@ -887,20 +966,21 @@ function reconcileModelUsage(
     return { ok: false, error: admissionFailure("reported model usage") };
   context.resources.inputTokens += usage.inputTokens;
   context.resources.outputTokens += usage.outputTokens;
-  return context.resources.inputTokens > M9A_EXECUTION_LIMITS.maxInputTokens ||
-    context.resources.outputTokens > M9A_EXECUTION_LIMITS.maxOutputTokens
+  return context.resources.inputTokens > limits.maxInputTokens ||
+    context.resources.outputTokens > limits.maxOutputTokens
     ? { ok: false, error: admissionFailure("model token or cost") }
     : { ok: true, value: undefined };
 }
 
 function accountRecordedModelUsage(
   context: MutableExecutionContext,
+  limits: M9aInternalExecutionLimits,
   usage: M9aModelUsage,
 ): Result<void, Diagnostic> {
   context.resources.inputTokens += usage.inputTokens;
   context.resources.outputTokens += usage.outputTokens;
-  return context.resources.inputTokens > M9A_EXECUTION_LIMITS.maxInputTokens ||
-    context.resources.outputTokens > M9A_EXECUTION_LIMITS.maxOutputTokens
+  return context.resources.inputTokens > limits.maxInputTokens ||
+    context.resources.outputTokens > limits.maxOutputTokens
     ? { ok: false, error: admissionFailure("recorded model token or cost") }
     : { ok: true, value: undefined };
 }
@@ -1021,6 +1101,7 @@ function createEffectHandler(
   corpus: M9aCorpus,
   model: M9aOfflineModel,
   context: MutableExecutionContext,
+  profile: M9aInternalExecutionProfile,
   externalSignal: AbortSignal | undefined,
 ): CodeModeEffectHandler {
   return async (request) => {
@@ -1039,7 +1120,7 @@ function createEffectHandler(
         case "m9a.model.decompose": {
           if (
             context.resources.rootModelCalls + 1 >
-            M9A_EXECUTION_LIMITS.maxRootModelCalls
+            profile.executionLimits.maxRootModelCalls
           )
             return {
               ok: false,
@@ -1055,14 +1136,15 @@ function createEffectHandler(
             };
           const reserved = reserveModelUsage(
             context,
-            M9A_MODEL_RESERVATIONS.root,
+            profile.executionLimits,
+            profile.rootModelReservation,
           );
           if (!reserved.ok) return reserved;
           context.resources.rootModelCalls += 1;
           const result = await model.decompose(
             task.data,
             combined.signal,
-            M9A_MODEL_RESERVATIONS.root,
+            profile.rootModelReservation,
           );
           if (!result.ok)
             return { ok: false, error: retrievalDiagnostic(result.error) };
@@ -1077,7 +1159,8 @@ function createEffectHandler(
             };
           const accounted = reconcileModelUsage(
             context,
-            M9A_MODEL_RESERVATIONS.root,
+            profile.executionLimits,
+            profile.rootModelReservation,
             usage.data,
           );
           if (!accounted.ok) return accounted;
@@ -1102,10 +1185,10 @@ function createEffectHandler(
         case "m9a.corpus.search": {
           if (
             context.resources.searchCalls + 1 >
-              M9A_EXECUTION_LIMITS.maxSearchCalls ||
+              profile.executionLimits.maxSearchCalls ||
             context.resources.returnedSearchResults +
               M9A_CORPUS_LIMITS.maxSearchResults >
-              M9A_EXECUTION_LIMITS.maxReturnedSearchResults
+              profile.executionLimits.maxReturnedSearchResults
           )
             return {
               ok: false,
@@ -1165,7 +1248,7 @@ function createEffectHandler(
             };
           const availableBytes = Math.min(
             M9A_CORPUS_LIMITS.maxReadBytes,
-            M9A_EXECUTION_LIMITS.maxTotalReadBytes -
+            profile.executionLimits.maxTotalReadBytes -
               context.resources.readBytes,
           );
           const selectedChunks: Array<M9aChunkIdentity> = [];
@@ -1178,7 +1261,7 @@ function createEffectHandler(
           }
           if (
             context.resources.readCalls + 1 >
-            M9A_EXECUTION_LIMITS.maxReadCalls
+            profile.executionLimits.maxReadCalls
           )
             return {
               ok: false,
@@ -1230,7 +1313,7 @@ function createEffectHandler(
         case "m9a.model.answer": {
           if (
             context.resources.leafModelCalls + 1 >
-            M9A_EXECUTION_LIMITS.maxLeafModelCalls
+            profile.executionLimits.maxLeafModelCalls
           )
             return {
               ok: false,
@@ -1244,16 +1327,29 @@ function createEffectHandler(
                 invalidOutput("Leaf-model input failed validation."),
               ),
             };
+          const reservation =
+            request.operation.id === "answer-one-shot-evidence"
+              ? profile.oneShotModelReservation
+              : profile.leafModelReservation;
+          if (reservation === undefined)
+            return {
+              ok: false,
+              error: diagnostic(
+                "INTERNAL_INVARIANT_VIOLATION",
+                "M9a one-shot model operation has no reservation profile.",
+              ),
+            };
           const reserved = reserveModelUsage(
             context,
-            M9A_MODEL_RESERVATIONS.leaf,
+            profile.executionLimits,
+            reservation,
           );
           if (!reserved.ok) return reserved;
           context.resources.leafModelCalls += 1;
           const result = await model.answer(
             evidence.data,
             combined.signal,
-            M9A_MODEL_RESERVATIONS.leaf,
+            reservation,
           );
           if (!result.ok)
             return { ok: false, error: retrievalDiagnostic(result.error) };
@@ -1268,7 +1364,8 @@ function createEffectHandler(
             };
           const accounted = reconcileModelUsage(
             context,
-            M9A_MODEL_RESERVATIONS.leaf,
+            profile.executionLimits,
+            reservation,
             usage.data,
           );
           if (!accounted.ok) return accounted;
@@ -1475,9 +1572,10 @@ async function executeM9aLiveSession(
       input.corpus,
       input.model,
       context,
+      stored.executionProfile,
       input.signal,
     ),
-    timeoutMs: M9A_DEFAULT_RESOURCE_ENVELOPE.budget.maxWallClockMs,
+    timeoutMs: stored.executionProfile.resourceEnvelope.budget.maxWallClockMs,
   });
   if (!executed.ok)
     return {
@@ -1617,6 +1715,7 @@ function createReplayEffectHandler(
   entries: ReadonlyArray<M9aPrivateReplayEntry>,
   context: MutableExecutionContext,
   consumed: Readonly<{ next: () => number }>,
+  profile: M9aInternalExecutionProfile,
 ): CodeModeEffectHandler {
   return async (request) => {
     const index = consumed.next();
@@ -1690,7 +1789,11 @@ function createReplayEffectHandler(
       entry.event.category === "root-model" ||
       entry.event.category === "leaf-model"
     ) {
-      const accounted = accountRecordedModelUsage(context, entry.usage);
+      const accounted = accountRecordedModelUsage(
+        context,
+        profile.executionLimits,
+        entry.usage,
+      );
       if (!accounted.ok)
         return {
           ok: false,
@@ -1702,14 +1805,14 @@ function createReplayEffectHandler(
     }
     if (
       context.resources.rootModelCalls >
-        M9A_EXECUTION_LIMITS.maxRootModelCalls ||
+        profile.executionLimits.maxRootModelCalls ||
       context.resources.leafModelCalls >
-        M9A_EXECUTION_LIMITS.maxLeafModelCalls ||
-      context.resources.searchCalls > M9A_EXECUTION_LIMITS.maxSearchCalls ||
-      context.resources.readCalls > M9A_EXECUTION_LIMITS.maxReadCalls ||
+        profile.executionLimits.maxLeafModelCalls ||
+      context.resources.searchCalls > profile.executionLimits.maxSearchCalls ||
+      context.resources.readCalls > profile.executionLimits.maxReadCalls ||
       context.resources.returnedSearchResults >
-        M9A_EXECUTION_LIMITS.maxReturnedSearchResults ||
-      context.resources.readBytes > M9A_EXECUTION_LIMITS.maxTotalReadBytes
+        profile.executionLimits.maxReturnedSearchResults ||
+      context.resources.readBytes > profile.executionLimits.maxTotalReadBytes
     )
       return {
         ok: false,
@@ -1757,6 +1860,16 @@ function createReplayEffectHandler(
 export async function replayM9aRetrievalProgram(
   artifactInput: unknown,
 ): Promise<Result<M9aRetrievalRun, M9aRunFailure>> {
+  return replayM9aRetrievalProgramWithProfile(
+    artifactInput,
+    M9A_INTERNAL_EXECUTION_PROFILE,
+  );
+}
+
+export async function replayM9aRetrievalProgramWithProfile(
+  artifactInput: unknown,
+  profile: M9aInternalExecutionProfile,
+): Promise<Result<M9aRetrievalRun, M9aRunFailure>> {
   const artifact = m9aPrivateReplayArtifactSchema.safeParse(artifactInput);
   if (!artifact.success)
     return {
@@ -1774,7 +1887,10 @@ export async function replayM9aRetrievalProgram(
       ok: false,
       error: replayMismatch("artifact digest does not match"),
     };
-  const compiled = await compileM9aRetrievalProgram(artifact.data.source);
+  const compiled = await compileM9aRetrievalProgramWithProfile(
+    artifact.data.source,
+    profile,
+  );
   if (!compiled.ok)
     return {
       ok: false,
@@ -1793,14 +1909,19 @@ export async function replayM9aRetrievalProgram(
   let nextIndex = 0;
   const executed = await executeCodeMode(stored.inner, {
     inputs: new Map([["task", artifact.data.task]]),
-    effectHandler: createReplayEffectHandler(artifact.data.entries, context, {
-      next: () => {
-        const current = nextIndex;
-        nextIndex += 1;
-        return current;
+    effectHandler: createReplayEffectHandler(
+      artifact.data.entries,
+      context,
+      {
+        next: () => {
+          const current = nextIndex;
+          nextIndex += 1;
+          return current;
+        },
       },
-    }),
-    timeoutMs: M9A_DEFAULT_RESOURCE_ENVELOPE.budget.maxWallClockMs,
+      profile,
+    ),
+    timeoutMs: profile.resourceEnvelope.budget.maxWallClockMs,
   });
   if (!executed.ok)
     return {
