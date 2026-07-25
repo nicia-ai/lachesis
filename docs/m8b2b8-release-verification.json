@@ -1,0 +1,135 @@
+{
+  "protocol": "lachesis.m8b2b8.release-verification-no-go.v1",
+  "disposition": "no-go-isolated-parity-unreliable-larger-runner-unavailable",
+  "baseline": {
+    "workflowCorrectionCommit": "36402de6560a2c5998d773e10f0c9a2695110e18",
+    "workflowSha256": "2c04cf37d453916f3d189be1e0c09f6090db2ffa31d0c41397036dadeb9b66f4",
+    "releaseSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "releaseTag": "v0.1.0-alpha.4",
+    "releaseId": 359550250,
+    "releaseBodySha256": "bec6a90f3c7683e3d66d10607ebfb4891105abb25064c5feae14e59196fc1a02"
+  },
+  "failedHostedRun": {
+    "databaseId": 30144568420,
+    "attempt": 1,
+    "workflowHeadCommit": "36402de6560a2c5998d773e10f0c9a2695110e18",
+    "conclusion": "failure",
+    "classification": "zero-publication-hosted-runner-timeout",
+    "failedTest": "packages/evidence-typegraph/tests/parity.test.ts:145",
+    "failedTestDurationMs": 20016,
+    "testsPassed": 442,
+    "testsTotal": 443,
+    "suiteDurationSeconds": 278.83,
+    "packageSetValidation": "skipped",
+    "pack": "skipped",
+    "publication": "skipped",
+    "registryVerification": "skipped",
+    "draftRestoration": "pass"
+  },
+  "prospectiveSplitDesign": {
+    "vitestVersion": "4.1.10",
+    "coverageMechanism": "blob reports followed by --merge-reports with coverage enabled",
+    "aggregateThresholdSource": "vitest.config.ts",
+    "isolatedPhase": {
+      "path": "packages/evidence-typegraph/tests/parity.test.ts",
+      "testCount": 14,
+      "freshProcess": true,
+      "separateBlobPath": true,
+      "separateCoveragePath": true
+    },
+    "remainingPhase": {
+      "explicitlyExcludedPath": "packages/evidence-typegraph/tests/parity.test.ts",
+      "testCount": 429,
+      "maxWorkers": 1
+    },
+    "accountingCorrection": {
+      "requestedRemainingCount": 442,
+      "actualRemainingCount": 429,
+      "reason": "The isolated file contains 14 tests, so exact-once execution is 14 plus 429, not 14 plus 442.",
+      "combinedCount": 443
+    },
+    "exactOnceAuditProspectivelyFeasible": true,
+    "mergeValidationReached": false,
+    "mergeValidationBlockedBy": "isolated parity phase failed its unchanged timeout"
+  },
+  "localKillGate": {
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "pressure": "none-intentionally-applied",
+    "run": 1,
+    "testsPassed": 13,
+    "testsTotal": 14,
+    "failedTest": "M4c TypeGraph parity preserves compiler, visible-view, validation, and reconstruction identities",
+    "failedTestDurationMs": 20009.738833,
+    "timeoutMs": 20000,
+    "coverageOutput": "not-produced-after-test-failure",
+    "blobOutput": "produced",
+    "decision": "kill-gate-triggered"
+  },
+  "largerRunnerReview": {
+    "organization": "nicia-ai",
+    "observedPlan": "free",
+    "hostedRunnerApi": {
+      "endpoint": "/orgs/nicia-ai/actions/hosted-runners",
+      "status": 404,
+      "classification": "GitHub hosted runners are not supported for this organization"
+    },
+    "eligibility": "GitHub Team or GitHub Enterprise Cloud required",
+    "availableIfSeparatelyProvisioned": [
+      {
+        "label": "macos-15-xlarge",
+        "architecture": "arm64",
+        "processor": "M2",
+        "cpu": 5,
+        "memoryGb": 14,
+        "rateUsdPerMinute": 0.102
+      },
+      {
+        "label": "macos-15-large",
+        "architecture": "x64",
+        "cpu": 12,
+        "memoryGb": 30,
+        "rateUsdPerMinute": 0.077
+      }
+    ],
+    "provisioned": false,
+    "repositoryAccessVerified": false,
+    "spendingAuthorizationVerified": false,
+    "capacityTested": false
+  },
+  "workflowOutcome": {
+    "workflowChanged": false,
+    "verificationOnlyModeAdded": false,
+    "reason": "The required isolated-process reliability gate failed before workflow implementation.",
+    "correctionCommit": null
+  },
+  "authorizationStatus": {
+    "correctionPush": "withheld-no-correction-commit",
+    "verificationOnlyDispatches": "withheld-no-eligible-runner-or-verified-workflow",
+    "finalReleaseDispatch": "withheld-hosted-verification-gates-not-passed"
+  },
+  "preserved": {
+    "packageSource": true,
+    "testSource": true,
+    "testTimeout": true,
+    "assertions": true,
+    "coverageThresholds": true,
+    "releaseSource": true,
+    "tag": true,
+    "tarballDigests": true,
+    "releaseNotes": true,
+    "registryState": true,
+    "trustedPublishers": true
+  },
+  "nonactions": [
+    "no-workflow-change",
+    "no-push",
+    "no-dispatch",
+    "no-publication",
+    "no-release-mutation",
+    "no-runner-provisioning",
+    "no-plan-upgrade",
+    "no-credential-access",
+    "no-tag-or-dist-tag-change"
+  ]
+}
