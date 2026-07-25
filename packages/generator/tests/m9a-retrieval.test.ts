@@ -33,13 +33,16 @@ import {
   inspectM9aRetrievalTranscript,
   M9A_DEFAULT_RESOURCE_ENVELOPE,
   M9A_EXECUTION_LIMITS,
+  M9A_MODEL_RESERVATIONS,
   M9A_MODEL_VISIBLE_GRAMMAR,
   M9A_RETRIEVAL_CODEMODE_PROTOCOL,
   type M9aEvidenceSlice,
+  type M9aModelReservation,
   type M9aOfflineModel,
   type M9aPartialAnswer,
   type M9aPrivateReplayArtifact,
   m9aPrivateReplayArtifactSchema,
+  m9aPrivateReplayEntrySchema,
   replayM9aRetrievalProgram,
   runM9aOfflineComparison,
   summarizeM9aUsage,
@@ -161,6 +164,15 @@ function deterministicModel(): M9aOfflineModel {
   };
 }
 
+function isolatedModelSessions(
+  createModel: () => M9aOfflineModel = deterministicModel,
+) {
+  return {
+    sequencedRetrieval: (): M9aOfflineModel => createModel(),
+    oneShotRag: (): M9aOfflineModel => createModel(),
+  };
+}
+
 const boundedRetrievalSource = `export default async function main(input, ops) {
   const questions = await ops.invoke("decompose-query@1.0.0", input.task);
   const state = await ops.invoke("prepare-retrieval-state@1.0.0", questions);
@@ -169,8 +181,8 @@ const boundedRetrievalSource = `export default async function main(input, ops) {
   const searches = await ops.map("search-corpus@1.0.0", queries);
   const evidence = await ops.map("read-search-results@1.0.0", searches);
   const partials = await ops.map("answer-evidence-slice@1.0.0", evidence);
-  const answer = await ops.fold("synthesize-grounded-answer@1.0.0", partials);
-  const submitted = await ops.invoke("submit-grounded-answer@1.0.0", answer);
+  const answer = await ops.fold("synthesize-citation-confined-answer@1.0.0", partials);
+  const submitted = await ops.invoke("submit-citation-confined-answer@1.0.0", answer);
   return submitted;
 }`;
 
@@ -722,6 +734,33 @@ describe("M9a retrieval CodeMode protocol", () => {
 });
 
 describe("M9a offline paired vertical slice", () => {
+  it("selects a deterministic evidence subset that fits the read-byte envelope", async () => {
+    const corpus = unwrap(
+      await createM9aCorpus({
+        id: "m9a-eight-large-hits",
+        version: "1",
+        documents: Array.from({ length: 8 }, (_value, index) => ({
+          id: `document-${index}`,
+          title: `Needle ${index}`,
+          text: `needle ${"x".repeat(1_016)}`,
+        })),
+      }),
+    );
+    const artifact = unwrap(
+      await compileM9aRetrievalProgram(M9A_MODEL_VISIBLE_GRAMMAR.template),
+    );
+    const result = await executeM9aRetrievalProgram(artifact, {
+      corpus,
+      task: "needle",
+      model: deterministicModel(),
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.visibility.searchResults.at(0)?.hits).toHaveLength(8);
+    expect(result.value.visibility.readResults.at(0)?.excerpts).toHaveLength(4);
+    expect(result.value.transcript.retrievalUsage.readBytes).toBe(4_092);
+  });
+
   it("contains fresh development cases and a functional sequencing gap without exposing hidden labels", async () => {
     expect(
       new Set(M9A_DEVELOPMENT_CASES.map((item) => item.category)).size,
@@ -735,7 +774,7 @@ describe("M9a offline paired vertical slice", () => {
     if (publicCase === undefined || hidden === undefined)
       throw new Error("Missing M9a development fixture.");
     const rootRequests: Array<string> = [];
-    const fixtureModel: M9aOfflineModel = {
+    const createFixtureModel = (): M9aOfflineModel => ({
       identity: { id: "m9a-functional-gap-fixture", version: "1" },
       decompose: (task) => {
         rootRequests.push(task);
@@ -778,13 +817,14 @@ describe("M9a offline paired vertical slice", () => {
           },
         });
       },
-    };
+    });
     const comparison = unwrap(
       await runM9aOfflineComparison({
         source: M9A_MODEL_VISIBLE_GRAMMAR.template,
         corpus: unwrap(await createM9aCorpus(M9A_DEVELOPMENT_CORPUS)),
         task: publicCase.task,
-        model: fixtureModel,
+        modelSessionFactories: isolatedModelSessions(createFixtureModel),
+        executionOrder: "sequenced-first",
       }),
     );
     expect(
@@ -811,15 +851,122 @@ describe("M9a offline paired vertical slice", () => {
   });
 
   it("returns a typed compile failure before either comparison arm executes", async () => {
+    let factoryCalls = 0;
+    const sessions = {
+      sequencedRetrieval: (): M9aOfflineModel => {
+        factoryCalls += 1;
+        return deterministicModel();
+      },
+      oneShotRag: (): M9aOfflineModel => {
+        factoryCalls += 1;
+        return deterministicModel();
+      },
+    };
     const result = await runM9aOfflineComparison({
       source: `export default async function main(input, ops) {
         return fetch(input.task);
       }`,
       corpus: await corpusFixture(),
       task: "Compare Project A and Project B launch years.",
-      model: deterministicModel(),
+      modelSessionFactories: sessions,
+      executionOrder: "sequenced-first",
     });
     expect(result.ok ? null : result.error.kind).toBe("compile");
+    expect(factoryCalls).toBe(0);
+  });
+
+  it("isolates model sessions and honors an explicit one-shot-first order", async () => {
+    const calls: Array<string> = [];
+    const taggedModel = (tag: string): M9aOfflineModel => {
+      const base = deterministicModel();
+      return {
+        ...base,
+        decompose: (task, signal, reservation) => {
+          calls.push(`${tag}:decompose`);
+          return base.decompose(task, signal, reservation);
+        },
+        answer: (evidence, signal, reservation) => {
+          calls.push(`${tag}:answer`);
+          return base.answer(evidence, signal, reservation);
+        },
+      };
+    };
+    const comparison = unwrap(
+      await runM9aOfflineComparison({
+        source: M9A_MODEL_VISIBLE_GRAMMAR.template,
+        corpus: await corpusFixture(),
+        task: "Compare Project A and Project B launch years.",
+        modelSessionFactories: {
+          sequencedRetrieval: () => {
+            calls.push("sequenced:create");
+            return taggedModel("sequenced");
+          },
+          oneShotRag: () => {
+            calls.push("one-shot:create");
+            return taggedModel("one-shot");
+          },
+        },
+        executionOrder: "one-shot-first",
+      }),
+    );
+    expect(comparison.executionOrder).toEqual([
+      "one-shot-rag",
+      "sequenced-retrieval",
+    ]);
+    expect(calls.slice(0, 3)).toEqual([
+      "one-shot:create",
+      "sequenced:create",
+      "one-shot:answer",
+    ]);
+    expect(calls).toContain("sequenced:decompose");
+  });
+
+  it("rejects shared factories, shared sessions, and mismatched identities", async () => {
+    const shared = deterministicModel();
+    const sharedFactory = (): M9aOfflineModel => deterministicModel();
+    const corpus = await corpusFixture();
+    const results = await Promise.all([
+      runM9aOfflineComparison({
+        source: M9A_MODEL_VISIBLE_GRAMMAR.template,
+        corpus,
+        task: "Compare Project A and Project B launch years.",
+        modelSessionFactories: {
+          sequencedRetrieval: sharedFactory,
+          oneShotRag: sharedFactory,
+        },
+        executionOrder: "sequenced-first",
+      }),
+      runM9aOfflineComparison({
+        source: M9A_MODEL_VISIBLE_GRAMMAR.template,
+        corpus,
+        task: "Compare Project A and Project B launch years.",
+        modelSessionFactories: {
+          sequencedRetrieval: () => shared,
+          oneShotRag: () => shared,
+        },
+        executionOrder: "sequenced-first",
+      }),
+      runM9aOfflineComparison({
+        source: M9A_MODEL_VISIBLE_GRAMMAR.template,
+        corpus,
+        task: "Compare Project A and Project B launch years.",
+        modelSessionFactories: {
+          sequencedRetrieval: deterministicModel,
+          oneShotRag: () => ({
+            ...deterministicModel(),
+            identity: { id: "different-model", version: "1.0.0" },
+          }),
+        },
+        executionOrder: "sequenced-first",
+      }),
+    ]);
+    expect(
+      results.map((result) => (result.ok ? null : result.error.kind)),
+    ).toEqual([
+      "invalid-comparison",
+      "invalid-comparison",
+      "invalid-comparison",
+    ]);
   });
 
   it("executes bounded sequenced retrieval and one-shot RAG under one substrate", async () => {
@@ -829,7 +976,8 @@ describe("M9a offline paired vertical slice", () => {
         source: boundedRetrievalSource,
         corpus,
         task: "Compare Project A and Project B launch years.",
-        model: deterministicModel(),
+        modelSessionFactories: isolatedModelSessions(),
+        executionOrder: "sequenced-first",
       }),
     );
     expect(comparison.sequenced.run.answer.citations.length).toBeGreaterThan(0);
@@ -843,6 +991,10 @@ describe("M9a offline paired vertical slice", () => {
       comparison.oneShot.run.transcript.model,
     );
     expect(comparison.resourceEnvelope).toBe(M9A_DEFAULT_RESOURCE_ENVELOPE);
+    expect(comparison.executionOrder).toEqual([
+      "sequenced-retrieval",
+      "one-shot-rag",
+    ]);
     expect(comparison.sequenced.run.transcript.retrievalUsage).toMatchObject({
       rootModelCalls: 1,
       leafModelCalls: 2,
@@ -861,6 +1013,10 @@ describe("M9a offline paired vertical slice", () => {
     expect(comparison.claimBoundary).toContain(
       "no retrieval-quality or production-readiness claim",
     );
+    expect(comparison.sequenced.run.answerValidation).toEqual({
+      kind: "citation-confinement-only",
+      semanticEvaluation: "external-not-performed",
+    });
   });
 
   it("keeps visibility, final answer, and provenance structurally separate", async () => {
@@ -952,6 +1108,53 @@ describe("M9a offline paired vertical slice", () => {
     expect(run.transcript.operationDependencies).not.toContain("fetch");
   });
 
+  it("labels a false but visible citation as semantically unevaluated", async () => {
+    const base = deterministicModel();
+    const falseButCited: M9aOfflineModel = {
+      ...base,
+      identity: { id: "false-but-cited-fixture", version: "1" },
+      answer: (evidence) =>
+        Promise.resolve({
+          ok: true,
+          value: {
+            value: {
+              claim: "Project A launched in 1999.",
+              citations: evidence.excerpts
+                .slice(0, 1)
+                .map((excerpt) => excerpt.chunk),
+            },
+            usage: {
+              inputTokens: 4,
+              outputTokens: 4,
+              wallClockMs: 1,
+              costUsdMicros: 0,
+            },
+          },
+        }),
+    };
+    const artifact = unwrap(
+      await compileM9aRetrievalProgram(M9A_MODEL_VISIBLE_GRAMMAR.template),
+    );
+    const run = unwrap(
+      await executeM9aRetrievalProgram(artifact, {
+        corpus: await corpusFixture(),
+        task: "When did Project A launch?",
+        model: falseButCited,
+      }),
+    );
+    expect(run.answer.answer).toContain("1999");
+    expect(run.visibility.readResults.at(0)?.excerpts.at(0)?.text).toContain(
+      "2020",
+    );
+    expect(run.answerValidation).toEqual({
+      kind: "citation-confinement-only",
+      semanticEvaluation: "external-not-performed",
+    });
+    expect(run.transcript.operationDependencies).not.toContain(
+      "submit-grounded-answer@1.0.0",
+    );
+  });
+
   it("rejects leaf citations outside the assigned evidence slice", async () => {
     const corpus = await corpusFixture();
     const baseline = deterministicModel();
@@ -978,7 +1181,11 @@ describe("M9a offline paired vertical slice", () => {
           | { ok: false; error: M9aRetrievalFailure }
         >
       > => {
-        const honest = await baseline.answer(evidence, signal);
+        const honest = await baseline.answer(
+          evidence,
+          signal,
+          M9A_MODEL_RESERVATIONS.leaf,
+        );
         if (!honest.ok) return honest;
         const citation = evidence.excerpts.at(0)?.chunk;
         if (citation === undefined)
@@ -1088,17 +1295,24 @@ describe("M9a offline paired vertical slice", () => {
     );
   });
 
-  it("enforces aggregate input-token admission for root and leaf model calls", async () => {
+  it("reserves model maxima before dispatch and reconciles reported usage", async () => {
     const artifact = unwrap(
       await compileM9aRetrievalProgram(M9A_MODEL_VISIBLE_GRAMMAR.template),
     );
     const corpus = await corpusFixture();
     const base = deterministicModel();
+    const reservations: Array<
+      Readonly<{ kind: string; reservation: M9aModelReservation }>
+    > = [];
     const rootHeavy: M9aOfflineModel = {
       ...base,
       identity: { id: "root-token-overflow", version: "1" },
-      decompose: async (task, signal) => {
-        const result = await base.decompose(task, signal);
+      decompose: async (task, signal, reservation) => {
+        reservations.push({
+          kind: "root",
+          reservation,
+        });
+        const result = await base.decompose(task, signal, reservation);
         return result.ok
           ? {
               ok: true,
@@ -1116,8 +1330,12 @@ describe("M9a offline paired vertical slice", () => {
     const leafHeavy: M9aOfflineModel = {
       ...base,
       identity: { id: "leaf-token-overflow", version: "1" },
-      answer: async (evidence, signal) => {
-        const result = await base.answer(evidence, signal);
+      answer: async (evidence, signal, reservation) => {
+        reservations.push({
+          kind: "leaf",
+          reservation,
+        });
+        const result = await base.answer(evidence, signal, reservation);
         return result.ok
           ? {
               ok: true,
@@ -1146,6 +1364,24 @@ describe("M9a offline paired vertical slice", () => {
     ]);
     expect(rootResult.ok ? null : rootResult.error.kind).toBe("execution");
     expect(leafResult.ok ? null : leafResult.error.kind).toBe("execution");
+    expect(reservations).toContainEqual({
+      kind: "root",
+      reservation: M9A_MODEL_RESERVATIONS.root,
+    });
+    expect(reservations).toContainEqual({
+      kind: "leaf",
+      reservation: M9A_MODEL_RESERVATIONS.leaf,
+    });
+    expect(
+      !rootResult.ok && rootResult.error.kind === "execution"
+        ? rootResult.error.failure.diagnostics.at(0)?.message
+        : null,
+    ).toContain("reported model usage");
+    expect(
+      !leafResult.ok && leafResult.error.kind === "execution"
+        ? leafResult.error.failure.diagnostics.at(0)?.message
+        : null,
+    ).toContain("reported model usage");
   });
 
   it("rejects an out-of-contract decomposition response", async () => {
@@ -1244,13 +1480,13 @@ describe("M9a offline paired vertical slice", () => {
     const base = deterministicModel();
     const counted: M9aOfflineModel = {
       identity: base.identity,
-      decompose: (task, signal) => {
+      decompose: (task, signal, reservation) => {
         modelCalls += 1;
-        return base.decompose(task, signal);
+        return base.decompose(task, signal, reservation);
       },
-      answer: (evidence, signal) => {
+      answer: (evidence, signal, reservation) => {
         modelCalls += 1;
-        return base.answer(evidence, signal);
+        return base.answer(evidence, signal, reservation);
       },
     };
     const artifact = unwrap(
@@ -1424,5 +1660,68 @@ describe("M9a offline paired vertical slice", () => {
       resignedTampering.map((tampered) => replayM9aRetrievalProgram(tampered)),
     );
     expect(resignedRejected.every((result) => !result.ok)).toBe(true);
+  });
+
+  it("preserves root and nested hostile JSON keys at the replay boundary", () => {
+    const nested: Record<string, unknown> = { safe: true };
+    Object.defineProperty(nested, "__proto__", {
+      value: { retained: true },
+      enumerable: true,
+    });
+    const input: Record<string, unknown> = { nested };
+    Object.defineProperty(input, "__proto__", {
+      value: { retained: true },
+      enumerable: true,
+    });
+    const parsed = m9aPrivateReplayEntrySchema.parse({
+      sequence: 0,
+      operation: "test@1",
+      effectName: "test.effect",
+      input,
+      output: input,
+      usage: {
+        inputTokens: 0,
+        outputTokens: 0,
+        wallClockMs: 0,
+        costUsdMicros: 0,
+      },
+      event: {
+        sequence: 0,
+        category: "submission",
+        operation: "test@1",
+        effectName: "test.effect",
+        inputDigest: "0".repeat(64),
+        outputDigest: "0".repeat(64),
+        evidenceChunkIds: [],
+        itemCount: 0,
+        bytes: 0,
+        usage: {
+          inputTokens: 0,
+          outputTokens: 0,
+          wallClockMs: 0,
+          costUsdMicros: 0,
+        },
+      },
+      readResult: null,
+    });
+    if (
+      parsed.input === null ||
+      typeof parsed.input !== "object" ||
+      Array.isArray(parsed.input) ||
+      parsed.output === null ||
+      typeof parsed.output !== "object" ||
+      Array.isArray(parsed.output)
+    )
+      throw new Error("Expected replay input and output objects.");
+    expect(Object.keys(parsed.input)).toEqual(["nested", "__proto__"]);
+    expect(Object.keys(parsed.output)).toEqual(["nested", "__proto__"]);
+    const parsedNested = parsed.input["nested"];
+    if (
+      parsedNested === null ||
+      typeof parsedNested !== "object" ||
+      Array.isArray(parsedNested)
+    )
+      throw new Error("Expected nested replay input object.");
+    expect(Object.keys(parsedNested)).toEqual(["safe", "__proto__"]);
   });
 });

@@ -31,6 +31,7 @@ import {
 import {
   inspectM9aCorpus,
   M9A_CORPUS_LIMITS,
+  type M9aChunkIdentity,
   m9aChunkIdentitySchema,
   type M9aCorpus,
   type M9aCorpusSnapshot,
@@ -45,10 +46,11 @@ import {
   readM9aCorpus,
   searchM9aCorpus,
 } from "./m9a-corpus.js";
+import { strictJsonValueSchema } from "./strict-json.js";
 
 export const M9A_RETRIEVAL_CODEMODE_PROTOCOL = Object.freeze({
   id: "lachesis-m9a-retrieval-codemode",
-  version: "1.0.0",
+  version: "1.1.0",
   grammar: "closed-retrieval-capability-typescript/1",
   composedInterpreter: Object.freeze({
     id: CODEMODE_PROTOCOL.id,
@@ -59,26 +61,26 @@ export const M9A_RETRIEVAL_CODEMODE_PROTOCOL = Object.freeze({
   isolation:
     "source is parsed and interpreted as a closed AST and never enters eval, Function, vm, a module loader, a child process, or an ordinary JavaScript execution realm",
   claimBoundary:
-    "offline infrastructure and functional evidence only; no retrieval-quality or production-readiness claim",
+    "offline infrastructure and citation-confinement evidence only; semantic correctness and grounding require external evaluation, which M9a does not perform, and no retrieval-quality or production-readiness claim is made",
 });
 
 export const M9A_PRIVATE_REPLAY_PROTOCOL = Object.freeze({
   id: "lachesis-m9a-private-retrieval-replay",
-  version: "1.0.0",
+  version: "1.1.0",
   visibility:
     "private artifact containing exact effect inputs, fetched evidence, and reduced outputs",
 });
 
 export const M9A_MODEL_VISIBLE_GRAMMAR = Object.freeze({
   id: "lachesis-m9a-retrieval-codemode-model-visible-grammar",
-  version: "1",
+  version: "1.1",
   template: `export default async function main(input, ops) {
   const questions = await ops.invoke("decompose-query@1.0.0", input.task);
   const searches = await ops.map("search-corpus@1.0.0", questions);
   const evidence = await ops.map("read-search-results@1.0.0", searches);
   const partials = await ops.map("answer-evidence-slice@1.0.0", evidence);
-  const answer = await ops.fold("synthesize-grounded-answer@1.0.0", partials);
-  const submitted = await ops.invoke("submit-grounded-answer@1.0.0", answer);
+  const answer = await ops.fold("synthesize-citation-confined-answer@1.0.0", partials);
+  const submitted = await ops.invoke("submit-citation-confined-answer@1.0.0", answer);
   return submitted;
 }`,
   rules: Object.freeze([
@@ -99,8 +101,8 @@ export const M9A_ONE_SHOT_RAG_SOURCE = `export default async function main(input
   const evidence = await ops.invoke("read-search-results@1.0.0", search);
   const partial = await ops.invoke("answer-evidence-slice@1.0.0", evidence);
   const partials = await ops.invoke("as-partial-list@1.0.0", partial);
-  const answer = await ops.fold("synthesize-grounded-answer@1.0.0", partials);
-  const submitted = await ops.invoke("submit-grounded-answer@1.0.0", answer);
+  const answer = await ops.fold("synthesize-citation-confined-answer@1.0.0", partials);
+  const submitted = await ops.invoke("submit-citation-confined-answer@1.0.0", answer);
   return submitted;
 }`;
 
@@ -136,6 +138,21 @@ export const M9A_EXECUTION_LIMITS = Object.freeze({
   maxCostUsdMicros: 0,
 });
 
+export const M9A_MODEL_RESERVATIONS = Object.freeze({
+  root: Object.freeze({
+    maxInputTokens: 128,
+    maxOutputTokens: 128,
+    maxWallClockMs: 1_000,
+    maxCostUsdMicros: 0,
+  }),
+  leaf: Object.freeze({
+    maxInputTokens: 256,
+    maxOutputTokens: 256,
+    maxWallClockMs: 2_000,
+    maxCostUsdMicros: 0,
+  }),
+});
+
 const taskValidator = z.string().min(1).max(2_048);
 const questionValidator = z.string().min(1).max(512);
 const questionsValidator = questionValidator.array().min(1).max(4).readonly();
@@ -155,13 +172,20 @@ const partialAnswerSchema = z
   .readonly();
 export type M9aPartialAnswer = z.infer<typeof partialAnswerSchema>;
 
-export const m9aGroundedAnswerSchema = z
+export const m9aCitationConfinedAnswerSchema = z
   .strictObject({
     answer: z.string().max(16_384),
     citations: m9aChunkIdentitySchema.array().max(32).readonly(),
   })
   .readonly();
-export type M9aGroundedAnswer = z.infer<typeof m9aGroundedAnswerSchema>;
+export type M9aCitationConfinedAnswer = z.infer<
+  typeof m9aCitationConfinedAnswerSchema
+>;
+
+export const M9A_ANSWER_VALIDATION = Object.freeze({
+  kind: "citation-confinement-only" as const,
+  semanticEvaluation: "external-not-performed" as const,
+});
 
 const retrievalStateSchema = z
   .strictObject({
@@ -226,7 +250,7 @@ const evidenceSlicesSchema = defineCollectionSchema({
 const partialSchema = defineSchema({
   id: "m9a-partial-answer",
   version: "1.0.0",
-  description: "One leaf-model claim grounded in assigned evidence.",
+  description: "One leaf-model claim citing only assigned evidence.",
   validator: partialAnswerSchema,
 });
 const partialsSchema = defineCollectionSchema({
@@ -237,11 +261,12 @@ const partialsSchema = defineCollectionSchema({
   element: partialSchema,
   defaultMaxItems: 4,
 });
-const groundedAnswerSchema = defineSchema({
-  id: "m9a-grounded-answer",
+const citationConfinedAnswerSchema = defineSchema({
+  id: "m9a-citation-confined-answer",
   version: "1.0.0",
-  description: "A final answer with canonical chunk citations.",
-  validator: m9aGroundedAnswerSchema,
+  description:
+    "A final answer with confined canonical citations and no semantic-correctness claim.",
+  validator: m9aCitationConfinedAnswerSchema,
 });
 const retrievalStateRegistration = defineSchema({
   id: "m9a-retrieval-state",
@@ -268,7 +293,9 @@ const operations = Object.freeze([
     output: questionsSchema,
     effectName: "m9a.model.decompose",
     capability: "m9a.model.decompose",
-    maxTokens: 256,
+    maxTokens:
+      M9A_MODEL_RESERVATIONS.root.maxInputTokens +
+      M9A_MODEL_RESERVATIONS.root.maxOutputTokens,
     maxWallClockMs: 1_000,
     replayable: true,
     maxOutputItems: 4,
@@ -305,16 +332,19 @@ const operations = Object.freeze([
     output: partialSchema,
     effectName: "m9a.model.answer",
     capability: "m9a.model.answer",
-    maxTokens: 512,
+    maxTokens:
+      M9A_MODEL_RESERVATIONS.leaf.maxInputTokens +
+      M9A_MODEL_RESERVATIONS.leaf.maxOutputTokens,
     maxWallClockMs: 2_000,
     replayable: true,
   }),
   defineReducer({
-    id: "synthesize-grounded-answer",
+    id: "synthesize-citation-confined-answer",
     version: "1.0.0",
-    description: "Aggregate ordered leaf answers without inventing evidence.",
+    description:
+      "Aggregate ordered leaf answers while preserving their confined citations.",
     element: partialSchema,
-    accumulator: groundedAnswerSchema,
+    accumulator: citationConfinedAnswerSchema,
     identity: { answer: "", citations: [] },
     laws: {
       associative: false,
@@ -337,12 +367,12 @@ const operations = Object.freeze([
     }),
   }),
   defineEffect({
-    id: "submit-grounded-answer",
+    id: "submit-citation-confined-answer",
     version: "1.0.0",
     description:
-      "Validate that final citations were visible in this execution and submit.",
-    input: groundedAnswerSchema,
-    output: groundedAnswerSchema,
+      "Validate citation visibility and submit without claiming semantic support.",
+    input: citationConfinedAnswerSchema,
+    output: citationConfinedAnswerSchema,
     effectName: "m9a.answer.submit",
     capability: "m9a.answer.submit",
     maxTokens: 0,
@@ -412,7 +442,7 @@ export function createM9aCapabilityCatalog(): Result<
   return createCatalog({
     identity: {
       id: "lachesis.m9a.retrieval-capabilities",
-      version: "1.0.0",
+      version: "1.1.0",
     },
     schemas: [
       taskSchema.runtime,
@@ -424,7 +454,7 @@ export function createM9aCapabilityCatalog(): Result<
       evidenceSlicesSchema.runtime,
       partialSchema.runtime,
       partialsSchema.runtime,
-      groundedAnswerSchema.runtime,
+      citationConfinedAnswerSchema.runtime,
       retrievalStateRegistration.runtime,
     ],
     operations,
@@ -441,6 +471,16 @@ export const m9aModelUsageSchema = z
   .readonly();
 export type M9aModelUsage = z.infer<typeof m9aModelUsageSchema>;
 
+export const m9aModelReservationSchema = z
+  .strictObject({
+    maxInputTokens: z.number().int().nonnegative(),
+    maxOutputTokens: z.number().int().nonnegative(),
+    maxWallClockMs: z.number().int().nonnegative(),
+    maxCostUsdMicros: z.literal(0),
+  })
+  .readonly();
+export type M9aModelReservation = z.infer<typeof m9aModelReservationSchema>;
+
 export type M9aOfflineModelResult<T> = Readonly<{
   value: T;
   usage: M9aModelUsage;
@@ -451,12 +491,14 @@ export type M9aOfflineModel = Readonly<{
   decompose: (
     task: string,
     signal: AbortSignal,
+    reservation: M9aModelReservation,
   ) => Promise<
     Result<M9aOfflineModelResult<ReadonlyArray<string>>, M9aRetrievalFailure>
   >;
   answer: (
     evidence: M9aEvidenceSlice,
     signal: AbortSignal,
+    reservation: M9aModelReservation,
   ) => Promise<
     Result<M9aOfflineModelResult<M9aPartialAnswer>, M9aRetrievalFailure>
   >;
@@ -521,6 +563,12 @@ export const m9aRunTranscriptSchema = z
         costUsdMicros: z.literal(0),
       })
       .readonly(),
+    answerValidation: z
+      .strictObject({
+        kind: z.literal(M9A_ANSWER_VALIDATION.kind),
+        semanticEvaluation: z.literal(M9A_ANSWER_VALIDATION.semanticEvaluation),
+      })
+      .readonly(),
     answerDigest: z.string().regex(/^[a-f0-9]{64}$/u),
     citationChunkIds: z.string().array().readonly(),
   })
@@ -532,8 +580,8 @@ export const m9aPrivateReplayEntrySchema = z
     sequence: z.number().int().nonnegative(),
     operation: z.string().min(1),
     effectName: z.string().min(1),
-    input: z.json(),
-    output: z.json(),
+    input: strictJsonValueSchema,
+    output: strictJsonValueSchema,
     usage: m9aModelUsageSchema,
     event: m9aTranscriptEventSchema,
     readResult: m9aReadResultSchema.nullable(),
@@ -583,7 +631,8 @@ export type M9aRetrievalVisibility = Readonly<{
 
 export type M9aRetrievalRun = Readonly<{
   runDigest: string;
-  answer: M9aGroundedAnswer;
+  answer: M9aCitationConfinedAnswer;
+  answerValidation: typeof M9A_ANSWER_VALIDATION;
   visibility: M9aRetrievalVisibility;
   transcript: M9aRunTranscript;
   predictedUsage: CodeModeStaticAnalysis;
@@ -591,6 +640,7 @@ export type M9aRetrievalRun = Readonly<{
 
 export type M9aRunFailure =
   | Readonly<{ kind: "invalid-artifact" }>
+  | Readonly<{ kind: "invalid-comparison"; diagnostic: Diagnostic }>
   | Readonly<{ kind: "execution"; failure: CodeModeExecutionFailure }>
   | Readonly<{ kind: "invalid-output"; failure: M9aRetrievalFailure }>
   | Readonly<{ kind: "replay-mismatch"; diagnostic: Diagnostic }>
@@ -698,7 +748,7 @@ export async function compileM9aRetrievalProgram(
   const semanticContractHash = await digestValue({
     protocol: M9A_RETRIEVAL_CODEMODE_PROTOCOL,
     sourceHash: sourceHash.value,
-    catalog: "lachesis.m9a.retrieval-capabilities@1.0.0",
+    catalog: "lachesis.m9a.retrieval-capabilities@1.1.0",
     resourceEnvelope: M9A_DEFAULT_RESOURCE_ENVELOPE,
     obligations: innerSummary.semanticObligations,
   });
@@ -735,6 +785,10 @@ type MutableExecutionContext = {
   reads: Array<M9aReadResult>;
   visibleChunkIds: Set<string>;
   replayEntries: Array<M9aPrivateReplayEntry>;
+  modelReservations: {
+    inputTokens: number;
+    outputTokens: number;
+  };
   resources: {
     rootModelCalls: number;
     leafModelCalls: number;
@@ -755,6 +809,10 @@ function emptyExecutionContext(): MutableExecutionContext {
     reads: [],
     visibleChunkIds: new Set(),
     replayEntries: [],
+    modelReservations: {
+      inputTokens: 0,
+      outputTokens: 0,
+    },
     resources: {
       rootModelCalls: 0,
       leafModelCalls: 0,
@@ -794,7 +852,48 @@ function codeModeUsage(
   };
 }
 
-function accountModelUsage(
+function reserveModelUsage(
+  context: MutableExecutionContext,
+  reservation: M9aModelReservation,
+): Result<void, Diagnostic> {
+  if (
+    context.resources.inputTokens +
+      context.modelReservations.inputTokens +
+      reservation.maxInputTokens >
+      M9A_EXECUTION_LIMITS.maxInputTokens ||
+    context.resources.outputTokens +
+      context.modelReservations.outputTokens +
+      reservation.maxOutputTokens >
+      M9A_EXECUTION_LIMITS.maxOutputTokens
+  )
+    return { ok: false, error: admissionFailure("model token or cost") };
+  context.modelReservations.inputTokens += reservation.maxInputTokens;
+  context.modelReservations.outputTokens += reservation.maxOutputTokens;
+  return { ok: true, value: undefined };
+}
+
+function reconcileModelUsage(
+  context: MutableExecutionContext,
+  reservation: M9aModelReservation,
+  usage: M9aModelUsage,
+): Result<void, Diagnostic> {
+  context.modelReservations.inputTokens -= reservation.maxInputTokens;
+  context.modelReservations.outputTokens -= reservation.maxOutputTokens;
+  if (
+    usage.inputTokens > reservation.maxInputTokens ||
+    usage.outputTokens > reservation.maxOutputTokens ||
+    usage.wallClockMs > reservation.maxWallClockMs
+  )
+    return { ok: false, error: admissionFailure("reported model usage") };
+  context.resources.inputTokens += usage.inputTokens;
+  context.resources.outputTokens += usage.outputTokens;
+  return context.resources.inputTokens > M9A_EXECUTION_LIMITS.maxInputTokens ||
+    context.resources.outputTokens > M9A_EXECUTION_LIMITS.maxOutputTokens
+    ? { ok: false, error: admissionFailure("model token or cost") }
+    : { ok: true, value: undefined };
+}
+
+function accountRecordedModelUsage(
   context: MutableExecutionContext,
   usage: M9aModelUsage,
 ): Result<void, Diagnostic> {
@@ -802,7 +901,7 @@ function accountModelUsage(
   context.resources.outputTokens += usage.outputTokens;
   return context.resources.inputTokens > M9A_EXECUTION_LIMITS.maxInputTokens ||
     context.resources.outputTokens > M9A_EXECUTION_LIMITS.maxOutputTokens
-    ? { ok: false, error: admissionFailure("model token or cost") }
+    ? { ok: false, error: admissionFailure("recorded model token or cost") }
     : { ok: true, value: undefined };
 }
 
@@ -869,8 +968,8 @@ async function recordEffect(
 ): Promise<Result<void, Diagnostic>> {
   const recorded = await appendEvent(context, input);
   if (!recorded.ok) return recorded;
-  const parsedInput = z.json().safeParse(input.input);
-  const parsedOutput = z.json().safeParse(input.output);
+  const parsedInput = strictJsonValueSchema.safeParse(input.input);
+  const parsedOutput = strictJsonValueSchema.safeParse(input.output);
   const event = context.events.at(-1);
   if (!parsedInput.success || !parsedOutput.success || event === undefined)
     return {
@@ -946,7 +1045,6 @@ function createEffectHandler(
               ok: false,
               error: admissionFailure("root-model call"),
             };
-          context.resources.rootModelCalls += 1;
           const task = taskValidator.safeParse(request.input);
           if (!task.success)
             return {
@@ -955,7 +1053,17 @@ function createEffectHandler(
                 invalidOutput("Decomposition input failed validation."),
               ),
             };
-          const result = await model.decompose(task.data, combined.signal);
+          const reserved = reserveModelUsage(
+            context,
+            M9A_MODEL_RESERVATIONS.root,
+          );
+          if (!reserved.ok) return reserved;
+          context.resources.rootModelCalls += 1;
+          const result = await model.decompose(
+            task.data,
+            combined.signal,
+            M9A_MODEL_RESERVATIONS.root,
+          );
           if (!result.ok)
             return { ok: false, error: retrievalDiagnostic(result.error) };
           const questions = questionsValidator.safeParse(result.value.value);
@@ -967,7 +1075,11 @@ function createEffectHandler(
                 invalidOutput("Decomposition output failed validation."),
               ),
             };
-          const accounted = accountModelUsage(context, usage.data);
+          const accounted = reconcileModelUsage(
+            context,
+            M9A_MODEL_RESERVATIONS.root,
+            usage.data,
+          );
           if (!accounted.ok) return accounted;
           const recorded = await recordEffect(context, {
             category: "root-model",
@@ -1051,15 +1163,22 @@ function createEffectHandler(
                 invalidOutput("Read input failed validation."),
               ),
             };
-          const reservedBytes = search.data.hits.reduce(
-            (sum, hit) => sum + hit.chunk.endByte - hit.chunk.startByte,
-            0,
+          const availableBytes = Math.min(
+            M9A_CORPUS_LIMITS.maxReadBytes,
+            M9A_EXECUTION_LIMITS.maxTotalReadBytes -
+              context.resources.readBytes,
           );
+          const selectedChunks: Array<M9aChunkIdentity> = [];
+          let reservedBytes = 0;
+          for (const hit of search.data.hits) {
+            const hitBytes = hit.chunk.endByte - hit.chunk.startByte;
+            if (reservedBytes + hitBytes > availableBytes) continue;
+            selectedChunks.push(hit.chunk);
+            reservedBytes += hitBytes;
+          }
           if (
             context.resources.readCalls + 1 >
-              M9A_EXECUTION_LIMITS.maxReadCalls ||
-            context.resources.readBytes + reservedBytes >
-              M9A_EXECUTION_LIMITS.maxTotalReadBytes
+            M9A_EXECUTION_LIMITS.maxReadCalls
           )
             return {
               ok: false,
@@ -1070,8 +1189,8 @@ function createEffectHandler(
           const result = readM9aCorpus(
             corpus,
             {
-              chunks: search.data.hits.map((hit) => hit.chunk),
-              maxBytes: M9A_CORPUS_LIMITS.maxReadBytes,
+              chunks: selectedChunks,
+              maxBytes: Math.max(reservedBytes, 1),
             },
             combined.signal,
           );
@@ -1117,7 +1236,6 @@ function createEffectHandler(
               ok: false,
               error: admissionFailure("leaf-model call"),
             };
-          context.resources.leafModelCalls += 1;
           const evidence = evidenceSliceSchema.safeParse(request.input);
           if (!evidence.success)
             return {
@@ -1126,7 +1244,17 @@ function createEffectHandler(
                 invalidOutput("Leaf-model input failed validation."),
               ),
             };
-          const result = await model.answer(evidence.data, combined.signal);
+          const reserved = reserveModelUsage(
+            context,
+            M9A_MODEL_RESERVATIONS.leaf,
+          );
+          if (!reserved.ok) return reserved;
+          context.resources.leafModelCalls += 1;
+          const result = await model.answer(
+            evidence.data,
+            combined.signal,
+            M9A_MODEL_RESERVATIONS.leaf,
+          );
           if (!result.ok)
             return { ok: false, error: retrievalDiagnostic(result.error) };
           const partial = partialAnswerSchema.safeParse(result.value.value);
@@ -1138,7 +1266,11 @@ function createEffectHandler(
                 invalidOutput("Leaf-model output failed validation."),
               ),
             };
-          const accounted = accountModelUsage(context, usage.data);
+          const accounted = reconcileModelUsage(
+            context,
+            M9A_MODEL_RESERVATIONS.leaf,
+            usage.data,
+          );
           if (!accounted.ok) return accounted;
           const assigned = new Set(
             evidence.data.excerpts.map((excerpt) => excerpt.chunk.id),
@@ -1178,7 +1310,9 @@ function createEffectHandler(
           };
         }
         case "m9a.answer.submit": {
-          const answer = m9aGroundedAnswerSchema.safeParse(request.input);
+          const answer = m9aCitationConfinedAnswerSchema.safeParse(
+            request.input,
+          );
           if (!answer.success || answer.data.answer.trim().length === 0)
             return {
               ok: false,
@@ -1244,13 +1378,15 @@ async function finalizeM9aRun(
   context: MutableExecutionContext,
   executed: CodeModeExecutionResult,
 ): Promise<Result<M9aRetrievalRun, M9aRunFailure>> {
-  const answer = m9aGroundedAnswerSchema.safeParse(executed.output);
+  const answer = m9aCitationConfinedAnswerSchema.safeParse(executed.output);
   if (!answer.success)
     return {
       ok: false,
       error: {
         kind: "invalid-output",
-        failure: invalidOutput("Program output is not a grounded answer."),
+        failure: invalidOutput(
+          "Program output is not a citation-confined answer.",
+        ),
       },
     };
   const taskDigest = await digestValue(task);
@@ -1280,6 +1416,7 @@ async function finalizeM9aRun(
     events: context.events,
     runtimeUsage: executed.usage,
     retrievalUsage: context.resources,
+    answerValidation: M9A_ANSWER_VALIDATION,
     answerDigest: answerDigest.value,
     citationChunkIds: answer.data.citations.map((citation) => citation.id),
   });
@@ -1298,6 +1435,7 @@ async function finalizeM9aRun(
     value: Object.freeze({
       runDigest: runDigest.value,
       answer: answer.data,
+      answerValidation: M9A_ANSWER_VALIDATION,
       visibility: Object.freeze({
         searchResults: Object.freeze([...context.searches]),
         readResults: Object.freeze([...context.reads]),
@@ -1552,7 +1690,7 @@ function createReplayEffectHandler(
       entry.event.category === "root-model" ||
       entry.event.category === "leaf-model"
     ) {
-      const accounted = accountModelUsage(context, entry.usage);
+      const accounted = accountRecordedModelUsage(context, entry.usage);
       if (!accounted.ok)
         return {
           ok: false,
@@ -1712,10 +1850,18 @@ export type M9aComparisonArm = Readonly<{
   run: M9aRetrievalRun;
 }>;
 
+export type M9aComparisonArmKind = M9aComparisonArm["kind"];
+export type M9aComparisonExecutionOrder = "sequenced-first" | "one-shot-first";
+export type M9aModelSessionFactories = Readonly<{
+  sequencedRetrieval: () => M9aOfflineModel;
+  oneShotRag: () => M9aOfflineModel;
+}>;
+
 export type M9aOfflineComparison = Readonly<{
   protocol: typeof M9A_RETRIEVAL_CODEMODE_PROTOCOL;
   corpus: M9aCorpusSnapshot;
   resourceEnvelope: CompilationPolicy;
+  executionOrder: Readonly<[M9aComparisonArmKind, M9aComparisonArmKind]>;
   sequenced: M9aComparisonArm;
   oneShot: M9aComparisonArm;
   claimBoundary: typeof M9A_RETRIEVAL_CODEMODE_PROTOCOL.claimBoundary;
@@ -1726,7 +1872,8 @@ export async function runM9aOfflineComparison(
     source: string;
     corpus: M9aCorpus;
     task: string;
-    model: M9aOfflineModel;
+    modelSessionFactories: M9aModelSessionFactories;
+    executionOrder: M9aComparisonExecutionOrder;
     signal?: AbortSignal | undefined;
   }>,
 ): Promise<Result<M9aOfflineComparison, M9aCompileFailure | M9aRunFailure>> {
@@ -1744,16 +1891,80 @@ export async function runM9aOfflineComparison(
       ok: false,
       error: { kind: "compile", diagnostics: oneShotArtifact.error },
     };
-  const sequenced = await executeM9aRetrievalProgram(
-    sequencedArtifact.value,
-    input,
-  );
-  if (!sequenced.ok) return sequenced;
-  const oneShot = await executeM9aRetrievalProgram(
-    oneShotArtifact.value,
-    input,
-  );
-  if (!oneShot.ok) return oneShot;
+  if (
+    input.modelSessionFactories.sequencedRetrieval ===
+    input.modelSessionFactories.oneShotRag
+  )
+    return {
+      ok: false,
+      error: {
+        kind: "invalid-comparison",
+        diagnostic: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "M9a comparison arms require distinct model-session factories.",
+        ),
+      },
+    };
+  const executionOrder: Readonly<[M9aComparisonArmKind, M9aComparisonArmKind]> =
+    input.executionOrder === "sequenced-first"
+      ? ["sequenced-retrieval", "one-shot-rag"]
+      : ["one-shot-rag", "sequenced-retrieval"];
+  const firstModel =
+    executionOrder[0] === "sequenced-retrieval"
+      ? input.modelSessionFactories.sequencedRetrieval()
+      : input.modelSessionFactories.oneShotRag();
+  const secondModel =
+    executionOrder[1] === "sequenced-retrieval"
+      ? input.modelSessionFactories.sequencedRetrieval()
+      : input.modelSessionFactories.oneShotRag();
+  const sequencedModel =
+    executionOrder[0] === "sequenced-retrieval" ? firstModel : secondModel;
+  const oneShotModel =
+    executionOrder[0] === "one-shot-rag" ? firstModel : secondModel;
+  if (
+    sequencedModel === oneShotModel ||
+    sequencedModel.identity.id !== oneShotModel.identity.id ||
+    sequencedModel.identity.version !== oneShotModel.identity.version
+  )
+    return {
+      ok: false,
+      error: {
+        kind: "invalid-comparison",
+        diagnostic: diagnostic(
+          "INVALID_WIRE_SCHEMA",
+          "M9a comparison arms require separate sessions with the same model identity.",
+        ),
+      },
+    };
+  let sequencedRun: M9aRetrievalRun | undefined;
+  let oneShotRun: M9aRetrievalRun | undefined;
+  for (const arm of executionOrder) {
+    const executed = await executeM9aRetrievalProgram(
+      arm === "sequenced-retrieval"
+        ? sequencedArtifact.value
+        : oneShotArtifact.value,
+      {
+        corpus: input.corpus,
+        task: input.task,
+        model: arm === "sequenced-retrieval" ? sequencedModel : oneShotModel,
+        signal: input.signal,
+      },
+    );
+    if (!executed.ok) return executed;
+    if (arm === "sequenced-retrieval") sequencedRun = executed.value;
+    else oneShotRun = executed.value;
+  }
+  if (sequencedRun === undefined || oneShotRun === undefined)
+    return {
+      ok: false,
+      error: {
+        kind: "invalid-comparison",
+        diagnostic: diagnostic(
+          "INTERNAL_INVARIANT_VIOLATION",
+          "M9a comparison order did not execute both arms.",
+        ),
+      },
+    };
   const corpus = inspectM9aCorpus(input.corpus);
   if (corpus === undefined)
     return { ok: false, error: { kind: "invalid-artifact" } };
@@ -1763,13 +1974,14 @@ export async function runM9aOfflineComparison(
       protocol: M9A_RETRIEVAL_CODEMODE_PROTOCOL,
       corpus,
       resourceEnvelope: M9A_DEFAULT_RESOURCE_ENVELOPE,
+      executionOrder,
       sequenced: Object.freeze({
         kind: "sequenced-retrieval",
-        run: sequenced.value,
+        run: sequencedRun,
       }),
       oneShot: Object.freeze({
         kind: "one-shot-rag",
-        run: oneShot.value,
+        run: oneShotRun,
       }),
       claimBoundary: M9A_RETRIEVAL_CODEMODE_PROTOCOL.claimBoundary,
     }),

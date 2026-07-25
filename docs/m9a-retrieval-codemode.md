@@ -15,7 +15,7 @@ model-quality, compositional-generalization, or production-readiness claim.
 
 ## Protocol decision
 
-M9a defines `lachesis-m9a-retrieval-codemode@1.0.0`. It composes the existing
+M9a defines `lachesis-m9a-retrieval-codemode@1.1.0`. It composes the existing
 closed restricted-CodeMode parser and interpreter but does not change the
 identity or behavior of the completed M2 protocol. In particular, M2 continues
 to reject direct or mapped effect invocation where it rejected it before.
@@ -73,6 +73,10 @@ Read is a justified bounded batch operation because the model-visible
 `read-search-results` capability consumes one bounded search result. It accepts
 only canonical chunk identities returned by the bound snapshot, checks every
 identity field, and rejects a total above the caller's explicit `maxBytes`.
+Before dispatch, the capability walks hits in deterministic rank order and
+greedily selects a ranked subset that fits both the remaining execution-byte
+budget and the per-read ceiling. Oversized hits are skipped; an exhausted budget
+produces an empty bounded read rather than dispatching an impossible request.
 Search and read return typed failures and accept an `AbortSignal`.
 
 ## Registered capability catalog
@@ -83,8 +87,10 @@ The internal catalog contains distinct operations for:
 - `search-corpus@1.0.0` — lexical corpus search;
 - `read-search-results@1.0.0` — bounded canonical reads;
 - `answer-evidence-slice@1.0.0` — leaf-model reasoning over assigned evidence;
-- `synthesize-grounded-answer@1.0.0` — ordered deterministic aggregation;
-- `submit-grounded-answer@1.0.0` — final citation confinement and submission;
+- `synthesize-citation-confined-answer@1.0.0` — ordered deterministic
+  aggregation;
+- `submit-citation-confined-answer@1.0.0` — final citation confinement and
+  submission;
 - explicit task/question and singleton-list nominal conversions; and
 - `prepare-retrieval-state`, `refine-next-query`, `remaining-retrieval-queries`,
   and `take-refined-queries` for bounded refinement.
@@ -94,13 +100,21 @@ capabilities, transcript categories, and usage entries. Leaf citations must come
 from that leaf's assigned evidence. Final citations must have been read in the
 same execution.
 
+Citation confinement is not semantic grounding. A visible citation can still
+contradict the submitted claim. The run and transcript therefore report
+`citation-confinement-only` with semantic evaluation `external-not-performed`;
+M9a performs no answer-correctness or abstention scoring.
+
 The execution envelope independently limits source bytes, statically predicted
 CodeMode operation calls, root-model calls, leaf-model calls, search calls, read
 calls, returned hits, total bytes read, fixed-point iterations, tokens,
 wall-clock time, and concurrency. Deterministic offline effects have a
 known-zero monetary cost. Search-result and read-byte reservations are checked
-before the corresponding corpus operation. Unknown collection or recursion
-bounds fail compilation.
+before the corresponding corpus operation. Each root or leaf model call also
+receives a maximum token, wall-clock, and zero-cost reservation that is admitted
+before adapter dispatch. Reported usage is validated against that reservation
+and reconciled to the aggregate counters afterward. Unknown collection or
+recursion bounds fail compilation.
 
 `boundedFix` is unchanged. The refinement state transition has the same nominal
 input and output schema, its measure is a validated nonnegative pending-query
@@ -119,19 +133,24 @@ refined queries explicitly.
   and submits.
 
 Both arms bind the same corpus snapshot, deterministic search implementation,
-offline model adapter identity, and `M9A_DEFAULT_RESOURCE_ENVELOPE`. Each arm
-has an independent execution context and transcript. The returned comparison
-reports raw functional evidence and usage only; it contains no quality score or
-superiority decision.
+offline model adapter identity, and `M9A_DEFAULT_RESOURCE_ENVELOPE`. The caller
+must provide a distinct model-session factory for each arm and an explicit
+`sequenced-first` or `one-shot-first` order. Returning the same session object,
+or sessions with different model identities, rejects. Each arm has an
+independent model session, execution context, and transcript. The returned
+comparison records the chosen order and reports raw functional evidence and
+usage only; it contains no quality score or superiority decision. A future M9b
+schedule must freeze a randomized or counterbalanced order before execution.
 
 ## Recording and replay
 
-`lachesis-m9a-private-retrieval-replay@1.0.0` is a private, content-addressed
+`lachesis-m9a-private-retrieval-replay@1.1.0` is a private, content-addressed
 artifact. Unlike the default transcript, it intentionally contains exact effect
 inputs, fetched evidence, and reduced outputs. It binds the retrieval protocol,
 source and semantic-contract hashes, task, corpus snapshot, model identity,
 ordered effects, usage, expected transcript digest, answer digest, and its own
-artifact digest.
+artifact digest. Exact JSON values use the generator's non-transforming strict
+JSON boundary, preserving root and nested hostile own keys such as `__proto__`.
 
 Replay validates the complete artifact digest, recompiles the closed program,
 checks source and semantic-contract identities, and interprets it with a replay
@@ -162,8 +181,14 @@ export default async function main(input, ops) {
   const searches = await ops.map("search-corpus@1.0.0", questions);
   const evidence = await ops.map("read-search-results@1.0.0", searches);
   const partials = await ops.map("answer-evidence-slice@1.0.0", evidence);
-  const answer = await ops.fold("synthesize-grounded-answer@1.0.0", partials);
-  const submitted = await ops.invoke("submit-grounded-answer@1.0.0", answer);
+  const answer = await ops.fold(
+    "synthesize-citation-confined-answer@1.0.0",
+    partials,
+  );
+  const submitted = await ops.invoke(
+    "submit-citation-confined-answer@1.0.0",
+    answer,
+  );
   return submitted;
 }
 ```
