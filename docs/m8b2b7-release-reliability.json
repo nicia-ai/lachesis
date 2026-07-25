@@ -1,0 +1,198 @@
+{
+  "protocol": "lachesis.m8b2b7.release-workflow-reliability.v1",
+  "disposition": "prepared-unexecuted-awaiting-separate-authorizations",
+  "failedRun": {
+    "databaseId": 30136489135,
+    "attempt": 1,
+    "workflowHeadCommit": "114be948fb1eac733b641cf47121db71265badeb",
+    "releaseSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "conclusion": "failure",
+    "classification": "zero-publication-frozen-verification-timeout",
+    "failedTest": "packages/evidence-typegraph/tests/parity.test.ts:145",
+    "failure": "The default-parallel test phase exceeded the unchanged 20000ms test timeout.",
+    "testsPassed": 442,
+    "testsTotal": 443,
+    "packStep": "skipped",
+    "publishStep": "skipped",
+    "draftRestoration": "success"
+  },
+  "frozenInputs": {
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "typescript": "6.0.3",
+    "testSourceSha256": "5a2ea73761e020403440b143373ecbf4e307293aa1334e1f94a642bfd6361b69",
+    "packageManifestSha256": "7a35101a4432e13d55982ac7bd8bdec285f770fe4158570f87a098c511277ddd",
+    "lockfileSha256": "3bff69d1eb0774e11e74664e842211bc210f76ab8ac9a285c35aefb5a644c320",
+    "testSourceChanged": false,
+    "timeoutChanged": false
+  },
+  "rootCause": {
+    "classification": "scheduler-and-contention-sensitive-default-parallel-timeout",
+    "finding": "The release workflow redundantly executed all tests with default file parallelism before executing the same full matrix through the supported single-worker coverage command.",
+    "isolatedParity": {
+      "runs": 10,
+      "passed": 10,
+      "durationSecondsRange": [10, 13]
+    },
+    "uncontendedDefaultParallel": {
+      "runs": 1,
+      "passed": 1,
+      "tests": "443/443",
+      "targetDurationMs": 9943
+    },
+    "controlledThreeCorePressureModel": {
+      "hostLogicalCpus": 14,
+      "backgroundCpuWorkers": 11,
+      "defaultParallelRuns": 5,
+      "completePasses": 3,
+      "targetTimeoutFailures": 2,
+      "passingTargetDurationsMs": [18210, 17630, 19708],
+      "failedRuns": [
+        { "run": 3, "tests": "442/443", "targetTimeoutMs": 20000 },
+        { "run": 4, "tests": "442/443", "targetTimeoutMs": 20000 }
+      ]
+    },
+    "officialRunnerReference": {
+      "workflowLabel": "macos-15",
+      "cpu": "3 M1",
+      "memoryGb": 7,
+      "source": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners"
+    }
+  },
+  "correction": {
+    "commit": "36402de6560a2c5998d773e10f0c9a2695110e18",
+    "workflow": ".github/workflows/release.yml",
+    "previousWorkflowSha256": "c6288195114390cbcb2369a0ae96f2573f8ccd4ab954950302496617dec822a1",
+    "correctedWorkflowSha256": "2c04cf37d453916f3d189be1e0c09f6090db2ffa31d0c41397036dadeb9b66f4",
+    "change": "Remove the redundant default-parallel pnpm test invocation and retain pnpm test:coverage.",
+    "singleWorkerCommand": "vitest run --coverage --maxWorkers=1",
+    "allTestsExecuted": true,
+    "coverageEnforced": true,
+    "testRetries": 0,
+    "assertionsRelaxed": false,
+    "timeoutsChanged": false,
+    "testsSkipped": false,
+    "packageSourceChanged": false
+  },
+  "correctedVerification": {
+    "cleanSingleWorker": {
+      "runs": 5,
+      "passed": 5,
+      "testsPerRun": "443/443",
+      "targetDurationsMs": [9335, 9488, 9748, 9843, 9501]
+    },
+    "moderatePressureSingleWorker": {
+      "hostLogicalCpus": 14,
+      "backgroundCpuWorkers": 9,
+      "runs": 3,
+      "passed": 3,
+      "testsPerRun": "443/443",
+      "targetDurationsMs": [14951, 17106, 15595]
+    },
+    "singleWorkerCoverage": {
+      "runs": 3,
+      "passed": 3,
+      "testsPerRun": "443/443",
+      "coverage": {
+        "statements": 90.04,
+        "branches": 80.36,
+        "functions": 97.17,
+        "lines": 94.06
+      },
+      "targetDurationsMsWhereVerbose": [14041, 15127]
+    },
+    "stressBoundary": {
+      "classification": "recorded-not-accepted-as-dedicated-runner-model",
+      "finding": "Under prolonged 11-worker synthetic host load, two single-worker runs passed and the third crossed the target timeout. This over-stress result is retained and is not represented as a corrected-workflow pass."
+    },
+    "linuxCgroupSupplement": {
+      "classification": "supplemental-not-actions-equivalent",
+      "image": "node:24.18.0-bookworm",
+      "imageDigest": "sha256:5711a0d445a1af54af9589066c646df387d1831a608226f4cd694fc59e745059",
+      "architecture": "arm64",
+      "cpuQuota": 3,
+      "memoryGb": 7,
+      "network": "none-during-tests",
+      "finding": "Default-parallel runs failed other existing short-deadline tests. Single-worker runs encountered unrelated Linux bind-mount and filesystem-semantic failures, so this supplement is not used as macos-15 acceptance evidence."
+    },
+    "workflowStaticValidation": "pass",
+    "actionlint": "pass"
+  },
+  "repositoryMatrix": {
+    "format": "pass",
+    "strictTypeScript6": "pass",
+    "lint": "pass",
+    "singleWorkerCoverage": {
+      "status": "pass",
+      "tests": "443/443",
+      "durationSeconds": 184.25,
+      "statements": 90.04,
+      "branches": 80.36,
+      "functions": 97.17,
+      "lines": 94.06
+    },
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersSmoke": "pass",
+    "offlineExamples": "pass",
+    "loadBaseline": "pass",
+    "sourceSafety": "pass",
+    "publicApiInventory": "pass",
+    "releaseChecksums": "pass",
+    "m7cPreregistrationAudit": "pass",
+    "m8HistoricalChecksums": "pass",
+    "m8b2aProspectiveAudit": "pass",
+    "packageAudit": "pass"
+  },
+  "packageAudit": {
+    "packRuns": 3,
+    "byteIdentical": true,
+    "strictConsumer": "pass",
+    "node": "pass",
+    "workers": "pass",
+    "tarballs": {
+      "@nicia-ai/lachesis": "298643284448324ad1a8a99e05364abc170cacb3ca839b9b32e95978cfec47cc",
+      "@nicia-ai/lachesis-evidence": "eb0a83b7977db40a8175a786697dce745bf7a7422e49e69da7a7bf20b2719ee0",
+      "@nicia-ai/lachesis-generator": "242c45f6e21fd376d58d27dc4f9764719f0368f49c31f2a26ca8e9a971072273",
+      "@nicia-ai/lachesis-runtime": "22ed70fa0490afa064c692b4f3285a672a1763618efbdc423f2a7b499e7809ef",
+      "@nicia-ai/lachesis-evidence-typegraph": "26f6f3775f1d9eda210a86b9f4f17466e9dfec245ef38205d8e281b53c5f2cb5",
+      "@nicia-ai/lachesis-cli": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638"
+    }
+  },
+  "publicationBoundary": {
+    "publishCount": 5,
+    "publishPackages": [
+      "@nicia-ai/lachesis",
+      "@nicia-ai/lachesis-evidence",
+      "@nicia-ai/lachesis-runtime",
+      "@nicia-ai/lachesis-evidence-typegraph",
+      "@nicia-ai/lachesis-generator"
+    ],
+    "cli": "immutable-registry-prerequisite",
+    "oidcTrustedPublishingOnly": true,
+    "npmTokenReferenced": false,
+    "unexpectedPartialStateFailsClosed": true
+  },
+  "preserved": {
+    "packageSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+    "releaseTag": "v0.1.0-alpha.4",
+    "draftReleaseId": 359550250,
+    "releaseBodySha256": "bec6a90f3c7683e3d66d10607ebfb4891105abb25064c5feae14e59196fc1a02",
+    "packageVersions": true,
+    "tarballDigests": true,
+    "testSource": true,
+    "timeouts": true,
+    "trustedPublishers": true,
+    "registryState": true,
+    "distTags": true
+  },
+  "nonactions": [
+    "no-push",
+    "no-workflow-dispatch",
+    "no-package-publication",
+    "no-release-change",
+    "no-tag-change",
+    "no-dist-tag-change",
+    "no-secret-or-token-introduction"
+  ]
+}
