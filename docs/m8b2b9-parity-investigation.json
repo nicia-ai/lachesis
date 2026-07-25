@@ -1,0 +1,125 @@
+{
+  "protocol": "lachesis.m8b2b9.parity-timeout-investigation.v1",
+  "subject": {
+    "path": "packages/evidence-typegraph/tests/parity.test.ts",
+    "test": "preserves compiler, visible-view, validation, and reconstruction identities",
+    "timeoutMs": 20000,
+    "population": {
+      "developmentTasks": 30,
+      "providers": 2,
+      "taskProviderAssignments": 60,
+      "compileCalls": 120,
+      "provenanceReconstructionCalls": 120
+    }
+  },
+  "method": {
+    "providerCalls": 0,
+    "diagnosticTimeoutMs": 120000,
+    "diagnosticTimeoutCommitted": false,
+    "node": "24.18.0",
+    "pnpm": "10.33.0",
+    "vitest": "4.1.10",
+    "hostLogicalCpus": 14,
+    "constrainedCondition": "13 CPU burners with the test process at nice 15",
+    "assertionsAndPopulationUnchanged": true
+  },
+  "uncontendedCurrentMs": {
+    "samples": [8825.854, 8842.777, 8919.734, 8926.822, 10137.115],
+    "min": 8825.854,
+    "median": 8919.734,
+    "max": 10137.115
+  },
+  "constrainedCurrentMs": {
+    "samples": [14079.356, 14781.304, 14806.105, 17446.546],
+    "min": 14079.356,
+    "median": 14806.105,
+    "max": 17446.546
+  },
+  "representativePhaseTimingMs": {
+    "total": 8842.777,
+    "typeGraphRepositoryCreation": 83.457,
+    "typeGraphSnapshot": 12.963,
+    "referenceGraphCompilationTotal": 2124.562,
+    "snapshotGraphCompilationTotal": 2117.0,
+    "snapshotGraphReconstructionTotal": 2206.519,
+    "referenceGraphReconstructionTotal": 2177.924,
+    "unattributedHarnessAndAssertions": 120.352
+  },
+  "taskProviderTimingMs": {
+    "measurement": "five tasks per category and provider; values summarize each call kind within that stratum",
+    "uncontendedObservedRangeAcrossAllStrata": {
+      "referenceCompile": [28.27, 60.316],
+      "snapshotCompile": [28.343, 59.164],
+      "snapshotReconstruction": [30.205, 62.401],
+      "referenceReconstruction": [30.388, 62.292]
+    },
+    "categoryOrdering": [
+      "multi-hop",
+      "temporal",
+      "contradiction",
+      "provenance",
+      "retraction",
+      "negative-control"
+    ],
+    "providerOrdering": ["openai", "anthropic"],
+    "slowestObservedStratum": {
+      "category": "provenance",
+      "provider": "openai",
+      "callKind": "snapshotReconstruction",
+      "max": 62.401
+    }
+  },
+  "historicalComparison": {
+    "alpha3ReleaseCommit": "e972400a2ff4e65e4b2fe68bc2585f5453e82a06",
+    "alpha3Ms": {
+      "cold": 9454.997,
+      "warm": 9173.318
+    },
+    "testIntroductionCommit": "a52f39e32877bc8cac844d50409b4970b0a3019f",
+    "introductionMs": {
+      "cold": 10261.957,
+      "warm": 10020.212
+    },
+    "materialTimingChangeCommit": null,
+    "finding": "No material slowdown relative to alpha.3 or the introducing commit was observed."
+  },
+  "hypotheses": [
+    {
+      "name": "post-alpha3-canonicalization-regression",
+      "result": "rejected",
+      "evidence": "Current warm timing is not slower than alpha.3 or the introducing commit."
+    },
+    {
+      "name": "typegraph-repository-or-snapshot-regression",
+      "result": "rejected",
+      "evidence": "Repository creation and snapshot together consumed about 1.1 percent of a representative run."
+    },
+    {
+      "name": "parallel-paired-calls-reduce-wall-time",
+      "result": "rejected",
+      "evidence": "A temporary Promise.all experiment remained CPU-bound and did not materially reduce clean wall time."
+    },
+    {
+      "name": "uncalibrated-aggregate-timeout",
+      "result": "confirmed",
+      "evidence": "The test was introduced with the full 60-assignment matrix and a fixed 20-second timeout; controlled contention approaches the bound and hosted runs are censored by it."
+    }
+  ],
+  "classification": {
+    "productRegression": false,
+    "redundantComputation": false,
+    "empiricallyInvalidTimeoutBound": true,
+    "rootCause": "The anti-hang timeout was fixed at 20 seconds without a measured contention margin for a CPU-bound 240-call identity matrix."
+  },
+  "prospectiveCorrection": {
+    "kind": "test-specific-timeout",
+    "timeoutMs": 40000,
+    "derivation": "Round up beyond twice the measured constrained maximum of 17446.546 ms.",
+    "marginOverMeasuredConstrainedMaximumMs": 22553.454,
+    "marginPercent": 129.27,
+    "assertionsChanged": false,
+    "populationChanged": false,
+    "implementationChanged": false,
+    "status": "proposed-not-yet-implemented"
+  }
+}

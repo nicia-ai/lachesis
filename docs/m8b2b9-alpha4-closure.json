@@ -1,0 +1,51 @@
+{
+  "protocol": "lachesis.m8b2b9.alpha4-release-closure.v1",
+  "disposition": "partial-bootstrap-only-verification-no-go",
+  "releaseSourceCommit": "635521f1d2e753095fca4fdbbafbf7ed2287efe1",
+  "releaseTag": "v0.1.0-alpha.4",
+  "githubRelease": {
+    "databaseId": 359550250,
+    "draft": true,
+    "prerelease": true,
+    "published": false,
+    "bodySha256": "bec6a90f3c7683e3d66d10607ebfb4891105abb25064c5feae14e59196fc1a02"
+  },
+  "published": [
+    {
+      "name": "@nicia-ai/lachesis-cli",
+      "version": "0.1.0-alpha.4",
+      "tarballSha256": "f9586fd9554fbe78fd88ab28400d2a04fe78792196d17f5d7f74558f33d3e638",
+      "status": "published-valid-immutable"
+    }
+  ],
+  "absent": [
+    "@nicia-ai/lachesis@0.1.0-alpha.4",
+    "@nicia-ai/lachesis-evidence@0.1.0-alpha.4",
+    "@nicia-ai/lachesis-generator@0.1.0-alpha.4",
+    "@nicia-ai/lachesis-runtime@0.1.0-alpha.4",
+    "@nicia-ai/lachesis-evidence-typegraph@0.1.0-alpha.4"
+  ],
+  "failedReleaseRuns": [
+    {
+      "databaseId": 30136489135,
+      "classification": "zero-publication-frozen-verification-timeout"
+    },
+    {
+      "databaseId": 30144568420,
+      "classification": "zero-publication-frozen-verification-timeout"
+    }
+  ],
+  "preserved": {
+    "tagUnchanged": true,
+    "draftReleaseUnchanged": true,
+    "distTagsUnchanged": true,
+    "publishedPackageNotUnpublished": true,
+    "noFabricatedPackage": true,
+    "historicalEvidenceAppendOnly": true
+  },
+  "nextRelease": {
+    "version": "0.1.0-alpha.5",
+    "status": "not-started",
+    "gate": "parity diagnosis and correction must be separately committed and reviewed"
+  }
+}
