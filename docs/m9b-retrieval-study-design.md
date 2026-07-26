@@ -464,9 +464,19 @@ and is never redispatched. Complete receipts reconcile exact bound usage; all
 campaign, provider, phase, arm, and request accounting is rederived from the
 canonical event chain.
 
-M9b remains **NO-GO** after M9b.4 because the candidate provider profile is not
-adapter conformance evidence; no corpus, final gold/evaluator, schedule,
-empirical discordance result, external preregistration, credentials, or explicit
-live authorization exists. M9b.4 permits only a separately scoped, intercepted,
-zero-network M9b.5 provider-adapter conformance milestone. It does not authorize
-corpus construction, provider calls, a held-out campaign, or live execution.
+M9b.5 subsequently passed the independently testable offline OpenAI Responses
+request, intercepted transport, raw response/usage, cancellation, zero-retry,
+identity, and private M9b.4 structural-composition boundaries under
+`lachesis-m9b5-openai-responses-offline-conformance@1.0.0`. It added no public
+export and made zero network calls.
+
+M9b remains **NO-GO** after M9b.5. Neither the pinned provider package nor the
+official Responses contract supplies an independently reproducible, versioned,
+offline count for the exact serialized Responses input and its provider-side
+framing. Request bytes, a generic encoding, synthetic counts, and reported usage
+after dispatch are not substitutes. The machine-readable decision is
+`adapter-conformance-pass-tokenizer-no-go`. No corpus, final gold/evaluator,
+schedule, empirical discordance result, external preregistration, credential,
+spending authority, or explicit live authorization exists. The next permitted
+step is review of this accounting blocker, not corpus construction or live
+execution.

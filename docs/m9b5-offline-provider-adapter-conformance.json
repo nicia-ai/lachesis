@@ -1,0 +1,117 @@
+{
+  "protocol": {
+    "id": "lachesis-m9b5-openai-responses-offline-conformance",
+    "version": "1.0.0",
+    "baselineCommit": "f13991720eede12d5c702cfc3dd633086669f875"
+  },
+  "target": {
+    "provider": "OpenAI",
+    "api": "Responses",
+    "route": "/v1/responses",
+    "installedProviderPackage": "@ai-sdk/openai@4.0.15",
+    "installedRuntimePackage": "ai@7.0.28",
+    "sdkMethod": "LanguageModelV4.doGenerate",
+    "sdkRetryLimit": 0,
+    "controllerRetryLimit": 0,
+    "maximumHttpRequestsPerInvocation": 1
+  },
+  "officialSources": [
+    {
+      "url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "use": "Responses create parameters and response contract"
+    },
+    {
+      "url": "https://api.openai.com/v1/responses",
+      "openApiVersion": "2.3.0",
+      "use": "official OpenAPI operation inspection only; no implementation or test request"
+    }
+  ],
+  "installedArtifactDigests": {
+    "providerPackageJsonSha256": "d0d40ad70fe2c4d0b4731cbc9f3a7c0ee79a1545a52b93c5bb8825932f8bd26f",
+    "providerImplementationSha256": "5362764d1aa17a019fb7317e1052bd27932a318dd5cf291e5e017e63873e7558",
+    "providerDeclarationsSha256": "0f8390f2bf9e0e4dc968291d606323f85b604bb371db2cadec5fa664eeea966a",
+    "adapterPackageJsonSha256": "f28af0d2f9332ff7937f49eba05c8084fcf121a93d226d87d588189ffed687e4",
+    "adapterImplementationSha256": "e4137376fc96de1276c013f42eaf9a3f2f048b9f0e9cc8b00f4aa83919446693",
+    "focusedTestSha256": "4e7a5e8d4fb2e61aea244abe7b82c10751ae442ae43b580979079a4373d55979"
+  },
+  "requestClasses": [
+    "root-program-authoring",
+    "static-one-shot-query-planning",
+    "discovered-program-leaf-reasoning",
+    "static-answer-generation"
+  ],
+  "requestContract": {
+    "required": [
+      "model",
+      "input",
+      "instructions",
+      "text.format",
+      "max_output_tokens",
+      "reasoning.effort=none",
+      "store=false",
+      "service_tier=default",
+      "truncation=disabled"
+    ],
+    "forbidden": [
+      "tools",
+      "background",
+      "previous_response_id",
+      "metadata",
+      "stream",
+      "polling"
+    ],
+    "serialization": "SDK output is strict-JSON parsed, canonicalized, and required to equal the pre-bound providerRequestBytes before intercepted transport"
+  },
+  "responseContract": {
+    "completedRequired": [
+      "response id",
+      "exact returned model",
+      "status=completed",
+      "one assistant message",
+      "one output_text",
+      "strict request-class JSON output",
+      "input_tokens",
+      "output_tokens",
+      "output_tokens_details.reasoning_tokens=0",
+      "total_tokens",
+      "locally measured wall clock",
+      "locally rederived price"
+    ],
+    "indeterminateOutcome": "M9b.4 ambiguous and full reservation charge",
+    "typedFailureRequirement": "determinate non-completed status plus complete usage"
+  },
+  "results": {
+    "requestTransportConformance": "pass-offline-intercepted",
+    "responseUsageConformance": "pass-offline-synthetic",
+    "cancellationZeroRetryConformance": "pass-offline-intercepted",
+    "m9b4StructuralComposition": "pass-offline-synthetic-accounting-only",
+    "exactOfflineTokenizerConformance": "no-go"
+  },
+  "tokenizerBlocker": {
+    "decision": "adapter-conformance-pass-tokenizer-no-go",
+    "reason": "Neither the pinned provider package nor the official Responses create contract supplies a versioned offline mechanism that reproduces provider input usage including Responses framing.",
+    "rejectedSubstitutes": [
+      "UTF-8 byte count",
+      "generic tiktoken encoding",
+      "request-body byte equality",
+      "synthetic token fixture",
+      "post-dispatch provider usage",
+      "unaccounted online input-token-count request"
+    ]
+  },
+  "effects": {
+    "networkRequests": 0,
+    "providerRequests": 0,
+    "credentialsRead": 0,
+    "corpusOrGoldAccesses": 0,
+    "publicExportsAdded": 0
+  },
+  "decision": "M9b-NO-GO",
+  "nonclaims": [
+    "no campaign-ready adapter claim",
+    "no provider entitlement claim",
+    "no corpus or study execution claim",
+    "no model-quality or retrieval-superiority claim",
+    "no production-readiness or professional-security-audit claim"
+  ]
+}
