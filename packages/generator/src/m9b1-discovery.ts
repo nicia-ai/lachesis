@@ -53,6 +53,17 @@ export const M9B1_OFFLINE_DISCOVERY_PROTOCOL = Object.freeze({
     "offline program-discovery boundary evidence only; M9b remains NO-GO and this protocol makes no semantic-quality, retrieval-superiority, generalization, live-provider, security-audit, or production-readiness claim",
 });
 
+export const M9B1_ARTIFACT_BOUND_DISCOVERY_PROTOCOL = Object.freeze({
+  id: "lachesis-m9b1e-artifact-bound-program-discovery",
+  version: "1.0.0",
+  composes: M9B1_OFFLINE_DISCOVERY_PROTOCOL,
+  visibility: "internal-offline-development-only" as const,
+  evaluatorRequestSerialization: "lachesis-canonical-json/1" as const,
+  firstAttemptOnly: true as const,
+  claimBoundary:
+    "offline evaluator-artifact provenance correction only; M9b remains NO-GO and this protocol makes no semantic-quality, retrieval-superiority, generalization, live-provider, security-audit, or production-readiness claim",
+});
+
 const M9B1_PLANNING_RESERVATION = Object.freeze({
   maxInputTokens: 32_768,
   maxOutputTokens: 65_536,
@@ -388,6 +399,59 @@ export type M9b1ExternalEvaluator = Readonly<{
   identity: M9b0ModelIdentity;
   evaluate: (
     input: Readonly<{ task: string; answer: StrictJsonValue }>,
+    signal: AbortSignal,
+  ) => Promise<Result<StrictJsonValue, M9aRetrievalFailure>>;
+}>;
+
+export const m9b1EvaluatorArtifactSchema = z
+  .strictObject({
+    id: z.string().min(1),
+    version: z.string().min(1),
+    artifactDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+    outputSchemaDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+    independentValidationRecordDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+  })
+  .readonly();
+export type M9b1EvaluatorArtifact = z.infer<typeof m9b1EvaluatorArtifactSchema>;
+
+const artifactBoundEvaluationInputSchema = z
+  .strictObject({
+    task: taskSchema,
+    answer: strictJsonValueSchema,
+    evaluatorArtifact: m9b1EvaluatorArtifactSchema,
+  })
+  .readonly();
+
+const artifactBoundEvaluationAttemptBase = {
+  evaluator: modelIdentitySchema,
+  evaluatorArtifact: m9b1EvaluatorArtifactSchema,
+  serializedInput: z.string().min(1),
+  inputDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+};
+const successfulArtifactBoundEvaluationAttemptSchema = z
+  .strictObject({
+    status: z.literal("success"),
+    ...artifactBoundEvaluationAttemptBase,
+    serializedOutput: z.string().min(1),
+    outputDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+  })
+  .readonly();
+const failedArtifactBoundEvaluationAttemptSchema = z
+  .strictObject({
+    status: z.literal("failure"),
+    ...artifactBoundEvaluationAttemptBase,
+    failure: retainedFailureSchema,
+  })
+  .readonly();
+export type M9b1ArtifactBoundEvaluationAttempt =
+  | z.infer<typeof successfulArtifactBoundEvaluationAttemptSchema>
+  | z.infer<typeof failedArtifactBoundEvaluationAttemptSchema>;
+
+export type M9b1ArtifactBoundExternalEvaluator = Readonly<{
+  identity: M9b0ModelIdentity;
+  evaluatorArtifact: M9b1EvaluatorArtifact;
+  evaluate: (
+    input: z.infer<typeof artifactBoundEvaluationInputSchema>,
     signal: AbortSignal,
   ) => Promise<Result<StrictJsonValue, M9aRetrievalFailure>>;
 }>;
@@ -1953,6 +2017,910 @@ export async function runM9b1OfflineProgramDiscovery(
       protocol: M9B1_OFFLINE_DISCOVERY_PROTOCOL,
       comparisonDigest: comparisonDigest.value,
       executionOrder: arms,
+      matchedModelEnvelope: M9B1_MATCHED_MODEL_ENVELOPE,
+      discovered,
+      staticControl,
+    }),
+  };
+}
+
+const artifactBoundRecordBodySchema = z
+  .strictObject({
+    protocol: z
+      .strictObject({
+        id: z.literal(M9B1_ARTIFACT_BOUND_DISCOVERY_PROTOCOL.id),
+        version: z.literal(M9B1_ARTIFACT_BOUND_DISCOVERY_PROTOCOL.version),
+      })
+      .readonly(),
+    comparisonDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+    approvedEvaluatorArtifact: m9b1EvaluatorArtifactSchema,
+    sourceRecord: m9b1InternalArmRecordSchema,
+    evaluationAttempt: z
+      .discriminatedUnion("status", [
+        successfulArtifactBoundEvaluationAttemptSchema,
+        failedArtifactBoundEvaluationAttemptSchema,
+      ])
+      .nullable(),
+  })
+  .superRefine((record, context) => {
+    const evaluated =
+      record.sourceRecord.outcome.status === "success" ||
+      record.sourceRecord.outcome.status === "evaluation-failure";
+    if (evaluated !== (record.evaluationAttempt !== null))
+      context.addIssue({
+        code: "custom",
+        message: "M9b.1e artifact attempt does not match the terminal stage.",
+      });
+  })
+  .readonly();
+
+export const m9b1ArtifactBoundArmRecordSchema = artifactBoundRecordBodySchema
+  .unwrap()
+  .safeExtend({ recordDigest: z.string().regex(/^[a-f0-9]{64}$/u) })
+  .readonly();
+export type M9b1ArtifactBoundArmRecord = z.infer<
+  typeof m9b1ArtifactBoundArmRecordSchema
+>;
+
+export type M9b1ArtifactBoundArmStore = Readonly<{
+  load: (
+    comparisonDigest: string,
+    arm: M9b1Arm,
+  ) => Promise<Result<M9b1ArtifactBoundArmRecord | undefined, Diagnostic>>;
+  save: (
+    record: M9b1ArtifactBoundArmRecord,
+  ) => Promise<Result<void, Diagnostic>>;
+}>;
+
+const artifactBoundStoreSchema = z
+  .strictObject({
+    protocol: z.literal("lachesis-m9b1e-artifact-bound-atomic-arm-store/1"),
+    records: m9b1ArtifactBoundArmRecordSchema.array().readonly(),
+  })
+  .readonly();
+
+function canonicalSame(left: unknown, right: unknown): boolean {
+  const canonicalLeft = canonicalizeJson(left);
+  const canonicalRight = canonicalizeJson(right);
+  return (
+    canonicalLeft.ok &&
+    canonicalRight.ok &&
+    canonicalLeft.value === canonicalRight.value
+  );
+}
+
+async function bindArtifactEvaluationInput(
+  evaluator: M9b0ModelIdentity,
+  evaluatorArtifact: M9b1EvaluatorArtifact,
+  task: string,
+  answerInput: unknown,
+): Promise<
+  Result<
+    Readonly<{
+      evaluator: M9b0ModelIdentity;
+      evaluatorArtifact: M9b1EvaluatorArtifact;
+      serializedInput: string;
+      inputDigest: string;
+      input: z.infer<typeof artifactBoundEvaluationInputSchema>;
+    }>,
+    Diagnostic
+  >
+> {
+  const answer = strictJsonValueSchema.safeParse(answerInput);
+  if (!answer.success)
+    return {
+      ok: false,
+      error: diagnostic(
+        "INTERNAL_INVARIANT_VIOLATION",
+        "M9b.1e run answer is not strict JSON.",
+      ),
+    };
+  const input = artifactBoundEvaluationInputSchema.parse({
+    task,
+    answer: answer.data,
+    evaluatorArtifact,
+  });
+  const serializedInput = canonicalizeJson(input);
+  const inputDigest = await digestValue(input);
+  return serializedInput.ok && inputDigest.ok
+    ? {
+        ok: true,
+        value: {
+          evaluator,
+          evaluatorArtifact,
+          serializedInput: serializedInput.value,
+          inputDigest: inputDigest.value,
+          input,
+        },
+      }
+    : {
+        ok: false,
+        error: diagnostic(
+          "INTERNAL_INVARIANT_VIOLATION",
+          "M9b.1e evaluator request binding failed.",
+        ),
+      };
+}
+
+async function artifactFailureAttempt(
+  bound: Readonly<{
+    evaluator: M9b0ModelIdentity;
+    evaluatorArtifact: M9b1EvaluatorArtifact;
+    serializedInput: string;
+    inputDigest: string;
+  }>,
+  payload: M9aRetrievalFailure,
+): Promise<Result<M9b1ArtifactBoundEvaluationAttempt, Diagnostic>> {
+  const retained = await retainFailure(
+    "evaluation",
+    strictJsonValueSchema.parse(payload),
+  );
+  return retained.ok
+    ? {
+        ok: true,
+        value: failedArtifactBoundEvaluationAttemptSchema.parse({
+          status: "failure",
+          evaluator: bound.evaluator,
+          evaluatorArtifact: bound.evaluatorArtifact,
+          serializedInput: bound.serializedInput,
+          inputDigest: bound.inputDigest,
+          failure: retained.value,
+        }),
+      }
+    : retained;
+}
+
+async function dispatchArtifactEvaluationAttempt(
+  evaluator: M9b1ArtifactBoundExternalEvaluator,
+  approvedEvaluatorArtifact: M9b1EvaluatorArtifact,
+  input: Readonly<{ task: string; answer: StrictJsonValue }>,
+  signal: AbortSignal,
+  controllerFailure?: M9aRetrievalFailure,
+): Promise<Result<M9b1ArtifactBoundEvaluationAttempt, Diagnostic>> {
+  const parsedArtifact = m9b1EvaluatorArtifactSchema.safeParse(
+    evaluator.evaluatorArtifact,
+  );
+  const parsedIdentity = modelIdentitySchema.safeParse(evaluator.identity);
+  if (
+    !parsedArtifact.success ||
+    !parsedIdentity.success ||
+    parsedArtifact.data.id !== parsedIdentity.data.id ||
+    parsedArtifact.data.version !== parsedIdentity.data.version
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "M9b.1e evaluator session has no valid self-consistent artifact identity.",
+      ),
+    };
+  const bound = await bindArtifactEvaluationInput(
+    parsedIdentity.data,
+    parsedArtifact.data,
+    input.task,
+    input.answer,
+  );
+  if (!bound.ok) return bound;
+  const preDispatchFailure =
+    controllerFailure ??
+    (canonicalSame(parsedArtifact.data, approvedEvaluatorArtifact)
+      ? undefined
+      : failure(
+          "M9b.1e evaluator session artifact differs from the approved artifact.",
+        ));
+  if (preDispatchFailure !== undefined)
+    return artifactFailureAttempt(bound.value, preDispatchFailure);
+  const evaluated = await evaluator.evaluate(bound.value.input, signal);
+  if (!evaluated.ok)
+    return artifactFailureAttempt(bound.value, evaluated.error);
+  const output = strictJsonValueSchema.safeParse(evaluated.value);
+  if (!output.success)
+    return artifactFailureAttempt(
+      bound.value,
+      failure("M9b.1e evaluator output is not strict JSON."),
+    );
+  const serializedOutput = canonicalizeJson(output.data);
+  const outputDigest = await digestValue(output.data);
+  return serializedOutput.ok && outputDigest.ok
+    ? {
+        ok: true,
+        value: successfulArtifactBoundEvaluationAttemptSchema.parse({
+          status: "success",
+          evaluator: bound.value.evaluator,
+          evaluatorArtifact: bound.value.evaluatorArtifact,
+          serializedInput: bound.value.serializedInput,
+          inputDigest: bound.value.inputDigest,
+          serializedOutput: serializedOutput.value,
+          outputDigest: outputDigest.value,
+        }),
+      }
+    : artifactFailureAttempt(
+        bound.value,
+        failure("M9b.1e evaluator output binding failed."),
+      );
+}
+
+async function validateArtifactEvaluationAttempt(
+  attempt: M9b1ArtifactBoundEvaluationAttempt,
+  task: string,
+  run: M9aRetrievalRun,
+  sourceAttempt: M9b1EvaluationAttempt,
+): Promise<Result<void, Diagnostic>> {
+  const expected = await bindArtifactEvaluationInput(
+    attempt.evaluator,
+    attempt.evaluatorArtifact,
+    task,
+    run.answer,
+  );
+  if (
+    !expected.ok ||
+    attempt.evaluator.id !== attempt.evaluatorArtifact.id ||
+    attempt.evaluator.version !== attempt.evaluatorArtifact.version ||
+    expected.value.serializedInput !== attempt.serializedInput ||
+    expected.value.inputDigest !== attempt.inputDigest ||
+    !sameIdentity(attempt.evaluator, sourceAttempt.evaluator) ||
+    attempt.status !== sourceAttempt.status
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "REPLAY_REQUEST_MISMATCH",
+        "M9b.1e evaluator attempt is not bound to its original request and source receipt.",
+      ),
+    };
+  if (attempt.status === "failure" && sourceAttempt.status === "failure") {
+    const retained = await validateRetainedFailure(attempt.failure);
+    return retained.ok && canonicalSame(attempt.failure, sourceAttempt.failure)
+      ? retained
+      : {
+          ok: false,
+          error: diagnostic(
+            "REPLAY_REQUEST_MISMATCH",
+            "M9b.1e failed evaluator receipts differ.",
+          ),
+        };
+  }
+  if (attempt.status === "success" && sourceAttempt.status === "success") {
+    const output = parseJson(attempt.serializedOutput);
+    const serializedOutput = output.ok
+      ? canonicalizeJson(output.value)
+      : output;
+    const outputDigest = output.ok ? await digestValue(output.value) : output;
+    return output.ok &&
+      serializedOutput.ok &&
+      serializedOutput.value === attempt.serializedOutput &&
+      outputDigest.ok &&
+      outputDigest.value === attempt.outputDigest &&
+      attempt.serializedOutput === sourceAttempt.serializedOutput &&
+      attempt.outputDigest === sourceAttempt.outputDigest
+      ? { ok: true, value: undefined }
+      : {
+          ok: false,
+          error: diagnostic(
+            "REPLAY_REQUEST_MISMATCH",
+            "M9b.1e successful evaluator receipts differ.",
+          ),
+        };
+  }
+  return {
+    ok: false,
+    error: diagnostic(
+      "REPLAY_REQUEST_MISMATCH",
+      "M9b.1e evaluator attempt status is inconsistent.",
+    ),
+  };
+}
+
+async function artifactComparisonDigest(input: {
+  sourceComparisonDigest: string;
+  approvedEvaluatorArtifact: M9b1EvaluatorArtifact;
+}): Promise<Result<string, Diagnostic>> {
+  return digestValue({
+    protocol: M9B1_ARTIFACT_BOUND_DISCOVERY_PROTOCOL,
+    sourceComparisonDigest: input.sourceComparisonDigest,
+    approvedEvaluatorArtifact: input.approvedEvaluatorArtifact,
+  });
+}
+
+function artifactRecordBody(
+  record: M9b1ArtifactBoundArmRecord,
+): z.infer<typeof artifactBoundRecordBodySchema> {
+  return {
+    protocol: record.protocol,
+    comparisonDigest: record.comparisonDigest,
+    approvedEvaluatorArtifact: record.approvedEvaluatorArtifact,
+    sourceRecord: record.sourceRecord,
+    evaluationAttempt: record.evaluationAttempt,
+  };
+}
+
+async function validateArtifactRecord(
+  input: unknown,
+): Promise<Result<M9b1ArtifactBoundArmRecord, Diagnostic>> {
+  const parsed = m9b1ArtifactBoundArmRecordSchema.safeParse(input);
+  if (!parsed.success)
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "M9b.1e artifact-bound arm record is invalid.",
+      ),
+    };
+  const source = await validateRecord(parsed.data.sourceRecord);
+  const digest = await digestValue(artifactRecordBody(parsed.data));
+  const comparison = await artifactComparisonDigest({
+    sourceComparisonDigest: parsed.data.sourceRecord.comparisonDigest,
+    approvedEvaluatorArtifact: parsed.data.approvedEvaluatorArtifact,
+  });
+  if (
+    !source.ok ||
+    !digest.ok ||
+    digest.value !== parsed.data.recordDigest ||
+    !comparison.ok ||
+    comparison.value !== parsed.data.comparisonDigest
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "REPLAY_REQUEST_MISMATCH",
+        "M9b.1e artifact-bound record or comparison digest differs.",
+      ),
+    };
+  const requestValue = parseJson(
+    parsed.data.sourceRecord.authoringRequest.serializedRequest,
+  );
+  const request = requestValue.ok
+    ? authoringRequestBodySchema.safeParse(requestValue.value)
+    : undefined;
+  if (request?.success !== true)
+    return {
+      ok: false,
+      error: diagnostic(
+        "REPLAY_REQUEST_MISMATCH",
+        "M9b.1e source task cannot be recovered from its frozen request.",
+      ),
+    };
+  const resumed = await resumeRecord(parsed.data.sourceRecord, {
+    task: request.data.task,
+    taskDigest: parsed.data.sourceRecord.taskDigest,
+    corpusSnapshotDigest: parsed.data.sourceRecord.corpusSnapshotDigest,
+    model: parsed.data.sourceRecord.model,
+    evaluator: parsed.data.sourceRecord.evaluator,
+    executionOrder: parsed.data.sourceRecord.executionOrder,
+  });
+  if (!resumed.ok)
+    return {
+      ok: false,
+      error: diagnostic(
+        "REPLAY_REQUEST_MISMATCH",
+        "M9b.1e embedded source record failed zero-effect replay.",
+      ),
+    };
+  if (
+    parsed.data.sourceRecord.outcome.status === "success" ||
+    parsed.data.sourceRecord.outcome.status === "evaluation-failure"
+  ) {
+    if (
+      parsed.data.evaluationAttempt === null ||
+      resumed.value.run === undefined
+    )
+      return {
+        ok: false,
+        error: diagnostic(
+          "REPLAY_REQUEST_MISMATCH",
+          "M9b.1e evaluated source lacks its original attempt and run.",
+        ),
+      };
+    const attempt = await validateArtifactEvaluationAttempt(
+      parsed.data.evaluationAttempt,
+      request.data.task,
+      resumed.value.run,
+      parsed.data.sourceRecord.outcome.evaluationAttempt,
+    );
+    if (!attempt.ok) return attempt;
+  }
+  return { ok: true, value: parsed.data };
+}
+
+async function readArtifactStore(persistence: M9b1AtomicPersistence): Promise<
+  Result<
+    Readonly<{
+      revision: string | null;
+      records: ReadonlyArray<M9b1ArtifactBoundArmRecord>;
+    }>,
+    Diagnostic
+  >
+> {
+  const loaded = await persistence.read();
+  if (!loaded.ok) return loaded;
+  if (loaded.value === undefined)
+    return { ok: true, value: { revision: null, records: [] } };
+  const parsed = parseJson(loaded.value.content);
+  const snapshot = parsed.ok
+    ? artifactBoundStoreSchema.safeParse(parsed.value)
+    : undefined;
+  if (!parsed.ok || snapshot?.success !== true)
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "M9b.1e artifact-bound arm store is invalid.",
+      ),
+    };
+  const records: Array<M9b1ArtifactBoundArmRecord> = [];
+  for (const candidate of snapshot.data.records) {
+    const validated = await validateArtifactRecord(candidate);
+    if (!validated.ok) return validated;
+    records.push(validated.value);
+  }
+  return {
+    ok: true,
+    value: { revision: loaded.value.revision, records },
+  };
+}
+
+export function createM9b1ArtifactBoundArmStore(
+  persistence: M9b1AtomicPersistence,
+): M9b1ArtifactBoundArmStore {
+  return {
+    load: async (comparisonDigest, arm) => {
+      const loaded = await readArtifactStore(persistence);
+      return loaded.ok
+        ? {
+            ok: true,
+            value: loaded.value.records.find(
+              (record) =>
+                record.comparisonDigest === comparisonDigest &&
+                record.sourceRecord.arm === arm,
+            ),
+          }
+        : loaded;
+    },
+    save: async (record) => {
+      const validated = await validateArtifactRecord(record);
+      if (!validated.ok) return validated;
+      const loaded = await readArtifactStore(persistence);
+      if (!loaded.ok) return loaded;
+      const existing = loaded.value.records.find(
+        (candidate) =>
+          candidate.comparisonDigest === record.comparisonDigest &&
+          candidate.sourceRecord.arm === record.sourceRecord.arm,
+      );
+      if (existing !== undefined)
+        return existing.recordDigest === record.recordDigest
+          ? { ok: true, value: undefined }
+          : {
+              ok: false,
+              error: diagnostic(
+                "REPLAY_REQUEST_MISMATCH",
+                "M9b.1e refuses to replace a different terminal arm record.",
+              ),
+            };
+      const records = [...loaded.value.records, record].toSorted(
+        (left, right) =>
+          `${left.comparisonDigest}:${left.sourceRecord.arm}`.localeCompare(
+            `${right.comparisonDigest}:${right.sourceRecord.arm}`,
+          ),
+      );
+      const content = canonicalizeJson({
+        protocol: "lachesis-m9b1e-artifact-bound-atomic-arm-store/1",
+        records,
+      });
+      if (!content.ok) return content;
+      const written = await persistence.writeAtomic({
+        expectedRevision: loaded.value.revision,
+        content: content.value,
+      });
+      return written.ok ? { ok: true, value: undefined } : written;
+    },
+  };
+}
+
+export type M9b1ArtifactBoundArmResult = Readonly<{
+  arm: M9b1Arm;
+  resumed: boolean;
+  record: M9b1ArtifactBoundArmRecord;
+  run?: M9aRetrievalRun | undefined;
+}>;
+
+export type M9b1ArtifactBoundComparison = Readonly<{
+  protocol: typeof M9B1_ARTIFACT_BOUND_DISCOVERY_PROTOCOL;
+  comparisonDigest: string;
+  executionOrder: Readonly<[M9b1Arm, M9b1Arm]>;
+  matchedModelEnvelope: typeof M9B1_MATCHED_MODEL_ENVELOPE;
+  discovered: M9b1ArtifactBoundArmResult;
+  staticControl: M9b1ArtifactBoundArmResult;
+}>;
+
+const artifactVerifiedBrand: unique symbol = Symbol(
+  "M9b1ArtifactBoundVerifiedTerminalRecord",
+);
+export type M9b1ArtifactBoundVerifiedTerminalRecord = Readonly<{
+  [artifactVerifiedBrand]: "M9b1ArtifactBoundVerifiedTerminalRecord";
+}>;
+type StoredArtifactVerifiedTerminalRecord = Readonly<{
+  result: M9b1ArtifactBoundArmResult;
+  task: string;
+}>;
+const artifactVerifiedRecords = new WeakMap<
+  M9b1ArtifactBoundVerifiedTerminalRecord,
+  StoredArtifactVerifiedTerminalRecord
+>();
+
+async function resumeArtifactRecord(
+  recordInput: M9b1ArtifactBoundArmRecord,
+  binding: Readonly<{
+    task: string;
+    taskDigest: string;
+    corpusSnapshotDigest: string;
+    model: M9b0ModelIdentity;
+    evaluator: M9b0ModelIdentity;
+    approvedEvaluatorArtifact: M9b1EvaluatorArtifact;
+    executionOrder: M9b1ExecutionOrder;
+  }>,
+): Promise<Result<M9b1ArtifactBoundArmResult, M9b1Failure>> {
+  const validated = await validateArtifactRecord(recordInput);
+  if (!validated.ok)
+    return {
+      ok: false,
+      error: outerFailure("resume", validated.error.message),
+    };
+  const record = validated.value;
+  if (
+    !canonicalSame(
+      record.approvedEvaluatorArtifact,
+      binding.approvedEvaluatorArtifact,
+    )
+  )
+    return {
+      ok: false,
+      error: outerFailure(
+        "resume",
+        "M9b.1e approved evaluator artifact is cross-bound.",
+      ),
+    };
+  const source = await resumeRecord(record.sourceRecord, binding);
+  if (!source.ok) return source;
+  if (
+    record.sourceRecord.outcome.status === "success" ||
+    record.sourceRecord.outcome.status === "evaluation-failure"
+  ) {
+    if (record.evaluationAttempt === null || source.value.run === undefined)
+      return {
+        ok: false,
+        error: outerFailure(
+          "resume",
+          "M9b.1e evaluated record lacks its artifact-bound receipt.",
+        ),
+      };
+    const attempt = await validateArtifactEvaluationAttempt(
+      record.evaluationAttempt,
+      binding.task,
+      source.value.run,
+      record.sourceRecord.outcome.evaluationAttempt,
+    );
+    if (!attempt.ok)
+      return {
+        ok: false,
+        error: outerFailure("resume", attempt.error.message),
+      };
+  }
+  return {
+    ok: true,
+    value: {
+      arm: record.sourceRecord.arm,
+      resumed: true,
+      record,
+      ...(source.value.run === undefined ? {} : { run: source.value.run }),
+    },
+  };
+}
+
+export async function m9b1InternalVerifyArtifactBoundTerminalRecord(
+  record: M9b1ArtifactBoundArmRecord,
+  binding: Readonly<{
+    task: string;
+    taskDigest: string;
+    corpusSnapshotDigest: string;
+    model: M9b0ModelIdentity;
+    evaluator: M9b0ModelIdentity;
+    approvedEvaluatorArtifact: M9b1EvaluatorArtifact;
+    executionOrder: M9b1ExecutionOrder;
+  }>,
+): Promise<Result<M9b1ArtifactBoundVerifiedTerminalRecord, M9b1Failure>> {
+  const resumed = await resumeArtifactRecord(record, binding);
+  if (!resumed.ok) return resumed;
+  const token: M9b1ArtifactBoundVerifiedTerminalRecord = Object.freeze({
+    [artifactVerifiedBrand]: "M9b1ArtifactBoundVerifiedTerminalRecord",
+  });
+  artifactVerifiedRecords.set(token, {
+    result: resumed.value,
+    task: binding.task,
+  });
+  return { ok: true, value: token };
+}
+
+export function m9b1InternalInspectArtifactBoundVerifiedTerminalRecord(
+  token: M9b1ArtifactBoundVerifiedTerminalRecord,
+): StoredArtifactVerifiedTerminalRecord | undefined {
+  return artifactVerifiedRecords.get(token);
+}
+
+function artifactAttemptToLegacyResult(
+  attempt: M9b1ArtifactBoundEvaluationAttempt,
+): Result<StrictJsonValue, M9aRetrievalFailure> {
+  if (attempt.status === "failure")
+    return {
+      ok: false,
+      error: m9aRetrievalFailureSchema.parse(attempt.failure.payload),
+    };
+  const output = parseJson(attempt.serializedOutput);
+  const strict = output.ok
+    ? strictJsonValueSchema.safeParse(output.value)
+    : undefined;
+  return strict?.success === true
+    ? { ok: true, value: strict.data }
+    : {
+        ok: false,
+        error: failure("M9b.1e lost a canonical evaluator output."),
+      };
+}
+
+export async function runM9b1ArtifactBoundProgramDiscovery(
+  input: Readonly<{
+    corpus: M9aCorpus;
+    task: string;
+    model: M9b0ModelIdentity;
+    authoringSessionFactories: Readonly<{
+      discoveredProgram: () => M9b1AuthoringModel;
+      staticQuery: () => M9b1AuthoringModel;
+    }>;
+    executionSessionFactories: Readonly<{
+      discoveredProgram: () => M9b0OfflineModel;
+      staticQuery: () => M9b0OfflineModel;
+    }>;
+    evaluator: M9b0ModelIdentity;
+    approvedEvaluatorArtifact: M9b1EvaluatorArtifact;
+    evaluatorSessionFactories: Readonly<{
+      discoveredProgram: () => M9b1ArtifactBoundExternalEvaluator;
+      staticQuery: () => M9b1ArtifactBoundExternalEvaluator;
+    }>;
+    executionOrder: M9b1ExecutionOrder;
+    store: M9b1ArtifactBoundArmStore;
+    signal?: AbortSignal | undefined;
+  }>,
+): Promise<Result<M9b1ArtifactBoundComparison, M9b1Failure>> {
+  const task = taskSchema.safeParse(input.task);
+  const model = modelIdentitySchema.safeParse(input.model);
+  const evaluatorIdentity = modelIdentitySchema.safeParse(input.evaluator);
+  const order = orderSchema.safeParse(input.executionOrder);
+  const corpus = inspectM9aCorpus(input.corpus);
+  const approved = m9b1EvaluatorArtifactSchema.safeParse(
+    input.approvedEvaluatorArtifact,
+  );
+  if (
+    !task.success ||
+    !model.success ||
+    !evaluatorIdentity.success ||
+    !order.success ||
+    corpus === undefined ||
+    !approved.success ||
+    approved.data.id !== evaluatorIdentity.data.id ||
+    approved.data.version !== evaluatorIdentity.data.version ||
+    sameIdentity(model.data, evaluatorIdentity.data) ||
+    input.authoringSessionFactories.discoveredProgram ===
+      input.authoringSessionFactories.staticQuery ||
+    input.executionSessionFactories.discoveredProgram ===
+      input.executionSessionFactories.staticQuery ||
+    input.evaluatorSessionFactories.discoveredProgram ===
+      input.evaluatorSessionFactories.staticQuery
+  )
+    return {
+      ok: false,
+      error: outerFailure(
+        "preflight",
+        "M9b.1e approved evaluator artifact is invalid.",
+      ),
+    };
+  const taskDigest = await digestValue(task.data);
+  if (!taskDigest.ok)
+    return {
+      ok: false,
+      error: { kind: "preflight", diagnostic: taskDigest.error },
+    };
+  const sourceComparisonDigest = await m9b1InternalComparisonDigest({
+    taskDigest: taskDigest.value,
+    corpusSnapshotDigest: corpus.snapshotDigest,
+    model: model.data,
+    evaluator: evaluatorIdentity.data,
+    order: order.data,
+  });
+  if (!sourceComparisonDigest.ok)
+    return {
+      ok: false,
+      error: { kind: "preflight", diagnostic: sourceComparisonDigest.error },
+    };
+  const comparisonDigest = await artifactComparisonDigest({
+    sourceComparisonDigest: sourceComparisonDigest.value,
+    approvedEvaluatorArtifact: approved.data,
+  });
+  if (!comparisonDigest.ok)
+    return {
+      ok: false,
+      error: { kind: "preflight", diagnostic: comparisonDigest.error },
+    };
+  const loaded = new Map<M9b1Arm, M9b1ArtifactBoundArmRecord>();
+  for (const arm of executionOrder(order.data)) {
+    const candidate = await input.store.load(comparisonDigest.value, arm);
+    if (!candidate.ok)
+      return {
+        ok: false,
+        error: { kind: "storage", diagnostic: candidate.error },
+      };
+    if (candidate.value !== undefined) loaded.set(arm, candidate.value);
+  }
+  const sourceRecords = new Map<M9b1Arm, M9b1ArmRecord>(
+    [...loaded.entries()].map(([arm, record]) => [arm, record.sourceRecord]),
+  );
+  const sourceStore: M9b1ArmStore = {
+    load: (_digest, arm) =>
+      Promise.resolve({ ok: true, value: sourceRecords.get(arm) }),
+    save: (record) => {
+      sourceRecords.set(record.arm, record);
+      return Promise.resolve({ ok: true, value: undefined });
+    },
+  };
+  const attempts = new Map<M9b1Arm, M9b1ArtifactBoundEvaluationAttempt>();
+  const sessions = new Set<object>();
+  const authoringFactory = (factory: () => M9b1AuthoringModel) => () => {
+    const session = factory();
+    sessions.add(session);
+    return session;
+  };
+  const executionFactory = (factory: () => M9b0OfflineModel) => () => {
+    const session = factory();
+    sessions.add(session);
+    return session;
+  };
+  const evaluatorFactory =
+    (
+      arm: M9b1Arm,
+      factory: () => M9b1ArtifactBoundExternalEvaluator,
+    ): (() => M9b1ExternalEvaluator) =>
+    () => {
+      const evaluator = factory();
+      const reused = sessions.has(evaluator);
+      sessions.add(evaluator);
+      return {
+        identity: evaluatorIdentity.data,
+        evaluate: async (_legacyInput, signal) => {
+          const attempt = await dispatchArtifactEvaluationAttempt(
+            evaluator,
+            approved.data,
+            _legacyInput,
+            signal,
+            reused
+              ? failure("M9b.1e requires independent evaluator sessions.")
+              : undefined,
+          );
+          if (!attempt.ok)
+            return { ok: false, error: failure(attempt.error.message) };
+          attempts.set(arm, attempt.value);
+          return artifactAttemptToLegacyResult(attempt.value);
+        },
+      };
+    };
+  const sourceComparison = await runM9b1OfflineProgramDiscovery({
+    corpus: input.corpus,
+    task: input.task,
+    model: model.data,
+    authoringSessionFactories: {
+      discoveredProgram: authoringFactory(
+        input.authoringSessionFactories.discoveredProgram,
+      ),
+      staticQuery: authoringFactory(
+        input.authoringSessionFactories.staticQuery,
+      ),
+    },
+    executionSessionFactories: {
+      discoveredProgram: executionFactory(
+        input.executionSessionFactories.discoveredProgram,
+      ),
+      staticQuery: executionFactory(
+        input.executionSessionFactories.staticQuery,
+      ),
+    },
+    evaluator: evaluatorIdentity.data,
+    evaluatorSessionFactories: {
+      discoveredProgram: evaluatorFactory(
+        "discovered-program",
+        input.evaluatorSessionFactories.discoveredProgram,
+      ),
+      staticQuery: evaluatorFactory(
+        "static-one-shot",
+        input.evaluatorSessionFactories.staticQuery,
+      ),
+    },
+    executionOrder: order.data,
+    store: sourceStore,
+    ...(input.signal === undefined ? {} : { signal: input.signal }),
+  });
+  if (!sourceComparison.ok) return sourceComparison;
+  const results = new Map<M9b1Arm, M9b1ArtifactBoundArmResult>();
+  for (const sourceResult of [
+    sourceComparison.value.discovered,
+    sourceComparison.value.staticControl,
+  ]) {
+    const resumedRecord = loaded.get(sourceResult.arm);
+    if (resumedRecord !== undefined) {
+      const resumed = await resumeArtifactRecord(resumedRecord, {
+        task: input.task,
+        taskDigest: sourceResult.record.taskDigest,
+        corpusSnapshotDigest: sourceResult.record.corpusSnapshotDigest,
+        model: model.data,
+        evaluator: evaluatorIdentity.data,
+        approvedEvaluatorArtifact: approved.data,
+        executionOrder: order.data,
+      });
+      if (!resumed.ok) return resumed;
+      results.set(sourceResult.arm, resumed.value);
+      continue;
+    }
+    const evaluated =
+      sourceResult.record.outcome.status === "success" ||
+      sourceResult.record.outcome.status === "evaluation-failure";
+    const attempt = attempts.get(sourceResult.arm) ?? null;
+    if (evaluated !== (attempt !== null))
+      return {
+        ok: false,
+        error: outerFailure(
+          "preflight",
+          "M9b.1e did not retain the original evaluator attempt.",
+        ),
+      };
+    const body = artifactBoundRecordBodySchema.parse({
+      protocol: {
+        id: M9B1_ARTIFACT_BOUND_DISCOVERY_PROTOCOL.id,
+        version: M9B1_ARTIFACT_BOUND_DISCOVERY_PROTOCOL.version,
+      },
+      comparisonDigest: comparisonDigest.value,
+      approvedEvaluatorArtifact: approved.data,
+      sourceRecord: sourceResult.record,
+      evaluationAttempt: attempt,
+    });
+    const recordDigest = await digestValue(body);
+    if (!recordDigest.ok)
+      return {
+        ok: false,
+        error: { kind: "storage", diagnostic: recordDigest.error },
+      };
+    const record = m9b1ArtifactBoundArmRecordSchema.parse({
+      ...body,
+      recordDigest: recordDigest.value,
+    });
+    const saved = await input.store.save(record);
+    if (!saved.ok)
+      return { ok: false, error: { kind: "storage", diagnostic: saved.error } };
+    results.set(sourceResult.arm, {
+      arm: sourceResult.arm,
+      resumed: false,
+      record,
+      ...(sourceResult.run === undefined ? {} : { run: sourceResult.run }),
+    });
+  }
+  const discovered = results.get("discovered-program");
+  const staticControl = results.get("static-one-shot");
+  if (discovered === undefined || staticControl === undefined)
+    return {
+      ok: false,
+      error: outerFailure("preflight", "M9b.1e lost one terminal arm record."),
+    };
+  return {
+    ok: true,
+    value: Object.freeze({
+      protocol: M9B1_ARTIFACT_BOUND_DISCOVERY_PROTOCOL,
+      comparisonDigest: comparisonDigest.value,
+      executionOrder: sourceComparison.value.executionOrder,
       matchedModelEnvelope: M9B1_MATCHED_MODEL_ENVELOPE,
       discovered,
       staticControl,

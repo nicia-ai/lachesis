@@ -1,6 +1,6 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.3d offline provenance correction only; M9b is not materialized or
+Status: **M9b.3e offline provenance correction only; M9b is not materialized or
 authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
@@ -8,16 +8,17 @@ external corpora. M9a does not create a final corpus, campaign, preregistration,
 provider identity, credential preflight, executable live state, or authorization
 text.
 
-## M9b.3d offline artifact-to-effect correction
+## M9b.3e offline pre-dispatch evaluator provenance correction
 
-M9b.3d supersedes the affected private M9b.3c identities with
-`lachesis-m9b3d-offline-prospective-study-preparation@1.0.0`. It retains the
-exact binding contract for a candidate provider, shared model, request protocol
-and serializer, exact tokenizer artifacts and conformance vectors, pricing
-snapshot, prompt and accepted measurement-boundary identities, balanced
-allocation, seed commitments, counterbalance algorithm, matched budgets,
-advancement and kill gates, and offline preregistration draft. Full details are
-in [M9b.3d offline prospective preparation](./m9b3-offline-preparation.md).
+M9b.3e supersedes the affected private M9b.3d identities with
+`lachesis-m9b3e-offline-prospective-study-preparation@1.0.0`. Earlier artifacts
+retain their exact meaning. It retains the exact binding contract for a
+candidate provider, shared model, request protocol and serializer, exact
+tokenizer artifacts and conformance vectors, pricing snapshot, prompt and
+accepted measurement-boundary identities, balanced allocation, seed commitments,
+counterbalance algorithm, matched budgets, advancement and kill gates, and
+offline preregistration draft. Full details are in
+[M9b.3e offline prospective preparation](./m9b3-offline-preparation.md).
 
 The exact probe decision now uses 95% Bonferroni-joint one-sided Clopper–Pearson
 lower bounds for discordance and conditional discovered wins, then requires
@@ -35,21 +36,25 @@ evaluator and exactly zero SDK/controller retries.
 The campaign-ineligible development evaluator remains bound only to existing
 M9b.2 artifacts. A distinct prospective supplement freezes the final
 deterministic evaluator's implementation artifact, output schema, and
-independent-validation receipt. M9b.3d terminal measurement and evaluation
-attempt receipts carry those complete identities; a same-label implementation
-without the bound fields rejects.
+independent-validation receipt. M9b.3e composes the frozen M9b.1b protocol with
+a separately versioned execution record whose exact evaluator request includes
+the complete artifact before dispatch. Original successful and failed receipts
+retain the canonical request, request digest, and artifact. Measurement accepts
+the supplement only when it exactly matches that original receipt; it cannot
+post-hoc attribute a same-label failure to an approved artifact.
 
 Probe gold is an opaque token derived from the exact prepared suite's hidden
 expectations, snapshots, case inventory, and suite digest. The supplement and
 measurement rederivation must consume that exact token and its derived
 content-addressed identity, so a copied or unrelated gold digest cannot affect
 scoring. The probe decision accepts no caller-authored counts. It rederives the
-complete 24-pair inventory from opaque M9b.1b verification tokens through the
-artifact-bound measurement record, requires the scheduled opposite arms and
-exact task, snapshot, comparison, model, endpoint, program, measurement-record,
-evaluator-artifact, gold-source, and source-arm identities, and derives all four
-outcome cells exclusively from `primary.success`. Its verifier repeats that
-derivation without model, retrieval, evaluator, or persistence effects.
+complete 24-pair inventory from opaque artifact-bound M9b.1e verification tokens
+through the pre-dispatch-bound measurement record, requires the scheduled
+opposite arms and exact task, snapshot, comparison, model, endpoint, program,
+measurement-record, evaluator-artifact, gold-source, and source-arm identities,
+and derives all four outcome cells exclusively from `primary.success`. Its
+verifier repeats that derivation without model, retrieval, evaluator, or
+persistence effects.
 
 The preparation accepts an independently trusted candidate provider profile and
 rederives every component digest plus the outer artifact. This is a binding, not
@@ -446,8 +451,8 @@ security review confirming:
 - no stable API, release, or provider boundary was widened.
 
 M9b.1b and M9b.2d have passed their offline reviews. M9b remains **NO-GO** after
-M9b.3d because the candidate provider profile is not conformance evidence; no
+M9b.3e because the candidate provider profile is not conformance evidence; no
 corpus, final gold/evaluator, schedule, empirical discordance result, external
 preregistration, adapter, credentials, or explicit live authorization exists.
-M9b.3d does not authorize corpus construction, provider integration, a held-out
+M9b.3e does not authorize corpus construction, provider integration, a held-out
 campaign, or live execution.

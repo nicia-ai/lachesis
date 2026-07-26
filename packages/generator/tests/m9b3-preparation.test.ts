@@ -7,12 +7,12 @@ import { createM9aCorpus, inspectM9aCorpus } from "../src/m9a-corpus.js";
 import { M9A_MODEL_VISIBLE_GRAMMAR } from "../src/m9a-retrieval.js";
 import type { M9b0OfflineModel } from "../src/m9b0-comparison.js";
 import {
-  createM9b1ArmStore,
+  createM9b1ArtifactBoundArmStore,
+  type M9b1ArtifactBoundExternalEvaluator,
   type M9b1AtomicPersistence,
   type M9b1AuthoringModel,
-  type M9b1ExternalEvaluator,
-  m9b1InternalVerifyTerminalRecord,
-  runM9b1OfflineProgramDiscovery,
+  m9b1InternalVerifyArtifactBoundTerminalRecord,
+  runM9b1ArtifactBoundProgramDiscovery,
 } from "../src/m9b1-discovery.js";
 import {
   createM9b2OfflineEvaluator,
@@ -25,7 +25,7 @@ import {
   type M9b2PreparedSuite,
   type M9b2PublicDevelopmentCase,
   type M9b3dGoldArtifactIdentity,
-  type M9cPairedMeasurementVerification,
+  type M9b3ePairedMeasurementVerification,
   prepareM9b2DevelopmentSuite,
   prepareM9b3dTrustedGold,
 } from "../src/m9b2-measurement.js";
@@ -110,6 +110,13 @@ const FINAL_EVALUATOR_IDENTITY = Object.freeze({
   version: "1",
 });
 
+const FINAL_EVALUATOR_ARTIFACT = Object.freeze({
+  ...FINAL_EVALUATOR_IDENTITY,
+  artifactDigest: "9".repeat(64),
+  outputSchemaDigest: "a".repeat(64),
+  independentValidationRecordDigest: "b".repeat(64),
+});
+
 async function preparationInput(): Promise<M9b3PreparationInput> {
   const development = await preparedDevelopmentSuite();
   const historicalDevelopmentBaseline = unwrap(
@@ -129,10 +136,7 @@ function prospectiveSupplementInput(
   return {
     finalGold,
     finalEvaluator: {
-      ...FINAL_EVALUATOR_IDENTITY,
-      artifactDigest: "9".repeat(64),
-      outputSchemaDigest: "a".repeat(64),
-      independentValidationRecordDigest: "b".repeat(64),
+      ...FINAL_EVALUATOR_ARTIFACT,
       deterministicLocalArmBlind: true,
       providerEffects: 0,
       campaignEligible: true,
@@ -408,7 +412,7 @@ async function pairedProbeMeasurementVerifications(
     id: string;
     version: string;
   }> = FINAL_EVALUATOR_IDENTITY,
-): Promise<ReadonlyArray<M9cPairedMeasurementVerification>> {
+): Promise<ReadonlyArray<M9b3ePairedMeasurementVerification>> {
   return Promise.all(
     schedule.probeEntries.map(async (scheduleEntry) => {
       const inspection = required(
@@ -440,13 +444,17 @@ async function pairedProbeMeasurementVerifications(
           },
         };
       };
-      const countedEvaluator = (): M9b1ExternalEvaluator => {
+      const evaluatorArtifact = {
+        ...FINAL_EVALUATOR_ARTIFACT,
+        ...evaluatorIdentity,
+      };
+      const countedEvaluator = (): M9b1ArtifactBoundExternalEvaluator => {
         const base = unwrap(
           createM9b2OfflineEvaluator(suite, scheduleEntry.caseId),
         );
         return {
-          ...base,
           identity: evaluatorIdentity,
+          evaluatorArtifact,
           evaluate: (input, signal) => {
             counter.evaluatorCalls += 1;
             return base.evaluate(input, signal);
@@ -464,7 +472,7 @@ async function pairedProbeMeasurementVerifications(
             : "discovered-first"
           : scheduledExecutionOrder;
       const comparison = unwrap(
-        await runM9b1OfflineProgramDiscovery({
+        await runM9b1ArtifactBoundProgramDiscovery({
           corpus,
           task: inspection.publicCase.task,
           model: { id: "m9b3d-offline-model", version: "1" },
@@ -477,12 +485,13 @@ async function pairedProbeMeasurementVerifications(
             staticQuery: () => countedExecution(),
           },
           evaluator: evaluatorIdentity,
+          approvedEvaluatorArtifact: evaluatorArtifact,
           evaluatorSessionFactories: {
             discoveredProgram: () => countedEvaluator(),
             staticQuery: () => countedEvaluator(),
           },
           executionOrder,
-          store: createM9b1ArmStore(memoryArmPersistence()),
+          store: createM9b1ArtifactBoundArmStore(memoryArmPersistence()),
         }),
       );
       const taskDigest = unwrap(await digestValue(inspection.publicCase.task));
@@ -490,18 +499,19 @@ async function pairedProbeMeasurementVerifications(
         arm: typeof comparison.discovered,
         expectedArm: "discovered-program" | "static-one-shot",
       ) => {
-        const response = required(arm.record.authoringResponse);
+        const response = required(arm.record.sourceRecord.authoringResponse);
         const programIdentity =
           response.kind === "program"
             ? response.sourceDigest
             : response.derivedSourceDigest;
         const verifiedRecord = unwrap(
-          await m9b1InternalVerifyTerminalRecord(arm.record, {
+          await m9b1InternalVerifyArtifactBoundTerminalRecord(arm.record, {
             task: inspection.publicCase.task,
             taskDigest,
             corpusSnapshotDigest: snapshot.snapshotDigest,
             model: { id: "m9b3d-offline-model", version: "1" },
             evaluator: evaluatorIdentity,
+            approvedEvaluatorArtifact: evaluatorArtifact,
             executionOrder,
           }),
         );
@@ -540,8 +550,8 @@ async function resign<T extends object>(
   };
 }
 
-describe("M9b.3d offline provenance correction", () => {
-  it("keeps the complete M9b.3d preparation surface private", () => {
+describe("M9b.3e pre-dispatch evaluator provenance correction", () => {
+  it("keeps the complete M9b.3e preparation surface private", () => {
     expect("M9B3_PREPARATION_PROTOCOL" in generatorFacade).toBe(false);
     expect("prepareM9b3OfflineStudy" in generatorFacade).toBe(false);
     expect("verifyM9b3OfflineStudy" in generatorFacade).toBe(false);
@@ -569,7 +579,7 @@ describe("M9b.3d offline provenance correction", () => {
       },
       studyBindings: {
         programDiscovery: {
-          id: "lachesis-m9b1b-offline-program-discovery",
+          id: "lachesis-m9b1e-artifact-bound-program-discovery",
           version: "1.0.0",
           promptBundleDigest: input.promptBundleDigest,
         },

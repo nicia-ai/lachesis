@@ -24,8 +24,11 @@ import {
 import {
   type M9b1Arm,
   type M9b1ArmRecord,
+  type M9b1ArtifactBoundVerifiedTerminalRecord,
   type M9b1ExternalEvaluator,
+  m9b1InternalInspectArtifactBoundVerifiedTerminalRecord,
   m9b1InternalInspectVerifiedTerminalRecord,
+  m9b1InternalVerifyTerminalRecord,
   type M9b1VerifiedTerminalRecord,
 } from "./m9b1-discovery.js";
 import { strictJsonValueSchema } from "./strict-json.js";
@@ -1305,6 +1308,77 @@ export type M9b3dTerminalMeasurementRecord = z.infer<
   typeof m9b3dTerminalMeasurementRecordSchema
 >;
 
+const m9b3eOriginalAttemptReceiptSchema = z
+  .strictObject({
+    attemptDigest: digestSchema,
+    inputDigest: digestSchema,
+    evaluatorArtifact: m9b3dEvaluatorArtifactSchema,
+  })
+  .readonly();
+
+const m9b3eTerminalMeasurementBodySchema = terminalMeasurementBodySchema
+  .unwrap()
+  .omit({ protocol: true, evaluation: true })
+  .safeExtend({
+    protocol: z.literal(
+      "lachesis-m9b3e-predispatch-artifact-terminal-measurement-record/1",
+    ),
+    sourceM9b1bArmRecordDigest: digestSchema,
+    sourceM9b3dMeasurementRecordDigest: digestSchema,
+    evaluatorArtifact: m9b3dEvaluatorArtifactSchema,
+    goldArtifact: m9b3dGoldArtifactIdentitySchema,
+    originalEvaluationAttempt: m9b3eOriginalAttemptReceiptSchema.nullable(),
+    evaluation: m9b3dEvaluationScoreSchema.nullable(),
+  })
+  .superRefine((record, context) => {
+    if (
+      record.evaluator.id !== record.evaluatorArtifact.id ||
+      record.evaluator.version !== record.evaluatorArtifact.version ||
+      record.goldArtifact.suiteDigest !== record.suiteDigest ||
+      (record.evaluationAttemptDigest === null) !==
+        (record.originalEvaluationAttempt === null)
+    )
+      context.addIssue({
+        code: "custom",
+        message: "M9b.3e original evaluator attempt is cross-bound.",
+      });
+    if (
+      record.originalEvaluationAttempt !== null &&
+      (record.originalEvaluationAttempt.attemptDigest !==
+        record.evaluationAttemptDigest ||
+        !canonicalEqual(
+          record.originalEvaluationAttempt.evaluatorArtifact,
+          record.evaluatorArtifact,
+        ))
+    )
+      context.addIssue({
+        code: "custom",
+        message: "M9b.3e original evaluator receipt differs.",
+      });
+    if (
+      record.evaluation !== null &&
+      (!canonicalEqual(
+        record.evaluation.evaluatorArtifact,
+        record.evaluatorArtifact,
+      ) ||
+        !canonicalEqual(record.evaluation.goldArtifact, record.goldArtifact))
+    )
+      context.addIssue({
+        code: "custom",
+        message: "M9b.3e evaluator output is not artifact-bound.",
+      });
+  })
+  .readonly();
+
+export const m9b3eTerminalMeasurementRecordSchema =
+  m9b3eTerminalMeasurementBodySchema
+    .unwrap()
+    .safeExtend({ recordDigest: digestSchema })
+    .readonly();
+export type M9b3eTerminalMeasurementRecord = z.infer<
+  typeof m9b3eTerminalMeasurementRecordSchema
+>;
+
 export type M9b2TerminalMeasurementVerification = Readonly<{
   suite: M9b2PreparedSuite;
   caseId: string;
@@ -1317,6 +1391,26 @@ export type M9b2TerminalMeasurementVerification = Readonly<{
     evaluator: Readonly<{ id: string; version: string }>;
     programIdentity: string | null;
   }>;
+}>;
+
+export type M9b3eTerminalMeasurementVerification = Readonly<{
+  suite: M9b2PreparedSuite;
+  caseId: string;
+  verifiedRecord: M9b1ArtifactBoundVerifiedTerminalRecord;
+  expected: Readonly<{
+    arm: M9b1Arm;
+    sourceArmRecordDigest: string;
+    comparisonDigest: string;
+    model: Readonly<{ id: string; version: string }>;
+    evaluator: Readonly<{ id: string; version: string }>;
+    programIdentity: string | null;
+  }>;
+}>;
+
+export type M9b3ePairedMeasurementVerification = Readonly<{
+  caseId: string;
+  discovered: M9b3eTerminalMeasurementVerification;
+  static: M9b3eTerminalMeasurementVerification;
 }>;
 
 function programIdentityOf(record: M9b1ArmRecord): string | null {
@@ -1742,6 +1836,153 @@ export async function verifyM9b3dTerminalMeasurementRecord(
     ? { ok: true, value: parsed.data }
     : invalid(
         "M9b.3d artifact-bound measurement record failed complete rederivation.",
+      );
+}
+
+/** @internal M9b.3e measurement from the original pre-dispatch artifact receipt. */
+export async function measureM9b3eVerifiedTerminalRecord(
+  input: M9b3eTerminalMeasurementVerification,
+  evaluatorArtifact: unknown,
+  goldToken: M9b3dTrustedGold,
+): Promise<Result<M9b3eTerminalMeasurementRecord, Diagnostic>> {
+  const parsedEvaluator =
+    m9b3dEvaluatorArtifactSchema.safeParse(evaluatorArtifact);
+  const gold = trustedGold.get(goldToken);
+  const stored = m9b1InternalInspectArtifactBoundVerifiedTerminalRecord(
+    input.verifiedRecord,
+  );
+  const prepared = suites.get(input.suite)?.cases.get(input.caseId);
+  if (
+    !parsedEvaluator.success ||
+    gold?.suite !== input.suite ||
+    stored === undefined ||
+    prepared === undefined
+  )
+    return invalid(
+      "M9b.3e requires the exact evaluator artifact, opaque gold, prepared case, and artifact-bound terminal token.",
+    );
+  const artifactRecord = stored.result.record;
+  const sourceRecord = artifactRecord.sourceRecord;
+  const actualArtifact =
+    artifactRecord.evaluationAttempt?.evaluatorArtifact ??
+    artifactRecord.approvedEvaluatorArtifact;
+  const actualProgramIdentity = programIdentityOf(sourceRecord);
+  if (
+    stored.task !== prepared.publicCase.task ||
+    artifactRecord.recordDigest !== input.expected.sourceArmRecordDigest ||
+    artifactRecord.comparisonDigest !== input.expected.comparisonDigest ||
+    sourceRecord.arm !== input.expected.arm ||
+    !canonicalEqual(sourceRecord.model, input.expected.model) ||
+    !canonicalEqual(sourceRecord.evaluator, input.expected.evaluator) ||
+    actualProgramIdentity !== input.expected.programIdentity ||
+    !canonicalEqual(actualArtifact, parsedEvaluator.data) ||
+    !canonicalEqual(
+      artifactRecord.approvedEvaluatorArtifact,
+      parsedEvaluator.data,
+    )
+  )
+    return invalid(
+      "M9b.3e terminal source or original evaluator artifact is cross-bound.",
+    );
+  const sourceToken = await m9b1InternalVerifyTerminalRecord(sourceRecord, {
+    task: stored.task,
+    taskDigest: sourceRecord.taskDigest,
+    corpusSnapshotDigest: sourceRecord.corpusSnapshotDigest,
+    model: sourceRecord.model,
+    evaluator: sourceRecord.evaluator,
+    executionOrder: sourceRecord.executionOrder,
+  });
+  if (!sourceToken.ok)
+    return invalid("M9b.3e embedded M9b.1b source record did not replay.");
+  const sourceMeasurement = await measureM9b3dVerifiedTerminalRecord(
+    {
+      suite: input.suite,
+      caseId: input.caseId,
+      verifiedRecord: sourceToken.value,
+      expected: {
+        arm: sourceRecord.arm,
+        sourceArmRecordDigest: sourceRecord.recordDigest,
+        comparisonDigest: sourceRecord.comparisonDigest,
+        model: sourceRecord.model,
+        evaluator: sourceRecord.evaluator,
+        programIdentity: actualProgramIdentity,
+      },
+    },
+    parsedEvaluator.data,
+    goldToken,
+  );
+  if (!sourceMeasurement.ok) return sourceMeasurement;
+  const originalAttempt = artifactRecord.evaluationAttempt;
+  const originalAttemptDigest =
+    originalAttempt === null ? undefined : await digestValue(originalAttempt);
+  if (originalAttemptDigest !== undefined && !originalAttemptDigest.ok)
+    return originalAttemptDigest;
+  const {
+    protocol: _sourceProtocol,
+    recordDigest: _sourceMeasurementDigest,
+    evaluationAttemptBinding: _postHocBinding,
+    sourceArmRecordDigest: _sourceArmRecordDigest,
+    comparisonDigest: _sourceComparisonDigest,
+    evaluationAttemptDigest: _sourceAttemptDigest,
+    ...sharedMeasurement
+  } = sourceMeasurement.value;
+  void _sourceProtocol;
+  void _sourceMeasurementDigest;
+  void _postHocBinding;
+  void _sourceArmRecordDigest;
+  void _sourceComparisonDigest;
+  void _sourceAttemptDigest;
+  const body = m9b3eTerminalMeasurementBodySchema.parse({
+    ...sharedMeasurement,
+    protocol:
+      "lachesis-m9b3e-predispatch-artifact-terminal-measurement-record/1",
+    sourceArmRecordDigest: artifactRecord.recordDigest,
+    comparisonDigest: artifactRecord.comparisonDigest,
+    sourceM9b1bArmRecordDigest: sourceRecord.recordDigest,
+    sourceM9b3dMeasurementRecordDigest: sourceMeasurement.value.recordDigest,
+    evaluatorArtifact: parsedEvaluator.data,
+    goldArtifact: gold.identity,
+    evaluationAttemptDigest: originalAttemptDigest?.value ?? null,
+    originalEvaluationAttempt:
+      originalAttempt === null || originalAttemptDigest === undefined
+        ? null
+        : {
+            attemptDigest: originalAttemptDigest.value,
+            inputDigest: originalAttempt.inputDigest,
+            evaluatorArtifact: originalAttempt.evaluatorArtifact,
+          },
+  });
+  const recordDigest = await digestValue(body);
+  return recordDigest.ok
+    ? {
+        ok: true,
+        value: m9b3eTerminalMeasurementRecordSchema.parse({
+          ...body,
+          recordDigest: recordDigest.value,
+        }),
+      }
+    : recordDigest;
+}
+
+/** @internal Zero-effect rederivation of the pre-dispatch artifact measurement. */
+export async function verifyM9b3eTerminalMeasurementRecord(
+  value: unknown,
+  verification: M9b3eTerminalMeasurementVerification,
+  evaluatorArtifact: unknown,
+  goldToken: M9b3dTrustedGold,
+): Promise<Result<M9b3eTerminalMeasurementRecord, Diagnostic>> {
+  const parsed = m9b3eTerminalMeasurementRecordSchema.safeParse(value);
+  if (!parsed.success)
+    return invalid("M9b.3e pre-dispatch artifact measurement is invalid.");
+  const rederived = await measureM9b3eVerifiedTerminalRecord(
+    verification,
+    evaluatorArtifact,
+    goldToken,
+  );
+  return rederived.ok && canonicalEqual(rederived.value, parsed.data)
+    ? { ok: true, value: parsed.data }
+    : invalid(
+        "M9b.3e pre-dispatch artifact measurement failed complete rederivation.",
       );
 }
 
