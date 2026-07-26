@@ -1,6 +1,6 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.2a offline measurement-integrity design only; M9b is not
+Status: **M9b.2b offline measurement-verification design only; M9b is not
 materialized or authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
@@ -8,15 +8,16 @@ external corpora. M9a does not create a final corpus, campaign, preregistration,
 provider identity, credential preflight, executable live state, or authorization
 text.
 
-## M9b.2a offline measurement-integrity correction
+## M9b.2b offline measurement-verification and estimand correction
 
-The private `lachesis-m9b2-offline-scientific-measurement@1.1.0` protocol,
-`lachesis.m9b2.offline-arm-blind-evaluator@1.1.0-development` evaluator,
-`lachesis-m9b2a-terminal-measurement-record/1` record, and
-`lachesis-m9b2a-atomic-measurement-store/1` store supersede the M9b.2 1.0.0
-development artifacts. The 1.0.0 wire formats are not reinterpreted. No symbol
-is exported by the generator facade, and M9a, M9b.0, and M9b.1b identities are
-unchanged.
+The private `lachesis-m9b2-offline-scientific-measurement@1.2.0` protocol,
+`lachesis.m9b2.offline-arm-blind-evaluator@1.2.0-development` evaluator,
+`lachesis-m9b2b-terminal-measurement-record/1` record, and
+`lachesis-m9b2b-canonical-measurement-snapshot/1` snapshot supersede M9b.2a
+development artifacts. Neither M9b.2 1.0.0 nor M9b.2a 1.1.0 artifacts are
+reinterpreted. The snapshot is exact canonical serialization, not an atomic or
+compare-and-swap persistence contract. No symbol is exported by the generator
+facade, and M9a, M9b.0, and M9b.1b identities are unchanged.
 
 Gold support is now an exact supporting-fact identity. Preparation locates one
 frozen fact wording in one canonical document, binds its byte span to one exact
@@ -40,39 +41,50 @@ as `unknown`, never fabricated as zero.
 
 The measurement record binds the suite, task, snapshot, model, evaluator, arm,
 program, comparison, authoring request, execution requests, run answer,
-evaluation attempt, and source terminal-record digest. Store save/load requires
-trusted contextual bindings as well as exact canonical JSON and inner record
-digests. Re-signing a record under another task, snapshot, model, evaluator,
-program, comparison, planning receipt, evaluation receipt, or execution answer
-therefore fails closed. Verification and measurement have exactly zero model,
-retrieval, corpus, or evaluator effects.
+evaluation attempt, and source terminal-record digest. Verification rederives
+the complete record from the trusted prepared suite and the opaque M9b.1b
+terminal-record token; an internally valid replacement `recordDigest` is never
+sufficient. Snapshot save/load likewise receives those independently trusted
+measurement inputs, remeasures every record, and validates its persisted trusted
+identity table and outer snapshot digest. Re-signing a primary outcome,
+evaluation, usage receipt, request/evaluation digest, secondary metric, task,
+snapshot, model, evaluator, program, or comparison therefore fails closed.
+Verification and remeasurement have exactly zero model, retrieval, corpus, or
+evaluator effects.
 
 ### Frozen M9c inference unit and estimand
 
 The M9c inference unit is one semantically independent paired case. The primary
 estimand is the equal-family-by-scale-cell-weighted difference in first-attempt
-success probability, discovered program minus static one-shot. Each of the 24
-family × scale cells has weight 1/24. Scale is a preregistered stratum, not
-three copies of one base problem. Every eventual M9c case must have a unique
-semantic problem identity; same-problem 1x/8x/32x clusters, including the
-current development scale fixtures, are reserved for M9d and are ineligible for
-M9c inference. Family- and scale-stratified results are descriptive and do not
+success probability, discovered program minus static one-shot. Every one of the
+24 family × scale cells must contain an identical number of cases, so the total
+paired-case count must be divisible by 24 and each cell has weight 1/24. Scale
+is a preregistered stratum, not three copies of one base problem. Every eventual
+M9c semantic-problem identity is derived from trusted prepared-case lineage: the
+normalized task template, stable entity identities, stable source identities,
+and a scale-neutral normalized semantic contract. Callers cannot choose or
+replace that digest. Same-problem 1x/8x/32x clusters, including the current
+development scale fixtures, are reserved for M9d and are ineligible for M9c
+inference. Family- and scale-stratified results are descriptive and do not
 create additional superiority hypotheses.
 
 Prospective power retains exact one-sided conditional McNemar scenario analysis.
 Its paired-case independence assumption is enforced by final M9c corpus
-construction, not inferred from the test statistic. Empirical power remains
-`unknown`; deterministic mock outcomes are not an effect estimate.
+construction, not inferred from the test statistic. Sample-size search advances
+only in balanced increments of 24; under the frozen strong scenario, the first
+valid total meeting the target is 168 rather than the unbalanced value 146.
+Empirical power remains `unknown`; deterministic mock outcomes are not an effect
+estimate.
 
 ### Split and evaluator-validation boundaries
 
 Development/held-out split auditing reports and rejects overlap in fixture IDs,
-stable entity-lineage identities (including renamed entities), exact task text,
-annotator-normalized task templates (including paraphrases), exact relevant-fact
-wording, normalized answer values, individual document content, whole-corpus
-content, and semantic contracts. Overlap in task-family and solution-strategy
-classes is explicitly allowed and reported because those are intended design
-strata, not held-out semantic content.
+stable entity and source-lineage identities (including renamed entities or
+sources), exact task text, annotator-normalized task templates (including
+paraphrases), exact relevant-fact wording, normalized answer values, individual
+document content, whole-corpus content, and semantic contracts. Overlap in
+task-family and solution-strategy classes is explicitly allowed and reported
+because those are intended design strata, not held-out semantic content.
 
 The 16-fixture result is classified only as deterministic evaluator conformance:
 all-family expected-output agreement and bit-for-bit repeatability. It never
@@ -81,7 +93,7 @@ evaluator must be separately frozen, independently reviewed, and validated.
 These development fixtures are not a final corpus and no held-out identity is
 materialized.
 
-M9b.2a therefore ends with **M9b NO-GO**. It creates no provider adapter or
+M9b.2b therefore ends with **M9b NO-GO**. It creates no provider adapter or
 call, corpus campaign, credential access, preregistration, final corpus
 identity, public API, package version, release artifact, or superiority claim.
 It is AI-assisted architecture and measurement work, not a professional security

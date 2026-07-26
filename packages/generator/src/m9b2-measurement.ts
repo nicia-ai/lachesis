@@ -32,7 +32,7 @@ import { strictJsonValueSchema } from "./strict-json.js";
 
 export const M9B2_MEASUREMENT_PROTOCOL = Object.freeze({
   id: "lachesis-m9b2-offline-scientific-measurement",
-  version: "1.1.0",
+  version: "1.2.0",
   visibility: "internal-offline-development-only" as const,
   claimBoundary:
     "offline fixture, evaluator, and prospective-power validation only; no model-quality, retrieval-superiority, generalization, live-provider, or production-readiness claim",
@@ -40,12 +40,12 @@ export const M9B2_MEASUREMENT_PROTOCOL = Object.freeze({
 
 export const M9B2_EVALUATOR_IDENTITY = Object.freeze({
   id: "lachesis.m9b2.offline-arm-blind-evaluator",
-  version: "1.1.0-development",
+  version: "1.2.0-development",
 });
 
 export const M9B2_PERSISTENCE_PROTOCOL = Object.freeze({
-  record: "lachesis-m9b2a-terminal-measurement-record/1",
-  store: "lachesis-m9b2a-atomic-measurement-store/1",
+  record: "lachesis-m9b2b-terminal-measurement-record/1",
+  snapshot: "lachesis-m9b2b-canonical-measurement-snapshot/1",
 });
 
 export const M9B2_PRIMARY_ENDPOINT =
@@ -120,6 +120,7 @@ export const m9b2HiddenExpectationSchema = z
       .strictObject({
         id: identifierSchema,
         documentId: identifierSchema,
+        sourceLineageId: identifierSchema,
         exactText: z.string().min(1).max(2_048),
       })
       .readonly()
@@ -131,7 +132,8 @@ export const m9b2HiddenExpectationSchema = z
       .max(4)
       .readonly(),
     allowedSupportingFactIds: documentIdSetSchema,
-    entityLineageIds: identifierSchema.array().max(16).readonly(),
+    entityLineageIds: identifierSchema.array().min(1).max(16).readonly(),
+    sourceLineageIds: identifierSchema.array().min(1).max(16).readonly(),
     normalizedTaskTemplate: z.string().min(1).max(2_048),
   })
   .superRefine((expectation, context) => {
@@ -160,7 +162,8 @@ export type M9b2HiddenExpectation = z.infer<typeof m9b2HiddenExpectationSchema>;
 export const m9b2SplitIdentitySchema = z
   .strictObject({
     fixtureIdentity: digestSchema,
-    entityIdentities: digestSchema.array().max(16).readonly(),
+    entityIdentities: digestSchema.array().min(1).max(16).readonly(),
+    sourceLineageIdentities: digestSchema.array().min(1).max(16).readonly(),
     exactTaskTemplateIdentity: digestSchema,
     normalizedTaskTemplateIdentity: digestSchema,
     exactRelevantFactWordingIdentities: digestSchema.array().max(16).readonly(),
@@ -185,6 +188,7 @@ const evaluatorFailureReasonSchema = z.enum([
 export const m9b2EvaluationScoreSchema = z
   .strictObject({
     protocol: z.literal(M9B2_MEASUREMENT_PROTOCOL.id),
+    measurementVersion: z.literal(M9B2_MEASUREMENT_PROTOCOL.version),
     evaluatorVersion: z.literal(M9B2_EVALUATOR_IDENTITY.version),
     caseId: identifierSchema,
     family: m9b2TaskFamilySchema,
@@ -214,6 +218,7 @@ type PreparedCase = Readonly<{
   snapshotDigest: string;
   chunksById: ReadonlyMap<string, M9aChunkIdentity>;
   supportingFactsById: ReadonlyMap<string, M9b2SupportingFactIdentity>;
+  semanticProblemIdentity: string;
 }>;
 
 export const m9b2SupportingFactIdentitySchema = z
@@ -279,17 +284,6 @@ function basisPoints(numerator: number, denominator: number): number {
     : Math.round((numerator * 10_000) / denominator);
 }
 
-function scaleRank(scale: M9b2CorpusScale): number {
-  switch (scale) {
-    case "1x":
-      return 1;
-    case "8x":
-      return 8;
-    case "32x":
-      return 32;
-  }
-}
-
 function exactChunkIdentity(
   left: M9aChunkIdentity,
   right: M9aChunkIdentity,
@@ -301,7 +295,10 @@ function validateTaxonomy(
   cases: ReadonlyArray<M9b2PublicDevelopmentCase>,
   expectations: ReadonlyArray<M9b2HiddenExpectation>,
 ): Result<true, Diagnostic> {
-  if (cases.length !== M9B2_TASK_FAMILIES.length * M9B2_CORPUS_SCALES.length)
+  if (
+    cases.length < M9B2_TASK_FAMILIES.length * M9B2_CORPUS_SCALES.length ||
+    cases.length > 10_000
+  )
     return invalid(
       "M9b.2 development fixtures require every family-scale cell.",
     );
@@ -317,65 +314,16 @@ function validateTaxonomy(
       "M9b.2 hidden expectations require one unique entry per case.",
     );
 
-  const expectationsByCase = new Map(
-    expectations.map((expectation) => [expectation.caseId, expectation]),
-  );
   for (const family of M9B2_TASK_FAMILIES) {
-    const familyCases = cases
-      .filter((item) => item.family === family)
-      .toSorted(
-        (left, right) => scaleRank(left.scale) - scaleRank(right.scale),
-      );
+    const familyCases = cases.filter((item) => item.family === family);
     if (
-      familyCases.length !== M9B2_CORPUS_SCALES.length ||
-      familyCases.some(
-        (item, index) => item.scale !== M9B2_CORPUS_SCALES[index],
+      M9B2_CORPUS_SCALES.some(
+        (scale) => !familyCases.some((item) => item.scale === scale),
       )
     )
       return invalid(
         `M9b.2 family ${family} does not contain 1x, 8x, and 32x.`,
       );
-    const first = familyCases[0];
-    if (first === undefined) return invalid("M9b.2 family fixture is missing.");
-    if (
-      familyCases.some(
-        (item) =>
-          item.strategyId !== first.strategyId || item.task !== first.task,
-      )
-    )
-      return invalid(
-        `M9b.2 family ${family} changes its task or solution strategy across scale.`,
-      );
-    const firstExpectation = expectationsByCase.get(first.id);
-    if (firstExpectation === undefined)
-      return invalid("M9b.2 hidden expectation is missing.");
-    const expectationBody = {
-      responseKind: firstExpectation.responseKind,
-      acceptedAnswers: firstExpectation.acceptedAnswers,
-      supportingFacts: firstExpectation.supportingFacts,
-      requiredSupportingFactSets: firstExpectation.requiredSupportingFactSets,
-      allowedSupportingFactIds: firstExpectation.allowedSupportingFactIds,
-      entityLineageIds: firstExpectation.entityLineageIds,
-      normalizedTaskTemplate: firstExpectation.normalizedTaskTemplate,
-    };
-    for (const item of familyCases) {
-      const expectation = expectationsByCase.get(item.id);
-      if (
-        expectation === undefined ||
-        !canonicalEqual(expectationBody, {
-          responseKind: expectation.responseKind,
-          acceptedAnswers: expectation.acceptedAnswers,
-          supportingFacts: expectation.supportingFacts,
-          requiredSupportingFactSets: expectation.requiredSupportingFactSets,
-          allowedSupportingFactIds: expectation.allowedSupportingFactIds,
-          entityLineageIds: expectation.entityLineageIds,
-          normalizedTaskTemplate: expectation.normalizedTaskTemplate,
-        })
-      )
-        return invalid(
-          `M9b.2 family ${family} changes its semantic contract across scale.`,
-        );
-    }
   }
   return { ok: true, value: true };
 }
@@ -425,10 +373,14 @@ export async function prepareM9b2DevelopmentSuite(
       !unique(supportingFactIds) ||
       !unique(expectation.allowedSupportingFactIds) ||
       !unique(expectation.entityLineageIds) ||
+      !unique(expectation.sourceLineageIds) ||
       !unique(evidenceSetIdentities) ||
       expectation.requiredSupportingFactSets.some((set) => !unique(set)) ||
       expectation.supportingFacts.some(
         (fact) => !documentsById.has(fact.documentId),
+      ) ||
+      expectation.supportingFacts.some(
+        (fact) => !expectation.sourceLineageIds.includes(fact.sourceLineageId),
       ) ||
       referencedFactIds.some((id) => !supportingFactIds.includes(id)) ||
       expectation.requiredSupportingFactSets.some((set) =>
@@ -503,6 +455,9 @@ export async function prepareM9b2DevelopmentSuite(
     const entityIdentityResults = await Promise.all(
       expectation.entityLineageIds.map((value) => digestValue(value)),
     );
+    const sourceLineageIdentityResults = await Promise.all(
+      expectation.sourceLineageIds.map((value) => digestValue(value)),
+    );
     const factWordingIdentityResults = await Promise.all(
       expectation.supportingFacts.map((fact) => digestValue(fact.exactText)),
     );
@@ -528,22 +483,49 @@ export async function prepareM9b2DevelopmentSuite(
     );
     const semanticContractIdentity = await digestValue({
       responseKind: expectation.responseKind,
-      acceptedAnswers: expectation.acceptedAnswers.map(normalizedAnswer),
-      supportingFacts: supportingFacts.map((entry) => entry[1]),
-      requiredSupportingFactSets: expectation.requiredSupportingFactSets,
-      allowedSupportingFactIds: expectation.allowedSupportingFactIds,
+      acceptedAnswers: expectation.acceptedAnswers
+        .map(normalizedAnswer)
+        .toSorted(),
+      supportingFacts: expectation.supportingFacts
+        .map((fact) => ({
+          id: fact.id,
+          sourceLineageId: fact.sourceLineageId,
+          exactText: normalizedAnswer(fact.exactText),
+        }))
+        .toSorted((left, right) => left.id.localeCompare(right.id)),
+      requiredSupportingFactSets: expectation.requiredSupportingFactSets
+        .map((set) => [...set].toSorted())
+        .toSorted((left, right) =>
+          left.join("\u0000").localeCompare(right.join("\u0000")),
+        ),
+      allowedSupportingFactIds: expectation.allowedSupportingFactIds.toSorted(),
     });
     if (
       !fixtureIdentity.ok ||
       !exactTaskTemplateIdentity.ok ||
       !normalizedTaskTemplateIdentity.ok ||
       entityIdentityResults.some((result) => !result.ok) ||
+      sourceLineageIdentityResults.some((result) => !result.ok) ||
       factWordingIdentityResults.some((result) => !result.ok) ||
       answerValueIdentityResults.some((result) => !result.ok) ||
       !corpusContentIdentity.ok ||
       !semanticContractIdentity.ok
     )
       return invalid("M9b.2 development split identity could not be derived.");
+    const entityIdentities = entityIdentityResults.flatMap((result) =>
+      result.ok ? [result.value] : [],
+    );
+    const sourceLineageIdentities = sourceLineageIdentityResults.flatMap(
+      (result) => (result.ok ? [result.value] : []),
+    );
+    const semanticProblemIdentity = await digestValue({
+      normalizedTaskTemplateIdentity: normalizedTaskTemplateIdentity.value,
+      entityIdentities: entityIdentities.toSorted(),
+      sourceLineageIdentities: sourceLineageIdentities.toSorted(),
+      semanticContractIdentity: semanticContractIdentity.value,
+    });
+    if (!semanticProblemIdentity.ok)
+      return invalid("M9b.2 semantic-problem identity could not be derived.");
     preparedCases.push([
       publicCase.id,
       Object.freeze({
@@ -551,9 +533,8 @@ export async function prepareM9b2DevelopmentSuite(
         expectation,
         splitIdentity: m9b2SplitIdentitySchema.parse({
           fixtureIdentity: fixtureIdentity.value,
-          entityIdentities: entityIdentityResults.flatMap((result) =>
-            result.ok ? [result.value] : [],
-          ),
+          entityIdentities,
+          sourceLineageIdentities,
           exactTaskTemplateIdentity: exactTaskTemplateIdentity.value,
           normalizedTaskTemplateIdentity: normalizedTaskTemplateIdentity.value,
           exactRelevantFactWordingIdentities:
@@ -572,6 +553,7 @@ export async function prepareM9b2DevelopmentSuite(
         snapshotDigest: snapshot.snapshotDigest,
         chunksById: new Map(chunks.map((chunk) => [chunk.id, chunk])),
         supportingFactsById: new Map(supportingFacts),
+        semanticProblemIdentity: semanticProblemIdentity.value,
       }),
     ]);
   }
@@ -715,6 +697,7 @@ function evaluatePreparedCase(
   if (citationValidity !== 10_000) failureReasons.push("invalid-citation");
   return m9b2EvaluationScoreSchema.parse({
     protocol: M9B2_MEASUREMENT_PROTOCOL.id,
+    measurementVersion: M9B2_MEASUREMENT_PROTOCOL.version,
     evaluatorVersion: M9B2_EVALUATOR_IDENTITY.version,
     caseId: prepared.publicCase.id,
     family: prepared.publicCase.family,
@@ -794,7 +777,7 @@ export type M9b2EvaluatorConformanceFixture = z.infer<
 
 export const m9b2EvaluatorConformanceReportSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b2a-evaluator-conformance/1"),
+    protocol: z.literal("lachesis-m9b2b-evaluator-conformance/2"),
     classification: z.literal("deterministic-evaluator-conformance-only"),
     fixtureCount: z.number().int().positive(),
     coveredFamilies: m9b2TaskFamilySchema.array().length(8).readonly(),
@@ -864,7 +847,7 @@ export async function auditM9b2EvaluatorConformance(
     expectedAgreementBasisPoints === 10_000 &&
     repeatabilityBasisPoints === 10_000;
   const body = {
-    protocol: "lachesis-m9b2a-evaluator-conformance/1" as const,
+    protocol: "lachesis-m9b2b-evaluator-conformance/2" as const,
     classification: "deterministic-evaluator-conformance-only" as const,
     fixtureCount: fixtures.data.length,
     coveredFamilies,
@@ -1049,17 +1032,18 @@ export const m9b2TerminalMeasurementRecordSchema = terminalMeasurementBodySchema
 export type M9b2TerminalMeasurementRecord = z.infer<
   typeof m9b2TerminalMeasurementRecordSchema
 >;
-export type M9b2TerminalMeasurementBinding = Readonly<{
-  suiteDigest: string;
+export type M9b2TerminalMeasurementVerification = Readonly<{
+  suite: M9b2PreparedSuite;
   caseId: string;
-  sourceArmRecordDigest: string;
-  comparisonDigest: string;
-  arm: M9b1Arm;
-  taskDigest: string;
-  corpusSnapshotDigest: string;
-  model: Readonly<{ id: string; version: string }>;
-  evaluator: Readonly<{ id: string; version: string }>;
-  programIdentity: string | null;
+  verifiedRecord: M9b1VerifiedTerminalRecord;
+  expected: Readonly<{
+    arm: M9b1Arm;
+    sourceArmRecordDigest: string;
+    comparisonDigest: string;
+    model: Readonly<{ id: string; version: string }>;
+    evaluator: Readonly<{ id: string; version: string }>;
+    programIdentity: string | null;
+  }>;
 }>;
 
 function programIdentityOf(record: M9b1ArmRecord): string | null {
@@ -1075,19 +1059,7 @@ function programIdentityOf(record: M9b1ArmRecord): string | null {
  * dispatch.
  */
 export async function measureM9b2VerifiedTerminalRecord(
-  input: Readonly<{
-    suite: M9b2PreparedSuite;
-    caseId: string;
-    verifiedRecord: M9b1VerifiedTerminalRecord;
-    expected: Readonly<{
-      arm: M9b1Arm;
-      sourceArmRecordDigest: string;
-      comparisonDigest: string;
-      model: Readonly<{ id: string; version: string }>;
-      evaluator: Readonly<{ id: string; version: string }>;
-      programIdentity: string | null;
-    }>;
-  }>,
+  input: M9b2TerminalMeasurementVerification,
 ): Promise<Result<M9b2TerminalMeasurementRecord, Diagnostic>> {
   const prepared = suites.get(input.suite)?.cases.get(input.caseId);
   const stored = m9b1InternalInspectVerifiedTerminalRecord(
@@ -1305,51 +1277,89 @@ export async function measureM9b2VerifiedTerminalRecord(
 
 export async function verifyM9b2TerminalMeasurementRecord(
   value: unknown,
-  binding: M9b2TerminalMeasurementBinding,
+  verification: M9b2TerminalMeasurementVerification,
 ): Promise<Result<M9b2TerminalMeasurementRecord, Diagnostic>> {
   const parsed = m9b2TerminalMeasurementRecordSchema.safeParse(value);
   if (!parsed.success)
     return invalid("M9b.2 terminal measurement record is invalid.");
-  const { recordDigest, ...body } = parsed.data;
-  const digest = await digestValue(body);
-  return digest.ok &&
-    digest.value === recordDigest &&
-    parsed.data.suiteDigest === binding.suiteDigest &&
-    parsed.data.caseId === binding.caseId &&
-    parsed.data.sourceArmRecordDigest === binding.sourceArmRecordDigest &&
-    parsed.data.comparisonDigest === binding.comparisonDigest &&
-    parsed.data.arm === binding.arm &&
-    parsed.data.taskDigest === binding.taskDigest &&
-    parsed.data.corpusSnapshotDigest === binding.corpusSnapshotDigest &&
-    canonicalEqual(parsed.data.model, binding.model) &&
-    canonicalEqual(parsed.data.evaluator, binding.evaluator) &&
-    parsed.data.programIdentity === binding.programIdentity
+  const rederived = await measureM9b2VerifiedTerminalRecord(verification);
+  return rederived.ok && canonicalEqual(rederived.value, parsed.data)
     ? { ok: true, value: parsed.data }
-    : invalid("M9b.2 terminal measurement record is cross-bound or altered.");
+    : invalid(
+        "M9b.2 terminal measurement record does not match its independently verified source.",
+      );
 }
 
-const measurementStoreSchema = z
+const trustedMeasurementIdentitySchema = terminalMeasurementBodySchema
+  .unwrap()
+  .pick({
+    suiteDigest: true,
+    caseId: true,
+    sourceArmRecordDigest: true,
+    comparisonDigest: true,
+    arm: true,
+    taskDigest: true,
+    corpusSnapshotDigest: true,
+    model: true,
+    evaluator: true,
+    programIdentity: true,
+  })
+  .safeExtend({ measurementRecordDigest: digestSchema })
+  .readonly();
+
+const measurementSnapshotBodySchema = z
   .strictObject({
-    protocol: z.literal(M9B2_PERSISTENCE_PROTOCOL.store),
+    protocol: z.literal(M9B2_PERSISTENCE_PROTOCOL.snapshot),
+    trustedMeasurementIdentities: trustedMeasurementIdentitySchema
+      .array()
+      .readonly(),
     records: m9b2TerminalMeasurementRecordSchema.array().readonly(),
   })
   .readonly();
+const measurementSnapshotSchema = measurementSnapshotBodySchema
+  .unwrap()
+  .safeExtend({ snapshotDigest: digestSchema })
+  .readonly();
 
-/** @internal Canonical offline persistence snapshot; no stable facade export. */
-export async function serializeM9b2MeasurementStore(
+function measurementSortKey(record: M9b2TerminalMeasurementRecord): string {
+  return `${record.comparisonDigest}:${record.arm}:${record.caseId}`;
+}
+
+function trustedIdentityOf(
+  record: M9b2TerminalMeasurementRecord,
+): z.infer<typeof trustedMeasurementIdentitySchema> {
+  return trustedMeasurementIdentitySchema.parse({
+    suiteDigest: record.suiteDigest,
+    caseId: record.caseId,
+    sourceArmRecordDigest: record.sourceArmRecordDigest,
+    comparisonDigest: record.comparisonDigest,
+    arm: record.arm,
+    taskDigest: record.taskDigest,
+    corpusSnapshotDigest: record.corpusSnapshotDigest,
+    model: record.model,
+    evaluator: record.evaluator,
+    programIdentity: record.programIdentity,
+    measurementRecordDigest: record.recordDigest,
+  });
+}
+
+/** @internal Canonical serialization only; this is not an atomic or CAS store. */
+export async function serializeM9b2MeasurementSnapshot(
   values: ReadonlyArray<unknown>,
-  bindings: ReadonlyArray<M9b2TerminalMeasurementBinding>,
+  verifications: ReadonlyArray<M9b2TerminalMeasurementVerification>,
 ): Promise<Result<string, Diagnostic>> {
-  if (values.length !== bindings.length)
-    return invalid("M9b.2 measurement store bindings are incomplete.");
+  if (values.length !== verifications.length)
+    return invalid("M9b.2 measurement snapshot bindings are incomplete.");
+  const parsedValues = m9b2TerminalMeasurementRecordSchema
+    .array()
+    .safeParse(values);
+  if (!parsedValues.success)
+    return invalid("M9b.2 measurement snapshot records are invalid.");
   const records: Array<M9b2TerminalMeasurementRecord> = [];
-  for (const [index, value] of values.entries()) {
-    const binding = bindings[index];
-    if (binding === undefined)
-      return invalid("M9b.2 measurement store binding is missing.");
-    const verified = await verifyM9b2TerminalMeasurementRecord(value, binding);
-    if (!verified.ok) return verified;
-    records.push(verified.value);
+  for (const verification of verifications) {
+    const rederived = await measureM9b2VerifiedTerminalRecord(verification);
+    if (!rederived.ok) return rederived;
+    records.push(rederived.value);
   }
   if (
     !unique(
@@ -1358,40 +1368,56 @@ export async function serializeM9b2MeasurementStore(
       ),
     )
   )
-    return invalid("M9b.2 measurement store contains duplicate arm records.");
-  return canonicalizeJson(
-    measurementStoreSchema.parse({
-      protocol: M9B2_PERSISTENCE_PROTOCOL.store,
-      records: records.toSorted((left, right) =>
-        `${left.comparisonDigest}:${left.arm}:${left.caseId}`.localeCompare(
-          `${right.comparisonDigest}:${right.arm}:${right.caseId}`,
-        ),
-      ),
-    }),
+    return invalid(
+      "M9b.2 measurement snapshot contains duplicate arm records.",
+    );
+  const sortedRecords = records.toSorted((left, right) =>
+    measurementSortKey(left).localeCompare(measurementSortKey(right)),
   );
+  const suppliedRecords = parsedValues.data.toSorted((left, right) =>
+    measurementSortKey(left).localeCompare(measurementSortKey(right)),
+  );
+  if (!canonicalEqual(sortedRecords, suppliedRecords))
+    return invalid(
+      "M9b.2 measurement snapshot does not match independently trusted measurements.",
+    );
+  const body = measurementSnapshotBodySchema.parse({
+    protocol: M9B2_PERSISTENCE_PROTOCOL.snapshot,
+    trustedMeasurementIdentities: sortedRecords.map(trustedIdentityOf),
+    records: sortedRecords,
+  });
+  const snapshotDigest = await digestValue(body);
+  return snapshotDigest.ok
+    ? canonicalizeJson(
+        measurementSnapshotSchema.parse({
+          ...body,
+          snapshotDigest: snapshotDigest.value,
+        }),
+      )
+    : snapshotDigest;
 }
 
 /** @internal Exact canonical load validation for offline measurement records. */
-export async function loadM9b2MeasurementStore(
+export async function loadM9b2MeasurementSnapshot(
   content: string,
-  bindings: ReadonlyArray<M9b2TerminalMeasurementBinding>,
+  verifications: ReadonlyArray<M9b2TerminalMeasurementVerification>,
 ): Promise<Result<ReadonlyArray<M9b2TerminalMeasurementRecord>, Diagnostic>> {
   const parsed = parseJson(content);
-  const store = parsed.ok
-    ? measurementStoreSchema.safeParse(parsed.value)
+  const snapshot = parsed.ok
+    ? measurementSnapshotSchema.safeParse(parsed.value)
     : undefined;
-  if (!parsed.ok || store?.success !== true)
-    return invalid("M9b.2 measurement store is invalid.");
-  const canonical = canonicalizeJson(store.data);
+  if (!parsed.ok || snapshot?.success !== true)
+    return invalid("M9b.2 measurement snapshot is invalid.");
+  const canonical = canonicalizeJson(snapshot.data);
   if (!canonical.ok || canonical.value !== content)
-    return invalid("M9b.2 measurement store is not exact canonical JSON.");
-  const reserialized = await serializeM9b2MeasurementStore(
-    store.data.records,
-    bindings,
+    return invalid("M9b.2 measurement snapshot is not exact canonical JSON.");
+  const reserialized = await serializeM9b2MeasurementSnapshot(
+    snapshot.data.records,
+    verifications,
   );
   return reserialized.ok && reserialized.value === content
-    ? { ok: true, value: store.data.records }
-    : invalid("M9b.2 measurement store records failed validation.");
+    ? { ok: true, value: snapshot.data.records }
+    : invalid("M9b.2 measurement snapshot failed trusted remeasurement.");
 }
 
 export const m9b2PowerScenarioSchema = z
@@ -1420,6 +1446,7 @@ export const M9C_FROZEN_ESTIMAND = Object.freeze({
   contrast:
     "discovered-program-minus-static-one-shot paired success probability" as const,
   weighting: "equal-weight-across-family-by-scale-cells" as const,
+  allocation: "identical-case-count-in-all-24-cells" as const,
   scaleRole: "preregistered-stratum" as const,
   clusteredScaleVariants: "reserved-for-m9d" as const,
   stratifiedResults:
@@ -1436,14 +1463,47 @@ export const m9cInferenceCaseSchema = z
   .readonly();
 export type M9cInferenceCase = z.infer<typeof m9cInferenceCaseSchema>;
 
-export async function auditM9cInferenceUnits(
+function deriveM9cInferenceCases(
+  suite: M9b2PreparedSuite,
   values: ReadonlyArray<unknown>,
+): Result<ReadonlyArray<M9cInferenceCase>, Diagnostic> {
+  const caseIds = identifierSchema
+    .array()
+    .min(24)
+    .max(10_000)
+    .safeParse(values);
+  const stored = suites.get(suite);
+  if (!caseIds.success || stored === undefined)
+    return invalid("M9c inference-unit candidates are invalid.");
+  const cases: Array<M9cInferenceCase> = [];
+  for (const caseId of caseIds.data) {
+    const prepared = stored.cases.get(caseId);
+    if (prepared === undefined)
+      return invalid(
+        "M9c inference-unit candidate is not in the prepared suite.",
+      );
+    cases.push(
+      m9cInferenceCaseSchema.parse({
+        fixtureId: prepared.publicCase.id,
+        family: prepared.publicCase.family,
+        scale: prepared.publicCase.scale,
+        semanticProblemIdentity: prepared.semanticProblemIdentity,
+      }),
+    );
+  }
+  return { ok: true, value: Object.freeze(cases) };
+}
+
+export async function auditM9cInferenceUnits(
+  suite: M9b2PreparedSuite,
+  caseIds: ReadonlyArray<unknown>,
 ): Promise<
   Result<
     Readonly<{
-      protocol: "lachesis-m9b2a-m9c-inference-unit-audit/1";
+      protocol: "lachesis-m9b2b-m9c-inference-unit-audit/2";
       estimand: typeof M9C_FROZEN_ESTIMAND;
       caseCount: number;
+      casesPerCell: number;
       cellWeight: Readonly<{ numerator: 1; denominator: 24 }>;
       passed: true;
       auditDigest: string;
@@ -1451,29 +1511,33 @@ export async function auditM9cInferenceUnits(
     Diagnostic
   >
 > {
-  const cases = m9cInferenceCaseSchema
-    .array()
-    .min(1)
-    .max(10_000)
-    .safeParse(values);
-  if (!cases.success)
-    return invalid("M9c inference-unit candidates are invalid.");
+  const cases = deriveM9cInferenceCases(suite, caseIds);
+  if (!cases.ok) return cases;
   if (
-    !unique(cases.data.map((value) => value.fixtureId)) ||
-    !unique(cases.data.map((value) => value.semanticProblemIdentity))
+    !unique(cases.value.map((value) => value.fixtureId)) ||
+    !unique(cases.value.map((value) => value.semanticProblemIdentity))
   )
     return invalid(
       "M9c requires semantically independent cases; clustered scale variants are reserved for M9d.",
     );
-  const cells = new Set(
-    cases.data.map((value) => `${value.family}:${value.scale}`),
-  );
-  if (cells.size !== M9B2_TASK_FAMILIES.length * M9B2_CORPUS_SCALES.length)
-    return invalid("M9c requires every family-by-scale stratum.");
+  if (cases.value.length % 24 !== 0)
+    return invalid("M9c paired-case totals must be divisible by 24.");
+  const casesPerCell = cases.value.length / 24;
+  if (
+    M9B2_TASK_FAMILIES.some((family) =>
+      M9B2_CORPUS_SCALES.some(
+        (scale) =>
+          cases.value.filter(
+            (value) => value.family === family && value.scale === scale,
+          ).length !== casesPerCell,
+      ),
+    )
+  )
+    return invalid("M9c requires identical case counts in all 24 strata.");
   const body = {
-    protocol: "lachesis-m9b2a-m9c-inference-unit-audit/1" as const,
+    protocol: "lachesis-m9b2b-m9c-inference-unit-audit/2" as const,
     estimand: M9C_FROZEN_ESTIMAND,
-    cases: cases.data.toSorted((left, right) =>
+    cases: cases.value.toSorted((left, right) =>
       left.fixtureId.localeCompare(right.fixtureId),
     ),
     cellWeight: { numerator: 1 as const, denominator: 24 as const },
@@ -1486,7 +1550,8 @@ export async function auditM9cInferenceUnits(
         value: {
           protocol: body.protocol,
           estimand: body.estimand,
-          caseCount: cases.data.length,
+          caseCount: cases.value.length,
+          casesPerCell,
           cellWeight: body.cellWeight,
           passed: true,
           auditDigest: auditDigest.value,
@@ -1494,6 +1559,14 @@ export async function auditM9cInferenceUnits(
       }
     : auditDigest;
 }
+
+const m9cPairedOutcomeInputSchema = z
+  .strictObject({
+    caseId: identifierSchema,
+    discoveredSuccess: z.boolean(),
+    staticSuccess: z.boolean(),
+  })
+  .readonly();
 
 const m9cPairedOutcomeSchema = m9cInferenceCaseSchema
   .unwrap()
@@ -1512,7 +1585,7 @@ const descriptiveStratumSchema = z
 
 export const m9cDescriptiveReportSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b2a-m9c-descriptive-report/1"),
+    protocol: z.literal("lachesis-m9b2b-m9c-descriptive-report/2"),
     estimand: strictJsonValueSchema,
     claimScope: z.literal(
       "family-and-scale-stratified-descriptive-results-only-no-additional-superiority-claims",
@@ -1548,40 +1621,57 @@ function describeOutcomeStratum(
 }
 
 export async function reportM9cPairedDescriptives(
+  suite: M9b2PreparedSuite,
   values: ReadonlyArray<unknown>,
 ): Promise<Result<M9cDescriptiveReport, Diagnostic>> {
-  const outcomes = m9cPairedOutcomeSchema
+  const inputs = m9cPairedOutcomeInputSchema
     .array()
     .min(24)
     .max(10_000)
     .safeParse(values);
-  if (!outcomes.success)
+  if (!inputs.success)
     return invalid("M9c paired descriptive outcomes are invalid.");
   const independence = await auditM9cInferenceUnits(
-    outcomes.data.map((value) => ({
-      fixtureId: value.fixtureId,
-      family: value.family,
-      scale: value.scale,
-      semanticProblemIdentity: value.semanticProblemIdentity,
-    })),
+    suite,
+    inputs.data.map((value) => value.caseId),
   );
   if (!independence.ok) return independence;
+  const derived = deriveM9cInferenceCases(
+    suite,
+    inputs.data.map((value) => value.caseId),
+  );
+  if (!derived.ok) return derived;
+  const outcomes = inputs.data.map((input, index) => {
+    const inferenceCase = derived.value[index];
+    if (inferenceCase === undefined) return undefined;
+    return m9cPairedOutcomeSchema.parse({
+      ...inferenceCase,
+      discoveredSuccess: input.discoveredSuccess,
+      staticSuccess: input.staticSuccess,
+    });
+  });
+  if (outcomes.some((value) => value === undefined))
+    return invalid("M9c paired descriptive outcomes lost prepared lineage.");
+  const completeOutcomes = outcomes.filter(
+    (value): value is z.infer<typeof m9cPairedOutcomeSchema> =>
+      value !== undefined,
+  );
   const cells = M9B2_TASK_FAMILIES.flatMap((family) =>
     M9B2_CORPUS_SCALES.map((scale) =>
       describeOutcomeStratum(
         `${family}:${scale}`,
-        outcomes.data.filter(
+        completeOutcomes.filter(
           (value) => value.family === family && value.scale === scale,
         ),
       ),
     ),
   );
   const body = {
-    protocol: "lachesis-m9b2a-m9c-descriptive-report/1" as const,
+    protocol: "lachesis-m9b2b-m9c-descriptive-report/2" as const,
     estimand: strictJsonValueSchema.parse(M9C_FROZEN_ESTIMAND),
     claimScope:
       "family-and-scale-stratified-descriptive-results-only-no-additional-superiority-claims" as const,
-    pairedCases: outcomes.data.length,
+    pairedCases: completeOutcomes.length,
     equalCellWeightedRiskDifferenceBasisPoints: Math.round(
       cells.reduce((sum, cell) => sum + cell.riskDifferenceBasisPoints, 0) /
         cells.length,
@@ -1589,13 +1679,13 @@ export async function reportM9cPairedDescriptives(
     byFamily: M9B2_TASK_FAMILIES.map((family) =>
       describeOutcomeStratum(
         family,
-        outcomes.data.filter((value) => value.family === family),
+        completeOutcomes.filter((value) => value.family === family),
       ),
     ),
     byScale: M9B2_CORPUS_SCALES.map((scale) =>
       describeOutcomeStratum(
         scale,
-        outcomes.data.filter((value) => value.scale === scale),
+        completeOutcomes.filter((value) => value.scale === scale),
       ),
     ),
   };
@@ -1615,7 +1705,7 @@ const powerCaseBoundSchema = z.discriminatedUnion("kind", [
   z
     .strictObject({
       kind: z.literal("known"),
-      pairedCases: z.number().int().positive(),
+      pairedCases: z.number().int().positive().multipleOf(24),
     })
     .readonly(),
   z
@@ -1640,14 +1730,20 @@ const powerScenarioResultSchema = z
 
 export const m9b2PowerReportSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b2a-prospective-paired-power/2"),
+    protocol: z.literal("lachesis-m9b2b-prospective-paired-power/3"),
     method: z.literal("exact-one-sided-conditional-mcnemar-scenario-analysis"),
+    allocation: z.literal("identical-case-count-in-all-24-cells"),
     independenceAssumption: z.literal(
       "enforced-by-final-m9c-corpus-construction-one-semantic-problem-per-paired-case",
     ),
     familyAlphaBasisPoints: z.number().int().positive().max(5_000),
     targetPowerBasisPoints: z.number().int().positive().max(10_000),
-    practicalPairedCaseCeiling: z.number().int().positive().max(2_000),
+    practicalPairedCaseCeiling: z
+      .number()
+      .int()
+      .positive()
+      .max(2_000)
+      .multipleOf(24),
     empiricalPower: z
       .strictObject({
         kind: z.literal("unknown"),
@@ -1762,7 +1858,12 @@ export async function analyzeM9b2ProspectivePower(
     .strictObject({
       familyAlphaBasisPoints: z.number().int().positive().max(5_000),
       targetPowerBasisPoints: z.number().int().positive().max(10_000),
-      practicalPairedCaseCeiling: z.number().int().positive().max(2_000),
+      practicalPairedCaseCeiling: z
+        .number()
+        .int()
+        .positive()
+        .max(2_000)
+        .multipleOf(24),
     })
     .safeParse({
       familyAlphaBasisPoints: input.familyAlphaBasisPoints ?? 500,
@@ -1805,9 +1906,9 @@ export async function analyzeM9b2ProspectivePower(
     };
     if (positiveEffect) {
       for (
-        let pairedCases = 1;
+        let pairedCases = 24;
         pairedCases <= settings.data.practicalPairedCaseCeiling;
-        pairedCases += 1
+        pairedCases += 24
       ) {
         if (
           scenarioPower(pairedCases, discordanceRate, conditionalPower) >=
@@ -1831,8 +1932,9 @@ export async function analyzeM9b2ProspectivePower(
     });
   });
   const body = {
-    protocol: "lachesis-m9b2a-prospective-paired-power/2" as const,
+    protocol: "lachesis-m9b2b-prospective-paired-power/3" as const,
     method: "exact-one-sided-conditional-mcnemar-scenario-analysis" as const,
+    allocation: "identical-case-count-in-all-24-cells" as const,
     independenceAssumption:
       "enforced-by-final-m9c-corpus-construction-one-semantic-problem-per-paired-case" as const,
     ...settings.data,
@@ -1946,6 +2048,7 @@ const measurementDesignBodySchema = z
         familyScaleWeight: z
           .strictObject({ numerator: z.literal(1), denominator: z.literal(24) })
           .readonly(),
+        allocation: z.literal("identical-case-count-in-all-24-cells"),
       })
       .readonly(),
     powerDesign: z
@@ -2039,6 +2142,7 @@ export async function designM9b2Measurement(): Promise<
       clusteredScaleVariants: "reserved-for-m9d",
       stratifiedResults: "descriptive-only-no-additional-superiority-claims",
       familyScaleWeight: { numerator: 1, denominator: 24 },
+      allocation: "identical-case-count-in-all-24-cells",
     },
     powerDesign: {
       method: "exact-one-sided-conditional-mcnemar-scenario-analysis",
@@ -2147,6 +2251,7 @@ export async function auditM9b2SplitDisjointness(
   }
   const vectorDimensions = [
     "entityIdentities",
+    "sourceLineageIdentities",
     "exactRelevantFactWordingIdentities",
     "answerValueIdentities",
     "documentContentIdentities",
@@ -2167,6 +2272,7 @@ export async function auditM9b2SplitDisjointness(
   const forbiddenOverlapDimensions = Object.freeze([
     "fixtureIdentity",
     "entityIdentity",
+    "sourceLineageIdentity",
     "exactTaskTemplateIdentity",
     "normalizedTaskTemplateIdentity",
     "exactRelevantFactWordingIdentity",
@@ -2196,7 +2302,7 @@ export async function auditM9b2SplitDisjointness(
     ].toSorted(),
   };
   const body = {
-    protocol: "lachesis-m9b2a-split-disjointness-audit/2",
+    protocol: "lachesis-m9b2b-split-disjointness-audit/3",
     developmentIdentities: development.data.toSorted((left, right) =>
       left.fixtureIdentity.localeCompare(right.fixtureIdentity),
     ),

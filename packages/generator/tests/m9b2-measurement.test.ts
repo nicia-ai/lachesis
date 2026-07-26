@@ -35,7 +35,7 @@ import {
   createM9b2OfflineEvaluator,
   designM9b2Measurement,
   inspectM9b2PreparedCase,
-  loadM9b2MeasurementStore,
+  loadM9b2MeasurementSnapshot,
   M9B2_CORPUS_SCALES,
   M9B2_EVALUATOR_IDENTITY,
   M9B2_MEASUREMENT_PROTOCOL,
@@ -54,7 +54,7 @@ import {
   measureM9b2VerifiedTerminalRecord,
   prepareM9b2DevelopmentSuite,
   reportM9cPairedDescriptives,
-  serializeM9b2MeasurementStore,
+  serializeM9b2MeasurementSnapshot,
   verifyM9b2EvaluatorConformanceReport,
   verifyM9b2MeasurementDesign,
   verifyM9b2PowerReport,
@@ -81,6 +81,7 @@ function required<T>(value: T | null | undefined): T {
 function splitIdentity(offset: number): Readonly<{
   fixtureIdentity: string;
   entityIdentities: ReadonlyArray<string>;
+  sourceLineageIdentities: ReadonlyArray<string>;
   exactTaskTemplateIdentity: string;
   normalizedTaskTemplateIdentity: string;
   exactRelevantFactWordingIdentities: ReadonlyArray<string>;
@@ -96,6 +97,7 @@ function splitIdentity(offset: number): Readonly<{
   return {
     fixtureIdentity: digest(offset),
     entityIdentities: [digest(offset + 1)],
+    sourceLineageIdentities: [digest(offset + 10)],
     exactTaskTemplateIdentity: digest(offset + 2),
     normalizedTaskTemplateIdentity: digest(offset + 3),
     exactRelevantFactWordingIdentities: [digest(offset + 4)],
@@ -115,6 +117,58 @@ async function preparedSuite(): Promise<M9b2PreparedSuite> {
       hiddenExpectations: M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS,
     }),
   );
+}
+
+async function independentPreparedSuite(
+  waves = 1,
+): Promise<
+  Readonly<{ suite: M9b2PreparedSuite; caseIds: ReadonlyArray<string> }>
+> {
+  const expectationsById = new Map(
+    M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS.map((expectation) => [
+      expectation.caseId,
+      expectation,
+    ]),
+  );
+  const publicCases = Array.from({ length: waves }, (_value, wave) =>
+    M9B2_PUBLIC_DEVELOPMENT_CASES.map((publicCase) => ({
+      ...publicCase,
+      id: `${publicCase.id}-wave-${String(wave + 1)}`,
+      task: `${publicCase.task} Lineage ${publicCase.id} wave ${String(wave + 1)}.`,
+      corpus: {
+        ...publicCase.corpus,
+        id: `${publicCase.corpus.id}-wave-${String(wave + 1)}`,
+      },
+    })),
+  ).flat();
+  const suite = unwrap(
+    await prepareM9b2DevelopmentSuite({
+      publicCases,
+      hiddenExpectations: publicCases.map((publicCase, index) => {
+        const original = required(M9B2_PUBLIC_DEVELOPMENT_CASES[index % 24]);
+        const expectation = required(expectationsById.get(original.id));
+        return {
+          ...expectation,
+          caseId: publicCase.id,
+          normalizedTaskTemplate: `${expectation.normalizedTaskTemplate} lineage-${publicCase.id}`,
+          entityLineageIds: expectation.entityLineageIds.map(
+            (identity) => `${identity}-${publicCase.id}`,
+          ),
+          sourceLineageIds: expectation.sourceLineageIds.map(
+            (identity) => `${identity}-${publicCase.id}`,
+          ),
+          supportingFacts: expectation.supportingFacts.map((fact) => ({
+            ...fact,
+            sourceLineageId: `${fact.sourceLineageId}-${publicCase.id}`,
+          })),
+        };
+      }),
+    }),
+  );
+  return Object.freeze({
+    suite,
+    caseIds: Object.freeze(publicCases.map((publicCase) => publicCase.id)),
+  });
 }
 
 function memoryArmPersistence(): M9b1AtomicPersistence {
@@ -356,7 +410,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     }
   });
 
-  it("rejects missing cells, duplicate identities, strategy drift, and gold drift", async () => {
+  it("rejects invalid taxonomy while permitting independent problems across scale", async () => {
     const first = required(M9B2_PUBLIC_DEVELOPMENT_CASES[0]);
     const second = required(M9B2_PUBLIC_DEVELOPMENT_CASES[1]);
     const firstExpectation = required(M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS[0]);
@@ -424,7 +478,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
         ],
         hiddenExpectations: M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS,
       }),
-    ).toMatchObject({ ok: false });
+    ).toMatchObject({ ok: true });
     expect(
       await prepareM9b2DevelopmentSuite({
         publicCases: M9B2_PUBLIC_DEVELOPMENT_CASES,
@@ -433,7 +487,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
           ...M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS.slice(1),
         ],
       }),
-    ).toMatchObject({ ok: false });
+    ).toMatchObject({ ok: true });
     expect(
       await prepareM9b2DevelopmentSuite({
         publicCases: M9B2_PUBLIC_DEVELOPMENT_CASES,
@@ -872,27 +926,36 @@ describe("M9b.2 offline evaluator and corpus design", () => {
       },
     });
     expect(evaluatorCalls).toBe(callsBeforeMeasurement);
-    const measurementBinding = {
-      suiteDigest: measured.suiteDigest,
+    const measurementVerification = {
+      suite,
       caseId: measured.caseId,
-      sourceArmRecordDigest: arm.record.recordDigest,
-      comparisonDigest: comparison.comparisonDigest,
-      arm: measured.arm,
-      taskDigest: measured.taskDigest,
-      corpusSnapshotDigest: snapshot.snapshotDigest,
-      model: { id: "m9b2-offline-model", version: "1" },
-      evaluator: M9B2_EVALUATOR_IDENTITY,
-      programIdentity: response.sourceDigest,
+      verifiedRecord: verified,
+      expected: {
+        sourceArmRecordDigest: arm.record.recordDigest,
+        comparisonDigest: comparison.comparisonDigest,
+        arm: measured.arm,
+        model: { id: "m9b2-offline-model", version: "1" },
+        evaluator: M9B2_EVALUATOR_IDENTITY,
+        programIdentity: response.sourceDigest,
+      },
     } as const;
     expect(
-      await verifyM9b2TerminalMeasurementRecord(measured, measurementBinding),
+      await verifyM9b2TerminalMeasurementRecord(
+        measured,
+        measurementVerification,
+      ),
     ).toMatchObject({ ok: true });
-    const serializedStore = unwrap(
-      await serializeM9b2MeasurementStore([measured], [measurementBinding]),
+    const serializedSnapshot = unwrap(
+      await serializeM9b2MeasurementSnapshot(
+        [measured],
+        [measurementVerification],
+      ),
     );
     expect(
       unwrap(
-        await loadM9b2MeasurementStore(serializedStore, [measurementBinding]),
+        await loadM9b2MeasurementSnapshot(serializedSnapshot, [
+          measurementVerification,
+        ]),
       ),
     ).toEqual([measured]);
     expect(evaluatorCalls).toBe(callsBeforeMeasurement);
@@ -917,7 +980,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
           ...measured,
           model: { id: "forged-model", version: "1" },
         },
-        measurementBinding,
+        measurementVerification,
       ),
     ).toMatchObject({ ok: false });
     const { recordDigest: _measurementDigest, ...measurementBody } = measured;
@@ -933,17 +996,64 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     expect(
       await verifyM9b2TerminalMeasurementRecord(
         rekeyedMeasurement,
-        measurementBinding,
+        measurementVerification,
       ),
     ).toMatchObject({ ok: false });
-    const rekeyedStore = unwrap(
+    expect(
+      await serializeM9b2MeasurementSnapshot(
+        [rekeyedMeasurement],
+        [measurementVerification],
+      ),
+    ).toMatchObject({ ok: false });
+    const parsedSnapshot = unwrap(parseJson(serializedSnapshot));
+    if (
+      typeof parsedSnapshot !== "object" ||
+      parsedSnapshot === null ||
+      Array.isArray(parsedSnapshot)
+    )
+      throw new Error("Expected a measurement snapshot object.");
+    const { snapshotDigest: _snapshotDigest, ...snapshotBody } = parsedSnapshot;
+    void _snapshotDigest;
+    const forgedSnapshotBody = {
+      ...snapshotBody,
+      records: [rekeyedMeasurement],
+    };
+    const forgedSnapshot = unwrap(
       canonicalizeJson({
-        protocol: "lachesis-m9b2a-atomic-measurement-store/1",
-        records: [rekeyedMeasurement],
+        ...forgedSnapshotBody,
+        snapshotDigest: unwrap(await digestValue(forgedSnapshotBody)),
       }),
     );
     expect(
-      await loadM9b2MeasurementStore(rekeyedStore, [measurementBinding]),
+      await loadM9b2MeasurementSnapshot(forgedSnapshot, [
+        measurementVerification,
+      ]),
+    ).toMatchObject({ ok: false });
+    const oldRecordBody = {
+      ...measurementBody,
+      protocol: "lachesis-m9b2a-terminal-measurement-record/1",
+      measurementProtocol: {
+        id: M9B2_MEASUREMENT_PROTOCOL.id,
+        version: "1.1.0",
+      },
+    };
+    expect(
+      await verifyM9b2TerminalMeasurementRecord(
+        {
+          ...oldRecordBody,
+          recordDigest: unwrap(await digestValue(oldRecordBody)),
+        },
+        measurementVerification,
+      ),
+    ).toMatchObject({ ok: false });
+    const oldSnapshot = unwrap(
+      canonicalizeJson({
+        protocol: "lachesis-m9b2a-atomic-measurement-store/1",
+        records: [measured],
+      }),
+    );
+    expect(
+      await loadM9b2MeasurementSnapshot(oldSnapshot, [measurementVerification]),
     ).toMatchObject({ ok: false });
     await fc.assert(
       fc.asyncProperty(fc.integer({ min: 1, max: 10_000 }), async (suffix) => {
@@ -957,12 +1067,121 @@ describe("M9b.2 offline evaluator and corpus design", () => {
               ...propertyBody,
               recordDigest: unwrap(await digestValue(propertyBody)),
             },
-            measurementBinding,
+            measurementVerification,
           ),
         ).toMatchObject({ ok: false });
       }),
       { numRuns: 20 },
     );
+    const knownPlanning = measured.usage.planning.actual;
+    if (knownPlanning.kind !== "known")
+      throw new Error("Expected known planning usage.");
+    const alteredMeasurementBodies = [
+      {
+        ...measurementBody,
+        primary: {
+          ...measured.primary,
+          semanticSupported: false,
+          success: false,
+        },
+      },
+      {
+        ...measurementBody,
+        evaluation: {
+          ...required(measured.evaluation),
+          responseCorrect: false,
+          semanticSupported: false,
+          failureReasons: ["answer-mismatch" as const],
+        },
+      },
+      {
+        ...measurementBody,
+        authoringRequestDigest: "1".repeat(64),
+      },
+      {
+        ...measurementBody,
+        executionRequestDigests: ["2".repeat(64)],
+      },
+      {
+        ...measurementBody,
+        evaluationAttemptDigest: "3".repeat(64),
+      },
+      {
+        ...measurementBody,
+        runAnswerDigest: "4".repeat(64),
+      },
+      {
+        ...measurementBody,
+        usage: {
+          ...measured.usage,
+          planning: {
+            ...measured.usage.planning,
+            actual: {
+              ...knownPlanning,
+              wallClockMs: knownPlanning.wallClockMs + 1,
+            },
+          },
+        },
+      },
+      {
+        ...measurementBody,
+        usage: {
+          ...measured.usage,
+          planning: {
+            ...measured.usage.planning,
+            requestDigest: "6".repeat(64),
+          },
+          execution: {
+            ...measured.usage.execution,
+            requestDigests: ["7".repeat(64)],
+          },
+        },
+      },
+      {
+        ...measurementBody,
+        secondary: {
+          ...measured.secondary,
+          compilationAccepted: false,
+        },
+      },
+      {
+        ...measurementBody,
+        secondary: {
+          ...measured.secondary,
+          bytesRead: { kind: "known" as const, value: 0 },
+        },
+      },
+    ];
+    for (const alteredBody of alteredMeasurementBodies) {
+      const altered = {
+        ...alteredBody,
+        recordDigest: unwrap(await digestValue(alteredBody)),
+      };
+      expect(
+        await verifyM9b2TerminalMeasurementRecord(
+          altered,
+          measurementVerification,
+        ),
+      ).toMatchObject({ ok: false });
+      expect(
+        await serializeM9b2MeasurementSnapshot(
+          [altered],
+          [measurementVerification],
+        ),
+      ).toMatchObject({ ok: false });
+    }
+    expect(
+      await loadM9b2MeasurementSnapshot(serializedSnapshot, [
+        {
+          ...measurementVerification,
+          expected: {
+            ...measurementVerification.expected,
+            comparisonDigest: "5".repeat(64),
+          },
+        },
+      ]),
+    ).toMatchObject({ ok: false });
+    expect(evaluatorCalls).toBe(callsBeforeMeasurement);
 
     const { recordDigest: _originalDigest, ...recordBody } = arm.record;
     void _originalDigest;
@@ -1242,7 +1461,10 @@ describe("M9b.2 offline evaluator and corpus design", () => {
       },
       decision: { outcome: "no-go" },
     });
-    expect(report.scenarios[0]?.requiredPairedCases.kind).toBe("known");
+    expect(report.scenarios[0]?.requiredPairedCases).toEqual({
+      kind: "known",
+      pairedCases: 168,
+    });
     expect(report.scenarios[1]?.requiredPairedCases.kind).toBe("unknown");
     expect(report.scenarios[2]).toMatchObject({
       powerAtPracticalCeilingBasisPoints: 0,
@@ -1263,6 +1485,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     const alteredBody = {
       protocol: altered.protocol,
       method: altered.method,
+      allocation: altered.allocation,
       independenceAssumption: altered.independenceAssumption,
       familyAlphaBasisPoints: altered.familyAlphaBasisPoints,
       targetPowerBasisPoints: altered.targetPowerBasisPoints,
@@ -1297,6 +1520,18 @@ describe("M9b.2 offline evaluator and corpus design", () => {
           },
         ],
         practicalPairedCaseCeiling: 20,
+      }),
+    ).toMatchObject({ ok: false });
+    expect(
+      await analyzeM9b2ProspectivePower({
+        scenarios: [
+          {
+            id: "all-discordances-favor-discovery",
+            discoveredOnlyRateBasisPoints: 10_000,
+            staticOnlyRateBasisPoints: 0,
+          },
+        ],
+        practicalPairedCaseCeiling: 24,
       }),
     ).toMatchObject({ ok: true });
   });
@@ -1335,6 +1570,9 @@ describe("M9b.2 offline evaluator and corpus design", () => {
       { fixtureIdentity: firstDevelopment.fixtureIdentity },
       { entityIdentities: firstDevelopment.entityIdentities },
       {
+        sourceLineageIdentities: firstDevelopment.sourceLineageIdentities,
+      },
+      {
         exactTaskTemplateIdentity: firstDevelopment.exactTaskTemplateIdentity,
       },
       {
@@ -1347,6 +1585,9 @@ describe("M9b.2 offline evaluator and corpus design", () => {
       },
       { answerValueIdentities: firstDevelopment.answerValueIdentities },
       { corpusContentIdentity: firstDevelopment.corpusContentIdentity },
+      {
+        semanticContractIdentity: firstDevelopment.semanticContractIdentity,
+      },
       {
         documentContentIdentities: firstDevelopment.documentContentIdentities,
       },
@@ -1400,17 +1641,10 @@ describe("M9b.2 offline evaluator and corpus design", () => {
   });
 
   it("freezes independent M9c cases and reserves clustered scale variants for M9d", async () => {
-    const digest = (value: number): string =>
-      value.toString(16).padStart(64, "0");
-    const independent = M9B2_TASK_FAMILIES.flatMap((family, familyIndex) =>
-      M9B2_CORPUS_SCALES.map((scale, scaleIndex) => ({
-        fixtureId: `independent-${family}-${scale}`,
-        family,
-        scale,
-        semanticProblemIdentity: digest(familyIndex * 3 + scaleIndex + 1),
-      })),
-    );
-    expect(await auditM9cInferenceUnits(independent)).toMatchObject({
+    const independent = await independentPreparedSuite();
+    expect(
+      await auditM9cInferenceUnits(independent.suite, independent.caseIds),
+    ).toMatchObject({
       ok: true,
       value: {
         estimand: {
@@ -1419,12 +1653,14 @@ describe("M9b.2 offline evaluator and corpus design", () => {
           clusteredScaleVariants: "reserved-for-m9d",
         },
         cellWeight: { numerator: 1, denominator: 24 },
+        casesPerCell: 1,
       },
     });
     const descriptive = unwrap(
       await reportM9cPairedDescriptives(
-        independent.map((item, index) => ({
-          ...item,
+        independent.suite,
+        independent.caseIds.map((caseId, index) => ({
+          caseId,
           discoveredSuccess: index % 2 === 0,
           staticSuccess: index % 3 === 0,
         })),
@@ -1437,40 +1673,46 @@ describe("M9b.2 offline evaluator and corpus design", () => {
       "lookup",
     );
     expect(descriptive.byScale.map((value) => value.stratum)).toContain("1x");
-    const clustered = independent.map((item) =>
-      item.family === "lookup"
-        ? { ...item, semanticProblemIdentity: digest(500) }
-        : item,
-    );
-    expect(await auditM9cInferenceUnits(clustered)).toMatchObject({
+    const clustered = await preparedSuite();
+    expect(
+      await auditM9cInferenceUnits(
+        clustered,
+        M9B2_PUBLIC_DEVELOPMENT_CASES.map((value) => value.id),
+      ),
+    ).toMatchObject({
       ok: false,
     });
-    await fc.assert(
-      fc.asyncProperty(
-        fc.integer({ min: 1_000, max: 100_000 }),
-        async (offset) => {
-          const shifted = independent.map((item, index) => ({
-            ...item,
-            semanticProblemIdentity: digest(offset + index),
-          }));
-          expect(await auditM9cInferenceUnits(shifted)).toMatchObject({
-            ok: true,
-          });
-          const duplicate = shifted.map((item, index) =>
-            index === 1
-              ? {
-                  ...item,
-                  semanticProblemIdentity: required(shifted[0])
-                    .semanticProblemIdentity,
-                }
-              : item,
-          );
-          expect(await auditM9cInferenceUnits(duplicate)).toMatchObject({
-            ok: false,
-          });
-        },
+    expect(
+      await auditM9cInferenceUnits(
+        independent.suite,
+        independent.caseIds.map((caseId, index) => ({
+          caseId,
+          semanticProblemIdentity: index.toString(16).padStart(64, "0"),
+        })),
       ),
-      { numRuns: 20 },
-    );
+    ).toMatchObject({ ok: false });
+
+    const twoWaves = await independentPreparedSuite(2);
+    expect(
+      await auditM9cInferenceUnits(twoWaves.suite, twoWaves.caseIds),
+    ).toMatchObject({
+      ok: true,
+      value: { caseCount: 48, casesPerCell: 2 },
+    });
+    const invalidTotal = twoWaves.caseIds.slice(0, -1);
+    expect(
+      await auditM9cInferenceUnits(twoWaves.suite, invalidTotal),
+    ).toMatchObject({ ok: false });
+    const threeWaves = await independentPreparedSuite(3);
+    const overrepresentedLookup = [
+      ...threeWaves.caseIds
+        .filter((caseId) => !caseId.includes("wave-3"))
+        .filter((caseId) => caseId !== "m9b2-dev-join-1x-wave-2"),
+      "m9b2-dev-lookup-1x-wave-3",
+    ];
+    expect(overrepresentedLookup).toHaveLength(48);
+    expect(
+      await auditM9cInferenceUnits(threeWaves.suite, overrepresentedLookup),
+    ).toMatchObject({ ok: false });
   });
 });

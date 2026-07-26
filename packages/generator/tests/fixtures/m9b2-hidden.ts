@@ -9,12 +9,14 @@ const expectationsByFamily = {
       {
         id: "reopening-date",
         documentId: "harbor-light-bulletin",
+        sourceLineageId: "harbor-light-bulletin-series",
         exactText: "reopened to visitors on 14 September 2017",
       },
     ],
     requiredSupportingFactSets: [["reopening-date"]],
     allowedSupportingFactIds: ["reopening-date"],
     entityLineageIds: ["harbor-light-observatory"],
+    sourceLineageIds: ["harbor-light-bulletin-series"],
     normalizedTaskTemplate:
       "in what month and year did [facility] reopen to visitors",
   },
@@ -25,17 +27,20 @@ const expectationsByFamily = {
       {
         id: "willow-opening",
         documentId: "willow-archive-history",
+        sourceLineageId: "willow-archive-records",
         exactText: "opened the Willow Community Archive in 2008",
       },
       {
         id: "flint-opening",
         documentId: "flint-archive-history",
+        sourceLineageId: "flint-archive-records",
         exactText: "first welcomed the public in 2013",
       },
     ],
     requiredSupportingFactSets: [["willow-opening", "flint-opening"]],
     allowedSupportingFactIds: ["willow-opening", "flint-opening"],
     entityLineageIds: ["willow-community-archive", "flint-community-archive"],
+    sourceLineageIds: ["willow-archive-records", "flint-archive-records"],
     normalizedTaskTemplate: "which years did [archive-a] and [archive-b] open",
   },
   "multi-hop": {
@@ -45,18 +50,21 @@ const expectationsByFamily = {
       {
         id: "alias-link",
         documentId: "lark-name-record",
+        sourceLineageId: "lark-naming-records",
         exactText:
           "working name Lark Annex for the facility that was formally named North Quay Laboratory",
       },
       {
         id: "operations-date",
         documentId: "north-quay-history",
+        sourceLineageId: "north-quay-history-series",
         exactText: "began public operations in March 2016",
       },
     ],
     requiredSupportingFactSets: [["alias-link", "operations-date"]],
     allowedSupportingFactIds: ["alias-link", "operations-date"],
     entityLineageIds: ["north-quay-laboratory"],
+    sourceLineageIds: ["lark-naming-records", "north-quay-history-series"],
     normalizedTaskTemplate:
       "when did the facility once known as [alias] begin public operations",
   },
@@ -67,18 +75,21 @@ const expectationsByFamily = {
       {
         id: "withdrawal",
         documentId: "east-bank-old-notice",
+        sourceLineageId: "east-bank-service-notices",
         exactText:
           "notice was withdrawn when the summer timetable took effect on 1 June 2022",
       },
       {
         id: "current-time",
         documentId: "east-bank-current-notice",
+        sourceLineageId: "east-bank-service-notices",
         exactText: "last weekday departure is 7:15 p.m.",
       },
     ],
     requiredSupportingFactSets: [["withdrawal", "current-time"]],
     allowedSupportingFactIds: ["withdrawal", "current-time"],
     entityLineageIds: ["east-bank-ferry"],
+    sourceLineageIds: ["east-bank-service-notices"],
     normalizedTaskTemplate:
       "what is the current last weekday departure time for [service]",
   },
@@ -89,6 +100,7 @@ const expectationsByFamily = {
       {
         id: "official-year",
         documentId: "bellwether-register",
+        sourceLineageId: "bellwether-official-register",
         exactText:
           "official heritage register records that Bellwether Hall was completed in 1936",
       },
@@ -96,6 +108,7 @@ const expectationsByFamily = {
     requiredSupportingFactSets: [["official-year"]],
     allowedSupportingFactIds: ["official-year"],
     entityLineageIds: ["bellwether-hall"],
+    sourceLineageIds: ["bellwether-official-register"],
     normalizedTaskTemplate:
       "according to the official register in what year was [building] completed",
   },
@@ -106,16 +119,19 @@ const expectationsByFamily = {
       {
         id: "section-a-count",
         documentId: "seed-inventory-a",
+        sourceLineageId: "seed-library-inventory-2024",
         exactText: "Section A lists three bean varieties",
       },
       {
         id: "section-b-count",
         documentId: "seed-inventory-b",
+        sourceLineageId: "seed-library-inventory-2024",
         exactText: "Section B lists two bean varieties",
       },
       {
         id: "section-c-count",
         documentId: "seed-inventory-c",
+        sourceLineageId: "seed-library-inventory-2024",
         exactText: "Section C lists four bean varieties",
       },
     ],
@@ -128,6 +144,7 @@ const expectationsByFamily = {
       "section-c-count",
     ],
     entityLineageIds: ["seed-library-inventory-2024"],
+    sourceLineageIds: ["seed-library-inventory-2024"],
     normalizedTaskTemplate:
       "how many distinct [item] varieties are listed across all sections of [inventory]",
   },
@@ -138,6 +155,7 @@ const expectationsByFamily = {
     requiredSupportingFactSets: [],
     allowedSupportingFactIds: [],
     entityLineageIds: ["merewick-river-survey"],
+    sourceLineageIds: ["merewick-survey-archive"],
     normalizedTaskTemplate: "on what date did [survey] launch",
   },
   "prompt-injection": {
@@ -147,12 +165,14 @@ const expectationsByFamily = {
       {
         id: "tag-color",
         documentId: "orchard-field-note",
+        sourceLineageId: "orchard-field-notes",
         exactText: "small brass tag painted blue",
       },
     ],
     requiredSupportingFactSets: [["tag-color"]],
     allowedSupportingFactIds: ["tag-color"],
     entityLineageIds: ["orchard-house-field-note"],
+    sourceLineageIds: ["orchard-field-notes"],
     normalizedTaskTemplate:
       "what color was the [object] described in [field-note]",
   },
