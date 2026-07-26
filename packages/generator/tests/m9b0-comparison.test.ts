@@ -285,6 +285,31 @@ async function expectResumeRejection(
   expect(result).toMatchObject({ ok: false, error: { kind: "resume" } });
 }
 
+async function expectFailureRecordRejection(
+  corpus: M9aCorpus,
+  record: M9b0ArmRecord,
+): Promise<void> {
+  const persisted = await runM9b0OfflineComparison(
+    comparisonInput({ corpus, persistence: persistenceWithRecord(record) }),
+  );
+  expect(persisted.ok).toBe(false);
+  const direct = await runM9b0OfflineComparison({
+    ...comparisonInput({
+      corpus,
+      persistence: memoryPersistence().persistence,
+    }),
+    store: {
+      load: (_comparisonDigest, arm) =>
+        Promise.resolve({
+          ok: true,
+          value: arm === record.arm ? record : undefined,
+        }),
+      save: () => Promise.resolve({ ok: true, value: undefined }),
+    },
+  });
+  expect(direct).toMatchObject({ ok: false, error: { kind: "resume" } });
+}
+
 function successfulSequencedRun(
   comparison: Readonly<{
     sequenced: Readonly<{
@@ -297,6 +322,31 @@ function successfulSequencedRun(
   if (record.outcome.status !== "success" || run === undefined)
     throw new Error("Expected a successful sequenced fixture arm.");
   return { record, run };
+}
+
+async function failedSequencedRecord(
+  corpus: M9aCorpus,
+): Promise<M9b0ArmRecord> {
+  const persistence = memoryPersistence();
+  const compared = unwrap(
+    await runM9b0OfflineComparison(
+      comparisonInput({
+        corpus,
+        persistence: persistence.persistence,
+        sequenced: () => ({
+          ...fixtureModel(),
+          identity: { id: "wrong-model", version: "1.0.0" },
+        }),
+      }),
+    ),
+  );
+  const record = compared.sequenced.record;
+  if (
+    record.outcome.status !== "failure" ||
+    record.outcome.failure.payload.kind !== "invalid-comparison"
+  )
+    throw new Error("Expected a retained invalid-comparison failure payload.");
+  return record;
 }
 
 const decomposeRequestBodySchema = z
@@ -525,6 +575,111 @@ describe("M9b.0 offline comparison protocol", () => {
       expect(compared.sequenced.record.outcome.status).toBe("failure");
       expect(compared.oneShot.record.outcome.status).toBe("success");
     }
+  });
+
+  it("rejects an altered failed-terminal kind after the outer record is re-signed", async () => {
+    expect.hasAssertions();
+    const corpus = await corpusFixture();
+    const original = await failedSequencedRecord(corpus);
+    if (original.outcome.status !== "failure")
+      throw new Error("Expected a retained failure payload.");
+    const forgedBody = {
+      protocol: original.protocol,
+      comparisonDigest: original.comparisonDigest,
+      arm: original.arm,
+      corpusSnapshotDigest: original.corpusSnapshotDigest,
+      taskDigest: original.taskDigest,
+      model: original.model,
+      envelope: original.envelope,
+      modelRequests: original.modelRequests,
+      outcome: {
+        status: "failure",
+        failure: {
+          ...original.outcome.failure,
+          kind: "forged-terminal-classification",
+        },
+      },
+    };
+    const forgedRecord = {
+      ...forgedBody,
+      recordDigest: unwrap(await digestValue(forgedBody)),
+    };
+    const forgedContent = unwrap(
+      canonicalizeJson({
+        protocol: "lachesis-m9b0-atomic-arm-store/1",
+        records: [forgedRecord],
+      }),
+    );
+    const forged = await runM9b0OfflineComparison(
+      comparisonInput({
+        corpus,
+        persistence: {
+          read: () =>
+            Promise.resolve({
+              ok: true,
+              value: { revision: "1", content: forgedContent },
+            }),
+          writeAtomic: () =>
+            Promise.resolve({ ok: true, value: { revision: "2" } }),
+        },
+      }),
+    );
+    expect(forged.ok).toBe(false);
+    const tampered = await resignArmRecord(original, {
+      outcome: {
+        status: "failure",
+        failure: {
+          ...original.outcome.failure,
+          kind: "invalid-output",
+        },
+      },
+    });
+    await expectFailureRecordRejection(corpus, tampered);
+  });
+
+  it("rejects an altered failed-terminal payload after the outer record is re-signed", async () => {
+    expect.hasAssertions();
+    const corpus = await corpusFixture();
+    const original = await failedSequencedRecord(corpus);
+    if (
+      original.outcome.status !== "failure" ||
+      original.outcome.failure.payload.kind !== "invalid-comparison"
+    )
+      throw new Error(
+        "Expected a retained invalid-comparison failure payload.",
+      );
+    const payload = {
+      ...original.outcome.failure.payload,
+      diagnostic: {
+        ...original.outcome.failure.payload.diagnostic,
+        message: "Forged terminal failure payload.",
+      },
+    };
+    const tampered = await resignArmRecord(original, {
+      outcome: {
+        status: "failure",
+        failure: { ...original.outcome.failure, payload },
+      },
+    });
+    await expectFailureRecordRejection(corpus, tampered);
+  });
+
+  it("rejects an altered failed-terminal digest after the outer record is re-signed", async () => {
+    expect.hasAssertions();
+    const corpus = await corpusFixture();
+    const original = await failedSequencedRecord(corpus);
+    if (original.outcome.status !== "failure")
+      throw new Error("Expected a retained failure payload.");
+    const tampered = await resignArmRecord(original, {
+      outcome: {
+        status: "failure",
+        failure: {
+          ...original.outcome.failure,
+          failureDigest: "0".repeat(64),
+        },
+      },
+    });
+    await expectFailureRecordRejection(corpus, tampered);
   });
 
   it("persists the first arm atomically across a second-arm store failure", async () => {

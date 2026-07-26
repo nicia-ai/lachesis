@@ -3,6 +3,7 @@ import {
   type CompilationPolicy,
   type Diagnostic,
   diagnostic,
+  diagnosticCodeSchema,
   digestValue,
   parseJson,
   type Result,
@@ -39,7 +40,7 @@ import { type StrictJsonValue, strictJsonValueSchema } from "./strict-json.js";
 
 export const M9B0_OFFLINE_COMPARISON_PROTOCOL = Object.freeze({
   id: "lachesis-m9b0-offline-retrieval-comparison",
-  version: "1.0.1",
+  version: "1.0.2",
   visibility: "internal-offline-development-only" as const,
   tokenizer: "utf8-byte-exact-offline-reference/1" as const,
   requestSerialization: "lachesis-canonical-json/1" as const,
@@ -464,12 +465,127 @@ function createM9aAdapter(
   };
 }
 
-const failureSummarySchema = z
+const diagnosticScalarSchema = z.union([z.string(), z.number(), z.boolean()]);
+const retainedDiagnosticLocationSchema = z
   .strictObject({
-    kind: z.string().min(1),
-    failureDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+    nodeId: z.string().optional(),
+    path: z.union([z.string(), z.number()]).array().readonly().optional(),
   })
   .readonly();
+const retainedDiagnosticReferenceSchema = z
+  .strictObject({
+    kind: z.enum(["schema", "operation", "catalog", "effectRequest"]),
+    id: z.string(),
+    version: z.string().optional(),
+  })
+  .readonly();
+const retainedDiagnosticValueSchema = z
+  .strictObject({
+    schema: z
+      .strictObject({ id: z.string(), version: z.string() })
+      .readonly()
+      .optional(),
+    reference: retainedDiagnosticReferenceSchema.optional(),
+    value: diagnosticScalarSchema.optional(),
+  })
+  .readonly();
+const retainedDiagnosticLimitSchema = z
+  .strictObject({
+    resource: z.string(),
+    limit: z.number(),
+    actual: z.number(),
+  })
+  .readonly();
+const retainedDiagnosticSchema = z
+  .strictObject({
+    code: diagnosticCodeSchema,
+    message: z.string(),
+    location: retainedDiagnosticLocationSchema,
+    details: z
+      .strictObject({ key: z.string(), value: diagnosticScalarSchema })
+      .readonly()
+      .array()
+      .readonly(),
+    expected: retainedDiagnosticValueSchema.optional(),
+    actual: retainedDiagnosticValueSchema.optional(),
+    limit: retainedDiagnosticLimitSchema.optional(),
+    repair: retainedDiagnosticLocationSchema.optional(),
+  })
+  .readonly();
+const retainedCodeModeUsageSchema = z
+  .strictObject({
+    operationCalls: z.number().int().nonnegative(),
+    effectCalls: z.number().int().nonnegative(),
+    tokens: z.number().int().nonnegative(),
+    wallClockMs: z.number().int().nonnegative(),
+  })
+  .readonly();
+const retainedCodeModeFailureSchema = z
+  .strictObject({
+    kind: z.enum([
+      "invalid-artifact",
+      "runtime-exception",
+      "timeout",
+      "capability-violation",
+      "budget-violation",
+    ]),
+    diagnostics: retainedDiagnosticSchema.array().readonly(),
+    usage: retainedCodeModeUsageSchema,
+  })
+  .readonly();
+const retainedFailurePayloadSchema = z
+  .discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("invalid-artifact") }).readonly(),
+    z
+      .strictObject({
+        kind: z.literal("invalid-comparison"),
+        diagnostic: retainedDiagnosticSchema,
+      })
+      .readonly(),
+    z
+      .strictObject({
+        kind: z.literal("execution"),
+        failure: retainedCodeModeFailureSchema,
+      })
+      .readonly(),
+    z
+      .strictObject({
+        kind: z.literal("invalid-output"),
+        failure: m9aRetrievalFailureSchema,
+      })
+      .readonly(),
+    z
+      .strictObject({
+        kind: z.literal("replay-mismatch"),
+        diagnostic: retainedDiagnosticSchema,
+      })
+      .readonly(),
+    z
+      .strictObject({
+        kind: z.literal("digest-failure"),
+        diagnostic: retainedDiagnosticSchema,
+      })
+      .readonly(),
+  ])
+  .readonly();
+
+const failureSummarySchema = z
+  .strictObject({
+    kind: z.enum([
+      "invalid-artifact",
+      "invalid-comparison",
+      "execution",
+      "invalid-output",
+      "replay-mismatch",
+      "digest-failure",
+    ]),
+    payload: retainedFailurePayloadSchema,
+    failureDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+  })
+  .readonly()
+  .refine((failure) => failure.kind === failure.payload.kind, {
+    message: "Failure summary kind must match its retained payload.",
+  });
 export type M9b0FailureSummary = z.infer<typeof failureSummarySchema>;
 
 const envelopeSchema = z
@@ -640,6 +756,12 @@ async function validateRecord(
     const validatedRequest = await validateBoundRequest(request);
     if (!validatedRequest.ok) return validatedRequest;
   }
+  if (parsed.data.outcome.status === "failure") {
+    const validatedFailure = await validateFailureSummary(
+      parsed.data.outcome.failure,
+    );
+    if (!validatedFailure.ok) return validatedFailure;
+  }
   return { ok: true, value: parsed.data };
 }
 
@@ -770,15 +892,56 @@ function armOrder(
 async function summarizeFailure(
   failure: M9aRunFailure,
 ): Promise<Result<M9b0FailureSummary, Diagnostic>> {
-  const failureDigest = await digestValue(failure);
+  const payload = retainedFailurePayloadSchema.safeParse(failure);
+  if (!payload.success)
+    return {
+      ok: false,
+      error: diagnostic(
+        "INTERNAL_INVARIANT_VIOLATION",
+        "M9b.0 cannot retain an unrecognized M9a failure payload.",
+      ),
+    };
+  const failureDigest = await digestValue(payload.data);
   if (!failureDigest.ok) return failureDigest;
-  return {
-    ok: true,
-    value: failureSummarySchema.parse({
-      kind: failure.kind,
-      failureDigest: failureDigest.value,
-    }),
-  };
+  const summary = failureSummarySchema.safeParse({
+    kind: payload.data.kind,
+    payload: payload.data,
+    failureDigest: failureDigest.value,
+  });
+  return summary.success
+    ? { ok: true, value: summary.data }
+    : {
+        ok: false,
+        error: diagnostic(
+          "INTERNAL_INVARIANT_VIOLATION",
+          "M9b.0 failed to retain its typed failure payload.",
+        ),
+      };
+}
+
+async function validateFailureSummary(
+  input: unknown,
+): Promise<Result<M9b0FailureSummary, Diagnostic>> {
+  const failure = failureSummarySchema.safeParse(input);
+  if (!failure.success)
+    return {
+      ok: false,
+      error: diagnostic(
+        "INVALID_WIRE_SCHEMA",
+        "M9b.0 retained failure payload is invalid.",
+      ),
+    };
+  const failureDigest = await digestValue(failure.data.payload);
+  if (!failureDigest.ok) return failureDigest;
+  return failureDigest.value === failure.data.failureDigest
+    ? { ok: true, value: failure.data }
+    : {
+        ok: false,
+        error: diagnostic(
+          "REPLAY_REQUEST_MISMATCH",
+          "M9b.0 retained failure payload digest does not match.",
+        ),
+      };
 }
 
 async function createArmRecord(
@@ -894,8 +1057,20 @@ async function resumedArm(
   record: M9b0ArmRecord,
   binding: ExpectedResumeBinding,
 ): Promise<Result<M9b0ArmResult, M9b0ComparisonFailure>> {
-  if (record.outcome.status === "failure")
+  if (record.outcome.status === "failure") {
+    const validatedFailure = await validateFailureSummary(
+      record.outcome.failure,
+    );
+    if (!validatedFailure.ok)
+      return {
+        ok: false,
+        error: comparisonFailure(
+          "resume",
+          "Persisted M9b.0 failure record does not match its retained payload.",
+        ),
+      };
     return { ok: true, value: { arm: record.arm, resumed: true, record } };
+  }
   if (!successMatchesResumeBinding(record, record.outcome, binding))
     return {
       ok: false,

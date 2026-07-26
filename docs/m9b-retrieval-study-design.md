@@ -1,16 +1,16 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.0.1 offline protocol hardening only; M9b is not materialized or
-authorized**.
+Status: **M9b.0.2 offline protocol hardening only; program discovery is not
+implemented and M9b is not materialized or authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
 external corpora. M9a does not create a final corpus, campaign, preregistration,
 provider identity, credential preflight, executable live state, or authorization
 text.
 
-## M9b.0.1 offline boundary correction
+## M9b.0.2 offline boundary correction
 
-The internal `lachesis-m9b0-offline-retrieval-comparison@1.0.1` protocol is a
+The internal `lachesis-m9b0-offline-retrieval-comparison@1.0.2` protocol is a
 development-only dry run of the comparison boundary. It is not exported from the
 generator package facade. It composes M9a's closed retrieval interpreter under
 arm-specific private execution profiles and does not change the M2 or M9a
@@ -38,11 +38,13 @@ A shared NFC and 512-UTF-8-byte task preflight runs before compilation creates a
 model session or either arm executes. Each arm has an independent terminal
 record written through a compare-and-swap atomic persistence contract. A record
 retains the exact bound model-request receipts. A successful record also
-contains the private M9a replay artifact; a failed record contains only a typed
-failure kind and digest as its outcome. Restart replays successful arms with
-zero corpus or model effects, resumes failed arms as terminal, and runs only
-missing arms. A second-arm execution or persistence failure therefore does not
-erase the first arm.
+contains the private M9a replay artifact. A failed record retains its exact
+typed strict-JSON failure payload, discriminant, and payload digest. Load and
+resume both revalidate the payload shape, require its discriminant to match the
+summary kind, and recompute its digest. Restart replays successful arms with
+zero corpus or model effects, resumes verified failed arms as terminal, and runs
+only missing arms. A second-arm execution or persistence failure therefore does
+not erase the first arm.
 
 M9b.0.1 also treats resume as one end-to-end identity boundary rather than a
 collection of independently valid digests. Before zero-effect replay, a
@@ -53,6 +55,11 @@ same identities. Every canonical model-request input digest must match its
 corresponding root- or leaf-model transcript event. Re-signing a locally valid
 record, replay artifact, or request therefore cannot move that component to a
 different comparison identity.
+
+M9b.0.2 closes the corresponding failed-terminal gap: changing the retained
+failure kind, payload, or digest fails closed even when the outer arm record is
+re-signed. Failure records no longer rely on an unverifiable digest of discarded
+data.
 
 This protocol still executes a caller-supplied treatment source. It does not
 test program discovery and makes no claim that a root model can discover a
@@ -142,5 +149,5 @@ security review confirming:
 M9b remains **NO-GO** until the program-discovery boundary, corpus, external
 semantic/abstention evaluator, provider/model/prompt/tokenizer/pricing
 identities, randomized schedule, operational budget, preregistration, and
-explicit live authorization are frozen and independently reviewed. M9b.0.1 does
+explicit live authorization are frozen and independently reviewed. M9b.0.2 does
 not satisfy those live-study gates.
