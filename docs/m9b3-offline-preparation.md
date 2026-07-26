@@ -1,15 +1,15 @@
-# M9b.3b offline provenance correction
+# M9b.3c offline provenance correction
 
 Status: **offline preparation frozen; M9b remains NO-GO for corpus
 materialization, provider integration, preregistration, and execution**.
 
-M9b.3b supersedes the affected private M9b.3a identities and freezes the
+M9b.3c supersedes the affected private M9b.3b identities and freezes the
 contracts that must exist before a later M9c provider study can be considered.
 It does not select credentials, implement an adapter, contact a provider,
 construct a corpus, create schedule entries, register a protocol, or authorize
 execution. The implementation is private to the generator package and is
-identified by `lachesis-m9b3b-offline-prospective-study-preparation@1.0.0`.
-Existing M9b.3a artifacts retain their original meaning and are not
+identified by `lachesis-m9b3c-offline-prospective-study-preparation@1.0.0`.
+Existing M9b.3a and M9b.3b artifacts retain their original meaning and are not
 reinterpreted.
 
 ## Provider, model, serializer, tokenizer, and pricing binding
@@ -29,9 +29,18 @@ and binds all of these exact identities:
 
 The preparation separately binds the frozen prompt bundle, M9b.1b discovery
 protocol, M9b.2 measurement protocol, M9b.2d inference/report/split identities,
-and the development evaluator identity. The development evaluator is explicitly
-ineligible for a campaign; final gold and evaluator identities remain absent
-until independent validation.
+and the development evaluator identity. It also accepts an independently trusted
+historical-development baseline containing the exact reviewed M9b.2 development
+suite and complete-inventory digests. That baseline is bound into the
+preparation, allocation, preregistration materials, and outer preparation
+digest. A different valid 24-case suite is therefore a decoy, not a substitute.
+
+The development evaluator is explicitly ineligible for a campaign. A separate
+content-addressed prospective supplement is required to freeze the independently
+validated final gold artifact, final deterministic evaluator artifact and output
+schema, and independent-validation record. The supplement rejects the
+development evaluator identity and grants no corpus, adapter, provider-call,
+preregistration, or execution authority.
 
 Provider, model, tokenizer, and pricing foreign keys must agree. The candidate
 model must contain the largest individual frozen M9b.1 request. These checks
@@ -62,7 +71,7 @@ Construction roles are separated into corpus constructor, gold annotator, and
 blind split auditor. Construction may begin only after external preregistration
 of this protocol. The complete corpus and gold are then independently frozen and
 must pass `lachesis-m9b2d-split-disjointness-audit/5` before an adapter exists.
-M9b.3b contains no documents, tasks, gold values, corpus snapshot, or final
+M9b.3c contains no documents, tasks, gold values, corpus snapshot, or final
 corpus identity.
 
 Scale is measured by the M9a snapshot's `corpusBytes`: the sum of canonical NFC
@@ -88,19 +97,21 @@ The allocation has 24 equal family × scale cells:
 - a fixed 168-case primary population, seven independent paired cases per cell.
 
 After corpus construction, the private
-`lachesis-m9b3b-prospective-population-binding/1` function consumes the existing
-M9b.2 development suite token and the separate probe and primary suite tokens.
-It derives each complete case inventory, suite and inventory digests, snapshot,
-scale-validation, and semantic-problem identities. It requires exactly 24
-development cases, 24 probe cases, and 168 primary cases. Probe and primary have
-respectively one and seven semantically independent cases in every cell; the
-existing development suite may retain its development-only scale clusters. Case
-identities are unique across all three populations and prospective semantic
-problems are unique across probe and primary. Exact M9b.2d audits must pass for
-development↔probe, development↔primary, and probe↔primary, and all three audit
-digests are bound into the population record. A caller cannot select or omit
-case IDs. The primary report must consume exactly the bound primary suite token,
-preserving M9b.2d full-suite reporting.
+`lachesis-m9b3c-prospective-population-binding/1` function consumes the exact
+historical M9b.2 development suite token and the separate probe and primary
+suite tokens. It derives each complete case inventory, suite and inventory
+digests, snapshot, scale-validation, and semantic-problem identities. It
+requires exactly 24 development cases, 24 probe cases, and 168 primary cases.
+Probe and primary have respectively one and seven semantically independent cases
+in every cell; the existing development suite may retain its development-only
+scale clusters. Case identities are unique across all three populations and
+prospective semantic problems are unique across probe and primary. Exact M9b.2d
+audits must pass for development↔probe, development↔primary, and probe↔primary,
+and all three audit digests are bound into the population record. Before those
+audits, the supplied development token must reproduce both historical suite and
+inventory digests already frozen in the preparation. A caller cannot substitute
+a clean decoy, select, or omit case IDs. The primary report must consume exactly
+the bound primary suite token, preserving M9b.2d full-suite reporting.
 
 The primary population is fixed before primary execution and keeps equal 1/24
 cell weights. The probe must pass the exact conservative gate defined below;
@@ -108,8 +119,8 @@ otherwise the study remains NO-GO. The practical ceiling remains 480 paired
 cases, but it is not authority to enlarge or adapt the primary sample after
 outcomes are observed.
 
-The schedule protocol is `lachesis-m9b3b-paired-counterbalance-schedule/1`.
-M9b.3b binds a SHA-256 commitment to a 256-bit seed reveal. After corpus and
+The schedule protocol is `lachesis-m9b3c-paired-counterbalance-schedule/1`.
+M9b.3c binds a SHA-256 commitment to a 256-bit seed reveal. After corpus and
 gold freeze, the materializer verifies the commitment and hashes canonical JSON
 frames containing the protocol, seed, population, complete suite/inventory
 identities, case, semantic-problem and snapshot identities, family, and scale.
@@ -121,26 +132,32 @@ executions per arm. A separate hash orders execution. All probe cases precede
 the advancement decision; primary execution is forbidden unless that decision
 passes. The verifier rederives the complete schedule from the opaque populations
 and trusted preparation. No seed reveal, case assignment, schedule entry, or
-execution state is created by the current M9b.3b preparation artifact.
+execution state is created by the current M9b.3c preparation artifact.
 
 ## Exact probe advancement rule
 
-`lachesis-m9b3b-probe-advancement-gate/1` consumes the complete set of 24 paired
-M9b.2 verification contexts, not aggregate counts. Each context contains opaque
-M9b.1b terminal-record verification tokens for the discovered and static arms.
-The gate rederives both terminal measurements without effects and requires exact
-probe suite and case coverage, opposite arm identities, the scheduled order, and
-matching comparison, task, snapshot, model, evaluator, endpoint, program,
-measurement-record, and source-arm identities. It then derives discovered-only,
-static-only, both-success, and both-failure exclusively from the verified
-`primary.success` values.
+`lachesis-m9b3c-probe-advancement-gate/1` consumes the complete set of 24 paired
+verification contexts, not aggregate counts. Each context contains opaque M9b.1b
+terminal-record verification tokens for the discovered and static arms. The gate
+verifies the prospective supplement, then rederives both terminal measurements
+through the distinct
+`lachesis-m9b3c-trusted-evaluator-terminal-measurement-record/1` boundary. It
+requires the final evaluator identity from that supplement; a terminal record
+using the campaign-ineligible development evaluator rejects. Successful scores
+are locally recomputed using the trusted evaluator version, while failures are
+still bound without evaluator dispatch. The gate also requires exact probe suite
+and case coverage, opposite arm identities, the scheduled order, and matching
+comparison, task, snapshot, model, endpoint, program, measurement-record, and
+source-arm identities. It derives all four outcome cells exclusively from the
+verified `primary.success` values.
 
-The decision binds the preparation, three-way population record, probe suite and
-inventory, materialized schedule, endpoint, model, evaluator, all 48 source
-measurement and arm-record digests, and a canonical measurement-inventory
-digest. Verification repeats the complete derivation and invokes no model,
-retriever, evaluator, corpus constructor, or persistence effect. Caller-authored
-counts cannot produce a decision.
+The decision binds the preparation, prospective supplement, final gold,
+three-way population record, probe suite and inventory, materialized schedule,
+endpoint, model, final evaluator, all 48 source measurement and arm-record
+digests, and a canonical measurement-inventory digest. Verification repeats the
+complete derivation and invokes no model, retriever, evaluator, corpus
+constructor, or persistence effect. Caller-authored counts cannot produce a
+decision.
 
 The gate estimates the discordance rate and the conditional discovered-win rate.
 For each parameter it computes a one-sided Clopper–Pearson lower bound by
@@ -177,29 +194,33 @@ grants no spending authority.
 
 The complete-effects budget requires the campaign evaluator to be deterministic,
 local, arm-blind, and to make zero provider calls, consume zero model tokens,
-and incur zero provider cost. Its final identity is still absent pending
-independent validation. SDK transport retries and controller dispatch retries
-are both exactly zero: one logical request permits one provider attempt, and the
-first dispatch failure is terminal. At most eight logical requests and provider
-attempts exist per pair, or 1,536 across all 192 prepared pairs. Consequently
-the model-envelope total is also the complete provider-attempt cost ceiling;
-evaluator or retry effects cannot be added without a new protocol identity and
-review.
+and incur zero provider cost. Its final identity is absent from the initial
+preparation and must be frozen by the separately verified prospective supplement
+after independent validation. SDK transport retries and controller dispatch
+retries are both exactly zero: one logical request permits one provider attempt,
+and the first dispatch failure is terminal. At most eight logical requests and
+provider attempts exist per pair, or 1,536 across all 192 prepared pairs.
+Consequently the model-envelope total is also the complete provider-attempt cost
+ceiling; evaluator or retry effects cannot be added without a new protocol
+identity and review.
 
 ## Preregistration materials and gates
 
-`lachesis-m9b3b-preregistration-materials/1` is an offline draft, not an
+`lachesis-m9b3c-preregistration-materials/1` is an offline draft, not an
 external registration. It freezes the primary endpoint, one-sided exact
 conditional McNemar test, alpha 0.05, target power 0.80, fixed 168-case
 allocation, primary direction, required component digests, and required
 prospective supplement.
 
-The supplement must bind the complete development, probe, and primary suite and
-case inventories, every snapshot and scale-validation digest, all three pairwise
-M9b.2d split audits, gold and final evaluator, seed reveal and exact schedule,
-and the protocol-probe measurement inventory and discordance gate. Any change
-after registration requires a new protocol identity and review; it cannot be
-silently re-signed.
+The preparation already binds the independently trusted historical development
+suite and complete-inventory digests. The prospective supplement separately
+binds independently reviewed final gold and evaluator identities and their
+validation receipt without granting authority. Eventual registration must also
+bind the complete probe and primary suite and case inventories, every snapshot
+and scale-validation digest, all three pairwise M9b.2d split audits, seed reveal
+and exact schedule, and the protocol-probe measurement inventory and discordance
+gate. Any change after registration requires a new protocol identity and review;
+it cannot be silently re-signed.
 
 Before any provider call, all of the following remain required: registered
 corpus supplement, frozen schedule, reviewed atomic persistence and zero-effect
@@ -210,7 +231,7 @@ binding mismatch is a kill gate that preserves already sealed records.
 
 ## Current decision
 
-M9b remains **NO-GO**. M9b.3b creates no corpus or gold, credentials, provider
+M9b remains **NO-GO**. M9b.3c creates no corpus or gold, credentials, provider
 adapter, provider call, schedule entries, execution state, external
 preregistration, spending authority, live authorization, or superiority claim.
 It is prospective architecture and scientific-design material, not a security

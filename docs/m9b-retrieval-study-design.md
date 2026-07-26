@@ -1,6 +1,6 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.3b offline provenance correction only; M9b is not materialized or
+Status: **M9b.3c offline provenance correction only; M9b is not materialized or
 authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
@@ -8,35 +8,42 @@ external corpora. M9a does not create a final corpus, campaign, preregistration,
 provider identity, credential preflight, executable live state, or authorization
 text.
 
-## M9b.3b offline provenance correction
+## M9b.3c offline provenance correction
 
-M9b.3b supersedes the affected private M9b.3a identities with
-`lachesis-m9b3b-offline-prospective-study-preparation@1.0.0`. It retains the
+M9b.3c supersedes the affected private M9b.3b identities with
+`lachesis-m9b3c-offline-prospective-study-preparation@1.0.0`. It retains the
 exact binding contract for a candidate provider, shared model, request protocol
 and serializer, exact tokenizer artifacts and conformance vectors, pricing
 snapshot, prompt and accepted measurement-boundary identities, balanced
 allocation, seed commitments, counterbalance algorithm, matched budgets,
 advancement and kill gates, and offline preregistration draft. Full details are
-in [M9b.3b offline prospective preparation](./m9b3-offline-preparation.md).
+in [M9b.3c offline prospective preparation](./m9b3-offline-preparation.md).
 
 The exact probe decision now uses 95% Bonferroni-joint one-sided Clopper–Pearson
 lower bounds for discordance and conditional discovered wins, then requires
 lower-bound exact McNemar power at 168 pairs to reach 80%. Corpus scale is the
 snapshot's canonical UTF-8 document-text bytes with frozen, nonoverlapping
-ranges. Opaque development, probe, and primary suites bind complete inventories
-and all three pairwise M9b.2d split audits. The deterministic schedule
-materializer freezes canonical hash frames, sorting, tie-breaking, odd-cell arm
-alternation, and probe-before-primary execution, and has a zero-effect verifier.
-The complete cost ceiling requires a local zero-provider evaluator and exactly
-zero SDK/controller retries.
+ranges. The preparation freezes the exact independently trusted historical
+development suite and inventory digests; population binding rejects a different
+valid 24-case token before running the three pairwise M9b.2d split audits.
+Opaque probe and primary suites bind complete inventories. The deterministic
+schedule materializer freezes canonical hash frames, sorting, tie-breaking,
+odd-cell arm alternation, and probe-before-primary execution, and has a
+zero-effect verifier. The complete cost ceiling requires a local zero-provider
+evaluator and exactly zero SDK/controller retries.
 
-The probe decision accepts no caller-authored counts. It rederives the complete
-24-pair inventory from opaque M9b.1b verification tokens through M9b.2b terminal
-measurement verification, requires the scheduled opposite arms and exact task,
-snapshot, comparison, model, evaluator, endpoint, program, measurement-record,
-and source-arm identities, and derives all four outcome cells exclusively from
-`primary.success`. Its verifier repeats that derivation without model,
-retrieval, evaluator, or persistence effects.
+The campaign-ineligible development evaluator remains bound only to existing
+M9b.2 artifacts. A distinct prospective supplement freezes independently
+validated final gold, final deterministic evaluator and output-schema
+identities, plus the independent-validation receipt, without granting execution
+authority. The probe decision accepts no caller-authored counts. It rederives
+the complete 24-pair inventory from opaque M9b.1b verification tokens through a
+new trusted-evaluator measurement record, requires the supplement's final
+evaluator and the scheduled opposite arms plus exact task, snapshot, comparison,
+model, endpoint, program, measurement-record, and source-arm identities, and
+derives all four outcome cells exclusively from `primary.success`. The decision
+also binds the supplement and final gold. Its verifier repeats that derivation
+without model, retrieval, evaluator, or persistence effects.
 
 The preparation accepts an independently trusted candidate provider profile and
 rederives every component digest plus the outer artifact. This is a binding, not
@@ -433,8 +440,8 @@ security review confirming:
 - no stable API, release, or provider boundary was widened.
 
 M9b.1b and M9b.2d have passed their offline reviews. M9b remains **NO-GO** after
-M9b.3b because the candidate provider profile is not conformance evidence; no
+M9b.3c because the candidate provider profile is not conformance evidence; no
 corpus, final gold/evaluator, schedule, empirical discordance result, external
 preregistration, adapter, credentials, or explicit live authorization exists.
-M9b.3b does not authorize corpus construction, provider integration, a held-out
+M9b.3c does not authorize corpus construction, provider integration, a held-out
 campaign, or live execution.

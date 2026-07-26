@@ -53,6 +53,7 @@ import {
   type M9b2PublicDevelopmentCase,
   type M9cPairedMeasurementVerification,
   measureM9b2VerifiedTerminalRecord,
+  measureM9b2VerifiedTerminalRecordForTrustedEvaluator,
   prepareM9b2DevelopmentSuite,
   reportM9cPairedDescriptives,
   serializeM9b2MeasurementSnapshot,
@@ -61,6 +62,7 @@ import {
   verifyM9b2PowerReport,
   verifyM9b2SplitDisjointnessAudit,
   verifyM9b2TerminalMeasurementRecord,
+  verifyM9b2TrustedEvaluatorTerminalMeasurementRecord,
   verifyM9cPairedDescriptiveReport,
 } from "../src/m9b2-measurement.js";
 import { strictJsonValueSchema } from "../src/strict-json.js";
@@ -509,6 +511,12 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     expect("createM9b2OfflineEvaluator" in generatorFacade).toBe(false);
     expect("analyzeM9b2ProspectivePower" in generatorFacade).toBe(false);
     expect("measureM9b2VerifiedTerminalRecord" in generatorFacade).toBe(false);
+    expect(
+      "measureM9b2VerifiedTerminalRecordForTrustedEvaluator" in generatorFacade,
+    ).toBe(false);
+    expect(
+      "verifyM9b2TrustedEvaluatorTerminalMeasurementRecord" in generatorFacade,
+    ).toBe(false);
     expect("auditM9cInferenceUnits" in generatorFacade).toBe(false);
     expect("verifyM9cPairedDescriptiveReport" in generatorFacade).toBe(false);
     expect("verifyM9b2SplitDisjointnessAudit" in generatorFacade).toBe(false);
@@ -1476,6 +1484,142 @@ describe("M9b.2 offline evaluator and corpus design", () => {
         evaluator: M9B2_EVALUATOR_IDENTITY,
         executionOrder: "discovered-first",
       }),
+    ).toMatchObject({ ok: false });
+  });
+
+  it("rederives successful measurements against a separately trusted evaluator", async () => {
+    const suite = await preparedSuite();
+    const caseId = "m9b2-dev-lookup-1x";
+    const publicCase = developmentCase(caseId);
+    const corpus = unwrap(await createM9aCorpus(publicCase.corpus));
+    const snapshot = required(inspectM9aCorpus(corpus));
+    const citation = required(
+      required(m9b2InternalInspectSupportingFacts(suite, caseId))[0],
+    ).chunk;
+    const finalEvaluator = {
+      id: "m9b3c.final-offline-evaluator",
+      version: "1",
+    } as const;
+    const evaluatorFactory = (): M9b1ExternalEvaluator => {
+      const developmentEvaluator = unwrap(
+        createM9b2OfflineEvaluator(suite, caseId),
+      );
+      return {
+        identity: finalEvaluator,
+        evaluate: async (input, signal) => {
+          const evaluated = await developmentEvaluator.evaluate(input, signal);
+          if (!evaluated.ok) return evaluated;
+          const score = m9b2EvaluationScoreSchema.parse(evaluated.value);
+          return {
+            ok: true,
+            value: strictJsonValueSchema.parse({
+              ...score,
+              evaluatorVersion: finalEvaluator.version,
+            }),
+          };
+        },
+      };
+    };
+    const comparison = unwrap(
+      await runM9b1OfflineProgramDiscovery({
+        corpus,
+        task: publicCase.task,
+        model: { id: "m9b2-offline-model", version: "1" },
+        authoringSessionFactories: {
+          discoveredProgram: () => authoredModel("discovered-program"),
+          staticQuery: () => authoredModel("static-one-shot"),
+        },
+        executionSessionFactories: {
+          discoveredProgram: () => executionModel(citation),
+          staticQuery: () => executionModel(citation),
+        },
+        evaluator: finalEvaluator,
+        evaluatorSessionFactories: {
+          discoveredProgram: () => evaluatorFactory(),
+          staticQuery: () => evaluatorFactory(),
+        },
+        executionOrder: "discovered-first",
+        store: createM9b1ArmStore(memoryArmPersistence()),
+      }),
+    );
+    const arm = comparison.discovered;
+    const taskDigest = unwrap(await digestValue(publicCase.task));
+    const verified = unwrap(
+      await m9b1InternalVerifyTerminalRecord(arm.record, {
+        task: publicCase.task,
+        taskDigest,
+        corpusSnapshotDigest: snapshot.snapshotDigest,
+        model: { id: "m9b2-offline-model", version: "1" },
+        evaluator: finalEvaluator,
+        executionOrder: "discovered-first",
+      }),
+    );
+    const response = required(arm.record.authoringResponse);
+    if (response.kind !== "program") throw new Error("Expected program arm.");
+    const verification = {
+      suite,
+      caseId,
+      verifiedRecord: verified,
+      expected: {
+        arm: "discovered-program",
+        sourceArmRecordDigest: arm.record.recordDigest,
+        comparisonDigest: comparison.comparisonDigest,
+        model: { id: "m9b2-offline-model", version: "1" },
+        evaluator: finalEvaluator,
+        programIdentity: response.sourceDigest,
+      },
+    } as const;
+    const measured = unwrap(
+      await measureM9b2VerifiedTerminalRecordForTrustedEvaluator(
+        verification,
+        finalEvaluator,
+      ),
+    );
+    expect(measured).toMatchObject({
+      protocol:
+        "lachesis-m9b3c-trusted-evaluator-terminal-measurement-record/1",
+      evaluator: finalEvaluator,
+      evaluation: {
+        evaluatorVersion: finalEvaluator.version,
+        semanticSupported: true,
+      },
+      primary: { terminalStage: "evaluated", success: true },
+    });
+    expect(
+      await verifyM9b2TrustedEvaluatorTerminalMeasurementRecord(
+        measured,
+        verification,
+        finalEvaluator,
+      ),
+    ).toMatchObject({ ok: true });
+    expect(await measureM9b2VerifiedTerminalRecord(verification)).toMatchObject(
+      { ok: false },
+    );
+    expect(
+      await verifyM9b2TrustedEvaluatorTerminalMeasurementRecord(
+        measured,
+        verification,
+        { ...finalEvaluator, id: "forged-evaluator" },
+      ),
+    ).toMatchObject({ ok: false });
+    const { recordDigest: _recordDigest, ...body } = measured;
+    void _recordDigest;
+    const forgedBody = {
+      ...body,
+      evaluation:
+        measured.evaluation === null
+          ? null
+          : { ...measured.evaluation, semanticSupported: false },
+    };
+    expect(
+      await verifyM9b2TrustedEvaluatorTerminalMeasurementRecord(
+        {
+          ...forgedBody,
+          recordDigest: unwrap(await digestValue(forgedBody)),
+        },
+        verification,
+        finalEvaluator,
+      ),
     ).toMatchObject({ ok: false });
   });
 

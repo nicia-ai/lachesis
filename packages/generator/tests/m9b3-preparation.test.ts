@@ -28,20 +28,24 @@ import {
 } from "../src/m9b2-measurement.js";
 import {
   bindM9b3Populations,
+  deriveM9b3HistoricalDevelopmentBaseline,
   deriveM9b3ScheduleSeedCommitment,
   evaluateM9b3ProbeAdvancement,
   M9B3_PREPARATION_PROTOCOL,
   type M9b3MaterializedSchedule,
   type M9b3PreparationInput,
+  type M9b3ProspectiveSupplementInput,
   type M9b3ProviderProfileInput,
   materializeM9b3Schedule,
   prepareM9b3OfflineStudy,
+  prepareM9b3ProspectiveSupplement,
   validateM9b3CorpusScale,
   verifyM9b3CorpusScale,
   verifyM9b3MaterializedSchedule,
   verifyM9b3OfflineStudy,
   verifyM9b3PopulationBinding,
   verifyM9b3ProbeAdvancement,
+  verifyM9b3ProspectiveSupplement,
 } from "../src/m9b3-preparation.js";
 import { M9B2_PUBLIC_DEVELOPMENT_CASES } from "./fixtures/m9b2-development.js";
 import { M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS } from "./fixtures/m9b2-hidden.js";
@@ -69,7 +73,7 @@ function providerProfile(): M9b3ProviderProfileInput {
     },
     model: {
       providerId: "offline.test-provider",
-      id: "m9b3b-offline-model",
+      id: "m9b3c-offline-model",
       revision: "1",
       contextWindowTokens: 262_144,
       maximumOutputTokens: 131_072,
@@ -77,7 +81,7 @@ function providerProfile(): M9b3ProviderProfileInput {
     },
     tokenizer: {
       providerId: "offline.test-provider",
-      modelId: "m9b3b-offline-model",
+      modelId: "m9b3c-offline-model",
       id: "offline.test-exact-tokenizer",
       version: "2026-07-26",
       artifactDigest: "2".repeat(64),
@@ -87,7 +91,7 @@ function providerProfile(): M9b3ProviderProfileInput {
     },
     pricing: {
       providerId: "offline.test-provider",
-      modelId: "m9b3b-offline-model",
+      modelId: "m9b3c-offline-model",
       currency: "USD",
       inputUsdMicrosPerMillionTokens: 1_000_000,
       outputUsdMicrosPerMillionTokens: 2_000_000,
@@ -98,17 +102,46 @@ function providerProfile(): M9b3ProviderProfileInput {
   };
 }
 
-function preparationInput(): M9b3PreparationInput {
+const FINAL_EVALUATOR_IDENTITY = Object.freeze({
+  id: "m9b3c.final-offline-evaluator",
+  version: "1",
+});
+
+async function preparationInput(): Promise<M9b3PreparationInput> {
+  const development = await preparedDevelopmentSuite();
+  const historicalDevelopmentBaseline = unwrap(
+    await deriveM9b3HistoricalDevelopmentBaseline(development),
+  );
   return {
     providerProfile: providerProfile(),
     promptBundleDigest: "7".repeat(64),
     scheduleSeedCommitment: "6".repeat(64),
+    historicalDevelopmentBaseline,
+  };
+}
+
+function prospectiveSupplementInput(): M9b3ProspectiveSupplementInput {
+  return {
+    finalGold: {
+      id: "m9b3c.final-offline-gold",
+      version: "1",
+      artifactDigest: "8".repeat(64),
+    },
+    finalEvaluator: {
+      ...FINAL_EVALUATOR_IDENTITY,
+      artifactDigest: "9".repeat(64),
+      outputSchemaDigest: "a".repeat(64),
+      deterministicLocalArmBlind: true,
+      providerEffects: 0,
+      campaignEligible: true,
+    },
+    independentValidationRecordDigest: "b".repeat(64),
   };
 }
 
 function required<T>(value: T | null | undefined): T {
   if (value === undefined || value === null)
-    throw new Error("Missing M9b.3b test fixture.");
+    throw new Error("Missing M9b.3c test fixture.");
   return value;
 }
 
@@ -152,7 +185,7 @@ function exactScaledCorpus(
     0,
   );
   if (changedBytes >= targetBytes)
-    throw new Error("M9b.3b fixture base corpus exceeds its scale target.");
+    throw new Error("M9b.3c fixture base corpus exceeds its scale target.");
   const paddingDocuments: Array<
     Readonly<{ id: string; title: string; text: string }>
   > = [];
@@ -162,7 +195,7 @@ function exactScaledCorpus(
     const prefix = `${suffix}-${String(paddingIndex)}-`;
     const bytes = Math.min(60_000, remaining);
     if (bytes < prefix.length)
-      throw new Error("M9b.3b fixture padding cannot preserve exact bytes.");
+      throw new Error("M9b.3c fixture padding cannot preserve exact bytes.");
     paddingDocuments.push({
       id: `padding-${String(paddingIndex)}`,
       title: `Natural background ${suffix} ${String(paddingIndex)}`,
@@ -202,7 +235,7 @@ function exactScaledCorpus(
 }
 
 async function createScaledSuite(
-  role: "probe" | "primary",
+  role: "probe" | "primary" | "decoy",
   waves: number,
 ): Promise<M9b2PreparedSuite> {
   const expectations = new Map(
@@ -268,6 +301,16 @@ let populationsPromise:
     >
   | undefined;
 
+let developmentSuitePromise: Promise<M9b2PreparedSuite> | undefined;
+
+function preparedDevelopmentSuite(): Promise<M9b2PreparedSuite> {
+  developmentSuitePromise ??= prepareM9b2DevelopmentSuite({
+    publicCases: M9B2_PUBLIC_DEVELOPMENT_CASES,
+    hiddenExpectations: M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS,
+  }).then(unwrap);
+  return developmentSuitePromise;
+}
+
 function preparedPopulations(): Promise<
   Readonly<{
     development: M9b2PreparedSuite;
@@ -276,10 +319,7 @@ function preparedPopulations(): Promise<
   }>
 > {
   populationsPromise ??= Promise.all([
-    prepareM9b2DevelopmentSuite({
-      publicCases: M9B2_PUBLIC_DEVELOPMENT_CASES,
-      hiddenExpectations: M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS,
-    }).then(unwrap),
+    preparedDevelopmentSuite(),
     createScaledSuite("probe", 1),
     createScaledSuite("primary", 7),
   ]).then(([development, probe, primary]) =>
@@ -303,7 +343,7 @@ function memoryArmPersistence(): M9b1AtomicPersistence {
     writeAtomic: ({ expectedRevision, content: next }) => {
       const expected = content === undefined ? null : String(revision);
       if (expectedRevision !== expected)
-        throw new Error("Unexpected M9b.3b fixture revision.");
+        throw new Error("Unexpected M9b.3c fixture revision.");
       content = next;
       revision += 1;
       return Promise.resolve({
@@ -318,7 +358,7 @@ function authoredModel(
   arm: "discovered-program" | "static-one-shot",
 ): M9b1AuthoringModel {
   return {
-    identity: { id: "m9b3b-offline-model", version: "1" },
+    identity: { id: "m9b3c-offline-model", version: "1" },
     complete: (request) => {
       const output =
         arm === "discovered-program"
@@ -343,7 +383,7 @@ function authoredModel(
 
 function failingExecutionModel(): M9b0OfflineModel {
   return {
-    identity: { id: "m9b3b-offline-model", version: "1" },
+    identity: { id: "m9b3c-offline-model", version: "1" },
     complete: () => {
       return Promise.resolve({
         ok: false,
@@ -363,6 +403,10 @@ async function pairedProbeMeasurementVerifications(
   schedule: M9b3MaterializedSchedule,
   counter: EffectCounter,
   reverseExecutionOrderForCaseId?: string,
+  evaluatorIdentity: Readonly<{
+    id: string;
+    version: string;
+  }> = FINAL_EVALUATOR_IDENTITY,
 ): Promise<ReadonlyArray<M9cPairedMeasurementVerification>> {
   return Promise.all(
     schedule.probeEntries.map(async (scheduleEntry) => {
@@ -401,6 +445,7 @@ async function pairedProbeMeasurementVerifications(
         );
         return {
           ...base,
+          identity: evaluatorIdentity,
           evaluate: (input, signal) => {
             counter.evaluatorCalls += 1;
             return base.evaluate(input, signal);
@@ -421,7 +466,7 @@ async function pairedProbeMeasurementVerifications(
         await runM9b1OfflineProgramDiscovery({
           corpus,
           task: inspection.publicCase.task,
-          model: { id: "m9b3b-offline-model", version: "1" },
+          model: { id: "m9b3c-offline-model", version: "1" },
           authoringSessionFactories: {
             discoveredProgram: () => countedAuthoring("discovered-program"),
             staticQuery: () => countedAuthoring("static-one-shot"),
@@ -430,7 +475,7 @@ async function pairedProbeMeasurementVerifications(
             discoveredProgram: () => countedExecution(),
             staticQuery: () => countedExecution(),
           },
-          evaluator: M9B2_EVALUATOR_IDENTITY,
+          evaluator: evaluatorIdentity,
           evaluatorSessionFactories: {
             discoveredProgram: () => countedEvaluator(),
             staticQuery: () => countedEvaluator(),
@@ -454,8 +499,8 @@ async function pairedProbeMeasurementVerifications(
             task: inspection.publicCase.task,
             taskDigest,
             corpusSnapshotDigest: snapshot.snapshotDigest,
-            model: { id: "m9b3b-offline-model", version: "1" },
-            evaluator: M9B2_EVALUATOR_IDENTITY,
+            model: { id: "m9b3c-offline-model", version: "1" },
+            evaluator: evaluatorIdentity,
             executionOrder,
           }),
         );
@@ -467,8 +512,8 @@ async function pairedProbeMeasurementVerifications(
             arm: expectedArm,
             sourceArmRecordDigest: arm.record.recordDigest,
             comparisonDigest: comparison.comparisonDigest,
-            model: { id: "m9b3b-offline-model", version: "1" },
-            evaluator: M9B2_EVALUATOR_IDENTITY,
+            model: { id: "m9b3c-offline-model", version: "1" },
+            evaluator: evaluatorIdentity,
             programIdentity,
           },
         } as const;
@@ -494,18 +539,23 @@ async function resign<T extends object>(
   };
 }
 
-describe("M9b.3b offline provenance correction", () => {
-  it("keeps the complete M9b.3b preparation surface private", () => {
+describe("M9b.3c offline provenance correction", () => {
+  it("keeps the complete M9b.3c preparation surface private", () => {
     expect("M9B3_PREPARATION_PROTOCOL" in generatorFacade).toBe(false);
     expect("prepareM9b3OfflineStudy" in generatorFacade).toBe(false);
     expect("verifyM9b3OfflineStudy" in generatorFacade).toBe(false);
     expect("bindM9b3Populations" in generatorFacade).toBe(false);
     expect("materializeM9b3Schedule" in generatorFacade).toBe(false);
     expect("evaluateM9b3ProbeAdvancement" in generatorFacade).toBe(false);
+    expect("deriveM9b3HistoricalDevelopmentBaseline" in generatorFacade).toBe(
+      false,
+    );
+    expect("prepareM9b3ProspectiveSupplement" in generatorFacade).toBe(false);
+    expect("verifyM9b3ProspectiveSupplement" in generatorFacade).toBe(false);
   });
 
   it("freezes exact prospective identities while retaining every live NO-GO", async () => {
-    const input = preparationInput();
+    const input = await preparationInput();
     const prepared = unwrap(await prepareM9b3OfflineStudy(input));
     expect(prepared).toMatchObject({
       protocol: M9B3_PREPARATION_PROTOCOL.id,
@@ -546,6 +596,7 @@ describe("M9b.3b offline provenance correction", () => {
         probeSuiteIdentity: "absent-pending-corpus-construction",
         primarySuiteIdentity: "absent-pending-corpus-construction",
         completeInventoriesRequired: true,
+        historicalDevelopmentBaseline: input.historicalDevelopmentBaseline,
         allocationMaterialized: false,
       },
       schedule: {
@@ -598,6 +649,12 @@ describe("M9b.3b offline provenance correction", () => {
       },
       decision: { outcome: "no-go" },
     });
+    expect(prepared.historicalDevelopmentBaseline).toEqual(
+      input.historicalDevelopmentBaseline,
+    );
+    expect(prepared.preregistration.requiredBindings).toContain(
+      "historical-development-baseline-digest",
+    );
     expect(await verifyM9b3OfflineStudy(input, prepared)).toMatchObject({
       ok: true,
     });
@@ -611,7 +668,7 @@ describe("M9b.3b offline provenance correction", () => {
   });
 
   it("rejects cross-bound provider, model, tokenizer, pricing, and seed identities", async () => {
-    const original = preparationInput();
+    const original = await preparationInput();
     const invalidProfiles: ReadonlyArray<unknown> = [
       {
         ...original,
@@ -701,7 +758,7 @@ describe("M9b.3b offline provenance correction", () => {
   });
 
   it("rejects re-signed identity, allocation, schedule, budget, gate, and preregistration mutations", async () => {
-    const input = preparationInput();
+    const input = await preparationInput();
     const prepared = unwrap(await prepareM9b3OfflineStudy(input));
     const { preparationDigest: _preparationDigest, ...body } = prepared;
     void _preparationDigest;
@@ -729,6 +786,14 @@ describe("M9b.3b offline provenance correction", () => {
       maximumCostUsdMicrosPerArm:
         prepared.matchedBudget.maximumCostUsdMicrosPerArm + 1,
     };
+    const changedHistoricalBaseline = {
+      ...prepared.historicalDevelopmentBaseline,
+      suiteDigest: "c".repeat(64),
+    };
+    const changedHistoricalAllocation = {
+      ...prepared.allocation,
+      historicalDevelopmentBaseline: changedHistoricalBaseline,
+    };
     const mutations = [
       {
         ...body,
@@ -754,6 +819,17 @@ describe("M9b.3b offline provenance correction", () => {
         ...body,
         matchedBudget: changedBudget,
         matchedBudgetDigest: unwrap(await digestValue(changedBudget)),
+      },
+      {
+        ...body,
+        historicalDevelopmentBaseline: changedHistoricalBaseline,
+        historicalDevelopmentBaselineDigest: unwrap(
+          await digestValue(changedHistoricalBaseline),
+        ),
+        allocation: changedHistoricalAllocation,
+        allocationDigest: unwrap(
+          await digestValue(changedHistoricalAllocation),
+        ),
       },
       { ...body, gatesDigest: "9".repeat(64) },
       { ...body, preregistrationMaterialsDigest: "a".repeat(64) },
@@ -800,12 +876,73 @@ describe("M9b.3b offline provenance correction", () => {
     const populations = await preparedPopulations();
     const seedReveal = "d".repeat(64);
     const input = {
-      ...preparationInput(),
+      ...(await preparationInput()),
       scheduleSeedCommitment: unwrap(
         await deriveM9b3ScheduleSeedCommitment(seedReveal),
       ),
     };
     const preparation = unwrap(await prepareM9b3OfflineStudy(input));
+    const supplementInput = prospectiveSupplementInput();
+    const supplement = unwrap(
+      await prepareM9b3ProspectiveSupplement(
+        input,
+        preparation,
+        supplementInput,
+      ),
+    );
+    expect(
+      await verifyM9b3ProspectiveSupplement(
+        input,
+        preparation,
+        supplementInput,
+        supplement,
+      ),
+    ).toMatchObject({ ok: true });
+    expect(
+      await prepareM9b3ProspectiveSupplement(input, preparation, {
+        ...supplementInput,
+        finalEvaluator: {
+          ...supplementInput.finalEvaluator,
+          ...M9B2_EVALUATOR_IDENTITY,
+        },
+      }),
+    ).toMatchObject({ ok: false });
+    expect(
+      await verifyM9b3ProspectiveSupplement(
+        input,
+        preparation,
+        supplementInput,
+        {
+          ...supplement,
+          finalGold: {
+            ...supplement.finalGold,
+            artifactDigest: "0".repeat(64),
+          },
+          supplementDigest: "0".repeat(64),
+        },
+      ),
+    ).toMatchObject({ ok: false });
+    const { supplementDigest: _supplementDigest, ...supplementBody } =
+      supplement;
+    void _supplementDigest;
+    const rekeyedSupplementBody = {
+      ...supplementBody,
+      finalEvaluator: {
+        ...supplement.finalEvaluator,
+        id: "m9b3c.forged-final-evaluator",
+      },
+    };
+    expect(
+      await verifyM9b3ProspectiveSupplement(
+        input,
+        preparation,
+        supplementInput,
+        {
+          ...rekeyedSupplementBody,
+          supplementDigest: unwrap(await digestValue(rekeyedSupplementBody)),
+        },
+      ),
+    ).toMatchObject({ ok: false });
     const schedule = unwrap(
       await materializeM9b3Schedule(
         input,
@@ -827,6 +964,8 @@ describe("M9b.3b offline provenance correction", () => {
       await evaluateM9b3ProbeAdvancement(
         input,
         preparation,
+        supplementInput,
+        supplement,
         populations.development,
         populations.probe,
         populations.primary,
@@ -837,8 +976,8 @@ describe("M9b.3b offline provenance correction", () => {
     );
     expect(decision).toMatchObject({
       endpoint: "first-attempt-semantically-supported-end-to-end-success",
-      model: { id: "m9b3b-offline-model", version: "1" },
-      evaluator: M9B2_EVALUATOR_IDENTITY,
+      model: { id: "m9b3c-offline-model", version: "1" },
+      evaluator: FINAL_EVALUATOR_IDENTITY,
       counts: {
         discoveredOnly: 0,
         staticOnly: 0,
@@ -857,6 +996,8 @@ describe("M9b.3b offline provenance correction", () => {
       await verifyM9b3ProbeAdvancement(
         input,
         preparation,
+        supplementInput,
+        supplement,
         populations.development,
         populations.probe,
         populations.primary,
@@ -872,6 +1013,8 @@ describe("M9b.3b offline provenance correction", () => {
       await evaluateM9b3ProbeAdvancement(
         input,
         preparation,
+        supplementInput,
+        supplement,
         populations.development,
         populations.probe,
         populations.primary,
@@ -880,10 +1023,34 @@ describe("M9b.3b offline provenance correction", () => {
         [],
       ),
     ).toMatchObject({ ok: false });
+    const developmentEvaluatorMeasurements =
+      await pairedProbeMeasurementVerifications(
+        populations.probe,
+        schedule,
+        { modelCalls: 0, evaluatorCalls: 0 },
+        undefined,
+        M9B2_EVALUATOR_IDENTITY,
+      );
     expect(
       await evaluateM9b3ProbeAdvancement(
         input,
         preparation,
+        supplementInput,
+        supplement,
+        populations.development,
+        populations.probe,
+        populations.primary,
+        seedReveal,
+        schedule,
+        developmentEvaluatorMeasurements,
+      ),
+    ).toMatchObject({ ok: false });
+    expect(
+      await evaluateM9b3ProbeAdvancement(
+        input,
+        preparation,
+        supplementInput,
+        supplement,
         populations.development,
         populations.probe,
         populations.primary,
@@ -902,6 +1069,8 @@ describe("M9b.3b offline provenance correction", () => {
       await evaluateM9b3ProbeAdvancement(
         input,
         preparation,
+        supplementInput,
+        supplement,
         populations.development,
         populations.probe,
         populations.primary,
@@ -928,6 +1097,8 @@ describe("M9b.3b offline provenance correction", () => {
       await evaluateM9b3ProbeAdvancement(
         input,
         preparation,
+        supplementInput,
+        supplement,
         populations.development,
         populations.probe,
         populations.primary,
@@ -954,6 +1125,8 @@ describe("M9b.3b offline provenance correction", () => {
       await verifyM9b3ProbeAdvancement(
         input,
         preparation,
+        supplementInput,
+        supplement,
         populations.development,
         populations.probe,
         populations.primary,
@@ -997,6 +1170,8 @@ describe("M9b.3b offline provenance correction", () => {
         await verifyM9b3ProbeAdvancement(
           input,
           preparation,
+          supplementInput,
+          supplement,
           populations.development,
           populations.probe,
           populations.primary,
@@ -1014,8 +1189,12 @@ describe("M9b.3b offline provenance correction", () => {
 
   it("binds exact mutually disjoint development, probe, and primary inventories", async () => {
     const populations = await preparedPopulations();
+    const input = await preparationInput();
+    const preparation = unwrap(await prepareM9b3OfflineStudy(input));
     const binding = unwrap(
       await bindM9b3Populations(
+        input,
+        preparation,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1045,6 +1224,8 @@ describe("M9b.3b offline provenance correction", () => {
     expect(binding.probe.suiteDigest).not.toBe(binding.primary.suiteDigest);
     expect(
       await verifyM9b3PopulationBinding(
+        input,
+        preparation,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1053,6 +1234,8 @@ describe("M9b.3b offline provenance correction", () => {
     ).toMatchObject({ ok: true });
     expect(
       await bindM9b3Populations(
+        input,
+        preparation,
         populations.development,
         populations.probe,
         populations.probe,
@@ -1060,6 +1243,8 @@ describe("M9b.3b offline provenance correction", () => {
     ).toMatchObject({ ok: false });
     expect(
       await bindM9b3Populations(
+        input,
+        preparation,
         populations.development,
         populations.primary,
         populations.probe,
@@ -1067,6 +1252,8 @@ describe("M9b.3b offline provenance correction", () => {
     ).toMatchObject({ ok: false });
     expect(
       await bindM9b3Populations(
+        input,
+        preparation,
         populations.development,
         populations.development,
         populations.primary,
@@ -1074,8 +1261,19 @@ describe("M9b.3b offline provenance correction", () => {
     ).toMatchObject({ ok: false });
     expect(
       await bindM9b3Populations(
+        input,
+        preparation,
         populations.development,
         await createDevelopmentTemplateLeakingProbeSuite(),
+        populations.primary,
+      ),
+    ).toMatchObject({ ok: false });
+    expect(
+      await bindM9b3Populations(
+        input,
+        preparation,
+        await createScaledSuite("decoy", 1),
+        populations.probe,
         populations.primary,
       ),
     ).toMatchObject({ ok: false });
@@ -1091,6 +1289,8 @@ describe("M9b.3b offline provenance correction", () => {
     };
     expect(
       await verifyM9b3PopulationBinding(
+        input,
+        preparation,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1108,7 +1308,7 @@ describe("M9b.3b offline provenance correction", () => {
     const scheduleSeedCommitment = unwrap(
       await deriveM9b3ScheduleSeedCommitment(seedReveal),
     );
-    const input = { ...preparationInput(), scheduleSeedCommitment };
+    const input = { ...(await preparationInput()), scheduleSeedCommitment };
     const preparation = unwrap(await prepareM9b3OfflineStudy(input));
     const schedule = unwrap(
       await materializeM9b3Schedule(
@@ -1229,7 +1429,7 @@ describe("M9b.3b offline provenance correction", () => {
           .map((digits) => digits.map((digit) => digit.toString(16)).join("")),
         async (seedReveal) => {
           const input = {
-            ...preparationInput(),
+            ...(await preparationInput()),
             scheduleSeedCommitment: unwrap(
               await deriveM9b3ScheduleSeedCommitment(seedReveal),
             ),
@@ -1263,7 +1463,7 @@ describe("M9b.3b offline provenance correction", () => {
         fc.integer({ min: 0, max: 10_000_000 }),
         fc.integer({ min: 0, max: 10_000_000 }),
         async (inputRate, outputRate) => {
-          const original = preparationInput();
+          const original = await preparationInput();
           const input = {
             ...original,
             providerProfile: {
@@ -1290,7 +1490,7 @@ describe("M9b.3b offline provenance correction", () => {
   });
 
   it("fails closed when a price multiplication exceeds safe integer bounds", async () => {
-    const original = preparationInput();
+    const original = await preparationInput();
     expect(
       await prepareM9b3OfflineStudy({
         ...original,

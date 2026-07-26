@@ -185,11 +185,11 @@ const evaluatorFailureReasonSchema = z.enum([
   "invalid-citation",
 ]);
 
-export const m9b2EvaluationScoreSchema = z
+const m9b2EvaluationScoreCoreSchema = z
   .strictObject({
     protocol: z.literal(M9B2_MEASUREMENT_PROTOCOL.id),
     measurementVersion: z.literal(M9B2_MEASUREMENT_PROTOCOL.version),
-    evaluatorVersion: z.literal(M9B2_EVALUATOR_IDENTITY.version),
+    evaluatorVersion: identifierSchema,
     caseId: identifierSchema,
     family: m9b2TaskFamilySchema,
     scale: m9b2CorpusScaleSchema,
@@ -204,7 +204,19 @@ export const m9b2EvaluationScoreSchema = z
     failureReasons: evaluatorFailureReasonSchema.array().readonly(),
   })
   .readonly();
+
+export const m9b2EvaluationScoreSchema = m9b2EvaluationScoreCoreSchema
+  .unwrap()
+  .safeExtend({
+    evaluatorVersion: z.literal(M9B2_EVALUATOR_IDENTITY.version),
+  })
+  .readonly();
 export type M9b2EvaluationScore = z.infer<typeof m9b2EvaluationScoreSchema>;
+
+const m9b2TrustedEvaluatorScoreSchema = m9b2EvaluationScoreCoreSchema;
+type M9b2TrustedEvaluatorScore = z.infer<
+  typeof m9b2TrustedEvaluatorScoreSchema
+>;
 
 const preparedSuiteBrand: unique symbol = Symbol("M9b2PreparedSuite");
 export type M9b2PreparedSuite = Readonly<{
@@ -697,7 +709,8 @@ function scoreEvidence(
 function evaluatePreparedCase(
   prepared: PreparedCase,
   answer: M9aCitationConfinedAnswer,
-): M9b2EvaluationScore {
+  evaluatorVersion: string = M9B2_EVALUATOR_IDENTITY.version,
+): M9b2TrustedEvaluatorScore {
   const normalized = normalizedAnswer(answer.answer);
   const accepted = prepared.expectation.acceptedAnswers.map(normalizedAnswer);
   const abstentions = [
@@ -738,10 +751,10 @@ function evaluatePreparedCase(
   if (evidence.precision !== 10_000)
     failureReasons.push("unsupported-citation");
   if (citationValidity !== 10_000) failureReasons.push("invalid-citation");
-  return m9b2EvaluationScoreSchema.parse({
+  return m9b2TrustedEvaluatorScoreSchema.parse({
     protocol: M9B2_MEASUREMENT_PROTOCOL.id,
     measurementVersion: M9B2_MEASUREMENT_PROTOCOL.version,
-    evaluatorVersion: M9B2_EVALUATOR_IDENTITY.version,
+    evaluatorVersion,
     caseId: prepared.publicCase.id,
     family: prepared.publicCase.family,
     scale: prepared.publicCase.scale,
@@ -1075,6 +1088,39 @@ export const m9b2TerminalMeasurementRecordSchema = terminalMeasurementBodySchema
 export type M9b2TerminalMeasurementRecord = z.infer<
   typeof m9b2TerminalMeasurementRecordSchema
 >;
+
+const m9b2TrustedEvaluatorTerminalMeasurementBodySchema =
+  terminalMeasurementBodySchema
+    .unwrap()
+    .omit({ protocol: true, evaluation: true })
+    .safeExtend({
+      protocol: z.literal(
+        "lachesis-m9b3c-trusted-evaluator-terminal-measurement-record/1",
+      ),
+      evaluation: m9b2TrustedEvaluatorScoreSchema.nullable(),
+    })
+    .superRefine((record, context) => {
+      if (
+        record.evaluation !== null &&
+        record.evaluation.evaluatorVersion !== record.evaluator.version
+      )
+        context.addIssue({
+          code: "custom",
+          message:
+            "M9b.3c trusted evaluator output version differs from its bound identity.",
+        });
+    })
+    .readonly();
+
+export const m9b2TrustedEvaluatorTerminalMeasurementRecordSchema =
+  m9b2TrustedEvaluatorTerminalMeasurementBodySchema
+    .unwrap()
+    .safeExtend({ recordDigest: digestSchema })
+    .readonly();
+export type M9b2TrustedEvaluatorTerminalMeasurementRecord = z.infer<
+  typeof m9b2TrustedEvaluatorTerminalMeasurementRecordSchema
+>;
+
 export type M9b2TerminalMeasurementVerification = Readonly<{
   suite: M9b2PreparedSuite;
   caseId: string;
@@ -1101,9 +1147,19 @@ function programIdentityOf(record: M9b1ArmRecord): string | null {
  * complete terminal arm record. It performs no retrieval, model, or evaluator
  * dispatch.
  */
-export async function measureM9b2VerifiedTerminalRecord(
+async function deriveM9b2VerifiedTerminalRecord(
   input: M9b2TerminalMeasurementVerification,
-): Promise<Result<M9b2TerminalMeasurementRecord, Diagnostic>> {
+  trustedEvaluator: Readonly<{ id: string; version: string }>,
+  recordProtocol:
+    | typeof M9B2_PERSISTENCE_PROTOCOL.record
+    | "lachesis-m9b3c-trusted-evaluator-terminal-measurement-record/1",
+): Promise<
+  Result<
+    | M9b2TerminalMeasurementRecord
+    | M9b2TrustedEvaluatorTerminalMeasurementRecord,
+    Diagnostic
+  >
+> {
   const prepared = suites.get(input.suite)?.cases.get(input.caseId);
   const stored = m9b1InternalInspectVerifiedTerminalRecord(
     input.verifiedRecord,
@@ -1125,7 +1181,7 @@ export async function measureM9b2VerifiedTerminalRecord(
     record.comparisonDigest !== input.expected.comparisonDigest ||
     !canonicalEqual(record.model, input.expected.model) ||
     !canonicalEqual(record.evaluator, input.expected.evaluator) ||
-    !canonicalEqual(record.evaluator, M9B2_EVALUATOR_IDENTITY) ||
+    !canonicalEqual(record.evaluator, trustedEvaluator) ||
     actualProgramIdentity !== input.expected.programIdentity
   )
     return invalid("M9b.2 verified terminal record is cross-bound.");
@@ -1145,7 +1201,7 @@ export async function measureM9b2VerifiedTerminalRecord(
     }
   })();
 
-  let evaluation: M9b2EvaluationScore | null = null;
+  let evaluation: M9b2TrustedEvaluatorScore | null = null;
   let evaluationAttemptDigest: string | null = null;
   let runAnswerDigest: string | null = null;
   if (
@@ -1165,7 +1221,7 @@ export async function measureM9b2VerifiedTerminalRecord(
         record.outcome.evaluationAttempt.serializedOutput,
       );
       const score = parsedOutput.ok
-        ? m9b2EvaluationScoreSchema.safeParse(parsedOutput.value)
+        ? m9b2TrustedEvaluatorScoreSchema.safeParse(parsedOutput.value)
         : undefined;
       const answer = m9aCitationConfinedAnswerSchema.safeParse(
         stored.result.run?.answer,
@@ -1173,10 +1229,15 @@ export async function measureM9b2VerifiedTerminalRecord(
       if (
         score?.success !== true ||
         !answer.success ||
-        score.data.caseId !== input.caseId
+        score.data.caseId !== input.caseId ||
+        score.data.evaluatorVersion !== trustedEvaluator.version
       )
         return invalid("M9b.2 persisted evaluator output is invalid.");
-      const recomputed = evaluatePreparedCase(prepared, answer.data);
+      const recomputed = evaluatePreparedCase(
+        prepared,
+        answer.data,
+        trustedEvaluator.version,
+      );
       if (!canonicalEqual(recomputed, score.data))
         return invalid(
           "M9b.2 persisted evaluation does not match the bound run answer.",
@@ -1237,8 +1298,8 @@ export async function measureM9b2VerifiedTerminalRecord(
         stored.result.run.transcript.retrievalUsage.rootModelCalls +
         stored.result.run.transcript.retrievalUsage.leafModelCalls;
   const knownMetric = (value: number) => ({ kind: "known" as const, value });
-  const body = terminalMeasurementBodySchema.parse({
-    protocol: M9B2_PERSISTENCE_PROTOCOL.record,
+  const bodyInput = {
+    protocol: recordProtocol,
     measurementProtocol: {
       id: M9B2_MEASUREMENT_PROTOCOL.id,
       version: M9B2_MEASUREMENT_PROTOCOL.version,
@@ -1305,9 +1366,14 @@ export async function measureM9b2VerifiedTerminalRecord(
           : knownMetric(modelCallCount),
       compilationAccepted: record.compilation?.status === "accepted",
     },
-  });
+  };
+  const body =
+    recordProtocol === M9B2_PERSISTENCE_PROTOCOL.record
+      ? terminalMeasurementBodySchema.parse(bodyInput)
+      : m9b2TrustedEvaluatorTerminalMeasurementBodySchema.parse(bodyInput);
   const recordDigest = await digestValue(body);
-  return recordDigest.ok
+  if (!recordDigest.ok) return recordDigest;
+  return recordProtocol === M9B2_PERSISTENCE_PROTOCOL.record
     ? {
         ok: true,
         value: m9b2TerminalMeasurementRecordSchema.parse({
@@ -1315,7 +1381,72 @@ export async function measureM9b2VerifiedTerminalRecord(
           recordDigest: recordDigest.value,
         }),
       }
-    : recordDigest;
+    : {
+        ok: true,
+        value: m9b2TrustedEvaluatorTerminalMeasurementRecordSchema.parse({
+          ...body,
+          recordDigest: recordDigest.value,
+        }),
+      };
+}
+
+export async function measureM9b2VerifiedTerminalRecord(
+  input: M9b2TerminalMeasurementVerification,
+): Promise<Result<M9b2TerminalMeasurementRecord, Diagnostic>> {
+  const derived = await deriveM9b2VerifiedTerminalRecord(
+    input,
+    M9B2_EVALUATOR_IDENTITY,
+    M9B2_PERSISTENCE_PROTOCOL.record,
+  );
+  if (!derived.ok) return derived;
+  const parsed = m9b2TerminalMeasurementRecordSchema.safeParse(derived.value);
+  return parsed.success
+    ? { ok: true, value: parsed.data }
+    : invalid("M9b.2 development measurement record is invalid.");
+}
+
+/** @internal M9b.3c verifier for an independently trusted evaluator identity. */
+export async function measureM9b2VerifiedTerminalRecordForTrustedEvaluator(
+  input: M9b2TerminalMeasurementVerification,
+  trustedEvaluator: unknown,
+): Promise<Result<M9b2TrustedEvaluatorTerminalMeasurementRecord, Diagnostic>> {
+  const parsedEvaluator =
+    measurementModelIdentitySchema.safeParse(trustedEvaluator);
+  if (!parsedEvaluator.success)
+    return invalid("M9b.3c trusted evaluator identity is invalid.");
+  const derived = await deriveM9b2VerifiedTerminalRecord(
+    input,
+    parsedEvaluator.data,
+    "lachesis-m9b3c-trusted-evaluator-terminal-measurement-record/1",
+  );
+  if (!derived.ok) return derived;
+  const parsed = m9b2TrustedEvaluatorTerminalMeasurementRecordSchema.safeParse(
+    derived.value,
+  );
+  return parsed.success
+    ? { ok: true, value: parsed.data }
+    : invalid("M9b.3c trusted evaluator measurement record is invalid.");
+}
+
+/** @internal Re-derives a trusted-evaluator record from its opaque source. */
+export async function verifyM9b2TrustedEvaluatorTerminalMeasurementRecord(
+  value: unknown,
+  verification: M9b2TerminalMeasurementVerification,
+  trustedEvaluator: unknown,
+): Promise<Result<M9b2TrustedEvaluatorTerminalMeasurementRecord, Diagnostic>> {
+  const parsed =
+    m9b2TrustedEvaluatorTerminalMeasurementRecordSchema.safeParse(value);
+  if (!parsed.success)
+    return invalid("M9b.3c trusted evaluator measurement record is invalid.");
+  const rederived = await measureM9b2VerifiedTerminalRecordForTrustedEvaluator(
+    verification,
+    trustedEvaluator,
+  );
+  return rederived.ok && canonicalEqual(rederived.value, parsed.data)
+    ? { ok: true, value: parsed.data }
+    : invalid(
+        "M9b.3c trusted evaluator measurement record does not match its independently verified source.",
+      );
 }
 
 export async function verifyM9b2TerminalMeasurementRecord(
