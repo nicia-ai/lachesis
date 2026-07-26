@@ -216,6 +216,7 @@ type PreparedCase = Readonly<{
   expectation: M9b2HiddenExpectation;
   splitIdentity: M9b2SplitIdentity;
   snapshotDigest: string;
+  corpusBytes: number;
   chunksById: ReadonlyMap<string, M9aChunkIdentity>;
   supportingFactsById: ReadonlyMap<string, M9b2SupportingFactIdentity>;
   semanticProblemIdentity: string;
@@ -551,6 +552,7 @@ export async function prepareM9b2DevelopmentSuite(
           solutionStrategyClass: publicCase.strategyId,
         }),
         snapshotDigest: snapshot.snapshotDigest,
+        corpusBytes: snapshot.corpusBytes,
         chunksById: new Map(chunks.map((chunk) => [chunk.id, chunk])),
         supportingFactsById: new Map(supportingFacts),
         semanticProblemIdentity: semanticProblemIdentity.value,
@@ -584,6 +586,47 @@ export type M9b2PreparedCaseInspection = Readonly<{
   snapshotDigest: string;
   chunks: ReadonlyArray<M9aChunkIdentity>;
 }>;
+
+export type M9b2PreparedSuiteCaseInspection = Readonly<{
+  caseId: string;
+  family: M9b2TaskFamily;
+  scale: M9b2CorpusScale;
+  snapshotDigest: string;
+  corpusBytes: number;
+  semanticProblemIdentity: string;
+}>;
+
+export type M9b2PreparedSuiteInspection = Readonly<{
+  suiteDigest: string;
+  cases: ReadonlyArray<M9b2PreparedSuiteCaseInspection>;
+}>;
+
+/** @internal Complete public inventory for private prospective population binding. */
+export function inspectM9b2PreparedSuite(
+  suite: M9b2PreparedSuite,
+): M9b2PreparedSuiteInspection | undefined {
+  const stored = suites.get(suite);
+  if (stored === undefined) return undefined;
+  return Object.freeze({
+    suiteDigest: stored.suiteDigest,
+    cases: Object.freeze(
+      [...stored.cases.values()]
+        .map((prepared) =>
+          Object.freeze({
+            caseId: prepared.publicCase.id,
+            family: prepared.publicCase.family,
+            scale: prepared.publicCase.scale,
+            snapshotDigest: prepared.snapshotDigest,
+            corpusBytes: prepared.corpusBytes,
+            semanticProblemIdentity: prepared.semanticProblemIdentity,
+          }),
+        )
+        .toSorted((left, right) =>
+          left.caseId < right.caseId ? -1 : left.caseId > right.caseId ? 1 : 0,
+        ),
+    ),
+  });
+}
 
 /** @internal Test and offline-analysis inspection; it exposes no hidden gold. */
 export function inspectM9b2PreparedCase(

@@ -1,23 +1,34 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.3 offline prospective preparation only; M9b is not materialized or
-authorized**.
+Status: **M9b.3a offline prospective preparation correction only; M9b is not
+materialized or authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
 external corpora. M9a does not create a final corpus, campaign, preregistration,
 provider identity, credential preflight, executable live state, or authorization
 text.
 
-## M9b.3 offline prospective preparation
+## M9b.3a offline prospective preparation correction
 
-M9b.3 adds the private
-`lachesis-m9b3-offline-prospective-study-preparation@1.0.0` artifact. It freezes
-the exact binding contract for a candidate provider, shared model, request
-protocol and serializer, exact tokenizer artifacts and conformance vectors,
-pricing snapshot, prompt and accepted measurement-boundary identities, balanced
+M9b.3a supersedes the private M9b.3 identities with
+`lachesis-m9b3a-offline-prospective-study-preparation@1.0.0`. It freezes the
+exact binding contract for a candidate provider, shared model, request protocol
+and serializer, exact tokenizer artifacts and conformance vectors, pricing
+snapshot, prompt and accepted measurement-boundary identities, balanced
 allocation, seed commitments, counterbalance algorithm, matched budgets,
 advancement and kill gates, and offline preregistration draft. Full details are
-in [M9b.3 offline prospective preparation](./m9b3-offline-preparation.md).
+in [M9b.3a offline prospective preparation](./m9b3-offline-preparation.md).
+
+The exact probe decision now uses 95% Bonferroni-joint one-sided Clopper–Pearson
+lower bounds for discordance and conditional discovered wins, then requires
+lower-bound exact McNemar power at 168 pairs to reach 80%. Corpus scale is the
+snapshot's canonical UTF-8 document-text bytes with frozen, nonoverlapping
+ranges. Separate opaque probe and primary suites bind complete inventories and
+must pass M9b.2d split disjointness. The deterministic schedule materializer
+freezes canonical hash frames, sorting, tie-breaking, odd-cell arm alternation,
+and probe-before-primary execution, and has a zero-effect verifier. The complete
+cost ceiling requires a local zero-provider evaluator and exactly zero
+SDK/controller retries.
 
 The preparation accepts an independently trusted candidate provider profile and
 rederives every component digest plus the outer artifact. This is a binding, not
@@ -414,8 +425,8 @@ security review confirming:
 - no stable API, release, or provider boundary was widened.
 
 M9b.1b and M9b.2d have passed their offline reviews. M9b remains **NO-GO** after
-M9b.3 because the candidate provider profile is not conformance evidence; no
+M9b.3a because the candidate provider profile is not conformance evidence; no
 corpus, final gold/evaluator, schedule, empirical discordance result, external
 preregistration, adapter, credentials, or explicit live authorization exists.
-M9b.3 does not authorize corpus construction, provider integration, a held-out
+M9b.3a does not authorize corpus construction, provider integration, a held-out
 campaign, or live execution.
