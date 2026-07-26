@@ -1,12 +1,95 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.1b offline program-discovery boundary only; M9b is not
+Status: **M9b.2 offline scientific-measurement design only; M9b is not
 materialized or authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
 external corpora. M9a does not create a final corpus, campaign, preregistration,
 provider identity, credential preflight, executable live state, or authorization
 text.
+
+## M9b.2 offline scientific-measurement design
+
+The private `lachesis-m9b2-offline-scientific-measurement@1.0.0` protocol
+freezes the development-only measurement rules without changing M9a, M9b.0, or
+M9b.1b's protocol identities and without adding a generator-facade export. Its
+content-addressed design digest covers the task taxonomy, scale taxonomy, answer
+normalization, semantic-support rule, primary and secondary endpoints, evaluator
+reliability gate, prospective power method, split policy, and explicit absence
+of live authority. It does not cover or freeze a final corpus, provider, model,
+campaign, schedule, or preregistration.
+
+The offline development fixture contains 24 substrate-neutral natural-document
+cases: lookup, join, multi-hop, temporal/retraction, contradiction, aggregation,
+insufficient-evidence, and prompt-injection tasks crossed with 1x, 8x, and 32x
+distractor scales. Within each family, the public task, relevant prose, solution
+strategy, accepted response, and evidence contract stay fixed; only unrelated
+background-document volume changes. The corpus/task fixture and hidden answer
+and evidence expectations live in separate modules. These are development
+fixtures, not the eventual held-out corpus. Preparing them uses M9a's immutable,
+content-addressed corpus implementation, but no final corpus identity is frozen.
+
+Each prepared development case derives separate case, normalized-task,
+ID-independent document-content, whole-corpus-content, and semantic-contract
+identities. The prospective split audit rejects overlap on any scalar dimension,
+rejects reuse of even one development document, and rejects duplicate case
+identities within a split. The eventual held-out namespace is reserved but has
+no materialized cases or identities. Distinct names or versions alone therefore
+cannot disguise reused task, corpus, document, or evaluator content.
+
+The `lachesis.m9b2.offline-arm-blind-evaluator@1.0.0-development` evaluator
+implements the existing M9b.1 external-evaluator interface. It is bound to one
+case and sees only that case's public task and submitted citation-confined
+answer; its callable interface has no arm label. Exact NFC-bound snapshot chunk
+identities are checked against the prepared corpus. A submitted answer is
+semantically supported only when:
+
+- its NFKC, lowercased, whitespace-collapsed, terminal-punctuation-stripped form
+  exactly matches a frozen accepted answer or abstention;
+- the observed answer/abstention kind is correct;
+- citations are exact chunks from the bound corpus snapshot;
+- at least one complete required-evidence set is cited;
+- every cited document belongs to the allowed support set; and
+- an abstention has no citations.
+
+This is a deterministic categorical evaluator for these fixtures, not a claim
+that string normalization solves open-ended semantic evaluation. Reliability
+validation requires 100% expected fixture agreement, 100% repeated-output
+identity, and coverage of all eight task families. The current 16-fixture
+positive/hostile suite passes both 100% gates; changing an expected outcome
+causes the advancement result to stop as unreliable. Reports replay from their
+fixtures and reject altered content or digests.
+
+The primary endpoint is frozen as
+`first-attempt-semantically-supported-end-to-end-success`. It is true only when
+authoring, first compilation, execution, and external evaluation all complete on
+the first attempt and the evaluator reports semantic support. A compile
+rejection or any earlier terminal failure is therefore a primary failure, not a
+missing observation. Secondary extraction separately records retrieved-evidence
+recall and precision, citation validity, correct abstention, bytes read,
+retrieval calls, model calls, compilation acceptance, input/output/reasoning
+tokens, latency, and cost. A real deterministic M9a run validates this
+measurement path offline.
+
+Prospective paired power uses exact one-sided conditional McNemar scenario
+analysis with family alpha 0.05, target power 0.80, and a practical ceiling of
+480 paired cases. It does not treat mock-fixture outcomes as a model effect
+estimate. Under an explicitly assumed 16% discovered-only versus 6% static-only
+discordance pattern, the method requires 146 pairs and has 99.90% power at the
+ceiling. Under a 12% versus 8% pattern, power is only 58.58% at the ceiling and
+the required sample is recorded as unknown beyond that ceiling. An 8% versus 8%
+no-effect scenario has no positive-effect sample-size result. Empirical power
+remains `unknown` because no offline development model discordance estimate
+exists.
+
+M9b.2 therefore ends with **M9b NO-GO**. The evaluator fixture gate passes, but
+practical power is assumption-sensitive and fails under the modest scenario; the
+final held-out corpus is absent; and provider request/tokenizer/pricing
+boundaries are not frozen. This milestone creates no provider adapter, provider
+call, corpus campaign, preregistration, final corpus identity, public API,
+package version, release artifact, or superiority claim. It is AI-assisted
+architecture and measurement work, not a professional security audit,
+penetration test, compliance assessment, or scientific result.
 
 ## M9b.0.2 offline boundary correction
 
@@ -197,23 +280,22 @@ confounded.
 
 ## Workloads
 
-Fresh development and held-out corpora would be disjoint. Workloads should cover
-lookup, joins, multi-hop resolution, temporal changes and retractions,
-contradictions, exhaustive aggregation, insufficient evidence, and
-document-embedded prompt injection. Each task family should have approximately
-1×, 8×, and 32× corpus-scale variants while preserving the solution strategy.
+The M9b.2 development fixtures cover lookup, joins, multi-hop resolution,
+temporal changes and retractions, contradictions, exhaustive aggregation,
+insufficient evidence, and document-embedded prompt injection at approximately
+1x, 8x, and 32x scale while preserving the solution strategy. Any eventual fresh
+held-out corpus must satisfy the multidimensional split-disjointness audit and
+must not reuse these development tasks, content, or semantic contracts.
 
 ## Outcomes
 
-M9a's submission endpoint establishes citation confinement only. Before M9b, the
-study must freeze an answer-and-abstention evaluator with task-level gold
-answers, support criteria, disagreement handling, and a scoring policy that is
-external to both arms. Only that frozen evaluator may define a prospective
-primary endpoint such as first-attempt semantically supported end-to-end
-success. Secondary outcomes would include required-evidence recall, retrieved
-evidence precision, citation validity, correct abstention, bytes read,
-search/read/root/leaf calls, input/output/reasoning tokens, known monetary cost,
-and latency.
+M9a's submission endpoint establishes citation confinement only. M9b.2 freezes
+the development evaluator rules, task-level gold shape, support criteria, and
+scoring policy external to both arms. It also freezes the prospective primary
+endpoint and secondary metric definitions described above. An eventual campaign
+would still need a separately frozen final evaluator/corpus identity and an
+independent reliability review; the development evaluator identity is not a
+campaign identity.
 
 Power and sample size remain unknown until a development study supplies a
 discordance estimate. Provider, model, prompt, pricing, capacity, operational
@@ -260,9 +342,11 @@ security review confirming:
 - private replay performs zero corpus and model effects; and
 - no stable API, release, or provider boundary was widened.
 
-M9b remains **NO-GO** until M9b.1b independently passes architecture/security
-review and the corpus, external semantic/abstention evaluator,
-provider/model/prompt/tokenizer/pricing identities, randomized schedule,
-operational budget, preregistration, and explicit live authorization are frozen
-and independently reviewed. M9b.1b does not satisfy those live-study gates and
-does not authorize provider adapters, corpus construction, or live execution.
+M9b.1b has passed its offline architecture/security review. M9b remains
+**NO-GO** after M9b.2 because there is no empirical development discordance
+estimate, the modest power scenario exceeds the practical case ceiling, and the
+fresh final corpus, final external evaluator identity, provider/model/prompt/
+tokenizer/pricing identities, randomized schedule, operational budget,
+preregistration, and explicit live authorization are not frozen or independently
+reviewed. M9b.2 does not authorize provider adapters, a held-out corpus
+campaign, or live execution.

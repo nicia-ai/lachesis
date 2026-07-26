@@ -423,6 +423,16 @@ export function inspectM9aCorpus(
   return corpora.get(corpus)?.snapshot;
 }
 
+/** @internal Private measurement seam; not exported from the package facade. */
+export function m9aInternalInspectChunkIdentities(
+  corpus: M9aCorpus,
+): ReadonlyArray<M9aChunkIdentity> | undefined {
+  const stored = corpora.get(corpus);
+  return stored === undefined
+    ? undefined
+    : freezeArray(stored.chunks.map((chunk) => chunk.identity));
+}
+
 export function searchM9aCorpus(
   corpus: M9aCorpus,
   request: M9aSearchRequest,
