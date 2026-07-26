@@ -5,8 +5,20 @@ import {
   type Result,
 } from "@nicia-ai/lachesis";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
-import { createM9aCorpus, type M9aCorpus } from "../src/m9a-corpus.js";
+import {
+  createM9aCorpus,
+  inspectM9aCorpus,
+  type M9aCorpus,
+  type M9aCorpusSnapshot,
+} from "../src/m9a-corpus.js";
+import {
+  M9A_RETRIEVAL_CODEMODE_PROTOCOL,
+  type M9aPrivateReplayArtifact,
+  m9aPrivateReplayArtifactSchema,
+  type M9aRetrievalRun,
+} from "../src/m9a-retrieval.js";
 import {
   createM9b0ArmStore,
   inspectM9b0SerializedRequest,
@@ -20,6 +32,7 @@ import {
   type M9b0OfflineModel,
   runM9b0OfflineComparison,
 } from "../src/m9b0-comparison.js";
+import { strictJsonValueSchema } from "../src/strict-json.js";
 
 function unwrap<T>(result: Result<T, unknown>): T {
   if (!result.ok)
@@ -102,6 +115,26 @@ async function corpusFixture(text?: string): Promise<M9aCorpus> {
   );
 }
 
+async function alternateCorpusSnapshot(): Promise<M9aCorpusSnapshot> {
+  const corpus = unwrap(
+    await createM9aCorpus({
+      id: "m9b0-alternate",
+      version: "2",
+      documents: [
+        {
+          id: "other",
+          title: "Other record",
+          text: "An unrelated immutable snapshot.",
+        },
+      ],
+    }),
+  );
+  const snapshot = inspectM9aCorpus(corpus);
+  if (snapshot === undefined)
+    throw new Error("Expected an inspectable alternate corpus snapshot.");
+  return snapshot;
+}
+
 type ModelOptions = Readonly<{
   fail?: boolean | undefined;
   invalidOutput?: boolean | undefined;
@@ -173,6 +206,112 @@ function comparisonInput(
     store: createM9b0ArmStore(input.persistence),
   };
 }
+
+async function resignArmRecord(
+  record: M9b0ArmRecord,
+  changes: Readonly<{
+    modelRequests?: ReadonlyArray<M9b0BoundModelRequest> | undefined;
+    outcome?: M9b0ArmRecord["outcome"] | undefined;
+  }>,
+): Promise<M9b0ArmRecord> {
+  const body = {
+    protocol: record.protocol,
+    comparisonDigest: record.comparisonDigest,
+    arm: record.arm,
+    corpusSnapshotDigest: record.corpusSnapshotDigest,
+    taskDigest: record.taskDigest,
+    model: record.model,
+    envelope: record.envelope,
+    modelRequests: changes.modelRequests ?? record.modelRequests,
+    outcome: changes.outcome ?? record.outcome,
+  };
+  return { ...body, recordDigest: unwrap(await digestValue(body)) };
+}
+
+async function resignReplayArtifact(
+  artifact: M9aPrivateReplayArtifact,
+  binding: Readonly<{
+    corpus: M9aCorpusSnapshot;
+    model: Readonly<{ id: string; version: string }>;
+    expectedTranscriptDigest: string;
+    expectedRunDigest: string;
+  }>,
+): Promise<M9aPrivateReplayArtifact> {
+  const body = {
+    protocol: artifact.protocol,
+    retrievalProtocol: artifact.retrievalProtocol,
+    source: artifact.source,
+    sourceHash: artifact.sourceHash,
+    semanticContractHash: artifact.semanticContractHash,
+    task: artifact.task,
+    corpus: binding.corpus,
+    model: binding.model,
+    entries: artifact.entries,
+    expectedTranscriptDigest: binding.expectedTranscriptDigest,
+    expectedAnswerDigest: artifact.expectedAnswerDigest,
+    expectedRunDigest: binding.expectedRunDigest,
+  };
+  return m9aPrivateReplayArtifactSchema.parse({
+    ...body,
+    artifactDigest: unwrap(await digestValue(body)),
+  });
+}
+
+function persistenceWithRecord(record: M9b0ArmRecord): M9b0AtomicPersistence {
+  const content = unwrap(
+    canonicalizeJson({
+      protocol: "lachesis-m9b0-atomic-arm-store/1",
+      records: [record],
+    }),
+  );
+  return {
+    read: () =>
+      Promise.resolve({
+        ok: true,
+        value: { revision: "1", content },
+      }),
+    writeAtomic: () => Promise.resolve({ ok: true, value: { revision: "2" } }),
+  };
+}
+
+async function expectResumeRejection(
+  corpus: M9aCorpus,
+  record: M9b0ArmRecord,
+): Promise<void> {
+  const persistence = persistenceWithRecord(record);
+  const result = await runM9b0OfflineComparison(
+    comparisonInput({ corpus, persistence }),
+  );
+  expect(result).toMatchObject({ ok: false, error: { kind: "resume" } });
+}
+
+function successfulSequencedRun(
+  comparison: Readonly<{
+    sequenced: Readonly<{
+      record: M9b0ArmRecord;
+      run?: M9aRetrievalRun | undefined;
+    }>;
+  }>,
+): Readonly<{ record: M9b0ArmRecord; run: M9aRetrievalRun }> {
+  const { record, run } = comparison.sequenced;
+  if (record.outcome.status !== "success" || run === undefined)
+    throw new Error("Expected a successful sequenced fixture arm.");
+  return { record, run };
+}
+
+const decomposeRequestBodySchema = z
+  .strictObject({
+    protocol: z.strictObject({ id: z.string(), version: z.string() }),
+    tokenizer: z.string(),
+    prompt: z.string(),
+    responseSchema: strictJsonValueSchema,
+    reasoning: z.strictObject({
+      enabled: z.literal(false),
+      maxTokens: z.literal(0),
+    }),
+    input: z.string(),
+  })
+  .readonly();
 
 describe("M9b.0 offline comparison protocol", () => {
   it("freezes a separate offline-only protocol and matched model envelope", () => {
@@ -520,7 +659,7 @@ describe("M9b.0 offline comparison protocol", () => {
     }
   });
 
-  it("fails closed on tampered replay or missing model-request receipts", async () => {
+  it("fails closed on tampered replay, record identity, or model-request receipts", async () => {
     const corpus = await corpusFixture();
     const firstPersistence = memoryPersistence();
     const first = unwrap(
@@ -560,7 +699,22 @@ describe("M9b.0 offline comparison protocol", () => {
       modelRequests: [],
       outcome: original.outcome,
     };
-    for (const body of [corruptReplayBody, missingReceiptsBody]) {
+    const reorderedReceiptsBody = {
+      ...baseBody,
+      modelRequests: original.modelRequests.toReversed(),
+      outcome: original.outcome,
+    };
+    const crossBoundRecordBody = {
+      ...baseBody,
+      model: { id: original.model.id, version: "9.0.0" },
+      outcome: original.outcome,
+    };
+    for (const body of [
+      corruptReplayBody,
+      missingReceiptsBody,
+      reorderedReceiptsBody,
+      crossBoundRecordBody,
+    ]) {
       const corruptRecord: M9b0ArmRecord = {
         ...body,
         recordDigest: unwrap(await digestValue(body)),
@@ -588,6 +742,146 @@ describe("M9b.0 offline comparison protocol", () => {
       });
       expect(result).toMatchObject({ ok: false, error: { kind: "resume" } });
     }
+  });
+
+  it("rejects a self-consistent arm record with a cross-bound run digest", async () => {
+    expect.hasAssertions();
+    const corpus = await corpusFixture();
+    const persistence = memoryPersistence();
+    const compared = unwrap(
+      await runM9b0OfflineComparison(
+        comparisonInput({ corpus, persistence: persistence.persistence }),
+      ),
+    );
+    const { record } = successfulSequencedRun(compared);
+    if (record.outcome.status !== "success")
+      throw new Error("Expected a successful fixture arm.");
+    const tampered = await resignArmRecord(record, {
+      outcome: {
+        ...record.outcome,
+        runDigest: "0".repeat(64),
+      },
+    });
+    await expectResumeRejection(corpus, tampered);
+  });
+
+  it("rejects a self-consistent replay bound to another model identity", async () => {
+    expect.hasAssertions();
+    const corpus = await corpusFixture();
+    const persistence = memoryPersistence();
+    const compared = unwrap(
+      await runM9b0OfflineComparison(
+        comparisonInput({ corpus, persistence: persistence.persistence }),
+      ),
+    );
+    const { record, run } = successfulSequencedRun(compared);
+    if (record.outcome.status !== "success")
+      throw new Error("Expected a successful fixture arm.");
+    const model = { id: "cross-bound-model", version: "9.0.0" };
+    const transcript = { ...run.transcript, model };
+    const expectedTranscriptDigest = unwrap(await digestValue(transcript));
+    const expectedRunDigest = unwrap(
+      await digestValue({
+        protocol: M9A_RETRIEVAL_CODEMODE_PROTOCOL,
+        transcript,
+        answer: run.answer,
+      }),
+    );
+    const replayArtifact = await resignReplayArtifact(
+      record.outcome.replayArtifact,
+      {
+        corpus: record.outcome.replayArtifact.corpus,
+        model,
+        expectedTranscriptDigest,
+        expectedRunDigest,
+      },
+    );
+    const tampered = await resignArmRecord(record, {
+      outcome: {
+        status: "success",
+        runDigest: expectedRunDigest,
+        replayArtifact,
+      },
+    });
+    await expectResumeRejection(corpus, tampered);
+  });
+
+  it("rejects a self-consistent replay bound to another corpus snapshot", async () => {
+    expect.hasAssertions();
+    const corpus = await corpusFixture();
+    const persistence = memoryPersistence();
+    const compared = unwrap(
+      await runM9b0OfflineComparison(
+        comparisonInput({ corpus, persistence: persistence.persistence }),
+      ),
+    );
+    const { record, run } = successfulSequencedRun(compared);
+    if (record.outcome.status !== "success")
+      throw new Error("Expected a successful fixture arm.");
+    const replayCorpus = await alternateCorpusSnapshot();
+    const transcript = {
+      ...run.transcript,
+      corpusSnapshotDigest: replayCorpus.snapshotDigest,
+    };
+    const expectedTranscriptDigest = unwrap(await digestValue(transcript));
+    const expectedRunDigest = unwrap(
+      await digestValue({
+        protocol: M9A_RETRIEVAL_CODEMODE_PROTOCOL,
+        transcript,
+        answer: run.answer,
+      }),
+    );
+    const replayArtifact = await resignReplayArtifact(
+      record.outcome.replayArtifact,
+      {
+        corpus: replayCorpus,
+        model: record.outcome.replayArtifact.model,
+        expectedTranscriptDigest,
+        expectedRunDigest,
+      },
+    );
+    const tampered = await resignArmRecord(record, {
+      outcome: {
+        status: "success",
+        runDigest: expectedRunDigest,
+        replayArtifact,
+      },
+    });
+    await expectResumeRejection(corpus, tampered);
+  });
+
+  it("rejects a self-consistent request whose input is cross-bound from its event", async () => {
+    const corpus = await corpusFixture();
+    const persistence = memoryPersistence();
+    const compared = unwrap(
+      await runM9b0OfflineComparison(
+        comparisonInput({ corpus, persistence: persistence.persistence }),
+      ),
+    );
+    const { record } = successfulSequencedRun(compared);
+    const request = record.modelRequests.at(0);
+    if (request?.phase !== "decompose")
+      throw new Error("Expected a root-model request receipt.");
+    const parsed = decomposeRequestBodySchema.parse(
+      unwrap(inspectM9b0SerializedRequest(request)),
+    );
+    const changedBody = {
+      ...parsed,
+      input: "When did Project Birch launch?",
+    };
+    const serializedRequest = unwrap(canonicalizeJson(changedBody));
+    expect(new TextEncoder().encode(serializedRequest).byteLength).toBe(
+      request.reservation.inputTokens,
+    );
+    const changedRequest: M9b0BoundModelRequest = {
+      ...request,
+      serializedRequest,
+      requestDigest: unwrap(await digestValue(changedBody)),
+    };
+    const tampered = await resignArmRecord(record, {
+      modelRequests: [changedRequest, ...record.modelRequests.slice(1)],
+    });
+    await expectResumeRejection(corpus, tampered);
   });
 
   it("supports reversed frozen order without sharing sessions", async () => {

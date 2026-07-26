@@ -30,6 +30,7 @@ import {
   type M9aPartialAnswer,
   type M9aPrivateReplayArtifact,
   m9aPrivateReplayArtifactSchema,
+  type M9aRetrievalArtifactSummary,
   type M9aRetrievalRun,
   type M9aRunFailure,
   replayM9aRetrievalProgramWithProfile,
@@ -38,12 +39,12 @@ import { type StrictJsonValue, strictJsonValueSchema } from "./strict-json.js";
 
 export const M9B0_OFFLINE_COMPARISON_PROTOCOL = Object.freeze({
   id: "lachesis-m9b0-offline-retrieval-comparison",
-  version: "1.0.0",
+  version: "1.0.1",
   visibility: "internal-offline-development-only" as const,
   tokenizer: "utf8-byte-exact-offline-reference/1" as const,
   requestSerialization: "lachesis-canonical-json/1" as const,
   claimBoundary:
-    "offline comparison-protocol infrastructure only; this protocol makes no semantic-quality, retrieval-superiority, generalization, live-provider, or production-readiness claim",
+    "offline comparison-protocol infrastructure only; this protocol makes no program-discovery, semantic-quality, retrieval-superiority, generalization, live-provider, or production-readiness claim",
 });
 
 export const M9B0_MATCHED_MODEL_ENVELOPE = Object.freeze({
@@ -823,34 +824,86 @@ async function createArmRecord(
     : recordDigest;
 }
 
-function modelRequestsMatchRun(
+async function modelRequestsMatchRun(
   requests: ReadonlyArray<M9b0BoundModelRequest>,
   run: M9aRetrievalRun,
-): boolean {
+): Promise<boolean> {
   const modelEvents = run.transcript.events.filter(
     (event) =>
       event.category === "root-model" || event.category === "leaf-model",
   );
+  if (modelEvents.length !== requests.length) return false;
+  for (const [index, event] of modelEvents.entries()) {
+    const request = requests.at(index);
+    if (
+      request?.phase !==
+        (event.category === "root-model" ? "decompose" : "answer") ||
+      request.reservation.inputTokens !== event.usage.inputTokens ||
+      event.usage.outputTokens > request.reservation.maxOutputTokens ||
+      event.usage.wallClockMs > request.reservation.maxWallClockMs
+    )
+      return false;
+    const parsed = parseJson(request.serializedRequest);
+    if (!parsed.ok) return false;
+    const body = requestBodySchema.safeParse(parsed.value);
+    if (!body.success) return false;
+    const inputDigest = await digestValue(body.data.input);
+    if (!inputDigest.ok || inputDigest.value !== event.inputDigest)
+      return false;
+  }
+  return true;
+}
+
+type ExpectedResumeBinding = Readonly<{
+  source: string;
+  artifact: M9aRetrievalArtifactSummary;
+  task: string;
+  taskDigest: string;
+  corpusSnapshotDigest: string;
+  model: M9b0ModelIdentity;
+}>;
+
+function sameModelIdentity(
+  left: M9b0ModelIdentity,
+  right: M9b0ModelIdentity,
+): boolean {
+  return left.id === right.id && left.version === right.version;
+}
+
+function successMatchesResumeBinding(
+  record: M9b0ArmRecord,
+  outcome: z.infer<typeof successOutcomeSchema>,
+  binding: ExpectedResumeBinding,
+): boolean {
+  const replay = outcome.replayArtifact;
   return (
-    modelEvents.length === requests.length &&
-    modelEvents.every((event, index) => {
-      const request = requests.at(index);
-      return (
-        request?.phase ===
-          (event.category === "root-model" ? "decompose" : "answer") &&
-        request.reservation.inputTokens === event.usage.inputTokens &&
-        event.usage.outputTokens <= request.reservation.maxOutputTokens &&
-        event.usage.wallClockMs <= request.reservation.maxWallClockMs
-      );
-    })
+    outcome.runDigest === replay.expectedRunDigest &&
+    record.taskDigest === binding.taskDigest &&
+    record.corpusSnapshotDigest === binding.corpusSnapshotDigest &&
+    sameModelIdentity(record.model, binding.model) &&
+    replay.source === binding.source &&
+    replay.sourceHash === binding.artifact.sourceHash &&
+    replay.semanticContractHash === binding.artifact.semanticContractHash &&
+    replay.task === binding.task &&
+    replay.corpus.snapshotDigest === binding.corpusSnapshotDigest &&
+    sameModelIdentity(replay.model, binding.model)
   );
 }
 
 async function resumedArm(
   record: M9b0ArmRecord,
+  binding: ExpectedResumeBinding,
 ): Promise<Result<M9b0ArmResult, M9b0ComparisonFailure>> {
   if (record.outcome.status === "failure")
     return { ok: true, value: { arm: record.arm, resumed: true, record } };
+  if (!successMatchesResumeBinding(record, record.outcome, binding))
+    return {
+      ok: false,
+      error: comparisonFailure(
+        "resume",
+        "Persisted M9b.0 success record is cross-bound from the frozen comparison identity.",
+      ),
+    };
   const replayed = await replayM9aRetrievalProgramWithProfile(
     record.outcome.replayArtifact,
     record.arm === "sequenced-retrieval"
@@ -865,7 +918,17 @@ async function resumedArm(
         "Persisted M9b.0 success record failed zero-effect replay.",
       ),
     };
-  if (!modelRequestsMatchRun(record.modelRequests, replayed.value))
+  if (
+    replayed.value.runDigest !== record.outcome.runDigest ||
+    replayed.value.transcript.sourceHash !== binding.artifact.sourceHash ||
+    replayed.value.transcript.semanticContractHash !==
+      binding.artifact.semanticContractHash ||
+    replayed.value.transcript.taskDigest !== binding.taskDigest ||
+    replayed.value.transcript.corpusSnapshotDigest !==
+      binding.corpusSnapshotDigest ||
+    !sameModelIdentity(replayed.value.transcript.model, binding.model) ||
+    !(await modelRequestsMatchRun(record.modelRequests, replayed.value))
+  )
     return {
       ok: false,
       error: comparisonFailure(
@@ -993,7 +1056,18 @@ export async function runM9b0OfflineComparison(
             "Persisted M9b.0 arm record does not match the frozen comparison identity.",
           ),
         };
-      const resumed = await resumedArm(loaded.value);
+      const expectedArtifact =
+        arm === "sequenced-retrieval" ? sequencedSummary : oneShotSummary;
+      const expectedSource =
+        arm === "sequenced-retrieval" ? input.source : M9B0_ONE_SHOT_RAG_SOURCE;
+      const resumed = await resumedArm(loaded.value, {
+        source: expectedSource,
+        artifact: expectedArtifact,
+        task: task.data,
+        taskDigest: taskDigest.value,
+        corpusSnapshotDigest: corpus.snapshotDigest,
+        model: modelIdentity.data,
+      });
       if (!resumed.ok) return resumed;
       results.set(arm, resumed.value);
       continue;
@@ -1038,7 +1112,7 @@ export async function runM9b0OfflineComparison(
       });
       if (executed.ok) {
         run = executed.value.run;
-        if (!modelRequestsMatchRun(modelRequests, run))
+        if (!(await modelRequestsMatchRun(modelRequests, run)))
           return {
             ok: false,
             error: comparisonFailure(
