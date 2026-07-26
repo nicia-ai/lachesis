@@ -31,13 +31,13 @@ import {
   m9b3dEvaluatorArtifactSchema,
   m9b3dGoldArtifactIdentitySchema,
   type M9b3dTrustedGold,
-  type M9b3ePairedMeasurementVerification,
-  type M9b3eTerminalMeasurementRecord,
-  measureM9b3eVerifiedTerminalRecord,
+  type M9b3fPairedMeasurementVerification,
+  type M9b3fTerminalMeasurementRecord,
+  measureM9b3fVerifiedTerminalRecord,
 } from "./m9b2-measurement.js";
 
 export const M9B3_PREPARATION_PROTOCOL = Object.freeze({
-  id: "lachesis-m9b3e-offline-prospective-study-preparation",
+  id: "lachesis-m9b3f-offline-prospective-study-preparation",
   version: "1.0.0",
   visibility: "internal-offline-preparation-only" as const,
   claimBoundary:
@@ -160,7 +160,7 @@ const m9b3ProviderProfileInputSchema = z
       context.addIssue({
         code: "custom",
         message:
-          "M9b.3e provider, model, tokenizer, and pricing identities differ.",
+          "M9b.3f provider, model, tokenizer, and pricing identities differ.",
       });
     if (
       profile.model.contextWindowTokens < M9B3_MAXIMUM_SINGLE_REQUEST_TOKENS ||
@@ -169,7 +169,7 @@ const m9b3ProviderProfileInputSchema = z
     )
       context.addIssue({
         code: "custom",
-        message: "M9b.3e candidate model cannot contain the frozen envelope.",
+        message: "M9b.3f candidate model cannot contain the frozen envelope.",
       });
   })
   .readonly();
@@ -352,7 +352,7 @@ const corpusConstructionSchema = z
 
 const allocationSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b3e-balanced-allocation/1"),
+    protocol: z.literal("lachesis-m9b3f-balanced-allocation/1"),
     cells: z.literal(24),
     protocolProbePairedCases: z.literal(24),
     protocolProbeCasesPerCell: z.literal(1),
@@ -363,7 +363,7 @@ const allocationSchema = z
     probeExcludedFromPrimaryAnalysis: z.literal(true),
     primaryPopulationFixedBeforePrimaryExecution: z.literal(true),
     populationBindingProtocol: z.literal(
-      "lachesis-m9b3e-prospective-population-binding/1",
+      "lachesis-m9b3f-prospective-population-binding/1",
     ),
     historicalDevelopmentBaseline: historicalDevelopmentBaselineSchema,
     probeSuiteIdentity: z.literal("absent-pending-corpus-construction"),
@@ -379,7 +379,7 @@ const allocationSchema = z
 
 const scheduleSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b3e-paired-counterbalance-schedule/1"),
+    protocol: z.literal("lachesis-m9b3f-paired-counterbalance-schedule/1"),
     unit: z.literal("one-paired-case"),
     arms: z
       .tuple([z.literal("discovered-program"), z.literal("static-one-shot")])
@@ -418,13 +418,13 @@ const scheduleSchema = z
 
 const probeGateProtocolSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b3e-probe-advancement-gate/1"),
+    protocol: z.literal("lachesis-m9b3f-probe-advancement-gate/1"),
     endpoint: z.literal(M9B2_PRIMARY_ENDPOINT),
     statistic: z.literal(
       "first-attempt-discovered-only-static-only-and-concordant-pair-counts",
     ),
     sourceBoundary: z.literal(
-      "complete-opaque-probe-suite-plus-24-paired-m9b3e-predispatch-artifact-terminal-measurements",
+      "complete-opaque-probe-suite-plus-24-paired-m9b3f-predispatch-artifact-terminal-measurements",
     ),
     requiredBindings: z.literal(
       "preparation-supplement-opaque-gold-scoring-source-evaluator-artifact-output-schema-validation-population-schedule-endpoint-model-and-all-source-record-digests",
@@ -458,7 +458,7 @@ const probeGateProtocolSchema = z
 
 const gateSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b3e-advancement-gates/1"),
+    protocol: z.literal("lachesis-m9b3f-advancement-gates/1"),
     beforeCorpusConstruction: z
       .tuple([
         z.literal("independent-m9b3a-architecture-security-scientific-review"),
@@ -490,7 +490,7 @@ const gateSchema = z
     beforePrimaryExecution: z
       .tuple([
         z.literal("verified-probe-population-completed"),
-        z.literal("m9b3e-probe-advancement-decision-is-pass"),
+        z.literal("m9b3f-probe-advancement-decision-is-pass"),
         z.literal("probe-decision-source-measurement-inventory-verified"),
         z.literal("exact-primary-suite-and-schedule-binding-verified"),
       ])
@@ -512,7 +512,7 @@ const gateSchema = z
 
 const preregistrationSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b3e-preregistration-materials/1"),
+    protocol: z.literal("lachesis-m9b3f-preregistration-materials/1"),
     status: z.literal("offline-draft-not-externally-registered"),
     primaryEndpoint: z.literal(M9B2_PRIMARY_ENDPOINT),
     primaryTest: z.literal("exact-one-sided-conditional-mcnemar"),
@@ -645,7 +645,7 @@ const m9b3ProspectiveSupplementInputSchema = z
       context.addIssue({
         code: "custom",
         message:
-          "M9b.3e final evaluator must differ from the campaign-ineligible development evaluator.",
+          "M9b.3f final evaluator must differ from the campaign-ineligible development evaluator.",
       });
   })
   .readonly();
@@ -655,7 +655,7 @@ export type M9b3ProspectiveSupplementInput = z.infer<
 
 const prospectiveSupplementBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b3e-prospective-supplement/1"),
+    protocol: z.literal("lachesis-m9b3f-prospective-supplement/1"),
     status: z.literal(
       "offline-identities-frozen-no-preregistration-or-execution-authority",
     ),
@@ -665,7 +665,7 @@ const prospectiveSupplementBodySchema = z
     finalEvaluator:
       m9b3ProspectiveSupplementInputSchema.unwrap().shape.finalEvaluator,
     measurementRecordProtocol: z.literal(
-      "lachesis-m9b3e-predispatch-artifact-terminal-measurement-record/1",
+      "lachesis-m9b3f-predispatch-artifact-terminal-measurement-record/1",
     ),
     authority: z
       .strictObject({
@@ -743,7 +743,7 @@ const boundPopulationSchema = z
 
 const populationBindingBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b3e-prospective-population-binding/1"),
+    protocol: z.literal("lachesis-m9b3f-prospective-population-binding/1"),
     preparationDigest: digestSchema,
     historicalDevelopmentBaselineDigest: digestSchema,
     development: boundDevelopmentPopulationSchema,
@@ -793,9 +793,9 @@ const scheduleEntrySchema = z
 
 const materializedScheduleBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b3e-materialized-schedule/1"),
+    protocol: z.literal("lachesis-m9b3f-materialized-schedule/1"),
     algorithmProtocol: z.literal(
-      "lachesis-m9b3e-paired-counterbalance-schedule/1",
+      "lachesis-m9b3f-paired-counterbalance-schedule/1",
     ),
     preparationDigest: digestSchema,
     populationBindingDigest: digestSchema,
@@ -866,8 +866,8 @@ const probeSourcePairSchema = z
 
 const probeDecisionBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b3e-probe-advancement-decision/1"),
-    gateProtocol: z.literal("lachesis-m9b3e-probe-advancement-gate/1"),
+    protocol: z.literal("lachesis-m9b3f-probe-advancement-decision/1"),
+    gateProtocol: z.literal("lachesis-m9b3f-probe-advancement-gate/1"),
     preparationDigest: digestSchema,
     prospectiveSupplementDigest: digestSchema,
     populationBindingDigest: digestSchema,
@@ -922,7 +922,7 @@ const probeDecisionBodySchema = z
     )
       context.addIssue({
         code: "custom",
-        message: "M9b.3e probe source-pair provenance is not unique.",
+        message: "M9b.3f probe source-pair provenance is not unique.",
       });
   })
   .readonly();
@@ -1068,7 +1068,7 @@ export async function validateM9b3CorpusScale(
       corpusBytes: z.number().int().positive(),
     })
     .safeParse(input);
-  if (!parsed.success) return invalid("M9b.3e corpus scale input is invalid.");
+  if (!parsed.success) return invalid("M9b.3f corpus scale input is invalid.");
   const range = M9B3_SCALE_RANGES.find(
     (candidate) => candidate.scale === parsed.data.claimedScale,
   );
@@ -1077,7 +1077,7 @@ export async function validateM9b3CorpusScale(
     parsed.data.corpusBytes < range.minimumBytesInclusive ||
     parsed.data.corpusBytes > range.maximumBytesInclusive
   )
-    return invalid("M9b.3e corpus bytes do not fit the claimed scale.");
+    return invalid("M9b.3f corpus bytes do not fit the claimed scale.");
   const body = scaleValidationBodySchema.parse({
     protocol: "lachesis-m9b3a-corpus-scale-validation/1",
     claimedScale: parsed.data.claimedScale,
@@ -1102,11 +1102,11 @@ export async function verifyM9b3CorpusScale(
   value: unknown,
 ): Promise<Result<M9b3ScaleValidation, Diagnostic>> {
   const parsed = m9b3ScaleValidationSchema.safeParse(value);
-  if (!parsed.success) return invalid("M9b.3e scale validation is invalid.");
+  if (!parsed.success) return invalid("M9b.3f scale validation is invalid.");
   const rederived = await validateM9b3CorpusScale(input);
   return rederived.ok && canonicalEqual(rederived.value, parsed.data)
     ? { ok: true, value: parsed.data }
-    : invalid("M9b.3e scale validation failed complete rederivation.");
+    : invalid("M9b.3f scale validation failed complete rederivation.");
 }
 
 async function bindPopulation(
@@ -1120,7 +1120,7 @@ async function bindPopulation(
       : M9B3_PRIMARY_PAIRED_CASES;
   const expectedPerCell = expectedCount / M9B3_CELL_COUNT;
   if (inspected?.cases.length !== expectedCount)
-    return invalid(`M9b.3e ${role} suite has the wrong complete case count.`);
+    return invalid(`M9b.3f ${role} suite has the wrong complete case count.`);
   if (
     M9B2_TASK_FAMILIES.some((family) =>
       M9B2_CORPUS_SCALES.some(
@@ -1132,7 +1132,7 @@ async function bindPopulation(
       ),
     )
   )
-    return invalid(`M9b.3e ${role} suite is not balanced across all 24 cells.`);
+    return invalid(`M9b.3f ${role} suite is not balanced across all 24 cells.`);
   const cases: Array<z.infer<typeof populationCaseSchema>> = [];
   for (const candidate of inspected.cases) {
     const scale = await validateM9b3CorpusScale({
@@ -1153,7 +1153,7 @@ async function bindPopulation(
     ),
   );
   const inventoryDigest = await digestValue({
-    protocol: "lachesis-m9b3e-population-inventory/1",
+    protocol: "lachesis-m9b3f-population-inventory/1",
     role,
     suiteDigest: inspected.suiteDigest,
     cases: sortedCases,
@@ -1181,7 +1181,7 @@ async function bindDevelopmentPopulation(
   const inspected = inspectM9b2PreparedSuite(suite);
   if (inspected?.cases.length !== M9B3_CELL_COUNT)
     return invalid(
-      "M9b.3e existing development suite must contain all 24 cases.",
+      "M9b.3f existing development suite must contain all 24 cases.",
     );
   if (
     M9B2_TASK_FAMILIES.some((family) =>
@@ -1195,7 +1195,7 @@ async function bindDevelopmentPopulation(
     )
   )
     return invalid(
-      "M9b.3e existing development suite must cover every family-scale cell once.",
+      "M9b.3f existing development suite must cover every family-scale cell once.",
     );
   const cases = Object.freeze(
     inspected.cases
@@ -1203,7 +1203,7 @@ async function bindDevelopmentPopulation(
       .toSorted((left, right) => compareIdentifiers(left.caseId, right.caseId)),
   );
   const inventoryDigest = await digestValue({
-    protocol: "lachesis-m9b3e-development-population-inventory/1",
+    protocol: "lachesis-m9b3f-development-population-inventory/1",
     role: "m9b2-development",
     suiteDigest: inspected.suiteDigest,
     cases,
@@ -1253,7 +1253,7 @@ export async function bindM9b3Populations(
     preparation,
   );
   if (!verifiedPreparation.ok)
-    return invalid("M9b.3e population preparation is invalid.");
+    return invalid("M9b.3f population preparation is invalid.");
   const development = await bindDevelopmentPopulation(developmentSuite);
   if (!development.ok) return development;
   const trustedBaseline =
@@ -1263,7 +1263,7 @@ export async function bindM9b3Populations(
     development.value.inventoryDigest !== trustedBaseline.inventoryDigest
   )
     return invalid(
-      "M9b.3e supplied development suite differs from the frozen historical baseline.",
+      "M9b.3f supplied development suite differs from the frozen historical baseline.",
     );
   const probe = await bindPopulation("protocol-probe", probeSuite);
   if (!probe.ok) return probe;
@@ -1281,9 +1281,9 @@ export async function bindM9b3Populations(
       primary.value.suiteDigest,
     ]).size !== 3
   )
-    return invalid("M9b.3e population suite identities must be distinct.");
+    return invalid("M9b.3f population suite identities must be distinct.");
   if (!unique(combinedCases.map((candidate) => candidate.caseId)))
-    return invalid("M9b.3e population case identities must be distinct.");
+    return invalid("M9b.3f population case identities must be distinct.");
   if (
     !unique(
       [...probe.value.cases, ...primary.value.cases].map(
@@ -1292,7 +1292,7 @@ export async function bindM9b3Populations(
     )
   )
     return invalid(
-      "M9b.3e population semantic-problem identities must be distinct.",
+      "M9b.3f population semantic-problem identities must be distinct.",
     );
   const developmentProbeAudit = await auditM9b2SplitDisjointness({
     developmentSuite,
@@ -1310,7 +1310,7 @@ export async function bindM9b3Populations(
   });
   if (!probePrimaryAudit.ok) return probePrimaryAudit;
   const body = populationBindingBodySchema.parse({
-    protocol: "lachesis-m9b3e-prospective-population-binding/1",
+    protocol: "lachesis-m9b3f-prospective-population-binding/1",
     preparationDigest: verifiedPreparation.value.preparationDigest,
     historicalDevelopmentBaselineDigest:
       verifiedPreparation.value.historicalDevelopmentBaselineDigest,
@@ -1348,7 +1348,7 @@ export async function verifyM9b3PopulationBinding(
   value: unknown,
 ): Promise<Result<M9b3PopulationBinding, Diagnostic>> {
   const parsed = m9b3PopulationBindingSchema.safeParse(value);
-  if (!parsed.success) return invalid("M9b.3e population binding is invalid.");
+  if (!parsed.success) return invalid("M9b.3f population binding is invalid.");
   const rederived = await bindM9b3Populations(
     preparationInput,
     preparation,
@@ -1358,7 +1358,7 @@ export async function verifyM9b3PopulationBinding(
   );
   return rederived.ok && canonicalEqual(rederived.value, parsed.data)
     ? { ok: true, value: parsed.data }
-    : invalid("M9b.3e population binding failed opaque-suite rederivation.");
+    : invalid("M9b.3f population binding failed opaque-suite rederivation.");
 }
 
 export async function deriveM9b3ScheduleSeedCommitment(
@@ -1366,9 +1366,9 @@ export async function deriveM9b3ScheduleSeedCommitment(
 ): Promise<Result<string, Diagnostic>> {
   const parsed = digestSchema.safeParse(seedReveal);
   if (!parsed.success)
-    return invalid("M9b.3e schedule seed reveal is invalid.");
+    return invalid("M9b.3f schedule seed reveal is invalid.");
   return digestValue({
-    protocol: "lachesis-m9b3e-seed-commitment/1",
+    protocol: "lachesis-m9b3f-seed-commitment/1",
     purpose: "paired-counterbalance-schedule",
     seedReveal: parsed.data,
   });
@@ -1391,7 +1391,7 @@ async function materializePopulationSchedule(
   for (const family of M9B2_TASK_FAMILIES) {
     for (const scale of M9B2_CORPUS_SCALES) {
       const cellOrderKey = await digestValue({
-        protocol: "lachesis-m9b3e-schedule-cell-order/1",
+        protocol: "lachesis-m9b3f-schedule-cell-order/1",
         seedReveal,
         population: population.role,
         family,
@@ -1423,7 +1423,7 @@ async function materializePopulationSchedule(
       (value) => value.family === cell.family && value.scale === cell.scale,
     )) {
       const caseOrderKey = await digestValue({
-        protocol: "lachesis-m9b3e-schedule-case-order/1",
+        protocol: "lachesis-m9b3f-schedule-case-order/1",
         seedReveal,
         population: population.role,
         suiteDigest: population.suiteDigest,
@@ -1452,7 +1452,7 @@ async function materializePopulationSchedule(
       cellRank % 2 === 0 ? "discovered-program" : "static-one-shot";
     for (const [positionInCell, keyed] of sortedCases.entries()) {
       const executionOrderKey = await digestValue({
-        protocol: "lachesis-m9b3e-schedule-execution-order/1",
+        protocol: "lachesis-m9b3f-schedule-execution-order/1",
         seedReveal,
         population: population.role,
         caseOrderKey: keyed.caseOrderKey,
@@ -1524,7 +1524,7 @@ export async function materializeM9b3Schedule(
   );
   const parsedSeed = digestSchema.safeParse(seedReveal);
   if (!verifiedPreparation.ok || !parsedSeed.success)
-    return invalid("M9b.3e schedule inputs are invalid.");
+    return invalid("M9b.3f schedule inputs are invalid.");
   const seedCommitment = await deriveM9b3ScheduleSeedCommitment(
     parsedSeed.data,
   );
@@ -1532,7 +1532,7 @@ export async function materializeM9b3Schedule(
     !seedCommitment.ok ||
     seedCommitment.value !== verifiedPreparation.value.schedule.seedCommitment
   )
-    return invalid("M9b.3e schedule seed does not open the frozen commitment.");
+    return invalid("M9b.3f schedule seed does not open the frozen commitment.");
   const populations = await bindM9b3Populations(
     preparationInput,
     preparation,
@@ -1552,8 +1552,8 @@ export async function materializeM9b3Schedule(
   );
   if (!primaryEntries.ok) return primaryEntries;
   const body = materializedScheduleBodySchema.parse({
-    protocol: "lachesis-m9b3e-materialized-schedule/1",
-    algorithmProtocol: "lachesis-m9b3e-paired-counterbalance-schedule/1",
+    protocol: "lachesis-m9b3f-materialized-schedule/1",
+    algorithmProtocol: "lachesis-m9b3f-paired-counterbalance-schedule/1",
     preparationDigest: verifiedPreparation.value.preparationDigest,
     populationBindingDigest: populations.value.bindingDigest,
     seedCommitment: seedCommitment.value,
@@ -1585,7 +1585,7 @@ export async function verifyM9b3MaterializedSchedule(
 ): Promise<Result<M9b3MaterializedSchedule, Diagnostic>> {
   const parsed = m9b3MaterializedScheduleSchema.safeParse(value);
   if (!parsed.success)
-    return invalid("M9b.3e materialized schedule is invalid.");
+    return invalid("M9b.3f materialized schedule is invalid.");
   const rederived = await materializeM9b3Schedule(
     preparationInput,
     preparation,
@@ -1596,7 +1596,7 @@ export async function verifyM9b3MaterializedSchedule(
   );
   return rederived.ok && canonicalEqual(rederived.value, parsed.data)
     ? { ok: true, value: parsed.data }
-    : invalid("M9b.3e schedule failed complete zero-effect rederivation.");
+    : invalid("M9b.3f schedule failed complete zero-effect rederivation.");
 }
 
 function pairedSuccessCounts(
@@ -1619,7 +1619,7 @@ function pairedSuccessCounts(
 }
 
 function modelIdentityMatchesPreparation(
-  record: M9b3eTerminalMeasurementRecord,
+  record: M9b3fTerminalMeasurementRecord,
   preparation: M9b3Preparation,
 ): boolean {
   return (
@@ -1629,7 +1629,7 @@ function modelIdentityMatchesPreparation(
 }
 
 function evaluatorIdentityMatchesSupplement(
-  record: M9b3eTerminalMeasurementRecord,
+  record: M9b3fTerminalMeasurementRecord,
   supplement: M9b3ProspectiveSupplement,
 ): boolean {
   return (
@@ -1662,14 +1662,14 @@ export async function evaluateM9b3ProbeAdvancement(
   primarySuite: M9b2PreparedSuite,
   seedReveal: unknown,
   schedule: unknown,
-  measurements: ReadonlyArray<M9b3ePairedMeasurementVerification>,
+  measurements: ReadonlyArray<M9b3fPairedMeasurementVerification>,
 ): Promise<Result<M9b3ProbeDecision, Diagnostic>> {
   const verifiedPreparation = await verifyM9b3OfflineStudy(
     preparationInput,
     preparation,
   );
   if (!verifiedPreparation.ok)
-    return invalid("M9b.3e probe preparation is invalid.");
+    return invalid("M9b.3f probe preparation is invalid.");
   const verifiedSupplement = await verifyM9b3ProspectiveSupplement(
     preparationInput,
     preparation,
@@ -1679,7 +1679,7 @@ export async function evaluateM9b3ProbeAdvancement(
     prospectiveSupplement,
   );
   if (!verifiedSupplement.ok)
-    return invalid("M9b.3e probe prospective supplement is invalid.");
+    return invalid("M9b.3f probe prospective supplement is invalid.");
   const populations = await bindM9b3Populations(
     preparationInput,
     preparation,
@@ -1703,7 +1703,7 @@ export async function evaluateM9b3ProbeAdvancement(
     !unique(measurements.map((measurement) => measurement.caseId))
   )
     return invalid(
-      "M9b.3e probe measurements must exactly cover 24 unique paired cases.",
+      "M9b.3f probe measurements must exactly cover 24 unique paired cases.",
     );
   const measurementsByCase = new Map(
     measurements.map((measurement) => [measurement.caseId, measurement]),
@@ -1714,7 +1714,7 @@ export async function evaluateM9b3ProbeAdvancement(
     )
   )
     return invalid(
-      "M9b.3e probe measurements do not cover the bound probe inventory.",
+      "M9b.3f probe measurements do not cover the bound probe inventory.",
     );
   const populationCases = new Map(
     populations.value.probe.cases.map((candidate) => [
@@ -1727,16 +1727,16 @@ export async function evaluateM9b3ProbeAdvancement(
     const measurement = measurementsByCase.get(scheduleEntry.caseId);
     const populationCase = populationCases.get(scheduleEntry.caseId);
     if (measurement === undefined || populationCase === undefined)
-      return invalid("M9b.3e probe schedule lost a bound case.");
+      return invalid("M9b.3f probe schedule lost a bound case.");
     const evaluatorArtifact = evaluatorArtifactFromSupplement(
       verifiedSupplement.value,
     );
-    const discovered = await measureM9b3eVerifiedTerminalRecord(
+    const discovered = await measureM9b3fVerifiedTerminalRecord(
       measurement.discovered,
       evaluatorArtifact,
       goldToken,
     );
-    const staticMeasurement = await measureM9b3eVerifiedTerminalRecord(
+    const staticMeasurement = await measureM9b3fVerifiedTerminalRecord(
       measurement.static,
       evaluatorArtifact,
       goldToken,
@@ -1800,7 +1800,7 @@ export async function evaluateM9b3ProbeAdvancement(
       )
     )
       return invalid(
-        "M9b.3e probe measurements are not cross-bound scheduled opposites.",
+        "M9b.3f probe measurements are not cross-bound scheduled opposites.",
       );
     sourcePairs.push(
       probeSourcePairSchema.parse({
@@ -1866,7 +1866,7 @@ export async function evaluateM9b3ProbeAdvancement(
             } as const)
           : ({ status: "pass" } as const);
   const sourceMeasurementInventoryDigest = await digestValue({
-    protocol: "lachesis-m9b3e-probe-measurement-inventory/1",
+    protocol: "lachesis-m9b3f-probe-measurement-inventory/1",
     preparationDigest: verifiedPreparation.value.preparationDigest,
     prospectiveSupplementDigest: verifiedSupplement.value.supplementDigest,
     populationBindingDigest: populations.value.bindingDigest,
@@ -1876,8 +1876,8 @@ export async function evaluateM9b3ProbeAdvancement(
   if (!sourceMeasurementInventoryDigest.ok)
     return sourceMeasurementInventoryDigest;
   const body = probeDecisionBodySchema.parse({
-    protocol: "lachesis-m9b3e-probe-advancement-decision/1",
-    gateProtocol: "lachesis-m9b3e-probe-advancement-gate/1",
+    protocol: "lachesis-m9b3f-probe-advancement-decision/1",
+    gateProtocol: "lachesis-m9b3f-probe-advancement-gate/1",
     preparationDigest: verifiedPreparation.value.preparationDigest,
     prospectiveSupplementDigest: verifiedSupplement.value.supplementDigest,
     populationBindingDigest: populations.value.bindingDigest,
@@ -1928,11 +1928,11 @@ export async function verifyM9b3ProbeAdvancement(
   primarySuite: M9b2PreparedSuite,
   seedReveal: unknown,
   schedule: unknown,
-  measurements: ReadonlyArray<M9b3ePairedMeasurementVerification>,
+  measurements: ReadonlyArray<M9b3fPairedMeasurementVerification>,
   value: unknown,
 ): Promise<Result<M9b3ProbeDecision, Diagnostic>> {
   const parsed = m9b3ProbeDecisionSchema.safeParse(value);
-  if (!parsed.success) return invalid("M9b.3e probe decision is invalid.");
+  if (!parsed.success) return invalid("M9b.3f probe decision is invalid.");
   const rederived = await evaluateM9b3ProbeAdvancement(
     preparationInput,
     preparation,
@@ -1948,7 +1948,7 @@ export async function verifyM9b3ProbeAdvancement(
   );
   return rederived.ok && canonicalEqual(rederived.value, parsed.data)
     ? { ok: true, value: parsed.data }
-    : invalid("M9b.3e probe decision failed complete rederivation.");
+    : invalid("M9b.3f probe decision failed complete rederivation.");
 }
 
 /** Freezes prospective identities and rules only. It performs no external effects. */
@@ -1957,7 +1957,7 @@ export async function prepareM9b3OfflineStudy(
 ): Promise<Result<M9b3Preparation, Diagnostic>> {
   const preparationInput = m9b3PreparationInputSchema.safeParse(input);
   if (!preparationInput.success)
-    return invalid("M9b.3e offline preparation input is invalid.");
+    return invalid("M9b.3f offline preparation input is invalid.");
   const profile = preparationInput.data.providerProfile;
   const inputCost = tokenCostCeiling(
     M9B1_MATCHED_MODEL_ENVELOPE.maxInputTokens,
@@ -1968,14 +1968,14 @@ export async function prepareM9b3OfflineStudy(
     profile.pricing.outputUsdMicrosPerMillionTokens,
   );
   if (inputCost === undefined || outputCost === undefined)
-    return invalid("M9b.3e matched cost ceiling exceeds safe integer bounds.");
+    return invalid("M9b.3f matched cost ceiling exceeds safe integer bounds.");
   const maximumCostUsdMicrosPerArm = inputCost + outputCost;
   if (!Number.isSafeInteger(maximumCostUsdMicrosPerArm))
-    return invalid("M9b.3e matched cost sum exceeds safe integer bounds.");
+    return invalid("M9b.3f matched cost sum exceeds safe integer bounds.");
   const maximumPreparedStudyCostUsdMicros =
     maximumCostUsdMicrosPerArm * M9B3_PREPARED_PAIRED_CASES * 2;
   if (!Number.isSafeInteger(maximumPreparedStudyCostUsdMicros))
-    return invalid("M9b.3e prepared study cost exceeds safe integer bounds.");
+    return invalid("M9b.3f prepared study cost exceeds safe integer bounds.");
 
   const corpusConstruction = corpusConstructionSchema.parse({
     protocol: "lachesis-m9b3a-natural-corpus-construction/1",
@@ -2035,7 +2035,7 @@ export async function prepareM9b3OfflineStudy(
     finalEvaluatorIdentity: "absent-pending-independent-validation",
   });
   const allocation = allocationSchema.parse({
-    protocol: "lachesis-m9b3e-balanced-allocation/1",
+    protocol: "lachesis-m9b3f-balanced-allocation/1",
     cells: 24,
     protocolProbePairedCases: 24,
     protocolProbeCasesPerCell: 1,
@@ -2046,7 +2046,7 @@ export async function prepareM9b3OfflineStudy(
     probeExcludedFromPrimaryAnalysis: true,
     primaryPopulationFixedBeforePrimaryExecution: true,
     populationBindingProtocol:
-      "lachesis-m9b3e-prospective-population-binding/1",
+      "lachesis-m9b3f-prospective-population-binding/1",
     historicalDevelopmentBaseline:
       preparationInput.data.historicalDevelopmentBaseline,
     probeSuiteIdentity: "absent-pending-corpus-construction",
@@ -2058,7 +2058,7 @@ export async function prepareM9b3OfflineStudy(
     allocationMaterialized: false,
   });
   const schedule = scheduleSchema.parse({
-    protocol: "lachesis-m9b3e-paired-counterbalance-schedule/1",
+    protocol: "lachesis-m9b3f-paired-counterbalance-schedule/1",
     unit: "one-paired-case",
     arms: ["discovered-program", "static-one-shot"],
     algorithm: "canonical-sha256-cell-balanced-paired-counterbalance/1",
@@ -2081,12 +2081,12 @@ export async function prepareM9b3OfflineStudy(
     scheduleDigest: "absent",
   });
   const probeGate = probeGateProtocolSchema.parse({
-    protocol: "lachesis-m9b3e-probe-advancement-gate/1",
+    protocol: "lachesis-m9b3f-probe-advancement-gate/1",
     endpoint: M9B2_PRIMARY_ENDPOINT,
     statistic:
       "first-attempt-discovered-only-static-only-and-concordant-pair-counts",
     sourceBoundary:
-      "complete-opaque-probe-suite-plus-24-paired-m9b3e-predispatch-artifact-terminal-measurements",
+      "complete-opaque-probe-suite-plus-24-paired-m9b3f-predispatch-artifact-terminal-measurements",
     requiredBindings:
       "preparation-supplement-opaque-gold-scoring-source-evaluator-artifact-output-schema-validation-population-schedule-endpoint-model-and-all-source-record-digests",
     callerAuthoredAggregateCountsAccepted: false,
@@ -2138,7 +2138,7 @@ export async function prepareM9b3OfflineStudy(
     spendingAuthorized: false,
   });
   const gates = gateSchema.parse({
-    protocol: "lachesis-m9b3e-advancement-gates/1",
+    protocol: "lachesis-m9b3f-advancement-gates/1",
     beforeCorpusConstruction: [
       "independent-m9b3a-architecture-security-scientific-review",
       "external-preregistration-of-construction-protocol",
@@ -2163,7 +2163,7 @@ export async function prepareM9b3OfflineStudy(
     ],
     beforePrimaryExecution: [
       "verified-probe-population-completed",
-      "m9b3e-probe-advancement-decision-is-pass",
+      "m9b3f-probe-advancement-decision-is-pass",
       "probe-decision-source-measurement-inventory-verified",
       "exact-primary-suite-and-schedule-binding-verified",
     ],
@@ -2179,7 +2179,7 @@ export async function prepareM9b3OfflineStudy(
     ],
   });
   const preregistration = preregistrationSchema.parse({
-    protocol: "lachesis-m9b3e-preregistration-materials/1",
+    protocol: "lachesis-m9b3f-preregistration-materials/1",
     status: "offline-draft-not-externally-registered",
     primaryEndpoint: M9B2_PRIMARY_ENDPOINT,
     primaryTest: "exact-one-sided-conditional-mcnemar",
@@ -2306,11 +2306,11 @@ export async function verifyM9b3OfflineStudy(
 ): Promise<Result<M9b3Preparation, Diagnostic>> {
   const parsed = m9b3PreparationSchema.safeParse(value);
   if (!parsed.success)
-    return invalid("M9b.3e preparation artifact is invalid.");
+    return invalid("M9b.3f preparation artifact is invalid.");
   const rederived = await prepareM9b3OfflineStudy(input);
   return rederived.ok && canonicalEqual(rederived.value, parsed.data)
     ? { ok: true, value: parsed.data }
-    : invalid("M9b.3e preparation failed complete offline rederivation.");
+    : invalid("M9b.3f preparation failed complete offline rederivation.");
 }
 
 /** Freezes reviewed final gold/evaluator identities without granting authority. */
@@ -2334,9 +2334,9 @@ export async function prepareM9b3ProspectiveSupplement(
     gold?.suiteDigest !== probe?.suiteDigest ||
     !canonicalEqual(gold, parsed.data.finalGold)
   )
-    return invalid("M9b.3e prospective supplement input is invalid.");
+    return invalid("M9b.3f prospective supplement input is invalid.");
   const body = prospectiveSupplementBodySchema.parse({
-    protocol: "lachesis-m9b3e-prospective-supplement/1",
+    protocol: "lachesis-m9b3f-prospective-supplement/1",
     status:
       "offline-identities-frozen-no-preregistration-or-execution-authority",
     preparationDigest: verifiedPreparation.value.preparationDigest,
@@ -2345,7 +2345,7 @@ export async function prepareM9b3ProspectiveSupplement(
     finalGold: gold,
     finalEvaluator: parsed.data.finalEvaluator,
     measurementRecordProtocol:
-      "lachesis-m9b3e-predispatch-artifact-terminal-measurement-record/1",
+      "lachesis-m9b3f-predispatch-artifact-terminal-measurement-record/1",
     authority: {
       corpusMaterializationAuthorized: false,
       providerAdapterAuthorized: false,
@@ -2376,7 +2376,7 @@ export async function verifyM9b3ProspectiveSupplement(
 ): Promise<Result<M9b3ProspectiveSupplement, Diagnostic>> {
   const parsed = m9b3ProspectiveSupplementSchema.safeParse(value);
   if (!parsed.success)
-    return invalid("M9b.3e prospective supplement is invalid.");
+    return invalid("M9b.3f prospective supplement is invalid.");
   const rederived = await prepareM9b3ProspectiveSupplement(
     preparationInput,
     preparation,
@@ -2386,5 +2386,5 @@ export async function verifyM9b3ProspectiveSupplement(
   );
   return rederived.ok && canonicalEqual(rederived.value, parsed.data)
     ? { ok: true, value: parsed.data }
-    : invalid("M9b.3e prospective supplement failed complete rederivation.");
+    : invalid("M9b.3f prospective supplement failed complete rederivation.");
 }

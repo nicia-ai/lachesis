@@ -25,7 +25,7 @@ import {
   type M9b2PreparedSuite,
   type M9b2PublicDevelopmentCase,
   type M9b3dGoldArtifactIdentity,
-  type M9b3ePairedMeasurementVerification,
+  type M9b3fPairedMeasurementVerification,
   prepareM9b2DevelopmentSuite,
   prepareM9b3dTrustedGold,
 } from "../src/m9b2-measurement.js";
@@ -412,7 +412,7 @@ async function pairedProbeMeasurementVerifications(
     id: string;
     version: string;
   }> = FINAL_EVALUATOR_IDENTITY,
-): Promise<ReadonlyArray<M9b3ePairedMeasurementVerification>> {
+): Promise<ReadonlyArray<M9b3fPairedMeasurementVerification>> {
   return Promise.all(
     schedule.probeEntries.map(async (scheduleEntry) => {
       const inspection = required(
@@ -550,8 +550,8 @@ async function resign<T extends object>(
   };
 }
 
-describe("M9b.3e pre-dispatch evaluator provenance correction", () => {
-  it("keeps the complete M9b.3e preparation surface private", () => {
+describe("M9b.3f pre-dispatch evaluator provenance correction", () => {
+  it("keeps the complete M9b.3f preparation surface private", () => {
     expect("M9B3_PREPARATION_PROTOCOL" in generatorFacade).toBe(false);
     expect("prepareM9b3OfflineStudy" in generatorFacade).toBe(false);
     expect("verifyM9b3OfflineStudy" in generatorFacade).toBe(false);
@@ -579,7 +579,7 @@ describe("M9b.3e pre-dispatch evaluator provenance correction", () => {
       },
       studyBindings: {
         programDiscovery: {
-          id: "lachesis-m9b1e-artifact-bound-program-discovery",
+          id: "lachesis-m9b1f-artifact-bound-program-discovery",
           version: "1.0.0",
           promptBundleDigest: input.promptBundleDigest,
         },

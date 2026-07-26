@@ -61,7 +61,7 @@ import {
   measureM9b2VerifiedTerminalRecord,
   measureM9b2VerifiedTerminalRecordForTrustedEvaluator,
   measureM9b3dVerifiedTerminalRecord,
-  measureM9b3eVerifiedTerminalRecord,
+  measureM9b3fVerifiedTerminalRecord,
   prepareM9b2DevelopmentSuite,
   prepareM9b3dTrustedGold,
   reportM9cPairedDescriptives,
@@ -73,7 +73,7 @@ import {
   verifyM9b2TerminalMeasurementRecord,
   verifyM9b2TrustedEvaluatorTerminalMeasurementRecord,
   verifyM9b3dTerminalMeasurementRecord,
-  verifyM9b3eTerminalMeasurementRecord,
+  verifyM9b3fTerminalMeasurementRecord,
   verifyM9cPairedDescriptiveReport,
 } from "../src/m9b2-measurement.js";
 import { strictJsonValueSchema } from "../src/strict-json.js";
@@ -537,8 +537,8 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     expect("verifyM9b3dTerminalMeasurementRecord" in generatorFacade).toBe(
       false,
     );
-    expect("measureM9b3eVerifiedTerminalRecord" in generatorFacade).toBe(false);
-    expect("verifyM9b3eTerminalMeasurementRecord" in generatorFacade).toBe(
+    expect("measureM9b3fVerifiedTerminalRecord" in generatorFacade).toBe(false);
+    expect("verifyM9b3fTerminalMeasurementRecord" in generatorFacade).toBe(
       false,
     );
     expect("auditM9cInferenceUnits" in generatorFacade).toBe(false);
@@ -1871,7 +1871,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
       required(m9b2InternalInspectSupportingFacts(suite, caseId))[0],
     ).chunk;
     const approvedArtifact = {
-      id: "m9b3e.final-offline-evaluator",
+      id: "m9b3f.final-offline-evaluator",
       version: "1",
       artifactDigest: "1".repeat(64),
       outputSchemaDigest: "2".repeat(64),
@@ -2031,7 +2031,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     });
     const mismatchedVerification = await verificationFor(mismatched);
     expect(
-      await measureM9b3eVerifiedTerminalRecord(
+      await measureM9b3fVerifiedTerminalRecord(
         mismatchedVerification,
         approvedArtifact,
         goldToken,
@@ -2042,22 +2042,22 @@ describe("M9b.2 offline evaluator and corpus design", () => {
         approvedArtifact,
         memoryArmPersistence(),
         false,
-        { ...approvedArtifact, id: "m9b3e.unapproved-evaluator" },
+        { ...approvedArtifact, id: "m9b3f.unapproved-evaluator" },
       ),
     ).toMatchObject({ ok: false, error: { kind: "preflight" } });
     expect(
       await runComparisonResult({
         ...approvedArtifact,
-        id: "m9b3e.mislabeled-session",
+        id: "m9b3f.mislabeled-session",
       }),
-    ).toMatchObject({ ok: false, error: { kind: "preflight" } });
+    ).toMatchObject({ ok: false, error: { kind: "storage" } });
 
     const validPersistence = memoryArmPersistence();
     const valid = await runComparison(approvedArtifact, validPersistence);
     expect(evaluatorCalls).toBe(2);
     const validVerification = await verificationFor(valid);
     const measured = unwrap(
-      await measureM9b3eVerifiedTerminalRecord(
+      await measureM9b3fVerifiedTerminalRecord(
         validVerification,
         approvedArtifact,
         goldToken,
@@ -2065,14 +2065,14 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     );
     expect(measured).toMatchObject({
       protocol:
-        "lachesis-m9b3e-predispatch-artifact-terminal-measurement-record/1",
+        "lachesis-m9b3f-predispatch-artifact-terminal-measurement-record/1",
       evaluatorArtifact: approvedArtifact,
       originalEvaluationAttempt: { evaluatorArtifact: approvedArtifact },
       primary: { success: false, terminalStage: "evaluation-failed" },
     });
     const callsBeforeVerification = evaluatorCalls;
     expect(
-      await verifyM9b3eTerminalMeasurementRecord(
+      await verifyM9b3fTerminalMeasurementRecord(
         measured,
         validVerification,
         approvedArtifact,
@@ -2143,7 +2143,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     );
     const successfulVerification = await verificationFor(successful);
     const successfulMeasurement = unwrap(
-      await measureM9b3eVerifiedTerminalRecord(
+      await measureM9b3fVerifiedTerminalRecord(
         successfulVerification,
         approvedArtifact,
         goldToken,
@@ -2167,7 +2167,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
         mismatched.discovered.record.sourceRecord.recordDigest,
     };
     expect(
-      await verifyM9b3eTerminalMeasurementRecord(
+      await verifyM9b3fTerminalMeasurementRecord(
         {
           ...forgedBody,
           recordDigest: unwrap(await digestValue(forgedBody)),
@@ -2178,6 +2178,135 @@ describe("M9b.2 offline evaluator and corpus design", () => {
       ),
     ).toMatchObject({ ok: false });
     expect(evaluatorCalls).toBe(callsAfterSuccessful);
+  });
+
+  it("durably persists the first arm before a second-arm write and resumes it with zero effects", async () => {
+    const suite = await preparedSuite();
+    const caseId = "m9b2-dev-lookup-1x";
+    const publicCase = developmentCase(caseId);
+    const corpus = unwrap(await createM9aCorpus(publicCase.corpus));
+    const citation = required(
+      required(m9b2InternalInspectSupportingFacts(suite, caseId))[0],
+    ).chunk;
+    const evaluatorArtifact = {
+      id: "m9b3f.durable-offline-evaluator",
+      version: "1",
+      artifactDigest: "a".repeat(64),
+      outputSchemaDigest: "b".repeat(64),
+      independentValidationRecordDigest: "c".repeat(64),
+    } as const;
+    const calls = {
+      discovered: { authoring: 0, execution: 0, evaluation: 0 },
+      staticControl: { authoring: 0, execution: 0, evaluation: 0 },
+    };
+    let content: string | undefined;
+    let revision = 0;
+    let writeAttempts = 0;
+    const persistence: M9b1AtomicPersistence = {
+      read: () =>
+        Promise.resolve({
+          ok: true,
+          value:
+            content === undefined
+              ? undefined
+              : { revision: String(revision), content },
+        }),
+      writeAtomic: ({ expectedRevision, content: next }) => {
+        const expected = content === undefined ? null : String(revision);
+        if (expectedRevision !== expected)
+          throw new Error("Unexpected durable M9b.1f fixture revision.");
+        writeAttempts += 1;
+        if (writeAttempts === 2)
+          return Promise.resolve({
+            ok: false,
+            error: {
+              code: "INTERNAL_INVARIANT_VIOLATION",
+              message: "Injected second-arm persistence failure.",
+              location: {},
+              details: [],
+            },
+          });
+        content = next;
+        revision += 1;
+        return Promise.resolve({
+          ok: true,
+          value: { revision: String(revision) },
+        });
+      },
+    };
+    const evaluatorSession = (
+      arm: "discovered" | "staticControl",
+    ): M9b1ArtifactBoundExternalEvaluator => ({
+      identity: {
+        id: evaluatorArtifact.id,
+        version: evaluatorArtifact.version,
+      },
+      evaluatorArtifact,
+      evaluate: () => {
+        calls[arm].evaluation += 1;
+        return Promise.resolve({
+          ok: false,
+          error: {
+            kind: "invalid-input",
+            message: "Injected deterministic evaluator failure.",
+          },
+        });
+      },
+    });
+    const run = () =>
+      runM9b1ArtifactBoundProgramDiscovery({
+        corpus,
+        task: publicCase.task,
+        model: { id: "m9b2-offline-model", version: "1" },
+        authoringSessionFactories: {
+          discoveredProgram: () => {
+            calls.discovered.authoring += 1;
+            return authoredModel("discovered-program");
+          },
+          staticQuery: () => {
+            calls.staticControl.authoring += 1;
+            return authoredModel("static-one-shot");
+          },
+        },
+        executionSessionFactories: {
+          discoveredProgram: () => {
+            calls.discovered.execution += 1;
+            return executionModel(citation);
+          },
+          staticQuery: () => {
+            calls.staticControl.execution += 1;
+            return executionModel(citation);
+          },
+        },
+        evaluator: {
+          id: evaluatorArtifact.id,
+          version: evaluatorArtifact.version,
+        },
+        approvedEvaluatorArtifact: evaluatorArtifact,
+        evaluatorSessionFactories: {
+          discoveredProgram: () => evaluatorSession("discovered"),
+          staticQuery: () => evaluatorSession("staticControl"),
+        },
+        executionOrder: "discovered-first",
+        store: createM9b1ArtifactBoundArmStore(persistence),
+      });
+
+    expect(await run()).toMatchObject({
+      ok: false,
+      error: { kind: "storage" },
+    });
+    expect(calls).toEqual({
+      discovered: { authoring: 1, execution: 1, evaluation: 1 },
+      staticControl: { authoring: 1, execution: 1, evaluation: 1 },
+    });
+
+    const resumed = unwrap(await run());
+    expect(resumed.discovered.resumed).toBe(true);
+    expect(resumed.staticControl.resumed).toBe(false);
+    expect(calls).toEqual({
+      discovered: { authoring: 1, execution: 1, evaluation: 1 },
+      staticControl: { authoring: 2, execution: 2, evaluation: 2 },
+    });
   });
 
   it("derives every first-attempt terminal stage from verified M9b.1b records", async () => {
