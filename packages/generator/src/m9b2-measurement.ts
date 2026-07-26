@@ -218,9 +218,55 @@ type M9b2TrustedEvaluatorScore = z.infer<
   typeof m9b2TrustedEvaluatorScoreSchema
 >;
 
+export const m9b3dEvaluatorArtifactSchema = z
+  .strictObject({
+    id: identifierSchema,
+    version: identifierSchema,
+    artifactDigest: digestSchema,
+    outputSchemaDigest: digestSchema,
+    independentValidationRecordDigest: digestSchema,
+  })
+  .readonly();
+export type M9b3dEvaluatorArtifact = z.infer<
+  typeof m9b3dEvaluatorArtifactSchema
+>;
+
+const m9b3dGoldArtifactBodySchema = z
+  .strictObject({
+    protocol: z.literal("lachesis-m9b3d-snapshot-bound-gold-artifact/1"),
+    id: z.literal("lachesis.m9b3d.snapshot-bound-gold"),
+    version: z.literal("1"),
+    suiteDigest: digestSchema,
+    caseCount: z.number().int().positive().max(10_000),
+    scoringSourceDigest: digestSchema,
+  })
+  .readonly();
+
+export const m9b3dGoldArtifactIdentitySchema = m9b3dGoldArtifactBodySchema
+  .unwrap()
+  .safeExtend({ artifactDigest: digestSchema })
+  .readonly();
+export type M9b3dGoldArtifactIdentity = z.infer<
+  typeof m9b3dGoldArtifactIdentitySchema
+>;
+
+const m9b3dEvaluationScoreSchema = m9b2EvaluationScoreCoreSchema
+  .unwrap()
+  .safeExtend({
+    evaluatorArtifact: m9b3dEvaluatorArtifactSchema,
+    goldArtifact: m9b3dGoldArtifactIdentitySchema,
+  })
+  .readonly();
+type M9b3dEvaluationScore = z.infer<typeof m9b3dEvaluationScoreSchema>;
+
 const preparedSuiteBrand: unique symbol = Symbol("M9b2PreparedSuite");
 export type M9b2PreparedSuite = Readonly<{
   [preparedSuiteBrand]: "M9b2PreparedSuite";
+}>;
+
+const trustedGoldBrand: unique symbol = Symbol("M9b3dTrustedGold");
+export type M9b3dTrustedGold = Readonly<{
+  [trustedGoldBrand]: "M9b3dTrustedGold";
 }>;
 
 type PreparedCase = Readonly<{
@@ -256,6 +302,13 @@ type StoredSuite = Readonly<{
 }>;
 
 const suites = new WeakMap<object, StoredSuite>();
+const trustedGold = new WeakMap<
+  object,
+  Readonly<{
+    suite: M9b2PreparedSuite;
+    identity: M9b3dGoldArtifactIdentity;
+  }>
+>();
 
 function invalid(message: string): Result<never, Diagnostic> {
   return { ok: false, error: diagnostic("INVALID_WIRE_SCHEMA", message) };
@@ -638,6 +691,56 @@ export function inspectM9b2PreparedSuite(
         ),
     ),
   });
+}
+
+/** @internal Derives an opaque gold token from the exact prepared scoring source. */
+export async function prepareM9b3dTrustedGold(
+  suite: M9b2PreparedSuite,
+): Promise<Result<M9b3dTrustedGold, Diagnostic>> {
+  const stored = suites.get(suite);
+  if (stored === undefined)
+    return invalid("M9b.3d trusted gold requires a prepared suite.");
+  const scoringSourceDigest = await digestValue({
+    protocol: "lachesis-m9b3d-gold-scoring-source/1",
+    measurementProtocol: M9B2_MEASUREMENT_PROTOCOL,
+    suiteDigest: stored.suiteDigest,
+    cases: [...stored.cases.values()]
+      .map((prepared) => ({
+        caseId: prepared.publicCase.id,
+        snapshotDigest: prepared.snapshotDigest,
+        expectation: prepared.expectation,
+      }))
+      .toSorted((left, right) =>
+        left.caseId < right.caseId ? -1 : left.caseId > right.caseId ? 1 : 0,
+      ),
+  });
+  if (!scoringSourceDigest.ok) return scoringSourceDigest;
+  const body = m9b3dGoldArtifactBodySchema.parse({
+    protocol: "lachesis-m9b3d-snapshot-bound-gold-artifact/1",
+    id: "lachesis.m9b3d.snapshot-bound-gold",
+    version: "1",
+    suiteDigest: stored.suiteDigest,
+    caseCount: stored.cases.size,
+    scoringSourceDigest: scoringSourceDigest.value,
+  });
+  const artifactDigest = await digestValue(body);
+  if (!artifactDigest.ok) return artifactDigest;
+  const identity = m9b3dGoldArtifactIdentitySchema.parse({
+    ...body,
+    artifactDigest: artifactDigest.value,
+  });
+  const token: M9b3dTrustedGold = Object.freeze({
+    [trustedGoldBrand]: "M9b3dTrustedGold",
+  });
+  trustedGold.set(token, Object.freeze({ suite, identity }));
+  return { ok: true, value: token };
+}
+
+/** @internal Reveals only the content-addressed identity, never hidden gold. */
+export function inspectM9b3dTrustedGold(
+  token: M9b3dTrustedGold,
+): M9b3dGoldArtifactIdentity | undefined {
+  return trustedGold.get(token)?.identity;
 }
 
 /** @internal Test and offline-analysis inspection; it exposes no hidden gold. */
@@ -1121,6 +1224,87 @@ export type M9b2TrustedEvaluatorTerminalMeasurementRecord = z.infer<
   typeof m9b2TrustedEvaluatorTerminalMeasurementRecordSchema
 >;
 
+const m9b3dEvaluationAttemptBindingBodySchema = z
+  .strictObject({
+    protocol: z.literal("lachesis-m9b3d-evaluation-attempt-binding/1"),
+    sourceEvaluationAttemptDigest: digestSchema,
+    evaluatorArtifact: m9b3dEvaluatorArtifactSchema,
+    goldArtifact: m9b3dGoldArtifactIdentitySchema,
+  })
+  .readonly();
+
+const m9b3dEvaluationAttemptBindingSchema =
+  m9b3dEvaluationAttemptBindingBodySchema
+    .unwrap()
+    .safeExtend({ bindingDigest: digestSchema })
+    .readonly();
+
+const m9b3dTerminalMeasurementBodySchema = terminalMeasurementBodySchema
+  .unwrap()
+  .omit({ protocol: true, evaluation: true })
+  .safeExtend({
+    protocol: z.literal(
+      "lachesis-m9b3d-artifact-bound-terminal-measurement-record/1",
+    ),
+    evaluatorArtifact: m9b3dEvaluatorArtifactSchema,
+    goldArtifact: m9b3dGoldArtifactIdentitySchema,
+    evaluationAttemptBinding: m9b3dEvaluationAttemptBindingSchema.nullable(),
+    evaluation: m9b3dEvaluationScoreSchema.nullable(),
+  })
+  .superRefine((record, context) => {
+    if (
+      record.evaluator.id !== record.evaluatorArtifact.id ||
+      record.evaluator.version !== record.evaluatorArtifact.version ||
+      record.goldArtifact.suiteDigest !== record.suiteDigest ||
+      (record.evaluationAttemptDigest === null) !==
+        (record.evaluationAttemptBinding === null)
+    )
+      context.addIssue({
+        code: "custom",
+        message: "M9b.3d evaluator, gold, or attempt bindings differ.",
+      });
+    if (
+      record.evaluationAttemptBinding !== null &&
+      (record.evaluationAttemptBinding.sourceEvaluationAttemptDigest !==
+        record.evaluationAttemptDigest ||
+        !canonicalEqual(
+          record.evaluationAttemptBinding.evaluatorArtifact,
+          record.evaluatorArtifact,
+        ) ||
+        !canonicalEqual(
+          record.evaluationAttemptBinding.goldArtifact,
+          record.goldArtifact,
+        ))
+    )
+      context.addIssue({
+        code: "custom",
+        message: "M9b.3d evaluation-attempt receipt is cross-bound.",
+      });
+    if (
+      record.evaluation !== null &&
+      (record.evaluation.evaluatorVersion !== record.evaluator.version ||
+        !canonicalEqual(
+          record.evaluation.evaluatorArtifact,
+          record.evaluatorArtifact,
+        ) ||
+        !canonicalEqual(record.evaluation.goldArtifact, record.goldArtifact))
+    )
+      context.addIssue({
+        code: "custom",
+        message: "M9b.3d evaluator output is not artifact-bound.",
+      });
+  })
+  .readonly();
+
+export const m9b3dTerminalMeasurementRecordSchema =
+  m9b3dTerminalMeasurementBodySchema
+    .unwrap()
+    .safeExtend({ recordDigest: digestSchema })
+    .readonly();
+export type M9b3dTerminalMeasurementRecord = z.infer<
+  typeof m9b3dTerminalMeasurementRecordSchema
+>;
+
 export type M9b2TerminalMeasurementVerification = Readonly<{
   suite: M9b2PreparedSuite;
   caseId: string;
@@ -1152,11 +1336,17 @@ async function deriveM9b2VerifiedTerminalRecord(
   trustedEvaluator: Readonly<{ id: string; version: string }>,
   recordProtocol:
     | typeof M9B2_PERSISTENCE_PROTOCOL.record
-    | "lachesis-m9b3c-trusted-evaluator-terminal-measurement-record/1",
+    | "lachesis-m9b3c-trusted-evaluator-terminal-measurement-record/1"
+    | "lachesis-m9b3d-artifact-bound-terminal-measurement-record/1",
+  artifactBoundary?: Readonly<{
+    evaluator: M9b3dEvaluatorArtifact;
+    gold: M9b3dGoldArtifactIdentity;
+  }>,
 ): Promise<
   Result<
     | M9b2TerminalMeasurementRecord
-    | M9b2TrustedEvaluatorTerminalMeasurementRecord,
+    | M9b2TrustedEvaluatorTerminalMeasurementRecord
+    | M9b3dTerminalMeasurementRecord,
     Diagnostic
   >
 > {
@@ -1168,6 +1358,14 @@ async function deriveM9b2VerifiedTerminalRecord(
     return invalid(
       "M9b.2 requires a prepared case and verified M9b.1b record.",
     );
+  if (
+    artifactBoundary !== undefined &&
+    (artifactBoundary.evaluator.id !== trustedEvaluator.id ||
+      artifactBoundary.evaluator.version !== trustedEvaluator.version ||
+      artifactBoundary.gold.suiteDigest !==
+        suites.get(input.suite)?.suiteDigest)
+  )
+    return invalid("M9b.3d evaluator or gold artifact is cross-bound.");
   const record = stored.result.record;
   const taskDigest = await digestValue(prepared.publicCase.task);
   const actualProgramIdentity = programIdentityOf(record);
@@ -1201,7 +1399,8 @@ async function deriveM9b2VerifiedTerminalRecord(
     }
   })();
 
-  let evaluation: M9b2TrustedEvaluatorScore | null = null;
+  let evaluation: M9b2TrustedEvaluatorScore | M9b3dEvaluationScore | null =
+    null;
   let evaluationAttemptDigest: string | null = null;
   let runAnswerDigest: string | null = null;
   if (
@@ -1221,7 +1420,9 @@ async function deriveM9b2VerifiedTerminalRecord(
         record.outcome.evaluationAttempt.serializedOutput,
       );
       const score = parsedOutput.ok
-        ? m9b2TrustedEvaluatorScoreSchema.safeParse(parsedOutput.value)
+        ? artifactBoundary === undefined
+          ? m9b2TrustedEvaluatorScoreSchema.safeParse(parsedOutput.value)
+          : m9b3dEvaluationScoreSchema.safeParse(parsedOutput.value)
         : undefined;
       const answer = m9aCitationConfinedAnswerSchema.safeParse(
         stored.result.run?.answer,
@@ -1233,17 +1434,42 @@ async function deriveM9b2VerifiedTerminalRecord(
         score.data.evaluatorVersion !== trustedEvaluator.version
       )
         return invalid("M9b.2 persisted evaluator output is invalid.");
-      const recomputed = evaluatePreparedCase(
+      const recomputedBase = evaluatePreparedCase(
         prepared,
         answer.data,
         trustedEvaluator.version,
       );
+      const recomputed =
+        artifactBoundary === undefined
+          ? recomputedBase
+          : m9b3dEvaluationScoreSchema.parse({
+              ...recomputedBase,
+              evaluatorArtifact: artifactBoundary.evaluator,
+              goldArtifact: artifactBoundary.gold,
+            });
       if (!canonicalEqual(recomputed, score.data))
         return invalid(
           "M9b.2 persisted evaluation does not match the bound run answer.",
         );
       evaluation = score.data;
     }
+  }
+  let evaluationAttemptBinding: z.infer<
+    typeof m9b3dEvaluationAttemptBindingSchema
+  > | null = null;
+  if (artifactBoundary !== undefined && evaluationAttemptDigest !== null) {
+    const bindingBody = m9b3dEvaluationAttemptBindingBodySchema.parse({
+      protocol: "lachesis-m9b3d-evaluation-attempt-binding/1",
+      sourceEvaluationAttemptDigest: evaluationAttemptDigest,
+      evaluatorArtifact: artifactBoundary.evaluator,
+      goldArtifact: artifactBoundary.gold,
+    });
+    const bindingDigest = await digestValue(bindingBody);
+    if (!bindingDigest.ok) return bindingDigest;
+    evaluationAttemptBinding = m9b3dEvaluationAttemptBindingSchema.parse({
+      ...bindingBody,
+      bindingDigest: bindingDigest.value,
+    });
   }
   const primary = classifyM9b2PrimaryEndpoint({
     terminalStage: stage,
@@ -1313,6 +1539,13 @@ async function deriveM9b2VerifiedTerminalRecord(
     corpusSnapshotDigest: record.corpusSnapshotDigest,
     model: record.model,
     evaluator: record.evaluator,
+    ...(artifactBoundary === undefined
+      ? {}
+      : {
+          evaluatorArtifact: artifactBoundary.evaluator,
+          goldArtifact: artifactBoundary.gold,
+          evaluationAttemptBinding,
+        }),
     programIdentity: actualProgramIdentity,
     authoringRequestDigest: record.authoringRequest.requestDigest,
     executionRequestDigests: record.executionRequests.map(
@@ -1370,7 +1603,10 @@ async function deriveM9b2VerifiedTerminalRecord(
   const body =
     recordProtocol === M9B2_PERSISTENCE_PROTOCOL.record
       ? terminalMeasurementBodySchema.parse(bodyInput)
-      : m9b2TrustedEvaluatorTerminalMeasurementBodySchema.parse(bodyInput);
+      : recordProtocol ===
+          "lachesis-m9b3c-trusted-evaluator-terminal-measurement-record/1"
+        ? m9b2TrustedEvaluatorTerminalMeasurementBodySchema.parse(bodyInput)
+        : m9b3dTerminalMeasurementBodySchema.parse(bodyInput);
   const recordDigest = await digestValue(body);
   if (!recordDigest.ok) return recordDigest;
   return recordProtocol === M9B2_PERSISTENCE_PROTOCOL.record
@@ -1381,13 +1617,22 @@ async function deriveM9b2VerifiedTerminalRecord(
           recordDigest: recordDigest.value,
         }),
       }
-    : {
-        ok: true,
-        value: m9b2TrustedEvaluatorTerminalMeasurementRecordSchema.parse({
-          ...body,
-          recordDigest: recordDigest.value,
-        }),
-      };
+    : recordProtocol ===
+        "lachesis-m9b3c-trusted-evaluator-terminal-measurement-record/1"
+      ? {
+          ok: true,
+          value: m9b2TrustedEvaluatorTerminalMeasurementRecordSchema.parse({
+            ...body,
+            recordDigest: recordDigest.value,
+          }),
+        }
+      : {
+          ok: true,
+          value: m9b3dTerminalMeasurementRecordSchema.parse({
+            ...body,
+            recordDigest: recordDigest.value,
+          }),
+        };
 }
 
 export async function measureM9b2VerifiedTerminalRecord(
@@ -1446,6 +1691,57 @@ export async function verifyM9b2TrustedEvaluatorTerminalMeasurementRecord(
     ? { ok: true, value: parsed.data }
     : invalid(
         "M9b.3c trusted evaluator measurement record does not match its independently verified source.",
+      );
+}
+
+/** @internal M9b.3d measurement with artifact-bound evaluator and gold. */
+export async function measureM9b3dVerifiedTerminalRecord(
+  input: M9b2TerminalMeasurementVerification,
+  evaluatorArtifact: unknown,
+  goldToken: M9b3dTrustedGold,
+): Promise<Result<M9b3dTerminalMeasurementRecord, Diagnostic>> {
+  const parsedEvaluator =
+    m9b3dEvaluatorArtifactSchema.safeParse(evaluatorArtifact);
+  const gold = trustedGold.get(goldToken);
+  if (!parsedEvaluator.success || gold?.suite !== input.suite)
+    return invalid(
+      "M9b.3d requires the exact evaluator artifact and opaque suite gold token.",
+    );
+  const derived = await deriveM9b2VerifiedTerminalRecord(
+    input,
+    {
+      id: parsedEvaluator.data.id,
+      version: parsedEvaluator.data.version,
+    },
+    "lachesis-m9b3d-artifact-bound-terminal-measurement-record/1",
+    { evaluator: parsedEvaluator.data, gold: gold.identity },
+  );
+  if (!derived.ok) return derived;
+  const parsed = m9b3dTerminalMeasurementRecordSchema.safeParse(derived.value);
+  return parsed.success
+    ? { ok: true, value: parsed.data }
+    : invalid("M9b.3d artifact-bound measurement record is invalid.");
+}
+
+/** @internal Zero-effect verification of an artifact-bound measurement. */
+export async function verifyM9b3dTerminalMeasurementRecord(
+  value: unknown,
+  verification: M9b2TerminalMeasurementVerification,
+  evaluatorArtifact: unknown,
+  goldToken: M9b3dTrustedGold,
+): Promise<Result<M9b3dTerminalMeasurementRecord, Diagnostic>> {
+  const parsed = m9b3dTerminalMeasurementRecordSchema.safeParse(value);
+  if (!parsed.success)
+    return invalid("M9b.3d artifact-bound measurement record is invalid.");
+  const rederived = await measureM9b3dVerifiedTerminalRecord(
+    verification,
+    evaluatorArtifact,
+    goldToken,
+  );
+  return rederived.ok && canonicalEqual(rederived.value, parsed.data)
+    ? { ok: true, value: parsed.data }
+    : invalid(
+        "M9b.3d artifact-bound measurement record failed complete rederivation.",
       );
 }
 

@@ -35,6 +35,7 @@ import {
   createM9b2OfflineEvaluator,
   designM9b2Measurement,
   inspectM9b2PreparedCase,
+  inspectM9b3dTrustedGold,
   loadM9b2MeasurementSnapshot,
   M9B2_CORPUS_SCALES,
   M9B2_EVALUATOR_IDENTITY,
@@ -54,7 +55,9 @@ import {
   type M9cPairedMeasurementVerification,
   measureM9b2VerifiedTerminalRecord,
   measureM9b2VerifiedTerminalRecordForTrustedEvaluator,
+  measureM9b3dVerifiedTerminalRecord,
   prepareM9b2DevelopmentSuite,
+  prepareM9b3dTrustedGold,
   reportM9cPairedDescriptives,
   serializeM9b2MeasurementSnapshot,
   verifyM9b2EvaluatorConformanceReport,
@@ -63,6 +66,7 @@ import {
   verifyM9b2SplitDisjointnessAudit,
   verifyM9b2TerminalMeasurementRecord,
   verifyM9b2TrustedEvaluatorTerminalMeasurementRecord,
+  verifyM9b3dTerminalMeasurementRecord,
   verifyM9cPairedDescriptiveReport,
 } from "../src/m9b2-measurement.js";
 import { strictJsonValueSchema } from "../src/strict-json.js";
@@ -517,6 +521,11 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     expect(
       "verifyM9b2TrustedEvaluatorTerminalMeasurementRecord" in generatorFacade,
     ).toBe(false);
+    expect("prepareM9b3dTrustedGold" in generatorFacade).toBe(false);
+    expect("measureM9b3dVerifiedTerminalRecord" in generatorFacade).toBe(false);
+    expect("verifyM9b3dTerminalMeasurementRecord" in generatorFacade).toBe(
+      false,
+    );
     expect("auditM9cInferenceUnits" in generatorFacade).toBe(false);
     expect("verifyM9cPairedDescriptiveReport" in generatorFacade).toBe(false);
     expect("verifyM9b2SplitDisjointnessAudit" in generatorFacade).toBe(false);
@@ -1592,6 +1601,19 @@ describe("M9b.2 offline evaluator and corpus design", () => {
         finalEvaluator,
       ),
     ).toMatchObject({ ok: true });
+    const goldToken = unwrap(await prepareM9b3dTrustedGold(suite));
+    expect(
+      await measureM9b3dVerifiedTerminalRecord(
+        verification,
+        {
+          ...finalEvaluator,
+          artifactDigest: "1".repeat(64),
+          outputSchemaDigest: "2".repeat(64),
+          independentValidationRecordDigest: "3".repeat(64),
+        },
+        goldToken,
+      ),
+    ).toMatchObject({ ok: false });
     expect(await measureM9b2VerifiedTerminalRecord(verification)).toMatchObject(
       { ok: false },
     );
@@ -1621,6 +1643,207 @@ describe("M9b.2 offline evaluator and corpus design", () => {
         finalEvaluator,
       ),
     ).toMatchObject({ ok: false });
+  });
+
+  it("binds the complete evaluator artifact and exact opaque gold to execution", async () => {
+    const suite = await preparedSuite();
+    const caseId = "m9b2-dev-lookup-1x";
+    const publicCase = developmentCase(caseId);
+    const corpus = unwrap(await createM9aCorpus(publicCase.corpus));
+    const snapshot = required(inspectM9aCorpus(corpus));
+    const citation = required(
+      required(m9b2InternalInspectSupportingFacts(suite, caseId))[0],
+    ).chunk;
+    const evaluatorArtifact = {
+      id: "m9b3d.final-offline-evaluator",
+      version: "1",
+      artifactDigest: "1".repeat(64),
+      outputSchemaDigest: "2".repeat(64),
+      independentValidationRecordDigest: "3".repeat(64),
+    } as const;
+    const goldToken = unwrap(await prepareM9b3dTrustedGold(suite));
+    const goldArtifact = required(inspectM9b3dTrustedGold(goldToken));
+    let evaluatorCalls = 0;
+    const evaluatorFactory = (): M9b1ExternalEvaluator => {
+      const developmentEvaluator = unwrap(
+        createM9b2OfflineEvaluator(suite, caseId),
+      );
+      return {
+        identity: {
+          id: evaluatorArtifact.id,
+          version: evaluatorArtifact.version,
+        },
+        evaluate: async (input, signal) => {
+          evaluatorCalls += 1;
+          const evaluated = await developmentEvaluator.evaluate(input, signal);
+          if (!evaluated.ok) return evaluated;
+          const score = m9b2EvaluationScoreSchema.parse(evaluated.value);
+          return {
+            ok: true,
+            value: strictJsonValueSchema.parse({
+              ...score,
+              evaluatorVersion: evaluatorArtifact.version,
+              evaluatorArtifact,
+              goldArtifact,
+            }),
+          };
+        },
+      };
+    };
+    const comparison = unwrap(
+      await runM9b1OfflineProgramDiscovery({
+        corpus,
+        task: publicCase.task,
+        model: { id: "m9b2-offline-model", version: "1" },
+        authoringSessionFactories: {
+          discoveredProgram: () => authoredModel("discovered-program"),
+          staticQuery: () => authoredModel("static-one-shot"),
+        },
+        executionSessionFactories: {
+          discoveredProgram: () => executionModel(citation),
+          staticQuery: () => executionModel(citation),
+        },
+        evaluator: {
+          id: evaluatorArtifact.id,
+          version: evaluatorArtifact.version,
+        },
+        evaluatorSessionFactories: {
+          discoveredProgram: () => evaluatorFactory(),
+          staticQuery: () => evaluatorFactory(),
+        },
+        executionOrder: "discovered-first",
+        store: createM9b1ArmStore(memoryArmPersistence()),
+      }),
+    );
+    const arm = comparison.discovered;
+    const taskDigest = unwrap(await digestValue(publicCase.task));
+    const evaluatorIdentity = {
+      id: evaluatorArtifact.id,
+      version: evaluatorArtifact.version,
+    };
+    const verified = unwrap(
+      await m9b1InternalVerifyTerminalRecord(arm.record, {
+        task: publicCase.task,
+        taskDigest,
+        corpusSnapshotDigest: snapshot.snapshotDigest,
+        model: { id: "m9b2-offline-model", version: "1" },
+        evaluator: evaluatorIdentity,
+        executionOrder: "discovered-first",
+      }),
+    );
+    const response = required(arm.record.authoringResponse);
+    if (response.kind !== "program") throw new Error("Expected program arm.");
+    const verification = {
+      suite,
+      caseId,
+      verifiedRecord: verified,
+      expected: {
+        arm: "discovered-program",
+        sourceArmRecordDigest: arm.record.recordDigest,
+        comparisonDigest: comparison.comparisonDigest,
+        model: { id: "m9b2-offline-model", version: "1" },
+        evaluator: evaluatorIdentity,
+        programIdentity: response.sourceDigest,
+      },
+    } as const;
+    const measured = unwrap(
+      await measureM9b3dVerifiedTerminalRecord(
+        verification,
+        evaluatorArtifact,
+        goldToken,
+      ),
+    );
+    expect(measured).toMatchObject({
+      protocol: "lachesis-m9b3d-artifact-bound-terminal-measurement-record/1",
+      evaluatorArtifact,
+      goldArtifact,
+      evaluationAttemptBinding: {
+        evaluatorArtifact,
+        goldArtifact,
+        sourceEvaluationAttemptDigest: measured.evaluationAttemptDigest,
+      },
+      evaluation: {
+        evaluatorArtifact,
+        goldArtifact,
+        semanticSupported: true,
+      },
+      primary: { success: true },
+    });
+    const callsBeforeVerification = evaluatorCalls;
+    expect(
+      await verifyM9b3dTerminalMeasurementRecord(
+        measured,
+        verification,
+        evaluatorArtifact,
+        goldToken,
+      ),
+    ).toMatchObject({ ok: true });
+    expect(evaluatorCalls).toBe(callsBeforeVerification);
+    for (const changedArtifact of [
+      { ...evaluatorArtifact, artifactDigest: "4".repeat(64) },
+      { ...evaluatorArtifact, outputSchemaDigest: "5".repeat(64) },
+      {
+        ...evaluatorArtifact,
+        independentValidationRecordDigest: "6".repeat(64),
+      },
+    ])
+      expect(
+        await verifyM9b3dTerminalMeasurementRecord(
+          measured,
+          verification,
+          changedArtifact,
+          goldToken,
+        ),
+      ).toMatchObject({ ok: false });
+    const wrongGoldSuite = (await disjointPreparedSuite("wrong-gold")).suite;
+    const wrongGoldToken = unwrap(
+      await prepareM9b3dTrustedGold(wrongGoldSuite),
+    );
+    expect(
+      await measureM9b3dVerifiedTerminalRecord(
+        verification,
+        evaluatorArtifact,
+        wrongGoldToken,
+      ),
+    ).toMatchObject({ ok: false });
+    const { recordDigest: _recordDigest, ...body } = measured;
+    void _recordDigest;
+    const changedGold = {
+      ...goldArtifact,
+      artifactDigest: "7".repeat(64),
+    };
+    const attemptBinding = required(measured.evaluationAttemptBinding);
+    const { bindingDigest: _bindingDigest, ...attemptBindingBody } =
+      attemptBinding;
+    void _bindingDigest;
+    const changedAttemptBindingBody = {
+      ...attemptBindingBody,
+      goldArtifact: changedGold,
+    };
+    const changedBody = {
+      ...body,
+      goldArtifact: changedGold,
+      evaluationAttemptBinding: {
+        ...changedAttemptBindingBody,
+        bindingDigest: unwrap(await digestValue(changedAttemptBindingBody)),
+      },
+      evaluation:
+        measured.evaluation === null
+          ? null
+          : { ...measured.evaluation, goldArtifact: changedGold },
+    };
+    expect(
+      await verifyM9b3dTerminalMeasurementRecord(
+        {
+          ...changedBody,
+          recordDigest: unwrap(await digestValue(changedBody)),
+        },
+        verification,
+        evaluatorArtifact,
+        goldToken,
+      ),
+    ).toMatchObject({ ok: false });
+    expect(evaluatorCalls).toBe(callsBeforeVerification);
   });
 
   it("derives every first-attempt terminal stage from verified M9b.1b records", async () => {

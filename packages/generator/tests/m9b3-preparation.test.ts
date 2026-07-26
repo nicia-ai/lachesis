@@ -17,14 +17,17 @@ import {
 import {
   createM9b2OfflineEvaluator,
   inspectM9b2PreparedCase,
+  inspectM9b3dTrustedGold,
   M9B2_CORPUS_SCALES,
   M9B2_EVALUATOR_IDENTITY,
   M9B2_TASK_FAMILIES,
   type M9b2HiddenExpectation,
   type M9b2PreparedSuite,
   type M9b2PublicDevelopmentCase,
+  type M9b3dGoldArtifactIdentity,
   type M9cPairedMeasurementVerification,
   prepareM9b2DevelopmentSuite,
+  prepareM9b3dTrustedGold,
 } from "../src/m9b2-measurement.js";
 import {
   bindM9b3Populations,
@@ -73,7 +76,7 @@ function providerProfile(): M9b3ProviderProfileInput {
     },
     model: {
       providerId: "offline.test-provider",
-      id: "m9b3c-offline-model",
+      id: "m9b3d-offline-model",
       revision: "1",
       contextWindowTokens: 262_144,
       maximumOutputTokens: 131_072,
@@ -81,7 +84,7 @@ function providerProfile(): M9b3ProviderProfileInput {
     },
     tokenizer: {
       providerId: "offline.test-provider",
-      modelId: "m9b3c-offline-model",
+      modelId: "m9b3d-offline-model",
       id: "offline.test-exact-tokenizer",
       version: "2026-07-26",
       artifactDigest: "2".repeat(64),
@@ -91,7 +94,7 @@ function providerProfile(): M9b3ProviderProfileInput {
     },
     pricing: {
       providerId: "offline.test-provider",
-      modelId: "m9b3c-offline-model",
+      modelId: "m9b3d-offline-model",
       currency: "USD",
       inputUsdMicrosPerMillionTokens: 1_000_000,
       outputUsdMicrosPerMillionTokens: 2_000_000,
@@ -103,7 +106,7 @@ function providerProfile(): M9b3ProviderProfileInput {
 }
 
 const FINAL_EVALUATOR_IDENTITY = Object.freeze({
-  id: "m9b3c.final-offline-evaluator",
+  id: "m9b3d.final-offline-evaluator",
   version: "1",
 });
 
@@ -120,28 +123,26 @@ async function preparationInput(): Promise<M9b3PreparationInput> {
   };
 }
 
-function prospectiveSupplementInput(): M9b3ProspectiveSupplementInput {
+function prospectiveSupplementInput(
+  finalGold: M9b3dGoldArtifactIdentity,
+): M9b3ProspectiveSupplementInput {
   return {
-    finalGold: {
-      id: "m9b3c.final-offline-gold",
-      version: "1",
-      artifactDigest: "8".repeat(64),
-    },
+    finalGold,
     finalEvaluator: {
       ...FINAL_EVALUATOR_IDENTITY,
       artifactDigest: "9".repeat(64),
       outputSchemaDigest: "a".repeat(64),
+      independentValidationRecordDigest: "b".repeat(64),
       deterministicLocalArmBlind: true,
       providerEffects: 0,
       campaignEligible: true,
     },
-    independentValidationRecordDigest: "b".repeat(64),
   };
 }
 
 function required<T>(value: T | null | undefined): T {
   if (value === undefined || value === null)
-    throw new Error("Missing M9b.3c test fixture.");
+    throw new Error("Missing M9b.3d test fixture.");
   return value;
 }
 
@@ -185,7 +186,7 @@ function exactScaledCorpus(
     0,
   );
   if (changedBytes >= targetBytes)
-    throw new Error("M9b.3c fixture base corpus exceeds its scale target.");
+    throw new Error("M9b.3d fixture base corpus exceeds its scale target.");
   const paddingDocuments: Array<
     Readonly<{ id: string; title: string; text: string }>
   > = [];
@@ -195,7 +196,7 @@ function exactScaledCorpus(
     const prefix = `${suffix}-${String(paddingIndex)}-`;
     const bytes = Math.min(60_000, remaining);
     if (bytes < prefix.length)
-      throw new Error("M9b.3c fixture padding cannot preserve exact bytes.");
+      throw new Error("M9b.3d fixture padding cannot preserve exact bytes.");
     paddingDocuments.push({
       id: `padding-${String(paddingIndex)}`,
       title: `Natural background ${suffix} ${String(paddingIndex)}`,
@@ -343,7 +344,7 @@ function memoryArmPersistence(): M9b1AtomicPersistence {
     writeAtomic: ({ expectedRevision, content: next }) => {
       const expected = content === undefined ? null : String(revision);
       if (expectedRevision !== expected)
-        throw new Error("Unexpected M9b.3c fixture revision.");
+        throw new Error("Unexpected M9b.3d fixture revision.");
       content = next;
       revision += 1;
       return Promise.resolve({
@@ -358,7 +359,7 @@ function authoredModel(
   arm: "discovered-program" | "static-one-shot",
 ): M9b1AuthoringModel {
   return {
-    identity: { id: "m9b3c-offline-model", version: "1" },
+    identity: { id: "m9b3d-offline-model", version: "1" },
     complete: (request) => {
       const output =
         arm === "discovered-program"
@@ -383,7 +384,7 @@ function authoredModel(
 
 function failingExecutionModel(): M9b0OfflineModel {
   return {
-    identity: { id: "m9b3c-offline-model", version: "1" },
+    identity: { id: "m9b3d-offline-model", version: "1" },
     complete: () => {
       return Promise.resolve({
         ok: false,
@@ -466,7 +467,7 @@ async function pairedProbeMeasurementVerifications(
         await runM9b1OfflineProgramDiscovery({
           corpus,
           task: inspection.publicCase.task,
-          model: { id: "m9b3c-offline-model", version: "1" },
+          model: { id: "m9b3d-offline-model", version: "1" },
           authoringSessionFactories: {
             discoveredProgram: () => countedAuthoring("discovered-program"),
             staticQuery: () => countedAuthoring("static-one-shot"),
@@ -499,7 +500,7 @@ async function pairedProbeMeasurementVerifications(
             task: inspection.publicCase.task,
             taskDigest,
             corpusSnapshotDigest: snapshot.snapshotDigest,
-            model: { id: "m9b3c-offline-model", version: "1" },
+            model: { id: "m9b3d-offline-model", version: "1" },
             evaluator: evaluatorIdentity,
             executionOrder,
           }),
@@ -512,7 +513,7 @@ async function pairedProbeMeasurementVerifications(
             arm: expectedArm,
             sourceArmRecordDigest: arm.record.recordDigest,
             comparisonDigest: comparison.comparisonDigest,
-            model: { id: "m9b3c-offline-model", version: "1" },
+            model: { id: "m9b3d-offline-model", version: "1" },
             evaluator: evaluatorIdentity,
             programIdentity,
           },
@@ -539,8 +540,8 @@ async function resign<T extends object>(
   };
 }
 
-describe("M9b.3c offline provenance correction", () => {
-  it("keeps the complete M9b.3c preparation surface private", () => {
+describe("M9b.3d offline provenance correction", () => {
+  it("keeps the complete M9b.3d preparation surface private", () => {
     expect("M9B3_PREPARATION_PROTOCOL" in generatorFacade).toBe(false);
     expect("prepareM9b3OfflineStudy" in generatorFacade).toBe(false);
     expect("verifyM9b3OfflineStudy" in generatorFacade).toBe(false);
@@ -882,12 +883,16 @@ describe("M9b.3c offline provenance correction", () => {
       ),
     };
     const preparation = unwrap(await prepareM9b3OfflineStudy(input));
-    const supplementInput = prospectiveSupplementInput();
+    const goldToken = unwrap(await prepareM9b3dTrustedGold(populations.probe));
+    const goldIdentity = required(inspectM9b3dTrustedGold(goldToken));
+    const supplementInput = prospectiveSupplementInput(goldIdentity);
     const supplement = unwrap(
       await prepareM9b3ProspectiveSupplement(
         input,
         preparation,
         supplementInput,
+        populations.probe,
+        goldToken,
       ),
     );
     expect(
@@ -895,23 +900,60 @@ describe("M9b.3c offline provenance correction", () => {
         input,
         preparation,
         supplementInput,
+        populations.probe,
+        goldToken,
         supplement,
       ),
     ).toMatchObject({ ok: true });
+    const wrongGoldToken = unwrap(
+      await prepareM9b3dTrustedGold(populations.primary),
+    );
     expect(
-      await prepareM9b3ProspectiveSupplement(input, preparation, {
-        ...supplementInput,
-        finalEvaluator: {
-          ...supplementInput.finalEvaluator,
-          ...M9B2_EVALUATOR_IDENTITY,
+      await prepareM9b3ProspectiveSupplement(
+        input,
+        preparation,
+        supplementInput,
+        populations.probe,
+        wrongGoldToken,
+      ),
+    ).toMatchObject({ ok: false });
+    expect(
+      await prepareM9b3ProspectiveSupplement(
+        input,
+        preparation,
+        {
+          ...supplementInput,
+          finalGold: {
+            ...supplementInput.finalGold,
+            artifactDigest: "0".repeat(64),
+          },
         },
-      }),
+        populations.probe,
+        goldToken,
+      ),
+    ).toMatchObject({ ok: false });
+    expect(
+      await prepareM9b3ProspectiveSupplement(
+        input,
+        preparation,
+        {
+          ...supplementInput,
+          finalEvaluator: {
+            ...supplementInput.finalEvaluator,
+            ...M9B2_EVALUATOR_IDENTITY,
+          },
+        },
+        populations.probe,
+        goldToken,
+      ),
     ).toMatchObject({ ok: false });
     expect(
       await verifyM9b3ProspectiveSupplement(
         input,
         preparation,
         supplementInput,
+        populations.probe,
+        goldToken,
         {
           ...supplement,
           finalGold: {
@@ -925,11 +967,43 @@ describe("M9b.3c offline provenance correction", () => {
     const { supplementDigest: _supplementDigest, ...supplementBody } =
       supplement;
     void _supplementDigest;
+    for (const changedEvaluator of [
+      {
+        ...supplement.finalEvaluator,
+        artifactDigest: "1".repeat(64),
+      },
+      {
+        ...supplement.finalEvaluator,
+        outputSchemaDigest: "2".repeat(64),
+      },
+      {
+        ...supplement.finalEvaluator,
+        independentValidationRecordDigest: "3".repeat(64),
+      },
+    ]) {
+      const changedSupplementBody = {
+        ...supplementBody,
+        finalEvaluator: changedEvaluator,
+      };
+      expect(
+        await verifyM9b3ProspectiveSupplement(
+          input,
+          preparation,
+          supplementInput,
+          populations.probe,
+          goldToken,
+          {
+            ...changedSupplementBody,
+            supplementDigest: unwrap(await digestValue(changedSupplementBody)),
+          },
+        ),
+      ).toMatchObject({ ok: false });
+    }
     const rekeyedSupplementBody = {
       ...supplementBody,
       finalEvaluator: {
         ...supplement.finalEvaluator,
-        id: "m9b3c.forged-final-evaluator",
+        id: "m9b3d.forged-final-evaluator",
       },
     };
     expect(
@@ -937,6 +1011,8 @@ describe("M9b.3c offline provenance correction", () => {
         input,
         preparation,
         supplementInput,
+        populations.probe,
+        goldToken,
         {
           ...rekeyedSupplementBody,
           supplementDigest: unwrap(await digestValue(rekeyedSupplementBody)),
@@ -966,6 +1042,7 @@ describe("M9b.3c offline provenance correction", () => {
         preparation,
         supplementInput,
         supplement,
+        goldToken,
         populations.development,
         populations.probe,
         populations.primary,
@@ -976,7 +1053,7 @@ describe("M9b.3c offline provenance correction", () => {
     );
     expect(decision).toMatchObject({
       endpoint: "first-attempt-semantically-supported-end-to-end-success",
-      model: { id: "m9b3c-offline-model", version: "1" },
+      model: { id: "m9b3d-offline-model", version: "1" },
       evaluator: FINAL_EVALUATOR_IDENTITY,
       counts: {
         discoveredOnly: 0,
@@ -998,6 +1075,7 @@ describe("M9b.3c offline provenance correction", () => {
         preparation,
         supplementInput,
         supplement,
+        goldToken,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1015,6 +1093,7 @@ describe("M9b.3c offline provenance correction", () => {
         preparation,
         supplementInput,
         supplement,
+        goldToken,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1037,6 +1116,7 @@ describe("M9b.3c offline provenance correction", () => {
         preparation,
         supplementInput,
         supplement,
+        goldToken,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1051,6 +1131,7 @@ describe("M9b.3c offline provenance correction", () => {
         preparation,
         supplementInput,
         supplement,
+        goldToken,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1071,6 +1152,7 @@ describe("M9b.3c offline provenance correction", () => {
         preparation,
         supplementInput,
         supplement,
+        goldToken,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1099,6 +1181,7 @@ describe("M9b.3c offline provenance correction", () => {
         preparation,
         supplementInput,
         supplement,
+        goldToken,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1127,6 +1210,7 @@ describe("M9b.3c offline provenance correction", () => {
         preparation,
         supplementInput,
         supplement,
+        goldToken,
         populations.development,
         populations.probe,
         populations.primary,
@@ -1144,6 +1228,32 @@ describe("M9b.3c offline provenance correction", () => {
       { ...body, scheduleDigest: "0".repeat(64) },
       { ...body, model: { ...body.model, id: "forged-model" } },
       { ...body, evaluator: { ...body.evaluator, id: "forged-evaluator" } },
+      {
+        ...body,
+        sourcePairs: [
+          {
+            ...firstPair,
+            evaluatorArtifact: {
+              ...firstPair.evaluatorArtifact,
+              outputSchemaDigest: "4".repeat(64),
+            },
+          },
+          ...body.sourcePairs.slice(1),
+        ],
+      },
+      {
+        ...body,
+        sourcePairs: [
+          {
+            ...firstPair,
+            goldArtifact: {
+              ...firstPair.goldArtifact,
+              scoringSourceDigest: "5".repeat(64),
+            },
+          },
+          ...body.sourcePairs.slice(1),
+        ],
+      },
       {
         ...body,
         sourcePairs: [
@@ -1172,6 +1282,7 @@ describe("M9b.3c offline provenance correction", () => {
           preparation,
           supplementInput,
           supplement,
+          goldToken,
           populations.development,
           populations.probe,
           populations.primary,
