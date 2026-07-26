@@ -37,12 +37,13 @@ import {
   type M9b0ModelIdentity,
   type M9b0OfflineModel,
   summarizeM9b0InternalFailure,
+  validateM9b0InternalBoundRequest,
   validateM9b0InternalFailureSummary,
 } from "./m9b0-comparison.js";
 import { type StrictJsonValue, strictJsonValueSchema } from "./strict-json.js";
 
 export const M9B1_OFFLINE_DISCOVERY_PROTOCOL = Object.freeze({
-  id: "lachesis-m9b1-offline-program-discovery",
+  id: "lachesis-m9b1a-offline-program-discovery",
   version: "1.0.0",
   visibility: "internal-offline-development-only" as const,
   tokenizer: "utf8-byte-exact-offline-reference/1" as const,
@@ -356,16 +357,32 @@ const retainedFailureSchema = z
   .readonly();
 type M9b1RetainedFailure = z.infer<typeof retainedFailureSchema>;
 
-const evaluationReceiptSchema = z
+const evaluationAttemptBase = {
+  evaluator: modelIdentitySchema,
+  serializedInput: z.string().min(1),
+  inputDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+};
+const successfulEvaluationAttemptSchema = z
   .strictObject({
-    evaluator: modelIdentitySchema,
-    serializedInput: z.string().min(1),
-    inputDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+    status: z.literal("success"),
+    ...evaluationAttemptBase,
     serializedOutput: z.string().min(1),
     outputDigest: z.string().regex(/^[a-f0-9]{64}$/u),
   })
   .readonly();
-export type M9b1EvaluationReceipt = z.infer<typeof evaluationReceiptSchema>;
+const failedEvaluationAttemptSchema = z
+  .strictObject({
+    status: z.literal("failure"),
+    ...evaluationAttemptBase,
+    failure: retainedFailureSchema,
+  })
+  .readonly();
+export type M9b1EvaluationAttempt =
+  | z.infer<typeof successfulEvaluationAttemptSchema>
+  | z.infer<typeof failedEvaluationAttemptSchema>;
+const evaluationInputSchema = z
+  .strictObject({ task: taskSchema, answer: strictJsonValueSchema })
+  .readonly();
 
 export type M9b1ExternalEvaluator = Readonly<{
   identity: M9b0ModelIdentity;
@@ -394,9 +411,9 @@ const terminalOutcomeSchema = z.discriminatedUnion("status", [
   z
     .strictObject({
       status: z.literal("evaluation-failure"),
-      failure: retainedFailureSchema,
       runDigest: z.string().regex(/^[a-f0-9]{64}$/u),
       replayArtifact: m9aPrivateReplayArtifactSchema,
+      evaluationAttempt: failedEvaluationAttemptSchema,
     })
     .readonly(),
   z
@@ -404,7 +421,7 @@ const terminalOutcomeSchema = z.discriminatedUnion("status", [
       status: z.literal("success"),
       runDigest: z.string().regex(/^[a-f0-9]{64}$/u),
       replayArtifact: m9aPrivateReplayArtifactSchema,
-      evaluation: evaluationReceiptSchema,
+      evaluationAttempt: successfulEvaluationAttemptSchema,
     })
     .readonly(),
 ]);
@@ -418,9 +435,11 @@ const recordBodyObjectSchema = z.strictObject({
     .readonly(),
   comparisonDigest: z.string().regex(/^[a-f0-9]{64}$/u),
   arm: armSchema,
+  executionOrder: orderSchema,
   corpusSnapshotDigest: z.string().regex(/^[a-f0-9]{64}$/u),
   taskDigest: z.string().regex(/^[a-f0-9]{64}$/u),
   model: modelIdentitySchema,
+  evaluator: modelIdentitySchema,
   matchedEnvelope: z
     .strictObject({
       maxInputTokens: z.literal(M9B1_MATCHED_MODEL_ENVELOPE.maxInputTokens),
@@ -465,7 +484,7 @@ export type M9b1ArmStore = Readonly<{
 
 const storeSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b1-atomic-arm-store/1"),
+    protocol: z.literal("lachesis-m9b1a-atomic-arm-store/1"),
     records: m9b1InternalArmRecordSchema.array().readonly(),
   })
   .readonly();
@@ -474,11 +493,56 @@ function failure(message: string): M9aRetrievalFailure {
   return m9aRetrievalFailureSchema.parse({ kind: "invalid-input", message });
 }
 
+function authoringTimeoutFailure(): M9aRetrievalFailure {
+  return m9aRetrievalFailureSchema.parse({
+    kind: "limit-exceeded",
+    message: "M9b.1 authoring exceeded its controller wall-clock ceiling.",
+  });
+}
+
 function sameIdentity(
   left: M9b0ModelIdentity,
   right: M9b0ModelIdentity,
 ): boolean {
   return left.id === right.id && left.version === right.version;
+}
+
+async function completeAuthoringWithDeadline(
+  author: M9b1AuthoringModel,
+  request: M9b1BoundAuthoringRequest,
+  outerSignal: AbortSignal,
+): ReturnType<M9b1AuthoringModel["complete"]> {
+  if (outerSignal.aborted)
+    return {
+      ok: false,
+      error: m9aRetrievalFailureSchema.parse({
+        kind: "aborted",
+        message: "M9b.1 authoring was cancelled before dispatch.",
+      }),
+    };
+  const controller = new AbortController();
+  const abort = (): void => {
+    controller.abort();
+  };
+  outerSignal.addEventListener("abort", abort, { once: true });
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<
+    Awaited<ReturnType<M9b1AuthoringModel["complete"]>>
+  >((resolve) => {
+    timeout = setTimeout(() => {
+      controller.abort();
+      resolve({ ok: false, error: authoringTimeoutFailure() });
+    }, request.reservation.maxWallClockMs);
+  });
+  try {
+    return await Promise.race([
+      author.complete(request, controller.signal),
+      deadline,
+    ]);
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout);
+    outerSignal.removeEventListener("abort", abort);
+  }
 }
 
 function authoringBody(
@@ -748,42 +812,122 @@ async function compileReceipt(
     : digest;
 }
 
-async function evaluationReceipt(
+async function bindEvaluationInput(
+  evaluator: M9b0ModelIdentity,
+  task: string,
+  run: M9aRetrievalRun,
+): Promise<
+  Result<
+    Readonly<{
+      evaluator: M9b0ModelIdentity;
+      serializedInput: string;
+      inputDigest: string;
+      input: Readonly<{ task: string; answer: StrictJsonValue }>;
+    }>,
+    Diagnostic
+  >
+> {
+  const answer = strictJsonValueSchema.safeParse(run.answer);
+  if (!answer.success)
+    return {
+      ok: false,
+      error: diagnostic(
+        "INTERNAL_INVARIANT_VIOLATION",
+        "M9b.1 run answer is not strict JSON.",
+      ),
+    };
+  const input = { task, answer: answer.data };
+  const serializedInput = canonicalizeJson(input);
+  const inputDigest = await digestValue(input);
+  return serializedInput.ok && inputDigest.ok
+    ? {
+        ok: true,
+        value: {
+          evaluator,
+          serializedInput: serializedInput.value,
+          inputDigest: inputDigest.value,
+          input,
+        },
+      }
+    : {
+        ok: false,
+        error: diagnostic(
+          "INTERNAL_INVARIANT_VIOLATION",
+          "M9b.1 evaluator input binding failed.",
+        ),
+      };
+}
+
+async function failedEvaluationAttempt(
+  evaluator: M9b0ModelIdentity,
+  task: string,
+  run: M9aRetrievalRun,
+  payload: M9aRetrievalFailure,
+): Promise<Result<M9b1EvaluationAttempt, Diagnostic>> {
+  const bound = await bindEvaluationInput(evaluator, task, run);
+  if (!bound.ok) return bound;
+  const retained = await retainFailure(
+    "evaluation",
+    strictJsonValueSchema.parse(payload),
+  );
+  return retained.ok
+    ? {
+        ok: true,
+        value: failedEvaluationAttemptSchema.parse({
+          status: "failure",
+          evaluator: bound.value.evaluator,
+          serializedInput: bound.value.serializedInput,
+          inputDigest: bound.value.inputDigest,
+          failure: retained.value,
+        }),
+      }
+    : retained;
+}
+
+async function evaluationAttempt(
   evaluator: M9b1ExternalEvaluator,
   task: string,
   run: M9aRetrievalRun,
   signal: AbortSignal,
-): Promise<Result<M9b1EvaluationReceipt, M9aRetrievalFailure>> {
-  const answer = strictJsonValueSchema.safeParse(run.answer);
-  if (!answer.success)
-    return { ok: false, error: failure("Run answer is not strict JSON.") };
-  const input = { task, answer: answer.data };
-  const serializedInput = canonicalizeJson(input);
-  const inputDigest = await digestValue(input);
-  if (!serializedInput.ok || !inputDigest.ok)
-    return { ok: false, error: failure("Evaluator input binding failed.") };
-  const evaluated = await evaluator.evaluate(input, signal);
-  if (!evaluated.ok) return evaluated;
+): Promise<Result<M9b1EvaluationAttempt, Diagnostic>> {
+  const bound = await bindEvaluationInput(evaluator.identity, task, run);
+  if (!bound.ok) return bound;
+  const evaluated = await evaluator.evaluate(bound.value.input, signal);
+  if (!evaluated.ok)
+    return failedEvaluationAttempt(
+      evaluator.identity,
+      task,
+      run,
+      evaluated.error,
+    );
   const output = strictJsonValueSchema.safeParse(evaluated.value);
   if (!output.success)
-    return {
-      ok: false,
-      error: failure("Evaluator output is not strict JSON."),
-    };
+    return failedEvaluationAttempt(
+      evaluator.identity,
+      task,
+      run,
+      failure("Evaluator output is not strict JSON."),
+    );
   const serializedOutput = canonicalizeJson(output.data);
   const outputDigest = await digestValue(output.data);
   return serializedOutput.ok && outputDigest.ok
     ? {
         ok: true,
-        value: evaluationReceiptSchema.parse({
-          evaluator: evaluator.identity,
-          serializedInput: serializedInput.value,
-          inputDigest: inputDigest.value,
+        value: successfulEvaluationAttemptSchema.parse({
+          status: "success",
+          evaluator: bound.value.evaluator,
+          serializedInput: bound.value.serializedInput,
+          inputDigest: bound.value.inputDigest,
           serializedOutput: serializedOutput.value,
           outputDigest: outputDigest.value,
         }),
       }
-    : { ok: false, error: failure("Evaluator output binding failed.") };
+    : failedEvaluationAttempt(
+        evaluator.identity,
+        task,
+        run,
+        failure("Evaluator output binding failed."),
+      );
 }
 
 function recordBody(record: M9b1ArmRecord): z.infer<typeof recordBodySchema> {
@@ -791,9 +935,11 @@ function recordBody(record: M9b1ArmRecord): z.infer<typeof recordBodySchema> {
     protocol: record.protocol,
     comparisonDigest: record.comparisonDigest,
     arm: record.arm,
+    executionOrder: record.executionOrder,
     corpusSnapshotDigest: record.corpusSnapshotDigest,
     taskDigest: record.taskDigest,
     model: record.model,
+    evaluator: record.evaluator,
     matchedEnvelope: record.matchedEnvelope,
     authoringRequest: record.authoringRequest,
     authoringResponse: record.authoringResponse,
@@ -848,39 +994,132 @@ async function validateResponse(
       };
 }
 
-async function validateEvaluation(
-  receipt: M9b1EvaluationReceipt,
+async function validateEvaluationAttempt(
+  attempt: M9b1EvaluationAttempt,
   evaluator: M9b0ModelIdentity,
   task: string,
   run: M9aRetrievalRun,
 ): Promise<Result<void, Diagnostic>> {
-  const answer = strictJsonValueSchema.safeParse(run.answer);
-  const expectedInput = answer.success
-    ? canonicalizeJson({ task, answer: answer.data })
-    : undefined;
-  const inputDigest = answer.success
-    ? await digestValue({ task, answer: answer.data })
-    : undefined;
-  const output = parseJson(receipt.serializedOutput);
-  const outputDigest = output.ok ? await digestValue(output.value) : undefined;
+  const expected = await bindEvaluationInput(evaluator, task, run);
   if (
-    !sameIdentity(receipt.evaluator, evaluator) ||
-    expectedInput === undefined ||
-    !expectedInput.ok ||
-    inputDigest === undefined ||
-    !inputDigest.ok ||
-    expectedInput.value !== receipt.serializedInput ||
-    inputDigest.value !== receipt.inputDigest ||
-    !output.ok ||
-    outputDigest === undefined ||
-    !outputDigest.ok ||
-    outputDigest.value !== receipt.outputDigest
+    !expected.ok ||
+    !sameIdentity(attempt.evaluator, evaluator) ||
+    expected.value.serializedInput !== attempt.serializedInput ||
+    expected.value.inputDigest !== attempt.inputDigest
   )
     return {
       ok: false,
       error: diagnostic(
         "REPLAY_REQUEST_MISMATCH",
-        "M9b.1 evaluator receipt is not cross-bound to the replayed answer.",
+        "M9b.1 evaluator attempt is not cross-bound to the replayed answer.",
+      ),
+    };
+  if (attempt.status === "failure")
+    return validateRetainedFailure(attempt.failure);
+  const output = parseJson(attempt.serializedOutput);
+  const serializedOutput = output.ok ? canonicalizeJson(output.value) : output;
+  const outputDigest = output.ok ? await digestValue(output.value) : output;
+  if (
+    !output.ok ||
+    !serializedOutput.ok ||
+    serializedOutput.value !== attempt.serializedOutput ||
+    !outputDigest.ok ||
+    outputDigest.value !== attempt.outputDigest
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "REPLAY_REQUEST_MISMATCH",
+        "M9b.1 evaluator output is not an exact canonical binding.",
+      ),
+    };
+  return { ok: true, value: undefined };
+}
+
+async function validateExecutionRequests(
+  requests: ReadonlyArray<M9b0BoundModelRequest>,
+): Promise<Result<void, Diagnostic>> {
+  for (const request of requests) {
+    const validated = await validateM9b0InternalBoundRequest(request);
+    if (!validated.ok) return validated;
+  }
+  return { ok: true, value: undefined };
+}
+
+type M9b1ComparisonIdentity = Readonly<{
+  taskDigest: string;
+  corpusSnapshotDigest: string;
+  model: M9b0ModelIdentity;
+  evaluator: M9b0ModelIdentity;
+  order: M9b1ExecutionOrder;
+}>;
+
+/** @internal Digest seam used by persistence hostile tests; not a facade export. */
+export async function m9b1InternalComparisonDigest(
+  input: M9b1ComparisonIdentity,
+): Promise<Result<string, Diagnostic>> {
+  return digestValue({
+    protocol: M9B1_OFFLINE_DISCOVERY_PROTOCOL,
+    taskDigest: input.taskDigest,
+    corpusSnapshotDigest: input.corpusSnapshotDigest,
+    model: input.model,
+    evaluator: input.evaluator,
+    order: input.order,
+    envelope: M9B1_MATCHED_MODEL_ENVELOPE,
+  });
+}
+
+async function validatePersistedEvaluationAttempt(
+  attempt: M9b1EvaluationAttempt,
+  evaluator: M9b0ModelIdentity,
+): Promise<Result<void, Diagnostic>> {
+  const input = parseJson(attempt.serializedInput);
+  const shapedInput = input.ok
+    ? evaluationInputSchema.safeParse(input.value)
+    : undefined;
+  const serializedInput =
+    shapedInput?.success === true
+      ? canonicalizeJson(shapedInput.data)
+      : undefined;
+  const inputDigest =
+    shapedInput?.success === true
+      ? await digestValue(shapedInput.data)
+      : undefined;
+  if (
+    !sameIdentity(attempt.evaluator, evaluator) ||
+    !input.ok ||
+    shapedInput?.success !== true ||
+    serializedInput === undefined ||
+    !serializedInput.ok ||
+    serializedInput.value !== attempt.serializedInput ||
+    inputDigest === undefined ||
+    !inputDigest.ok ||
+    inputDigest.value !== attempt.inputDigest
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "REPLAY_REQUEST_MISMATCH",
+        "M9b.1 persisted evaluator input is not an exact canonical binding.",
+      ),
+    };
+  if (attempt.status === "failure")
+    return validateRetainedFailure(attempt.failure);
+  const output = parseJson(attempt.serializedOutput);
+  const serializedOutput = output.ok ? canonicalizeJson(output.value) : output;
+  const outputDigest = output.ok ? await digestValue(output.value) : output;
+  if (
+    !output.ok ||
+    !serializedOutput.ok ||
+    serializedOutput.value !== attempt.serializedOutput ||
+    !outputDigest.ok ||
+    outputDigest.value !== attempt.outputDigest
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "REPLAY_REQUEST_MISMATCH",
+        "M9b.1 persisted evaluator output is not an exact canonical binding.",
       ),
     };
   return { ok: true, value: undefined };
@@ -905,6 +1144,26 @@ async function validateRecord(
         "M9b.1 arm record digest does not match.",
       ),
     };
+  const comparisonDigest = await m9b1InternalComparisonDigest({
+    taskDigest: parsed.data.taskDigest,
+    corpusSnapshotDigest: parsed.data.corpusSnapshotDigest,
+    model: parsed.data.model,
+    evaluator: parsed.data.evaluator,
+    order: parsed.data.executionOrder,
+  });
+  if (
+    !comparisonDigest.ok ||
+    comparisonDigest.value !== parsed.data.comparisonDigest
+  )
+    return comparisonDigest.ok
+      ? {
+          ok: false,
+          error: diagnostic(
+            "REPLAY_REQUEST_MISMATCH",
+            "M9b.1 comparison identity digest does not match its record.",
+          ),
+        }
+      : comparisonDigest;
   const requestBodyValue = parseJson(
     parsed.data.authoringRequest.serializedRequest,
   );
@@ -926,6 +1185,21 @@ async function validateRecord(
     requestBody.data.task,
   );
   if (!request.ok) return request;
+  const taskDigest = await digestValue(requestBody.data.task);
+  if (!taskDigest.ok || taskDigest.value !== parsed.data.taskDigest)
+    return taskDigest.ok
+      ? {
+          ok: false,
+          error: diagnostic(
+            "REPLAY_REQUEST_MISMATCH",
+            "M9b.1 task digest does not match its canonical authoring request.",
+          ),
+        }
+      : taskDigest;
+  const executionRequests = await validateExecutionRequests(
+    parsed.data.executionRequests,
+  );
+  if (!executionRequests.ok) return executionRequests;
   if (parsed.data.authoringResponse !== null) {
     const response = await validateResponse(
       parsed.data.authoringResponse,
@@ -954,11 +1228,20 @@ async function validateRecord(
   }
   if (
     parsed.data.outcome.status === "authoring-rejected-first-attempt" ||
-    parsed.data.outcome.status === "execution-failure" ||
-    parsed.data.outcome.status === "evaluation-failure"
+    parsed.data.outcome.status === "execution-failure"
   ) {
     const retained = await validateRetainedFailure(parsed.data.outcome.failure);
     if (!retained.ok) return retained;
+  }
+  if (
+    parsed.data.outcome.status === "evaluation-failure" ||
+    parsed.data.outcome.status === "success"
+  ) {
+    const evaluation = await validatePersistedEvaluationAttempt(
+      parsed.data.outcome.evaluationAttempt,
+      parsed.data.evaluator,
+    );
+    if (!evaluation.ok) return evaluation;
   }
   const structurallyConsistent = (() => {
     switch (parsed.data.outcome.status) {
@@ -983,7 +1266,7 @@ async function validateRecord(
         );
       case "evaluation-failure":
         return (
-          parsed.data.outcome.failure.kind === "evaluation" &&
+          parsed.data.outcome.evaluationAttempt.failure.kind === "evaluation" &&
           parsed.data.authoringResponse !== null &&
           parsed.data.compilation?.status === "accepted"
         );
@@ -1082,7 +1365,7 @@ export function createM9b1ArmStore(
           ),
       );
       const content = canonicalizeJson({
-        protocol: "lachesis-m9b1-atomic-arm-store/1",
+        protocol: "lachesis-m9b1a-atomic-arm-store/1",
         records,
       });
       if (!content.ok) return content;
@@ -1152,19 +1435,29 @@ function executionOrder(
 }
 
 async function resumeRecord(
-  record: M9b1ArmRecord,
+  recordInput: M9b1ArmRecord,
   binding: Readonly<{
     task: string;
     taskDigest: string;
     corpusSnapshotDigest: string;
     model: M9b0ModelIdentity;
     evaluator: M9b0ModelIdentity;
+    executionOrder: M9b1ExecutionOrder;
   }>,
 ): Promise<Result<M9b1ArmResult, M9b1Failure>> {
+  const validatedRecord = await validateRecord(recordInput);
+  if (!validatedRecord.ok)
+    return {
+      ok: false,
+      error: outerFailure("resume", validatedRecord.error.message),
+    };
+  const record = validatedRecord.value;
   if (
     record.taskDigest !== binding.taskDigest ||
     record.corpusSnapshotDigest !== binding.corpusSnapshotDigest ||
-    !sameIdentity(record.model, binding.model)
+    !sameIdentity(record.model, binding.model) ||
+    !sameIdentity(record.evaluator, binding.evaluator) ||
+    record.executionOrder !== binding.executionOrder
   )
     return {
       ok: false,
@@ -1235,19 +1528,17 @@ async function resumeRecord(
       ok: false,
       error: outerFailure("resume", "M9b.1 zero-effect replay failed."),
     };
-  if (record.outcome.status === "success") {
-    const evaluation = await validateEvaluation(
-      record.outcome.evaluation,
-      binding.evaluator,
-      binding.task,
-      replayed.value,
-    );
-    if (!evaluation.ok)
-      return {
-        ok: false,
-        error: outerFailure("resume", evaluation.error.message),
-      };
-  }
+  const evaluation = await validateEvaluationAttempt(
+    record.outcome.evaluationAttempt,
+    binding.evaluator,
+    binding.task,
+    replayed.value,
+  );
+  if (!evaluation.ok)
+    return {
+      ok: false,
+      error: outerFailure("resume", evaluation.error.message),
+    };
   return {
     ok: true,
     value: { arm: record.arm, resumed: true, record, run: replayed.value },
@@ -1288,6 +1579,7 @@ export async function runM9b1OfflineProgramDiscovery(
     !evaluator.success ||
     !order.success ||
     corpus === undefined ||
+    sameIdentity(model.data, evaluator.data) ||
     input.authoringSessionFactories.discoveredProgram ===
       input.authoringSessionFactories.staticQuery ||
     input.executionSessionFactories.discoveredProgram ===
@@ -1299,7 +1591,7 @@ export async function runM9b1OfflineProgramDiscovery(
       ok: false,
       error: outerFailure(
         "preflight",
-        "M9b.1 shared inputs or independent session factories are invalid.",
+        "M9b.1 shared inputs, distinct model/evaluator identities, or independent session factories are invalid.",
       ),
     };
   const taskDigest = await digestValue(task.data);
@@ -1308,14 +1600,12 @@ export async function runM9b1OfflineProgramDiscovery(
       ok: false,
       error: { kind: "preflight", diagnostic: taskDigest.error },
     };
-  const comparisonDigest = await digestValue({
-    protocol: M9B1_OFFLINE_DISCOVERY_PROTOCOL,
+  const comparisonDigest = await m9b1InternalComparisonDigest({
     taskDigest: taskDigest.value,
     corpusSnapshotDigest: corpus.snapshotDigest,
     model: model.data,
     evaluator: evaluator.data,
     order: order.data,
-    envelope: M9B1_MATCHED_MODEL_ENVELOPE,
   });
   if (!comparisonDigest.ok)
     return {
@@ -1324,8 +1614,7 @@ export async function runM9b1OfflineProgramDiscovery(
     };
   const arms = executionOrder(order.data);
   const results = new Map<M9b1Arm, M9b1ArmResult>();
-  const modelSessions = new Set<M9b1AuthoringModel | M9b0OfflineModel>();
-  const evaluatorSessions = new Set<M9b1ExternalEvaluator>();
+  const sessions = new Set<object>();
   const signal = input.signal ?? new AbortController().signal;
   for (const arm of arms) {
     const loaded = await input.store.load(comparisonDigest.value, arm);
@@ -1341,6 +1630,7 @@ export async function runM9b1OfflineProgramDiscovery(
         corpusSnapshotDigest: corpus.snapshotDigest,
         model: model.data,
         evaluator: evaluator.data,
+        executionOrder: order.data,
       });
       if (!resumed.ok) return resumed;
       results.set(arm, resumed.value);
@@ -1361,10 +1651,9 @@ export async function runM9b1OfflineProgramDiscovery(
     let executionRequests: ReadonlyArray<M9b0BoundModelRequest> = [];
     let run: M9aRetrievalRun | undefined;
     let outcome: z.infer<typeof terminalOutcomeSchema>;
-    if (
-      modelSessions.has(author) ||
-      !sameIdentity(author.identity, model.data)
-    ) {
+    const authorReused = sessions.has(author);
+    sessions.add(author);
+    if (authorReused || !sameIdentity(author.identity, model.data)) {
       const payload = strictJsonValueSchema.parse(
         failure("M9b.1 requires independent authoring sessions."),
       );
@@ -1379,8 +1668,11 @@ export async function runM9b1OfflineProgramDiscovery(
         failure: retained.value,
       };
     } else {
-      modelSessions.add(author);
-      const authored = await author.complete(request.value, signal);
+      const authored = await completeAuthoringWithDeadline(
+        author,
+        request.value,
+        signal,
+      );
       const received = authored.ok
         ? await responseReceipt(
             arm,
@@ -1423,10 +1715,9 @@ export async function runM9b1OfflineProgramDiscovery(
               : input.executionSessionFactories.staticQuery();
           const mutableRequests: Array<M9b0BoundModelRequest> = [];
           executionRequests = mutableRequests;
-          if (
-            modelSessions.has(runtime) ||
-            !sameIdentity(runtime.identity, model.data)
-          ) {
+          const runtimeReused = sessions.has(runtime);
+          sessions.add(runtime);
+          if (runtimeReused || !sameIdentity(runtime.identity, model.data)) {
             const summary = await summarizeM9b0InternalFailure({
               kind: "invalid-comparison",
               diagnostic: diagnostic(
@@ -1450,7 +1741,6 @@ export async function runM9b1OfflineProgramDiscovery(
               };
             outcome = { status: "execution-failure", failure: retained.value };
           } else {
-            modelSessions.add(runtime);
             const executed = await executeM9aRetrievalProgramWithReplay(
               compiled.value,
               {
@@ -1510,57 +1800,56 @@ export async function runM9b1OfflineProgramDiscovery(
                 arm === "discovered-program"
                   ? input.evaluatorSessionFactories.discoveredProgram()
                   : input.evaluatorSessionFactories.staticQuery();
+              const evaluatorReused = sessions.has(evaluatorSession);
+              sessions.add(evaluatorSession);
               if (
-                evaluatorSessions.has(evaluatorSession) ||
+                evaluatorReused ||
                 !sameIdentity(evaluatorSession.identity, evaluator.data)
               ) {
-                const retained = await retainFailure(
-                  "evaluation",
-                  strictJsonValueSchema.parse(
-                    failure("M9b.1 requires independent evaluator sessions."),
-                  ),
+                const attempt = await failedEvaluationAttempt(
+                  evaluator.data,
+                  task.data,
+                  run,
+                  failure("M9b.1 requires independent evaluator sessions."),
                 );
-                if (!retained.ok)
+                if (!attempt.ok)
                   return {
                     ok: false,
-                    error: { kind: "preflight", diagnostic: retained.error },
+                    error: { kind: "preflight", diagnostic: attempt.error },
                   };
                 outcome = {
                   status: "evaluation-failure",
-                  failure: retained.value,
                   runDigest: executed.value.run.runDigest,
                   replayArtifact: executed.value.replayArtifact,
+                  evaluationAttempt: failedEvaluationAttemptSchema.parse(
+                    attempt.value,
+                  ),
                 };
               } else {
-                evaluatorSessions.add(evaluatorSession);
-                const evaluated = await evaluationReceipt(
+                const evaluated = await evaluationAttempt(
                   evaluatorSession,
                   task.data,
                   run,
                   signal,
                 );
                 if (!evaluated.ok) {
-                  const retained = await retainFailure(
-                    "evaluation",
-                    strictJsonValueSchema.parse(evaluated.error),
-                  );
-                  if (!retained.ok)
-                    return {
-                      ok: false,
-                      error: { kind: "preflight", diagnostic: retained.error },
-                    };
+                  return {
+                    ok: false,
+                    error: { kind: "preflight", diagnostic: evaluated.error },
+                  };
+                } else if (evaluated.value.status === "failure") {
                   outcome = {
                     status: "evaluation-failure",
-                    failure: retained.value,
                     runDigest: executed.value.run.runDigest,
                     replayArtifact: executed.value.replayArtifact,
+                    evaluationAttempt: evaluated.value,
                   };
                 } else {
                   outcome = {
                     status: "success",
                     runDigest: executed.value.run.runDigest,
                     replayArtifact: executed.value.replayArtifact,
-                    evaluation: evaluated.value,
+                    evaluationAttempt: evaluated.value,
                   };
                 }
               }
@@ -1572,9 +1861,11 @@ export async function runM9b1OfflineProgramDiscovery(
     const record = await createRecord({
       comparisonDigest: comparisonDigest.value,
       arm,
+      executionOrder: order.data,
       corpusSnapshotDigest: corpus.snapshotDigest,
       taskDigest: taskDigest.value,
       model: model.data,
+      evaluator: evaluator.data,
       authoringRequest: request.value,
       authoringResponse: response,
       compilation,

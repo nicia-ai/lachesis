@@ -693,7 +693,19 @@ function armRecordBody(
   };
 }
 
-async function validateBoundRequest(
+function reservationMatches(
+  actual: M9b0ExactModelReservation,
+  expected: M9aModelReservation,
+): boolean {
+  return (
+    actual.inputTokens <= expected.maxInputTokens &&
+    actual.maxOutputTokens === expected.maxOutputTokens &&
+    actual.maxWallClockMs === expected.maxWallClockMs
+  );
+}
+
+/** @internal Canonical M9b.0 request validator; not exported by the facade. */
+export async function validateM9b0InternalBoundRequest(
   request: M9b0BoundModelRequest,
 ): Promise<Result<void, Diagnostic>> {
   const parsed = parseJson(request.serializedRequest);
@@ -725,12 +737,18 @@ async function validateBoundRequest(
   const inputTokens = new TextEncoder().encode(
     request.serializedRequest,
   ).byteLength;
+  const reservationValid =
+    request.phase === "decompose"
+      ? reservationMatches(request.reservation, M9B0_ROOT_RESERVATION)
+      : reservationMatches(request.reservation, M9B0_LEAF_RESERVATION) ||
+        reservationMatches(request.reservation, M9B0_ONE_SHOT_RESERVATION);
   if (
     !expected.ok ||
     !requestDigest.ok ||
     expected.value !== request.serializedRequest ||
     requestDigest.value !== request.requestDigest ||
-    inputTokens !== request.reservation.inputTokens
+    inputTokens !== request.reservation.inputTokens ||
+    !reservationValid
   )
     return {
       ok: false,
@@ -762,7 +780,7 @@ async function validateRecord(
       ),
     };
   for (const request of parsed.data.modelRequests) {
-    const validatedRequest = await validateBoundRequest(request);
+    const validatedRequest = await validateM9b0InternalBoundRequest(request);
     if (!validatedRequest.ok) return validatedRequest;
   }
   if (parsed.data.outcome.status === "failure") {
@@ -1011,8 +1029,20 @@ export async function m9b0InternalModelRequestsMatchRun(
   for (const [index, event] of modelEvents.entries()) {
     const request = requests.at(index);
     if (
-      request?.phase !==
+      request === undefined ||
+      !(await validateM9b0InternalBoundRequest(request)).ok
+    )
+      return false;
+    const expectedReservation =
+      event.operation === "answer-one-shot-evidence@1.0.0"
+        ? M9B0_ONE_SHOT_RESERVATION
+        : event.category === "root-model"
+          ? M9B0_ROOT_RESERVATION
+          : M9B0_LEAF_RESERVATION;
+    if (
+      request.phase !==
         (event.category === "root-model" ? "decompose" : "answer") ||
+      !reservationMatches(request.reservation, expectedReservation) ||
       request.reservation.inputTokens !== event.usage.inputTokens ||
       event.usage.outputTokens > request.reservation.maxOutputTokens ||
       event.usage.wallClockMs > request.reservation.maxWallClockMs
