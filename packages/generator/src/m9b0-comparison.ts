@@ -760,6 +760,68 @@ export async function validateM9b0InternalBoundRequest(
   return { ok: true, value: undefined };
 }
 
+export type M9b0InternalRequestProfile = "sequenced" | "one-shot";
+
+/** @internal Profile-contextual request-sequence validator for offline M9 composition. */
+export async function validateM9b0InternalBoundRequestSequence(
+  requests: ReadonlyArray<M9b0BoundModelRequest>,
+  profile: M9b0InternalRequestProfile,
+): Promise<Result<void, Diagnostic>> {
+  if (
+    (profile === "one-shot" && requests.length > 1) ||
+    (profile === "sequenced" && requests.length > 5)
+  )
+    return {
+      ok: false,
+      error: diagnostic(
+        "REPLAY_REQUEST_MISMATCH",
+        "M9b.0 bound model request count exceeds its execution profile.",
+      ),
+    };
+  let decompositionRequests = 0;
+  let answerRequests = 0;
+  let observedAnswer = false;
+  for (const request of requests) {
+    const validated = await validateM9b0InternalBoundRequest(request);
+    if (!validated.ok) return validated;
+    if (request.phase === "decompose") {
+      decompositionRequests += 1;
+      if (
+        profile === "one-shot" ||
+        observedAnswer ||
+        decompositionRequests > 1 ||
+        !reservationMatches(request.reservation, M9B0_ROOT_RESERVATION)
+      )
+        return {
+          ok: false,
+          error: diagnostic(
+            "REPLAY_REQUEST_MISMATCH",
+            "M9b.0 decomposition request violates its execution profile.",
+          ),
+        };
+    } else {
+      observedAnswer = true;
+      answerRequests += 1;
+      const reservation =
+        profile === "one-shot"
+          ? M9B0_ONE_SHOT_RESERVATION
+          : M9B0_LEAF_RESERVATION;
+      if (
+        answerRequests > (profile === "one-shot" ? 1 : 4) ||
+        !reservationMatches(request.reservation, reservation)
+      )
+        return {
+          ok: false,
+          error: diagnostic(
+            "REPLAY_REQUEST_MISMATCH",
+            "M9b.0 answer request violates its execution profile.",
+          ),
+        };
+    }
+  }
+  return { ok: true, value: undefined };
+}
+
 async function validateRecord(
   input: unknown,
 ): Promise<Result<M9b0ArmRecord, Diagnostic>> {
@@ -1057,6 +1119,21 @@ export async function m9b0InternalModelRequestsMatchRun(
       return false;
   }
   return true;
+}
+
+/** @internal Profile-contextual matcher for offline M9 composition. */
+export async function m9b0InternalModelRequestsMatchRunForProfile(
+  requests: ReadonlyArray<M9b0BoundModelRequest>,
+  run: M9aRetrievalRun,
+  profile: M9b0InternalRequestProfile,
+): Promise<boolean> {
+  const validated = await validateM9b0InternalBoundRequestSequence(
+    requests,
+    profile,
+  );
+  return (
+    validated.ok && (await m9b0InternalModelRequestsMatchRun(requests, run))
+  );
 }
 
 type ExpectedResumeBinding = Readonly<{

@@ -115,7 +115,7 @@ function memoryPersistence(): MemoryPersistence {
       }
       content = unwrap(
         canonicalizeJson({
-          protocol: "lachesis-m9b1a-atomic-arm-store/1",
+          protocol: "lachesis-m9b1b-atomic-arm-store/1",
           records: await transform(records),
         }),
       );
@@ -207,6 +207,7 @@ type RuntimeOptions = Readonly<{
   requests?: Array<M9b0BoundModelRequest> | undefined;
   calls?: (() => void) | undefined;
   fail?: boolean | undefined;
+  failPhase?: M9b0BoundModelRequest["phase"] | undefined;
 }>;
 
 function runtimeModel(options: RuntimeOptions = {}): M9b0OfflineModel {
@@ -215,7 +216,7 @@ function runtimeModel(options: RuntimeOptions = {}): M9b0OfflineModel {
     complete: (request) => {
       options.calls?.();
       options.requests?.push(request);
-      if (options.fail === true)
+      if (options.fail === true || options.failPhase === request.phase)
         return Promise.resolve({
           ok: false,
           error: { kind: "invalid-input", message: "Runtime failed." },
@@ -388,12 +389,18 @@ async function alterFirstExecutionRequest(
   });
 }
 
-describe("M9b.1a offline program discovery persistence", () => {
+describe("M9b.1b offline failed-request profile binding", () => {
   it("does not widen the generator package facade", () => {
     expect("runM9b1OfflineProgramDiscovery" in generatorFacade).toBe(false);
     expect("M9B1_OFFLINE_DISCOVERY_PROTOCOL" in generatorFacade).toBe(false);
     expect("m9b1InternalComparisonDigest" in generatorFacade).toBe(false);
     expect("validateM9b0InternalBoundRequest" in generatorFacade).toBe(false);
+    expect("validateM9b0InternalBoundRequestSequence" in generatorFacade).toBe(
+      false,
+    );
+    expect(
+      "m9b0InternalModelRequestsMatchRunForProfile" in generatorFacade,
+    ).toBe(false);
   });
 
   it("authors, compiles, executes, evaluates, and persists both matched arms", async () => {
@@ -1296,7 +1303,217 @@ describe("M9b.1a offline program discovery persistence", () => {
     }
   });
 
-  it("applies canonical execution-request validation on save and direct resume", async () => {
+  it("rejects cross-profile reservations, phases, counts, and ordering in successful and failed records", async () => {
+    const mutations = [
+      "discovered-one-shot-reservation",
+      "static-leaf-reservation",
+      "static-decomposition",
+      "static-duplicate-answer",
+      "discovered-duplicate-decomposition",
+      "discovered-reordered-decomposition",
+      "discovered-too-many-answers",
+    ] as const;
+    for (const terminal of ["success", "execution-failure"] as const) {
+      for (const mutation of mutations) {
+        const persistence = memoryPersistence();
+        const corpus = await corpusFixture();
+        unwrap(
+          await runM9b1OfflineProgramDiscovery(
+            comparisonInput({
+              corpus,
+              persistence: persistence.persistence,
+              discoveredRuntime: () =>
+                runtimeModel({
+                  failPhase:
+                    terminal === "execution-failure" ? "answer" : undefined,
+                }),
+              staticRuntime: () =>
+                runtimeModel({ fail: terminal === "execution-failure" }),
+            }),
+          ),
+        );
+        await persistence.transform((records) => {
+          const discovered = records.find(
+            (record) => record.arm === "discovered-program",
+          );
+          const staticControl = records.find(
+            (record) => record.arm === "static-one-shot",
+          );
+          const decomposition = discovered?.executionRequests.find(
+            (request) => request.phase === "decompose",
+          );
+          const discoveredAnswer = discovered?.executionRequests.find(
+            (request) => request.phase === "answer",
+          );
+          const staticAnswer = staticControl?.executionRequests.find(
+            (request) => request.phase === "answer",
+          );
+          if (
+            discovered === undefined ||
+            staticControl === undefined ||
+            decomposition === undefined ||
+            discoveredAnswer === undefined ||
+            staticAnswer === undefined
+          )
+            throw new Error(
+              "Expected complete profile-bound request fixtures.",
+            );
+          return Promise.all(
+            records.map((record) => {
+              if (
+                mutation === "discovered-one-shot-reservation" &&
+                record.arm === "discovered-program"
+              ) {
+                const changedAnswer: M9b0BoundModelRequest = {
+                  ...discoveredAnswer,
+                  reservation: {
+                    ...discoveredAnswer.reservation,
+                    maxOutputTokens: 20_480,
+                    maxWallClockMs: 10_000,
+                  },
+                };
+                return resignRecord({
+                  ...record,
+                  executionRequests: record.executionRequests.map((request) =>
+                    request.phase === "answer" ? changedAnswer : request,
+                  ),
+                });
+              }
+              if (
+                mutation === "static-leaf-reservation" &&
+                record.arm === "static-one-shot"
+              ) {
+                const changedAnswer: M9b0BoundModelRequest = {
+                  ...staticAnswer,
+                  reservation: {
+                    ...staticAnswer.reservation,
+                    maxOutputTokens: 4_096,
+                    maxWallClockMs: 2_000,
+                  },
+                };
+                return resignRecord({
+                  ...record,
+                  executionRequests: [changedAnswer],
+                });
+              }
+              if (
+                mutation === "static-decomposition" &&
+                record.arm === "static-one-shot"
+              )
+                return resignRecord({
+                  ...record,
+                  executionRequests: [decomposition],
+                });
+              if (
+                mutation === "static-duplicate-answer" &&
+                record.arm === "static-one-shot"
+              )
+                return resignRecord({
+                  ...record,
+                  executionRequests: [staticAnswer, staticAnswer],
+                });
+              if (
+                mutation === "discovered-duplicate-decomposition" &&
+                record.arm === "discovered-program"
+              )
+                return resignRecord({
+                  ...record,
+                  executionRequests: [
+                    decomposition,
+                    decomposition,
+                    ...record.executionRequests.filter(
+                      (request) => request.phase === "answer",
+                    ),
+                  ],
+                });
+              if (
+                mutation === "discovered-reordered-decomposition" &&
+                record.arm === "discovered-program"
+              )
+                return resignRecord({
+                  ...record,
+                  executionRequests: [discoveredAnswer, decomposition],
+                });
+              if (
+                mutation === "discovered-too-many-answers" &&
+                record.arm === "discovered-program"
+              )
+                return resignRecord({
+                  ...record,
+                  executionRequests: [
+                    decomposition,
+                    discoveredAnswer,
+                    discoveredAnswer,
+                    discoveredAnswer,
+                    discoveredAnswer,
+                    discoveredAnswer,
+                  ],
+                });
+              return Promise.resolve(record);
+            }),
+          );
+        });
+        const resumed = await runM9b1OfflineProgramDiscovery(
+          comparisonInput({ corpus, persistence: persistence.persistence }),
+        );
+        expect(resumed, `${terminal}: ${mutation}`).toMatchObject({
+          ok: false,
+          error: { kind: "storage" },
+        });
+      }
+    }
+  });
+
+  it("resumes valid successful and leaf/static execution-failure records with exactly zero effects", async () => {
+    for (const terminal of ["success", "execution-failure"] as const) {
+      const persistence = memoryPersistence();
+      const corpus = await corpusFixture();
+      const compared = unwrap(
+        await runM9b1OfflineProgramDiscovery(
+          comparisonInput({
+            corpus,
+            persistence: persistence.persistence,
+            discoveredRuntime: () =>
+              runtimeModel({
+                failPhase:
+                  terminal === "execution-failure" ? "answer" : undefined,
+              }),
+            staticRuntime: () =>
+              runtimeModel({ fail: terminal === "execution-failure" }),
+          }),
+        ),
+      );
+      expect(compared.discovered.record.outcome.status).toBe(
+        terminal === "success" ? "success" : "execution-failure",
+      );
+      expect(compared.staticControl.record.outcome.status).toBe(
+        terminal === "success" ? "success" : "execution-failure",
+      );
+      let effects = 0;
+      const resumed = unwrap(
+        await runM9b1OfflineProgramDiscovery(
+          comparisonInput({
+            corpus,
+            persistence: persistence.persistence,
+            discoveredAuthor: () =>
+              authorModel({ calls: () => (effects += 1) }),
+            staticAuthor: () => authorModel({ calls: () => (effects += 1) }),
+            discoveredRuntime: () =>
+              runtimeModel({ calls: () => (effects += 1) }),
+            staticRuntime: () => runtimeModel({ calls: () => (effects += 1) }),
+            discoveredEvaluator: () => evaluator(() => (effects += 1)),
+            staticEvaluator: () => evaluator(() => (effects += 1)),
+          }),
+        ),
+      );
+      expect(resumed.discovered.resumed).toBe(true);
+      expect(resumed.staticControl.resumed).toBe(true);
+      expect(effects).toBe(0);
+      expect(persistence.writes()).toBe(2);
+    }
+  });
+
+  it("applies canonical and profile-contextual execution-request validation on save and direct resume", async () => {
     const sourcePersistence = memoryPersistence();
     const corpus = await corpusFixture();
     const compared = unwrap(
@@ -1311,17 +1528,33 @@ describe("M9b.1a offline program discovery persistence", () => {
       compared.discovered.record,
       "request-digest",
     );
+    const profileAltered = await resignRecord({
+      ...compared.discovered.record,
+      executionRequests: compared.discovered.record.executionRequests.map(
+        (request) =>
+          request.phase === "answer"
+            ? {
+                ...request,
+                reservation: {
+                  ...request.reservation,
+                  maxOutputTokens: 20_480,
+                  maxWallClockMs: 10_000,
+                },
+              }
+            : request,
+      ),
+    });
     const emptyPersistence = memoryPersistence();
-    const saved = await createM9b1ArmStore(emptyPersistence.persistence).save(
-      altered,
-    );
+    const emptyStore = createM9b1ArmStore(emptyPersistence.persistence);
+    const saved = await emptyStore.save(altered);
     expect(saved.ok).toBe(false);
+    expect((await emptyStore.save(profileAltered)).ok).toBe(false);
 
     const directStore: M9b1ArmStore = {
       load: (_comparisonDigest, arm) =>
         Promise.resolve({
           ok: true,
-          value: arm === "discovered-program" ? altered : undefined,
+          value: arm === "discovered-program" ? profileAltered : undefined,
         }),
       save: () => Promise.resolve({ ok: true, value: undefined }),
     };

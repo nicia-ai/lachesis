@@ -33,17 +33,17 @@ import {
   M9B0_MATCHED_MODEL_ENVELOPE,
   type M9b0BoundModelRequest,
   m9b0InternalBoundRequestSchema,
-  m9b0InternalModelRequestsMatchRun,
+  m9b0InternalModelRequestsMatchRunForProfile,
   type M9b0ModelIdentity,
   type M9b0OfflineModel,
   summarizeM9b0InternalFailure,
-  validateM9b0InternalBoundRequest,
+  validateM9b0InternalBoundRequestSequence,
   validateM9b0InternalFailureSummary,
 } from "./m9b0-comparison.js";
 import { type StrictJsonValue, strictJsonValueSchema } from "./strict-json.js";
 
 export const M9B1_OFFLINE_DISCOVERY_PROTOCOL = Object.freeze({
-  id: "lachesis-m9b1a-offline-program-discovery",
+  id: "lachesis-m9b1b-offline-program-discovery",
   version: "1.0.0",
   visibility: "internal-offline-development-only" as const,
   tokenizer: "utf8-byte-exact-offline-reference/1" as const,
@@ -484,7 +484,7 @@ export type M9b1ArmStore = Readonly<{
 
 const storeSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b1a-atomic-arm-store/1"),
+    protocol: z.literal("lachesis-m9b1b-atomic-arm-store/1"),
     records: m9b1InternalArmRecordSchema.array().readonly(),
   })
   .readonly();
@@ -769,6 +769,10 @@ function profileOf(arm: M9b1Arm) {
     : M9B0_INTERNAL_ONE_SHOT_EXECUTION_PROFILE;
 }
 
+function requestProfileOf(arm: M9b1Arm): "sequenced" | "one-shot" {
+  return arm === "discovered-program" ? "sequenced" : "one-shot";
+}
+
 async function compileReceipt(
   artifact: Result<M9aRetrievalArtifact, ReadonlyArray<Diagnostic>>,
 ): Promise<Result<z.infer<typeof compilationSchema>, Diagnostic>> {
@@ -1038,12 +1042,12 @@ async function validateEvaluationAttempt(
 
 async function validateExecutionRequests(
   requests: ReadonlyArray<M9b0BoundModelRequest>,
+  arm: M9b1Arm,
 ): Promise<Result<void, Diagnostic>> {
-  for (const request of requests) {
-    const validated = await validateM9b0InternalBoundRequest(request);
-    if (!validated.ok) return validated;
-  }
-  return { ok: true, value: undefined };
+  return validateM9b0InternalBoundRequestSequence(
+    requests,
+    requestProfileOf(arm),
+  );
 }
 
 type M9b1ComparisonIdentity = Readonly<{
@@ -1198,6 +1202,7 @@ async function validateRecord(
       : taskDigest;
   const executionRequests = await validateExecutionRequests(
     parsed.data.executionRequests,
+    parsed.data.arm,
   );
   if (!executionRequests.ok) return executionRequests;
   if (parsed.data.authoringResponse !== null) {
@@ -1365,7 +1370,7 @@ export function createM9b1ArmStore(
           ),
       );
       const content = canonicalizeJson({
-        protocol: "lachesis-m9b1a-atomic-arm-store/1",
+        protocol: "lachesis-m9b1b-atomic-arm-store/1",
         records,
       });
       if (!content.ok) return content;
@@ -1519,9 +1524,10 @@ async function resumeRecord(
       (record.authoringResponse.kind === "query"
         ? record.authoringResponse.query
         : binding.task) ||
-    !(await m9b0InternalModelRequestsMatchRun(
+    !(await m9b0InternalModelRequestsMatchRunForProfile(
       record.executionRequests,
       replayed.value,
+      requestProfileOf(record.arm),
     ))
   )
     return {
@@ -1775,9 +1781,10 @@ export async function runM9b1OfflineProgramDiscovery(
             } else {
               run = executed.value.run;
               if (
-                !(await m9b0InternalModelRequestsMatchRun(
+                !(await m9b0InternalModelRequestsMatchRunForProfile(
                   mutableRequests,
                   run,
+                  requestProfileOf(arm),
                 )) ||
                 response.usage.inputTokens +
                   run.transcript.retrievalUsage.inputTokens >

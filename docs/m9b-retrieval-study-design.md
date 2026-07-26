@@ -1,6 +1,6 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.1a offline program-discovery boundary only; M9b is not
+Status: **M9b.1b offline program-discovery boundary only; M9b is not
 materialized or authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
@@ -63,6 +63,30 @@ data.
 
 M9b.0 still executes a caller-supplied treatment source. It therefore remains a
 protocol-hardening substrate rather than program-discovery evidence.
+
+## M9b.1b offline failed-request profile binding
+
+The internal `lachesis-m9b1b-offline-program-discovery@1.0.0` protocol and
+`lachesis-m9b1b-atomic-arm-store/1` identity supersede M9b.1a persisted records.
+M9b.0's frozen protocol identity is unchanged.
+
+M9b.1b validates every retained execution-request sequence against its frozen
+arm profile after validating each request's canonical M9b.0 identity. The static
+control may retain at most one request: an answer request using the exact
+one-shot reservation. It cannot retain a decomposition request or a leaf
+reservation. The discovered arm may retain at most one root-reserved
+decomposition request followed by at most four leaf-reserved answer requests;
+one-shot reservations, repeated decomposition, and decomposition after an answer
+all fail closed.
+
+The contextual sequence check runs during store load, store save, controller
+resume, and successful request-to-transcript matching. Execution-failure records
+pass through the same validation before they can resume as terminal. The 33-test
+focused suite includes equivalent successful and failed-record mutations for
+reservation swapping, fully canonical cross-profile decomposition, repeated or
+reordered decomposition, request-count ceilings, and exact zero-effect resume.
+These remain offline development regressions, not a professional security audit,
+penetration test, or compliance assessment.
 
 ## M9b.1a offline persistence and isolation correction
 
@@ -236,9 +260,9 @@ security review confirming:
 - private replay performs zero corpus and model effects; and
 - no stable API, release, or provider boundary was widened.
 
-M9b remains **NO-GO** until M9b.1a independently passes architecture/security
+M9b remains **NO-GO** until M9b.1b independently passes architecture/security
 review and the corpus, external semantic/abstention evaluator,
 provider/model/prompt/tokenizer/pricing identities, randomized schedule,
 operational budget, preregistration, and explicit live authorization are frozen
-and independently reviewed. M9b.1a does not satisfy those live-study gates and
+and independently reviewed. M9b.1b does not satisfy those live-study gates and
 does not authorize provider adapters, corpus construction, or live execution.
