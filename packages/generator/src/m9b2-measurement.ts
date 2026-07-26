@@ -1475,6 +1475,15 @@ function deriveM9cInferenceCases(
   const stored = suites.get(suite);
   if (!caseIds.success || stored === undefined)
     return invalid("M9c inference-unit candidates are invalid.");
+  const selectedCaseIds = new Set(caseIds.data);
+  if (
+    !unique(caseIds.data) ||
+    selectedCaseIds.size !== stored.cases.size ||
+    [...stored.cases.keys()].some((caseId) => !selectedCaseIds.has(caseId))
+  )
+    return invalid(
+      "M9c inference units must exactly cover the prepared suite population.",
+    );
   const cases: Array<M9cInferenceCase> = [];
   for (const caseId of caseIds.data) {
     const prepared = stored.cases.get(caseId);
@@ -1500,7 +1509,7 @@ export async function auditM9cInferenceUnits(
 ): Promise<
   Result<
     Readonly<{
-      protocol: "lachesis-m9b2b-m9c-inference-unit-audit/2";
+      protocol: "lachesis-m9b2d-m9c-inference-unit-audit/3";
       estimand: typeof M9C_FROZEN_ESTIMAND;
       caseCount: number;
       casesPerCell: number;
@@ -1535,7 +1544,7 @@ export async function auditM9cInferenceUnits(
   )
     return invalid("M9c requires identical case counts in all 24 strata.");
   const body = {
-    protocol: "lachesis-m9b2b-m9c-inference-unit-audit/2" as const,
+    protocol: "lachesis-m9b2d-m9c-inference-unit-audit/3" as const,
     estimand: M9C_FROZEN_ESTIMAND,
     cases: cases.value.toSorted((left, right) =>
       left.fixtureId.localeCompare(right.fixtureId),
@@ -1577,7 +1586,7 @@ const descriptiveStratumSchema = z
 
 export const m9cDescriptiveReportSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b2c-m9c-descriptive-report/3"),
+    protocol: z.literal("lachesis-m9b2d-m9c-descriptive-report/4"),
     estimand: strictJsonValueSchema,
     claimScope: z.literal(
       "family-and-scale-stratified-descriptive-results-only-no-additional-superiority-claims",
@@ -1763,7 +1772,7 @@ export async function reportM9cPairedDescriptives(
     ),
   );
   const body = {
-    protocol: "lachesis-m9b2c-m9c-descriptive-report/3" as const,
+    protocol: "lachesis-m9b2d-m9c-descriptive-report/4" as const,
     estimand: strictJsonValueSchema.parse(M9C_FROZEN_ESTIMAND),
     claimScope:
       "family-and-scale-stratified-descriptive-results-only-no-additional-superiority-claims" as const,
@@ -2314,7 +2323,7 @@ const splitAuditCaseInventorySchema = z
 
 export const m9b2SplitDisjointnessAuditSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b2c-split-disjointness-audit/4"),
+    protocol: z.literal("lachesis-m9b2d-split-disjointness-audit/5"),
     developmentSuiteDigest: digestSchema,
     heldoutSuiteDigest: digestSchema,
     developmentCount: z.number().int().positive(),
@@ -2355,33 +2364,23 @@ export type M9b2SplitDisjointnessAudit = z.infer<
   typeof m9b2SplitDisjointnessAuditSchema
 >;
 
-function deriveSplitAuditInventory(
-  suite: unknown,
-  values: ReadonlyArray<unknown>,
-): Result<
+function deriveSplitAuditInventory(suite: unknown): Result<
   Readonly<{
     suiteDigest: string;
     cases: ReadonlyArray<z.infer<typeof splitAuditCaseInventorySchema>>;
   }>,
   Diagnostic
 > {
-  const caseIds = identifierSchema.array().min(1).max(10_000).safeParse(values);
   const stored =
     typeof suite === "object" && suite !== null ? suites.get(suite) : undefined;
-  if (!caseIds.success || stored === undefined || !unique(caseIds.data))
-    return invalid("M9b.2 split case inventory is invalid.");
-  const cases: Array<z.infer<typeof splitAuditCaseInventorySchema>> = [];
-  for (const caseId of caseIds.data) {
-    const prepared = stored.cases.get(caseId);
-    if (prepared === undefined)
-      return invalid("M9b.2 split case is not in its prepared suite.");
-    cases.push(
-      splitAuditCaseInventorySchema.parse({
-        caseId,
-        splitIdentity: prepared.splitIdentity,
-      }),
-    );
-  }
+  if (stored === undefined)
+    return invalid("M9b.2 split suite token is invalid.");
+  const cases = [...stored.cases.values()].map((prepared) =>
+    splitAuditCaseInventorySchema.parse({
+      caseId: prepared.publicCase.id,
+      splitIdentity: prepared.splitIdentity,
+    }),
+  );
   return {
     ok: true,
     value: Object.freeze({
@@ -2401,21 +2400,15 @@ export async function auditM9b2SplitDisjointness(
   const parsedInput = z
     .strictObject({
       developmentSuite: z.unknown(),
-      developmentCaseIds: z.unknown().array().readonly(),
       heldoutSuite: z.unknown(),
-      heldoutCaseIds: z.unknown().array().readonly(),
     })
     .safeParse(input);
   if (!parsedInput.success)
     return invalid("M9b.2 split audit input is invalid.");
   const development = deriveSplitAuditInventory(
     parsedInput.data.developmentSuite,
-    parsedInput.data.developmentCaseIds,
   );
-  const heldout = deriveSplitAuditInventory(
-    parsedInput.data.heldoutSuite,
-    parsedInput.data.heldoutCaseIds,
-  );
+  const heldout = deriveSplitAuditInventory(parsedInput.data.heldoutSuite);
   if (!development.ok || !heldout.ok)
     return invalid("M9b.2 split inventories are invalid.");
   if (development.value.suiteDigest === heldout.value.suiteDigest)
@@ -2506,7 +2499,7 @@ export async function auditM9b2SplitDisjointness(
     ].toSorted(),
   };
   const body = {
-    protocol: "lachesis-m9b2c-split-disjointness-audit/4" as const,
+    protocol: "lachesis-m9b2d-split-disjointness-audit/5" as const,
     developmentSuiteDigest: development.value.suiteDigest,
     heldoutSuiteDigest: heldout.value.suiteDigest,
     developmentCount: development.value.cases.length,

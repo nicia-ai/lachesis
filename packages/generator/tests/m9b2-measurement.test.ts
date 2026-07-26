@@ -81,38 +81,6 @@ function required<T>(value: T | null | undefined): T {
   return value;
 }
 
-function splitIdentity(offset: number): Readonly<{
-  fixtureIdentity: string;
-  entityIdentities: ReadonlyArray<string>;
-  sourceLineageIdentities: ReadonlyArray<string>;
-  exactTaskTemplateIdentity: string;
-  normalizedTaskTemplateIdentity: string;
-  exactRelevantFactWordingIdentities: ReadonlyArray<string>;
-  answerValueIdentities: ReadonlyArray<string>;
-  corpusContentIdentity: string;
-  documentContentIdentities: ReadonlyArray<string>;
-  semanticContractIdentity: string;
-  taskFamily: "lookup";
-  solutionStrategyClass: string;
-}> {
-  const digest = (value: number): string =>
-    value.toString(16).padStart(64, "0");
-  return {
-    fixtureIdentity: digest(offset),
-    entityIdentities: [digest(offset + 1)],
-    sourceLineageIdentities: [digest(offset + 10)],
-    exactTaskTemplateIdentity: digest(offset + 2),
-    normalizedTaskTemplateIdentity: digest(offset + 3),
-    exactRelevantFactWordingIdentities: [digest(offset + 4)],
-    answerValueIdentities: [digest(offset + 5)],
-    corpusContentIdentity: digest(offset + 6),
-    documentContentIdentities: [digest(offset + 7), digest(offset + 8)],
-    semanticContractIdentity: digest(offset + 9),
-    taskFamily: "lookup",
-    solutionStrategyClass: "shared-lookup-strategy",
-  };
-}
-
 async function preparedSuite(): Promise<M9b2PreparedSuite> {
   return unwrap(
     await prepareM9b2DevelopmentSuite({
@@ -176,6 +144,7 @@ async function independentPreparedSuite(
 
 async function disjointPreparedSuite(
   lineage: string,
+  firstAnswerLineage: string = lineage,
 ): Promise<
   Readonly<{ suite: M9b2PreparedSuite; caseIds: ReadonlyArray<string> }>
 > {
@@ -222,7 +191,8 @@ async function disjointPreparedSuite(
           ...expectation,
           caseId: publicCase.id,
           acceptedAnswers: expectation.acceptedAnswers.map(
-            (answer) => `${answer} ${lineage}`,
+            (answer) =>
+              `${answer} ${index === 0 ? firstAnswerLineage : lineage}`,
           ),
           normalizedTaskTemplate: `${expectation.normalizedTaskTemplate} ${lineage}`,
           entityLineageIds: expectation.entityLineageIds.map(
@@ -1737,13 +1707,11 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     const heldout = await disjointPreparedSuite("heldout-lineage");
     const auditInput = {
       developmentSuite: development.suite,
-      developmentCaseIds: development.caseIds,
       heldoutSuite: heldout.suite,
-      heldoutCaseIds: heldout.caseIds,
     } as const;
     const audit = unwrap(await auditM9b2SplitDisjointness(auditInput));
     expect(audit).toMatchObject({
-      protocol: "lachesis-m9b2c-split-disjointness-audit/4",
+      protocol: "lachesis-m9b2d-split-disjointness-audit/5",
       developmentCount: 24,
       heldoutCount: 24,
       passed: true,
@@ -1776,9 +1744,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     expect(
       await auditM9b2SplitDisjointness({
         developmentSuite: development.suite,
-        developmentCaseIds: development.caseIds,
         heldoutSuite: development.suite,
-        heldoutCaseIds: development.caseIds,
       }),
     ).toMatchObject({ ok: false });
     const clusteredDevelopment = await preparedSuite();
@@ -1786,33 +1752,33 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     expect(
       await auditM9b2SplitDisjointness({
         developmentSuite: clusteredDevelopment,
-        developmentCaseIds: M9B2_PUBLIC_DEVELOPMENT_CASES.map(
-          (value) => value.id,
-        ),
         heldoutSuite: overlappingHeldout.suite,
-        heldoutCaseIds: overlappingHeldout.caseIds,
+      }),
+    ).toMatchObject({ ok: false });
+    const singleOverlapHeldout = await disjointPreparedSuite(
+      "single-overlap-heldout",
+      "development-lineage",
+    );
+    expect(
+      await auditM9b2SplitDisjointness({
+        developmentSuite: development.suite,
+        heldoutSuite: singleOverlapHeldout.suite,
       }),
     ).toMatchObject({ ok: false });
     expect(
       await auditM9b2SplitDisjointness({
         developmentSuite: development.suite,
-        developmentCaseIds: [...development.caseIds, "unknown-case"],
-        heldoutSuite: heldout.suite,
-        heldoutCaseIds: heldout.caseIds,
-      }),
-    ).toMatchObject({ ok: false });
-    expect(
-      await auditM9b2SplitDisjointness({
-        developmentIdentities: [splitIdentity(1)],
-        heldoutIdentities: [splitIdentity(20)],
+        developmentCaseIds: development.caseIds.slice(1),
+        heldoutSuite: singleOverlapHeldout.suite,
+        heldoutCaseIds: singleOverlapHeldout.caseIds,
       }),
     ).toMatchObject({ ok: false });
     await fc.assert(
       fc.asyncProperty(fc.integer({ min: 1, max: 100_000 }), async (offset) => {
         expect(
           await auditM9b2SplitDisjointness({
-            developmentIdentities: [splitIdentity(offset)],
-            heldoutIdentities: [splitIdentity(offset + 100_000)],
+            developmentSuite: { opaqueDigest: offset },
+            heldoutSuite: { opaqueDigest: offset + 100_000 },
           }),
         ).toMatchObject({ ok: false });
       }),
@@ -1827,6 +1793,7 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     ).toMatchObject({
       ok: true,
       value: {
+        protocol: "lachesis-m9b2d-m9c-inference-unit-audit/3",
         estimand: {
           inferenceUnit: "one-semantically-independent-paired-case",
           scaleRole: "preregistered-stratum",
@@ -1961,6 +1928,24 @@ describe("M9b.2 offline evaluator and corpus design", () => {
       ok: true,
       value: { caseCount: 48, casesPerCell: 2 },
     });
+    const firstWaveCaseIds = twoWaves.caseIds.filter((caseId) =>
+      caseId.includes("wave-1"),
+    );
+    expect(firstWaveCaseIds).toHaveLength(24);
+    const subsetEffectCounter: EffectCounter = {
+      modelCalls: 0,
+      evaluatorCalls: 0,
+    };
+    const firstWavePairs = await pairedMeasurementVerifications(
+      twoWaves.suite,
+      firstWaveCaseIds,
+      subsetEffectCounter,
+    );
+    const effectsBeforeSubsetReport = { ...subsetEffectCounter };
+    expect(
+      await reportM9cPairedDescriptives(twoWaves.suite, firstWavePairs),
+    ).toMatchObject({ ok: false });
+    expect(subsetEffectCounter).toEqual(effectsBeforeSubsetReport);
     const invalidTotal = twoWaves.caseIds.slice(0, -1);
     expect(
       await auditM9cInferenceUnits(twoWaves.suite, invalidTotal),

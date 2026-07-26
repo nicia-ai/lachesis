@@ -1,12 +1,32 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.2c offline analysis-provenance design only; M9b is not
+Status: **M9b.2d offline population-integrity design only; M9b is not
 materialized or authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
 external corpora. M9a does not create a final corpus, campaign, preregistration,
 provider identity, credential preflight, executable live state, or authorization
 text.
+
+## M9b.2d offline population-integrity correction
+
+M9b.2d supersedes the affected private analysis artifacts with
+`lachesis-m9b2d-m9c-inference-unit-audit/3`,
+`lachesis-m9b2d-m9c-descriptive-report/4`, and
+`lachesis-m9b2d-split-disjointness-audit/5`. Earlier audit and report artifacts
+retain their original meaning and are not reinterpreted.
+
+The M9c inference audit and descriptive report require exact coverage of every
+case committed by the opaque prepared-suite token. The suite digest therefore
+binds a prospectively prepared population, and callers cannot select a balanced
+wave or any other subset after observing outcomes. Report verification repeats
+the full-population check while rederiving every paired measurement without
+model, retrieval, corpus, or evaluator effects.
+
+The split audit accepts only the two opaque prepared-suite tokens. It derives
+the complete development and eventual held-out inventories directly from those
+tokens; caller-selected case IDs are not part of the input. The audit and its
+zero-effect verifier therefore cannot omit an overlapping case.
 
 ## M9b.2c offline analysis-provenance correction
 
@@ -117,7 +137,7 @@ evaluator must be separately frozen, independently reviewed, and validated.
 These development fixtures are not a final corpus and no held-out identity is
 materialized.
 
-M9b.2c therefore ends with **M9b NO-GO**. It creates no provider adapter or
+M9b.2d therefore ends with **M9b NO-GO**. It creates no provider adapter or
 call, corpus campaign, credential access, preregistration, final corpus
 identity, public API, package version, release artifact, or superiority claim.
 It is AI-assisted architecture and measurement work, not a professional security
