@@ -1,12 +1,36 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.2b offline measurement-verification design only; M9b is not
+Status: **M9b.2c offline analysis-provenance design only; M9b is not
 materialized or authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
 external corpora. M9a does not create a final corpus, campaign, preregistration,
 provider identity, credential preflight, executable live state, or authorization
 text.
+
+## M9b.2c offline analysis-provenance correction
+
+M9b.2c retains the M9b.2b measurement, evaluator, terminal-record, and
+canonical-snapshot identities because their wire semantics are unchanged. It
+supersedes only the affected private analysis artifacts with
+`lachesis-m9b2c-m9c-descriptive-report/3` and
+`lachesis-m9b2c-split-disjointness-audit/4`; earlier reports and audits are not
+reinterpreted.
+
+The paired descriptive endpoint no longer accepts caller-authored success
+booleans. Each case supplies opposite-arm M9b.2 verification contexts containing
+opaque M9b.1b terminal tokens. Reporting rederives both measurements, requires a
+shared case, comparison, task, snapshot, model, and evaluator, and derives both
+outcomes exclusively from `primary.success`. The report binds every comparison,
+measurement-record, and source-arm-record digest. Report verification repeats
+the derivation without model, retrieval, corpus, or evaluator effects and
+rejects re-signed outcomes, aggregates, or source identities.
+
+Split auditing likewise no longer accepts caller-authored digest objects. It
+accepts two opaque prepared-suite tokens and their case IDs, derives every split
+identity internally, and binds both suite digests plus the sorted
+case-to-lineage inventories into the audit record. Audit verification rederives
+the complete record from those trusted inputs with zero effects.
 
 ## M9b.2b offline measurement-verification and estimand correction
 
@@ -93,7 +117,7 @@ evaluator must be separately frozen, independently reviewed, and validated.
 These development fixtures are not a final corpus and no held-out identity is
 materialized.
 
-M9b.2b therefore ends with **M9b NO-GO**. It creates no provider adapter or
+M9b.2c therefore ends with **M9b NO-GO**. It creates no provider adapter or
 call, corpus campaign, credential access, preregistration, final corpus
 identity, public API, package version, release artifact, or superiority claim.
 It is AI-assisted architecture and measurement work, not a professional security

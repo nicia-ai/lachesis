@@ -51,6 +51,7 @@ import {
   type M9b2PreparedSuite,
   m9b2PrimaryEndpointSchema,
   type M9b2PublicDevelopmentCase,
+  type M9cPairedMeasurementVerification,
   measureM9b2VerifiedTerminalRecord,
   prepareM9b2DevelopmentSuite,
   reportM9cPairedDescriptives,
@@ -58,7 +59,9 @@ import {
   verifyM9b2EvaluatorConformanceReport,
   verifyM9b2MeasurementDesign,
   verifyM9b2PowerReport,
+  verifyM9b2SplitDisjointnessAudit,
   verifyM9b2TerminalMeasurementRecord,
+  verifyM9cPairedDescriptiveReport,
 } from "../src/m9b2-measurement.js";
 import { strictJsonValueSchema } from "../src/strict-json.js";
 import { M9B2_PUBLIC_DEVELOPMENT_CASES } from "./fixtures/m9b2-development.js";
@@ -171,6 +174,78 @@ async function independentPreparedSuite(
   });
 }
 
+async function disjointPreparedSuite(
+  lineage: string,
+): Promise<
+  Readonly<{ suite: M9b2PreparedSuite; caseIds: ReadonlyArray<string> }>
+> {
+  const expectationsById = new Map(
+    M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS.map((expectation) => [
+      expectation.caseId,
+      expectation,
+    ]),
+  );
+  const publicCases = M9B2_PUBLIC_DEVELOPMENT_CASES.map((publicCase) => {
+    const expectation = required(expectationsById.get(publicCase.id));
+    return {
+      ...publicCase,
+      id: `${publicCase.id}-${lineage}`,
+      task: `${publicCase.task} ${lineage}.`,
+      corpus: {
+        ...publicCase.corpus,
+        id: `${publicCase.corpus.id}-${lineage}`,
+        documents: publicCase.corpus.documents.map((document) => {
+          const facts = expectation.supportingFacts.filter(
+            (fact) => fact.documentId === document.id,
+          );
+          const text = facts.reduce(
+            (current, fact) =>
+              current.replace(fact.exactText, `${fact.exactText} ${lineage}`),
+            document.text,
+          );
+          return {
+            ...document,
+            title: `${document.title} ${lineage}`,
+            text: `${text} ${lineage}-content`,
+          };
+        }),
+      },
+    };
+  });
+  const suite = unwrap(
+    await prepareM9b2DevelopmentSuite({
+      publicCases,
+      hiddenExpectations: publicCases.map((publicCase, index) => {
+        const original = required(M9B2_PUBLIC_DEVELOPMENT_CASES[index]);
+        const expectation = required(expectationsById.get(original.id));
+        return {
+          ...expectation,
+          caseId: publicCase.id,
+          acceptedAnswers: expectation.acceptedAnswers.map(
+            (answer) => `${answer} ${lineage}`,
+          ),
+          normalizedTaskTemplate: `${expectation.normalizedTaskTemplate} ${lineage}`,
+          entityLineageIds: expectation.entityLineageIds.map(
+            (identity) => `${identity}-${lineage}`,
+          ),
+          sourceLineageIds: expectation.sourceLineageIds.map(
+            (identity) => `${identity}-${lineage}`,
+          ),
+          supportingFacts: expectation.supportingFacts.map((fact) => ({
+            ...fact,
+            sourceLineageId: `${fact.sourceLineageId}-${lineage}`,
+            exactText: `${fact.exactText} ${lineage}`,
+          })),
+        };
+      }),
+    }),
+  );
+  return Object.freeze({
+    suite,
+    caseIds: Object.freeze(publicCases.map((publicCase) => publicCase.id)),
+  });
+}
+
 function memoryArmPersistence(): M9b1AtomicPersistence {
   let content: string | undefined;
   let revision = 0;
@@ -261,6 +336,125 @@ function executionModel(
   };
 }
 
+type EffectCounter = { modelCalls: number; evaluatorCalls: number };
+
+async function pairedMeasurementVerifications(
+  suite: M9b2PreparedSuite,
+  caseIds: ReadonlyArray<string>,
+  counter: EffectCounter,
+): Promise<ReadonlyArray<M9cPairedMeasurementVerification>> {
+  const fallbackCitation = required(
+    required(
+      m9b2InternalInspectSupportingFacts(suite, required(caseIds[0])),
+    )[0],
+  ).chunk;
+  return Promise.all(
+    caseIds.map(async (caseId) => {
+      const inspection = required(inspectM9b2PreparedCase(suite, caseId));
+      const corpus = unwrap(
+        await createM9aCorpus(inspection.publicCase.corpus),
+      );
+      const snapshot = required(inspectM9aCorpus(corpus));
+      const countedAuthoring = (
+        arm: "discovered-program" | "static-one-shot",
+      ): M9b1AuthoringModel => {
+        const base = authoredModel(arm);
+        return {
+          ...base,
+          complete: (request, signal) => {
+            counter.modelCalls += 1;
+            return base.complete(request, signal);
+          },
+        };
+      };
+      const countedExecution = (): M9b0OfflineModel => {
+        const base = executionModel(fallbackCitation, true);
+        return {
+          ...base,
+          complete: (request, signal) => {
+            counter.modelCalls += 1;
+            return base.complete(request, signal);
+          },
+        };
+      };
+      const countedEvaluator = (): M9b1ExternalEvaluator => {
+        const base = unwrap(createM9b2OfflineEvaluator(suite, caseId));
+        return {
+          ...base,
+          evaluate: (input, signal) => {
+            counter.evaluatorCalls += 1;
+            return base.evaluate(input, signal);
+          },
+        };
+      };
+      const comparison = unwrap(
+        await runM9b1OfflineProgramDiscovery({
+          corpus,
+          task: inspection.publicCase.task,
+          model: { id: "m9b2-offline-model", version: "1" },
+          authoringSessionFactories: {
+            discoveredProgram: () => countedAuthoring("discovered-program"),
+            staticQuery: () => countedAuthoring("static-one-shot"),
+          },
+          executionSessionFactories: {
+            discoveredProgram: () => countedExecution(),
+            staticQuery: () => countedExecution(),
+          },
+          evaluator: M9B2_EVALUATOR_IDENTITY,
+          evaluatorSessionFactories: {
+            discoveredProgram: () => countedEvaluator(),
+            staticQuery: () => countedEvaluator(),
+          },
+          executionOrder: "discovered-first",
+          store: createM9b1ArmStore(memoryArmPersistence()),
+        }),
+      );
+      const taskDigest = unwrap(await digestValue(inspection.publicCase.task));
+      const verification = async (
+        arm: typeof comparison.discovered,
+        expectedArm: "discovered-program" | "static-one-shot",
+      ) => {
+        const response = required(arm.record.authoringResponse);
+        const programIdentity =
+          response.kind === "program"
+            ? response.sourceDigest
+            : response.derivedSourceDigest;
+        const verifiedRecord = unwrap(
+          await m9b1InternalVerifyTerminalRecord(arm.record, {
+            task: inspection.publicCase.task,
+            taskDigest,
+            corpusSnapshotDigest: snapshot.snapshotDigest,
+            model: { id: "m9b2-offline-model", version: "1" },
+            evaluator: M9B2_EVALUATOR_IDENTITY,
+            executionOrder: "discovered-first",
+          }),
+        );
+        return {
+          suite,
+          caseId,
+          verifiedRecord,
+          expected: {
+            arm: expectedArm,
+            sourceArmRecordDigest: arm.record.recordDigest,
+            comparisonDigest: comparison.comparisonDigest,
+            model: { id: "m9b2-offline-model", version: "1" },
+            evaluator: M9B2_EVALUATOR_IDENTITY,
+            programIdentity,
+          },
+        } as const;
+      };
+      return {
+        caseId,
+        discovered: await verification(
+          comparison.discovered,
+          "discovered-program",
+        ),
+        static: await verification(comparison.staticControl, "static-one-shot"),
+      };
+    }),
+  );
+}
+
 function developmentCase(caseId: string): M9b2PublicDevelopmentCase {
   return required(
     M9B2_PUBLIC_DEVELOPMENT_CASES.find((item) => item.id === caseId),
@@ -346,6 +540,8 @@ describe("M9b.2 offline evaluator and corpus design", () => {
     expect("analyzeM9b2ProspectivePower" in generatorFacade).toBe(false);
     expect("measureM9b2VerifiedTerminalRecord" in generatorFacade).toBe(false);
     expect("auditM9cInferenceUnits" in generatorFacade).toBe(false);
+    expect("verifyM9cPairedDescriptiveReport" in generatorFacade).toBe(false);
+    expect("verifyM9b2SplitDisjointnessAudit" in generatorFacade).toBe(false);
   });
 
   it("freezes the scientific rules while retaining every live-study NO-GO", async () => {
@@ -1537,107 +1733,91 @@ describe("M9b.2 offline evaluator and corpus design", () => {
   });
 
   it("enforces disjoint development and eventual held-out identities", async () => {
-    const firstDevelopment = splitIdentity(1);
-    const secondDevelopment = splitIdentity(10);
-    const heldout = splitIdentity(20);
-    expect(
-      await auditM9b2SplitDisjointness({
-        developmentIdentities: [firstDevelopment, secondDevelopment],
-        heldoutIdentities: [heldout],
-      }),
-    ).toMatchObject({
-      ok: true,
-      value: {
-        developmentCount: 2,
-        heldoutCount: 1,
-        passed: true,
-      },
+    const development = await disjointPreparedSuite("development-lineage");
+    const heldout = await disjointPreparedSuite("heldout-lineage");
+    const auditInput = {
+      developmentSuite: development.suite,
+      developmentCaseIds: development.caseIds,
+      heldoutSuite: heldout.suite,
+      heldoutCaseIds: heldout.caseIds,
+    } as const;
+    const audit = unwrap(await auditM9b2SplitDisjointness(auditInput));
+    expect(audit).toMatchObject({
+      protocol: "lachesis-m9b2c-split-disjointness-audit/4",
+      developmentCount: 24,
+      heldoutCount: 24,
+      passed: true,
     });
+    expect(audit.developmentSuiteDigest).not.toBe(audit.heldoutSuiteDigest);
+    expect(audit.developmentCases.map((value) => value.caseId)).toEqual(
+      [...development.caseIds].toSorted(),
+    );
+    expect(audit.heldoutCases.map((value) => value.caseId)).toEqual(
+      [...heldout.caseIds].toSorted(),
+    );
+    expect(audit.allowedOverlap.taskFamilies).toEqual(M9B2_TASK_FAMILIES);
     expect(
-      await auditM9b2SplitDisjointness({
-        developmentIdentities: [firstDevelopment],
-        heldoutIdentities: [
-          {
-            ...heldout,
-            documentContentIdentities: [
-              required(firstDevelopment.documentContentIdentities[0]),
-            ],
-          },
-        ],
+      await verifyM9b2SplitDisjointnessAudit(auditInput, audit),
+    ).toMatchObject({ ok: true });
+    const { auditDigest: _auditDigest, ...auditBody } = audit;
+    void _auditDigest;
+    const forgedAuditBody = {
+      ...auditBody,
+      developmentSuiteDigest: "e".repeat(64),
+      developmentCases: audit.developmentCases.slice(1),
+      developmentCount: audit.developmentCount - 1,
+    };
+    expect(
+      await verifyM9b2SplitDisjointnessAudit(auditInput, {
+        ...forgedAuditBody,
+        auditDigest: unwrap(await digestValue(forgedAuditBody)),
       }),
     ).toMatchObject({ ok: false });
-    const forbiddenMutations = [
-      { fixtureIdentity: firstDevelopment.fixtureIdentity },
-      { entityIdentities: firstDevelopment.entityIdentities },
-      {
-        sourceLineageIdentities: firstDevelopment.sourceLineageIdentities,
-      },
-      {
-        exactTaskTemplateIdentity: firstDevelopment.exactTaskTemplateIdentity,
-      },
-      {
-        normalizedTaskTemplateIdentity:
-          firstDevelopment.normalizedTaskTemplateIdentity,
-      },
-      {
-        exactRelevantFactWordingIdentities:
-          firstDevelopment.exactRelevantFactWordingIdentities,
-      },
-      { answerValueIdentities: firstDevelopment.answerValueIdentities },
-      { corpusContentIdentity: firstDevelopment.corpusContentIdentity },
-      {
-        semanticContractIdentity: firstDevelopment.semanticContractIdentity,
-      },
-      {
-        documentContentIdentities: firstDevelopment.documentContentIdentities,
-      },
-    ];
-    for (const mutation of forbiddenMutations) {
-      expect(
-        await auditM9b2SplitDisjointness({
-          developmentIdentities: [firstDevelopment],
-          heldoutIdentities: [{ ...heldout, ...mutation }],
-        }),
-      ).toMatchObject({ ok: false });
-    }
+    expect(
+      await auditM9b2SplitDisjointness({
+        developmentSuite: development.suite,
+        developmentCaseIds: development.caseIds,
+        heldoutSuite: development.suite,
+        heldoutCaseIds: development.caseIds,
+      }),
+    ).toMatchObject({ ok: false });
+    const clusteredDevelopment = await preparedSuite();
+    const overlappingHeldout = await independentPreparedSuite();
+    expect(
+      await auditM9b2SplitDisjointness({
+        developmentSuite: clusteredDevelopment,
+        developmentCaseIds: M9B2_PUBLIC_DEVELOPMENT_CASES.map(
+          (value) => value.id,
+        ),
+        heldoutSuite: overlappingHeldout.suite,
+        heldoutCaseIds: overlappingHeldout.caseIds,
+      }),
+    ).toMatchObject({ ok: false });
+    expect(
+      await auditM9b2SplitDisjointness({
+        developmentSuite: development.suite,
+        developmentCaseIds: [...development.caseIds, "unknown-case"],
+        heldoutSuite: heldout.suite,
+        heldoutCaseIds: heldout.caseIds,
+      }),
+    ).toMatchObject({ ok: false });
+    expect(
+      await auditM9b2SplitDisjointness({
+        developmentIdentities: [splitIdentity(1)],
+        heldoutIdentities: [splitIdentity(20)],
+      }),
+    ).toMatchObject({ ok: false });
     await fc.assert(
-      fc.asyncProperty(
-        fc.integer({ min: 0, max: forbiddenMutations.length - 1 }),
-        async (index) => {
-          expect(
-            await auditM9b2SplitDisjointness({
-              developmentIdentities: [firstDevelopment],
-              heldoutIdentities: [
-                { ...heldout, ...required(forbiddenMutations[index]) },
-              ],
-            }),
-          ).toMatchObject({ ok: false });
-        },
-      ),
+      fc.asyncProperty(fc.integer({ min: 1, max: 100_000 }), async (offset) => {
+        expect(
+          await auditM9b2SplitDisjointness({
+            developmentIdentities: [splitIdentity(offset)],
+            heldoutIdentities: [splitIdentity(offset + 100_000)],
+          }),
+        ).toMatchObject({ ok: false });
+      }),
       { numRuns: 20 },
     );
-    const allowed = unwrap(
-      await auditM9b2SplitDisjointness({
-        developmentIdentities: [firstDevelopment],
-        heldoutIdentities: [heldout],
-      }),
-    );
-    expect(allowed.allowedOverlap).toEqual({
-      taskFamilies: ["lookup"],
-      solutionStrategyClasses: ["shared-lookup-strategy"],
-    });
-    expect(
-      await auditM9b2SplitDisjointness({
-        developmentIdentities: [firstDevelopment, firstDevelopment],
-        heldoutIdentities: [heldout],
-      }),
-    ).toMatchObject({ ok: false });
-    expect(
-      await auditM9b2SplitDisjointness({
-        developmentIdentities: [],
-        heldoutIdentities: [heldout],
-      }),
-    ).toMatchObject({ ok: false });
   });
 
   it("freezes independent M9c cases and reserves clustered scale variants for M9d", async () => {
@@ -1656,15 +1836,15 @@ describe("M9b.2 offline evaluator and corpus design", () => {
         casesPerCell: 1,
       },
     });
+    const effectCounter: EffectCounter = { modelCalls: 0, evaluatorCalls: 0 };
+    const pairs = await pairedMeasurementVerifications(
+      independent.suite,
+      independent.caseIds,
+      effectCounter,
+    );
+    const effectsBeforeReporting = { ...effectCounter };
     const descriptive = unwrap(
-      await reportM9cPairedDescriptives(
-        independent.suite,
-        independent.caseIds.map((caseId, index) => ({
-          caseId,
-          discoveredSuccess: index % 2 === 0,
-          staticSuccess: index % 3 === 0,
-        })),
-      ),
+      await reportM9cPairedDescriptives(independent.suite, pairs),
     );
     expect(descriptive.claimScope).toBe(
       "family-and-scale-stratified-descriptive-results-only-no-additional-superiority-claims",
@@ -1673,6 +1853,88 @@ describe("M9b.2 offline evaluator and corpus design", () => {
       "lookup",
     );
     expect(descriptive.byScale.map((value) => value.stratum)).toContain("1x");
+    expect(descriptive.sourcePairs).toHaveLength(24);
+    expect(
+      descriptive.sourcePairs.every(
+        (pair) => !pair.discovered.success && !pair.static.success,
+      ),
+    ).toBe(true);
+    expect(
+      await verifyM9cPairedDescriptiveReport(
+        independent.suite,
+        pairs,
+        descriptive,
+      ),
+    ).toMatchObject({ ok: true });
+    expect(effectCounter).toEqual(effectsBeforeReporting);
+    const { reportDigest: _reportDigest, ...descriptiveBody } = descriptive;
+    void _reportDigest;
+    const forgedSourcePairs = descriptive.sourcePairs.map((pair) => ({
+      ...pair,
+      discovered: { ...pair.discovered, success: !pair.discovered.success },
+      static: { ...pair.static, success: !pair.static.success },
+    }));
+    const forgedBody = {
+      ...descriptiveBody,
+      equalCellWeightedRiskDifferenceBasisPoints: 10_000,
+      sourcePairs: forgedSourcePairs,
+    };
+    expect(
+      await verifyM9cPairedDescriptiveReport(independent.suite, pairs, {
+        ...forgedBody,
+        reportDigest: unwrap(await digestValue(forgedBody)),
+      }),
+    ).toMatchObject({ ok: false });
+    const firstPair = required(descriptive.sourcePairs[0]);
+    for (const sourcePairMutation of [
+      {
+        ...firstPair,
+        suiteDigest: "9".repeat(64),
+      },
+      {
+        ...firstPair,
+        comparisonDigest: "a".repeat(64),
+      },
+      {
+        ...firstPair,
+        taskDigest: "b".repeat(64),
+      },
+      {
+        ...firstPair,
+        corpusSnapshotDigest: "c".repeat(64),
+      },
+      {
+        ...firstPair,
+        discovered: {
+          ...firstPair.discovered,
+          measurementRecordDigest: "d".repeat(64),
+        },
+      },
+    ]) {
+      const alteredBody = {
+        ...descriptiveBody,
+        sourcePairs: [sourcePairMutation, ...descriptive.sourcePairs.slice(1)],
+      };
+      expect(
+        await verifyM9cPairedDescriptiveReport(independent.suite, pairs, {
+          ...alteredBody,
+          reportDigest: unwrap(await digestValue(alteredBody)),
+        }),
+      ).toMatchObject({ ok: false });
+    }
+    expect(
+      await reportM9cPairedDescriptives(independent.suite, [
+        { ...required(pairs[0]), static: required(pairs[1]).static },
+        ...pairs.slice(1),
+      ]),
+    ).toMatchObject({ ok: false });
+    expect(
+      await reportM9cPairedDescriptives(independent.suite, [
+        { ...required(pairs[0]), static: required(pairs[0]).discovered },
+        ...pairs.slice(1),
+      ]),
+    ).toMatchObject({ ok: false });
+    expect(effectCounter).toEqual(effectsBeforeReporting);
     const clustered = await preparedSuite();
     expect(
       await auditM9cInferenceUnits(

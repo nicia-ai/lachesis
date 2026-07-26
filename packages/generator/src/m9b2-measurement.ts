@@ -242,7 +242,7 @@ type StoredSuite = Readonly<{
   cases: ReadonlyMap<string, PreparedCase>;
 }>;
 
-const suites = new WeakMap<M9b2PreparedSuite, StoredSuite>();
+const suites = new WeakMap<object, StoredSuite>();
 
 function invalid(message: string): Result<never, Diagnostic> {
   return { ok: false, error: diagnostic("INVALID_WIRE_SCHEMA", message) };
@@ -1560,14 +1560,6 @@ export async function auditM9cInferenceUnits(
     : auditDigest;
 }
 
-const m9cPairedOutcomeInputSchema = z
-  .strictObject({
-    caseId: identifierSchema,
-    discoveredSuccess: z.boolean(),
-    staticSuccess: z.boolean(),
-  })
-  .readonly();
-
 const m9cPairedOutcomeSchema = m9cInferenceCaseSchema
   .unwrap()
   .safeExtend({ discoveredSuccess: z.boolean(), staticSuccess: z.boolean() })
@@ -1585,7 +1577,7 @@ const descriptiveStratumSchema = z
 
 export const m9cDescriptiveReportSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b2b-m9c-descriptive-report/2"),
+    protocol: z.literal("lachesis-m9b2c-m9c-descriptive-report/3"),
     estimand: strictJsonValueSchema,
     claimScope: z.literal(
       "family-and-scale-stratified-descriptive-results-only-no-additional-superiority-claims",
@@ -1598,10 +1590,69 @@ export const m9cDescriptiveReportSchema = z
       .max(10_000),
     byFamily: descriptiveStratumSchema.array().length(8).readonly(),
     byScale: descriptiveStratumSchema.array().length(3).readonly(),
+    sourcePairs: z
+      .strictObject({
+        caseId: identifierSchema,
+        suiteDigest: digestSchema,
+        comparisonDigest: digestSchema,
+        taskDigest: digestSchema,
+        corpusSnapshotDigest: digestSchema,
+        model: measurementModelIdentitySchema,
+        evaluator: measurementModelIdentitySchema,
+        discovered: z
+          .strictObject({
+            measurementRecordDigest: digestSchema,
+            sourceArmRecordDigest: digestSchema,
+            success: z.boolean(),
+          })
+          .readonly(),
+        static: z
+          .strictObject({
+            measurementRecordDigest: digestSchema,
+            sourceArmRecordDigest: digestSchema,
+            success: z.boolean(),
+          })
+          .readonly(),
+      })
+      .readonly()
+      .array()
+      .min(24)
+      .max(10_000)
+      .readonly(),
     reportDigest: digestSchema,
+  })
+  .superRefine((report, context) => {
+    if (
+      report.pairedCases !== report.sourcePairs.length ||
+      !unique(report.sourcePairs.map((pair) => pair.caseId)) ||
+      new Set(report.sourcePairs.map((pair) => pair.suiteDigest)).size !== 1 ||
+      !unique(report.sourcePairs.map((pair) => pair.comparisonDigest)) ||
+      !unique(
+        report.sourcePairs.flatMap((pair) => [
+          pair.discovered.measurementRecordDigest,
+          pair.static.measurementRecordDigest,
+        ]),
+      ) ||
+      !unique(
+        report.sourcePairs.flatMap((pair) => [
+          pair.discovered.sourceArmRecordDigest,
+          pair.static.sourceArmRecordDigest,
+        ]),
+      )
+    )
+      context.addIssue({
+        code: "custom",
+        message: "M9c descriptive source-pair inventory is inconsistent.",
+      });
   })
   .readonly();
 export type M9cDescriptiveReport = z.infer<typeof m9cDescriptiveReportSchema>;
+
+export type M9cPairedMeasurementVerification = Readonly<{
+  caseId: string;
+  discovered: M9b2TerminalMeasurementVerification;
+  static: M9b2TerminalMeasurementVerification;
+}>;
 
 function describeOutcomeStratum(
   stratum: string,
@@ -1622,56 +1673,101 @@ function describeOutcomeStratum(
 
 export async function reportM9cPairedDescriptives(
   suite: M9b2PreparedSuite,
-  values: ReadonlyArray<unknown>,
+  values: ReadonlyArray<M9cPairedMeasurementVerification>,
 ): Promise<Result<M9cDescriptiveReport, Diagnostic>> {
-  const inputs = m9cPairedOutcomeInputSchema
+  const caseIds = identifierSchema
     .array()
     .min(24)
     .max(10_000)
-    .safeParse(values);
-  if (!inputs.success)
-    return invalid("M9c paired descriptive outcomes are invalid.");
-  const independence = await auditM9cInferenceUnits(
-    suite,
-    inputs.data.map((value) => value.caseId),
-  );
+    .safeParse(values.map((value) => value.caseId));
+  if (!caseIds.success)
+    return invalid("M9c paired measurement inputs are invalid.");
+  const reportingSuite = suites.get(suite);
+  if (reportingSuite === undefined)
+    return invalid("M9c reporting suite is invalid.");
+  const independence = await auditM9cInferenceUnits(suite, caseIds.data);
   if (!independence.ok) return independence;
-  const derived = deriveM9cInferenceCases(
-    suite,
-    inputs.data.map((value) => value.caseId),
-  );
+  const derived = deriveM9cInferenceCases(suite, caseIds.data);
   if (!derived.ok) return derived;
-  const outcomes = inputs.data.map((input, index) => {
+  const outcomes: Array<z.infer<typeof m9cPairedOutcomeSchema>> = [];
+  const sourcePairs: Array<
+    z.infer<typeof m9cDescriptiveReportSchema>["sourcePairs"][number]
+  > = [];
+  for (const [index, input] of values.entries()) {
     const inferenceCase = derived.value[index];
-    if (inferenceCase === undefined) return undefined;
-    return m9cPairedOutcomeSchema.parse({
-      ...inferenceCase,
-      discoveredSuccess: input.discoveredSuccess,
-      staticSuccess: input.staticSuccess,
+    if (inferenceCase === undefined)
+      return invalid("M9c paired measurements lost prepared lineage.");
+    const discovered = await measureM9b2VerifiedTerminalRecord(
+      input.discovered,
+    );
+    const staticMeasurement = await measureM9b2VerifiedTerminalRecord(
+      input.static,
+    );
+    if (
+      !discovered.ok ||
+      !staticMeasurement.ok ||
+      input.caseId !== inferenceCase.fixtureId ||
+      discovered.value.caseId !== input.caseId ||
+      staticMeasurement.value.caseId !== input.caseId ||
+      discovered.value.suiteDigest !== reportingSuite.suiteDigest ||
+      staticMeasurement.value.suiteDigest !== reportingSuite.suiteDigest ||
+      discovered.value.arm !== "discovered-program" ||
+      staticMeasurement.value.arm !== "static-one-shot" ||
+      discovered.value.comparisonDigest !==
+        staticMeasurement.value.comparisonDigest ||
+      discovered.value.taskDigest !== staticMeasurement.value.taskDigest ||
+      discovered.value.corpusSnapshotDigest !==
+        staticMeasurement.value.corpusSnapshotDigest ||
+      !canonicalEqual(discovered.value.model, staticMeasurement.value.model) ||
+      !canonicalEqual(
+        discovered.value.evaluator,
+        staticMeasurement.value.evaluator,
+      )
+    )
+      return invalid("M9c paired measurements are not cross-bound opposites.");
+    outcomes.push(
+      m9cPairedOutcomeSchema.parse({
+        ...inferenceCase,
+        discoveredSuccess: discovered.value.primary.success,
+        staticSuccess: staticMeasurement.value.primary.success,
+      }),
+    );
+    sourcePairs.push({
+      caseId: input.caseId,
+      suiteDigest: reportingSuite.suiteDigest,
+      comparisonDigest: discovered.value.comparisonDigest,
+      taskDigest: discovered.value.taskDigest,
+      corpusSnapshotDigest: discovered.value.corpusSnapshotDigest,
+      model: discovered.value.model,
+      evaluator: discovered.value.evaluator,
+      discovered: {
+        measurementRecordDigest: discovered.value.recordDigest,
+        sourceArmRecordDigest: discovered.value.sourceArmRecordDigest,
+        success: discovered.value.primary.success,
+      },
+      static: {
+        measurementRecordDigest: staticMeasurement.value.recordDigest,
+        sourceArmRecordDigest: staticMeasurement.value.sourceArmRecordDigest,
+        success: staticMeasurement.value.primary.success,
+      },
     });
-  });
-  if (outcomes.some((value) => value === undefined))
-    return invalid("M9c paired descriptive outcomes lost prepared lineage.");
-  const completeOutcomes = outcomes.filter(
-    (value): value is z.infer<typeof m9cPairedOutcomeSchema> =>
-      value !== undefined,
-  );
+  }
   const cells = M9B2_TASK_FAMILIES.flatMap((family) =>
     M9B2_CORPUS_SCALES.map((scale) =>
       describeOutcomeStratum(
         `${family}:${scale}`,
-        completeOutcomes.filter(
+        outcomes.filter(
           (value) => value.family === family && value.scale === scale,
         ),
       ),
     ),
   );
   const body = {
-    protocol: "lachesis-m9b2b-m9c-descriptive-report/2" as const,
+    protocol: "lachesis-m9b2c-m9c-descriptive-report/3" as const,
     estimand: strictJsonValueSchema.parse(M9C_FROZEN_ESTIMAND),
     claimScope:
       "family-and-scale-stratified-descriptive-results-only-no-additional-superiority-claims" as const,
-    pairedCases: completeOutcomes.length,
+    pairedCases: outcomes.length,
     equalCellWeightedRiskDifferenceBasisPoints: Math.round(
       cells.reduce((sum, cell) => sum + cell.riskDifferenceBasisPoints, 0) /
         cells.length,
@@ -1679,14 +1775,17 @@ export async function reportM9cPairedDescriptives(
     byFamily: M9B2_TASK_FAMILIES.map((family) =>
       describeOutcomeStratum(
         family,
-        completeOutcomes.filter((value) => value.family === family),
+        outcomes.filter((value) => value.family === family),
       ),
     ),
     byScale: M9B2_CORPUS_SCALES.map((scale) =>
       describeOutcomeStratum(
         scale,
-        completeOutcomes.filter((value) => value.scale === scale),
+        outcomes.filter((value) => value.scale === scale),
       ),
+    ),
+    sourcePairs: sourcePairs.toSorted((left, right) =>
+      left.caseId.localeCompare(right.caseId),
     ),
   };
   const reportDigest = await digestValue(body);
@@ -1699,6 +1798,19 @@ export async function reportM9cPairedDescriptives(
         }),
       }
     : reportDigest;
+}
+
+export async function verifyM9cPairedDescriptiveReport(
+  suite: M9b2PreparedSuite,
+  values: ReadonlyArray<M9cPairedMeasurementVerification>,
+  value: unknown,
+): Promise<Result<M9cDescriptiveReport, Diagnostic>> {
+  const parsed = m9cDescriptiveReportSchema.safeParse(value);
+  if (!parsed.success) return invalid("M9c descriptive report is invalid.");
+  const rederived = await reportM9cPairedDescriptives(suite, values);
+  return rederived.ok && canonicalEqual(rederived.value, parsed.data)
+    ? { ok: true, value: parsed.data }
+    : invalid("M9c descriptive report failed zero-effect rederivation.");
 }
 
 const powerCaseBoundSchema = z.discriminatedUnion("kind", [
@@ -2193,42 +2305,132 @@ export async function verifyM9b2MeasurementDesign(
     : invalid("M9b.2 measurement design identity is invalid.");
 }
 
-export async function auditM9b2SplitDisjointness(
-  input: Readonly<{
-    developmentIdentities: ReadonlyArray<unknown>;
-    heldoutIdentities: ReadonlyArray<unknown>;
+const splitAuditCaseInventorySchema = z
+  .strictObject({
+    caseId: identifierSchema,
+    splitIdentity: m9b2SplitIdentitySchema,
+  })
+  .readonly();
+
+export const m9b2SplitDisjointnessAuditSchema = z
+  .strictObject({
+    protocol: z.literal("lachesis-m9b2c-split-disjointness-audit/4"),
+    developmentSuiteDigest: digestSchema,
+    heldoutSuiteDigest: digestSchema,
+    developmentCount: z.number().int().positive(),
+    heldoutCount: z.number().int().positive(),
+    developmentCases: splitAuditCaseInventorySchema
+      .array()
+      .min(1)
+      .max(10_000)
+      .readonly(),
+    heldoutCases: splitAuditCaseInventorySchema
+      .array()
+      .min(1)
+      .max(10_000)
+      .readonly(),
+    forbiddenOverlapDimensions: z.string().min(1).array().readonly(),
+    allowedOverlap: z
+      .strictObject({
+        taskFamilies: m9b2TaskFamilySchema.array().readonly(),
+        solutionStrategyClasses: identifierSchema.array().readonly(),
+      })
+      .readonly(),
+    auditDigest: digestSchema,
+    passed: z.literal(true),
+  })
+  .superRefine((audit, context) => {
+    if (
+      audit.developmentCount !== audit.developmentCases.length ||
+      audit.heldoutCount !== audit.heldoutCases.length ||
+      audit.developmentSuiteDigest === audit.heldoutSuiteDigest
+    )
+      context.addIssue({
+        code: "custom",
+        message: "M9b.2 split audit inventory is inconsistent.",
+      });
+  })
+  .readonly();
+export type M9b2SplitDisjointnessAudit = z.infer<
+  typeof m9b2SplitDisjointnessAuditSchema
+>;
+
+function deriveSplitAuditInventory(
+  suite: unknown,
+  values: ReadonlyArray<unknown>,
+): Result<
+  Readonly<{
+    suiteDigest: string;
+    cases: ReadonlyArray<z.infer<typeof splitAuditCaseInventorySchema>>;
   }>,
-): Promise<
-  Result<
-    Readonly<{
-      developmentCount: number;
-      heldoutCount: number;
-      forbiddenOverlapDimensions: ReadonlyArray<string>;
-      allowedOverlap: Readonly<{
-        taskFamilies: ReadonlyArray<M9b2TaskFamily>;
-        solutionStrategyClasses: ReadonlyArray<string>;
-      }>;
-      auditDigest: string;
-      passed: true;
-    }>,
-    Diagnostic
-  >
+  Diagnostic
 > {
-  const development = m9b2SplitIdentitySchema
-    .array()
-    .min(1)
-    .max(10_000)
-    .safeParse(input.developmentIdentities);
-  const heldout = m9b2SplitIdentitySchema
-    .array()
-    .min(1)
-    .max(10_000)
-    .safeParse(input.heldoutIdentities);
-  if (!development.success || !heldout.success)
-    return invalid("M9b.2 split identities are invalid.");
+  const caseIds = identifierSchema.array().min(1).max(10_000).safeParse(values);
+  const stored =
+    typeof suite === "object" && suite !== null ? suites.get(suite) : undefined;
+  if (!caseIds.success || stored === undefined || !unique(caseIds.data))
+    return invalid("M9b.2 split case inventory is invalid.");
+  const cases: Array<z.infer<typeof splitAuditCaseInventorySchema>> = [];
+  for (const caseId of caseIds.data) {
+    const prepared = stored.cases.get(caseId);
+    if (prepared === undefined)
+      return invalid("M9b.2 split case is not in its prepared suite.");
+    cases.push(
+      splitAuditCaseInventorySchema.parse({
+        caseId,
+        splitIdentity: prepared.splitIdentity,
+      }),
+    );
+  }
+  return {
+    ok: true,
+    value: Object.freeze({
+      suiteDigest: stored.suiteDigest,
+      cases: Object.freeze(
+        cases.toSorted((left, right) =>
+          left.caseId.localeCompare(right.caseId),
+        ),
+      ),
+    }),
+  };
+}
+
+export async function auditM9b2SplitDisjointness(
+  input: unknown,
+): Promise<Result<M9b2SplitDisjointnessAudit, Diagnostic>> {
+  const parsedInput = z
+    .strictObject({
+      developmentSuite: z.unknown(),
+      developmentCaseIds: z.unknown().array().readonly(),
+      heldoutSuite: z.unknown(),
+      heldoutCaseIds: z.unknown().array().readonly(),
+    })
+    .safeParse(input);
+  if (!parsedInput.success)
+    return invalid("M9b.2 split audit input is invalid.");
+  const development = deriveSplitAuditInventory(
+    parsedInput.data.developmentSuite,
+    parsedInput.data.developmentCaseIds,
+  );
+  const heldout = deriveSplitAuditInventory(
+    parsedInput.data.heldoutSuite,
+    parsedInput.data.heldoutCaseIds,
+  );
+  if (!development.ok || !heldout.ok)
+    return invalid("M9b.2 split inventories are invalid.");
+  if (development.value.suiteDigest === heldout.value.suiteDigest)
+    return invalid("M9b.2 split suites must have distinct identities.");
+  const developmentIdentities = development.value.cases.map(
+    (item) => item.splitIdentity,
+  );
+  const heldoutIdentities = heldout.value.cases.map(
+    (item) => item.splitIdentity,
+  );
   if (
-    !unique(development.data.map((identity) => identity.fixtureIdentity)) ||
-    !unique(heldout.data.map((identity) => identity.fixtureIdentity))
+    !unique(
+      developmentIdentities.map((identity) => identity.fixtureIdentity),
+    ) ||
+    !unique(heldoutIdentities.map((identity) => identity.fixtureIdentity))
   )
     return invalid("M9b.2 split case identities contain duplicates.");
   const scalarDimensions = [
@@ -2240,10 +2442,12 @@ export async function auditM9b2SplitDisjointness(
   ] as const;
   for (const dimension of scalarDimensions) {
     const developmentSet = new Set(
-      development.data.map((identity) => identity[dimension]),
+      developmentIdentities.map((identity) => identity[dimension]),
     );
     if (
-      heldout.data.some((identity) => developmentSet.has(identity[dimension]))
+      heldoutIdentities.some((identity) =>
+        developmentSet.has(identity[dimension]),
+      )
     )
       return invalid(
         `M9b.2 development and held-out ${dimension} values overlap.`,
@@ -2258,10 +2462,10 @@ export async function auditM9b2SplitDisjointness(
   ] as const;
   for (const dimension of vectorDimensions) {
     const developmentSet = new Set(
-      development.data.flatMap((identity) => identity[dimension]),
+      developmentIdentities.flatMap((identity) => identity[dimension]),
     );
     if (
-      heldout.data.some((identity) =>
+      heldoutIdentities.some((identity) =>
         identity[dimension].some((digest) => developmentSet.has(digest)),
       )
     )
@@ -2282,33 +2486,33 @@ export async function auditM9b2SplitDisjointness(
     "semanticContractIdentity",
   ] as const);
   const developmentFamilies = new Set(
-    development.data.map((identity) => identity.taskFamily),
+    developmentIdentities.map((identity) => identity.taskFamily),
   );
   const developmentStrategies = new Set(
-    development.data.map((identity) => identity.solutionStrategyClass),
+    developmentIdentities.map((identity) => identity.solutionStrategyClass),
   );
   const allowedOverlap = {
     taskFamilies: M9B2_TASK_FAMILIES.filter(
       (family) =>
         developmentFamilies.has(family) &&
-        heldout.data.some((identity) => identity.taskFamily === family),
+        heldoutIdentities.some((identity) => identity.taskFamily === family),
     ),
     solutionStrategyClasses: [
       ...new Set(
-        heldout.data
+        heldoutIdentities
           .map((identity) => identity.solutionStrategyClass)
           .filter((strategy) => developmentStrategies.has(strategy)),
       ),
     ].toSorted(),
   };
   const body = {
-    protocol: "lachesis-m9b2b-split-disjointness-audit/3",
-    developmentIdentities: development.data.toSorted((left, right) =>
-      left.fixtureIdentity.localeCompare(right.fixtureIdentity),
-    ),
-    heldoutIdentities: heldout.data.toSorted((left, right) =>
-      left.fixtureIdentity.localeCompare(right.fixtureIdentity),
-    ),
+    protocol: "lachesis-m9b2c-split-disjointness-audit/4" as const,
+    developmentSuiteDigest: development.value.suiteDigest,
+    heldoutSuiteDigest: heldout.value.suiteDigest,
+    developmentCount: development.value.cases.length,
+    heldoutCount: heldout.value.cases.length,
+    developmentCases: development.value.cases,
+    heldoutCases: heldout.value.cases,
     forbiddenOverlapDimensions,
     allowedOverlap,
     passed: true as const,
@@ -2317,14 +2521,23 @@ export async function auditM9b2SplitDisjointness(
   return auditDigest.ok
     ? {
         ok: true,
-        value: {
-          developmentCount: development.data.length,
-          heldoutCount: heldout.data.length,
-          forbiddenOverlapDimensions,
-          allowedOverlap,
+        value: m9b2SplitDisjointnessAuditSchema.parse({
+          ...body,
           auditDigest: auditDigest.value,
-          passed: true,
-        },
+        }),
       }
     : auditDigest;
+}
+
+export async function verifyM9b2SplitDisjointnessAudit(
+  input: unknown,
+  value: unknown,
+): Promise<Result<M9b2SplitDisjointnessAudit, Diagnostic>> {
+  const parsed = m9b2SplitDisjointnessAuditSchema.safeParse(value);
+  if (!parsed.success)
+    return invalid("M9b.2 split disjointness audit is invalid.");
+  const rederived = await auditM9b2SplitDisjointness(input);
+  return rederived.ok && canonicalEqual(rederived.value, parsed.data)
+    ? { ok: true, value: parsed.data }
+    : invalid("M9b.2 split audit failed prepared-suite rederivation.");
 }
