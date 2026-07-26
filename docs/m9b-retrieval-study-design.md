@@ -456,9 +456,17 @@ security review confirming:
 - private replay performs zero corpus and model effects; and
 - no stable API, release, or provider boundary was widened.
 
-M9b.1b and M9b.2d have passed their offline reviews. M9b remains **NO-GO** after
-M9b.3f because the candidate provider profile is not conformance evidence; no
-corpus, final gold/evaluator, schedule, empirical discordance result, external
-preregistration, adapter, credentials, or explicit live authorization exists.
-M9b.3f does not authorize corpus construction, provider integration, a held-out
-campaign, or live execution.
+M9b.1b and M9b.2d have passed their offline reviews. M9b.4 adds a private
+provider-neutral effect ledger whose maximum reservation and `dispatch-started`
+record persist before session creation or transport. A resumed
+`dispatch-started` attempt is terminal ambiguity, consumes the full reservation,
+and is never redispatched. Complete receipts reconcile exact bound usage; all
+campaign, provider, phase, arm, and request accounting is rederived from the
+canonical event chain.
+
+M9b remains **NO-GO** after M9b.4 because the candidate provider profile is not
+adapter conformance evidence; no corpus, final gold/evaluator, schedule,
+empirical discordance result, external preregistration, credentials, or explicit
+live authorization exists. M9b.4 permits only a separately scoped, intercepted,
+zero-network M9b.5 provider-adapter conformance milestone. It does not authorize
+corpus construction, provider calls, a held-out campaign, or live execution.
