@@ -3,6 +3,7 @@ import {
   type Diagnostic,
   diagnostic,
   digestValue,
+  parseJson,
   type Result,
 } from "@nicia-ai/lachesis";
 import { z } from "zod";
@@ -11,6 +12,7 @@ import {
   createM9aCorpus,
   inspectM9aCorpus,
   type M9aChunkIdentity,
+  m9aChunkIdentitySchema,
   m9aCorpusInputSchema,
   m9aInternalInspectChunkIdentities,
   type M9aRetrievalFailure,
@@ -18,16 +20,19 @@ import {
 import {
   type M9aCitationConfinedAnswer,
   m9aCitationConfinedAnswerSchema,
-  type M9aModelUsage,
-  m9aModelUsageSchema,
-  type M9aRetrievalRun,
 } from "./m9a-retrieval.js";
-import type { M9b1ExternalEvaluator } from "./m9b1-discovery.js";
+import {
+  type M9b1Arm,
+  type M9b1ArmRecord,
+  type M9b1ExternalEvaluator,
+  m9b1InternalInspectVerifiedTerminalRecord,
+  type M9b1VerifiedTerminalRecord,
+} from "./m9b1-discovery.js";
 import { strictJsonValueSchema } from "./strict-json.js";
 
 export const M9B2_MEASUREMENT_PROTOCOL = Object.freeze({
   id: "lachesis-m9b2-offline-scientific-measurement",
-  version: "1.0.0",
+  version: "1.1.0",
   visibility: "internal-offline-development-only" as const,
   claimBoundary:
     "offline fixture, evaluator, and prospective-power validation only; no model-quality, retrieval-superiority, generalization, live-provider, or production-readiness claim",
@@ -35,7 +40,12 @@ export const M9B2_MEASUREMENT_PROTOCOL = Object.freeze({
 
 export const M9B2_EVALUATOR_IDENTITY = Object.freeze({
   id: "lachesis.m9b2.offline-arm-blind-evaluator",
-  version: "1.0.0-development",
+  version: "1.1.0-development",
+});
+
+export const M9B2_PERSISTENCE_PROTOCOL = Object.freeze({
+  record: "lachesis-m9b2a-terminal-measurement-record/1",
+  store: "lachesis-m9b2a-atomic-measurement-store/1",
 });
 
 export const M9B2_PRIMARY_ENDPOINT =
@@ -106,13 +116,28 @@ export const m9b2HiddenExpectationSchema = z
       .min(1)
       .max(8)
       .readonly(),
-    requiredEvidenceSets: requiredEvidenceSetSchema.array().max(4).readonly(),
-    allowedSupportingDocumentIds: documentIdSetSchema,
+    supportingFacts: z
+      .strictObject({
+        id: identifierSchema,
+        documentId: identifierSchema,
+        exactText: z.string().min(1).max(2_048),
+      })
+      .readonly()
+      .array()
+      .max(16)
+      .readonly(),
+    requiredSupportingFactSets: requiredEvidenceSetSchema
+      .array()
+      .max(4)
+      .readonly(),
+    allowedSupportingFactIds: documentIdSetSchema,
+    entityLineageIds: identifierSchema.array().max(16).readonly(),
+    normalizedTaskTemplate: z.string().min(1).max(2_048),
   })
   .superRefine((expectation, context) => {
     if (
       expectation.responseKind === "answer" &&
-      expectation.requiredEvidenceSets.length === 0
+      expectation.requiredSupportingFactSets.length === 0
     )
       context.addIssue({
         code: "custom",
@@ -120,8 +145,9 @@ export const m9b2HiddenExpectationSchema = z
       });
     if (
       expectation.responseKind === "abstain" &&
-      (expectation.requiredEvidenceSets.length > 0 ||
-        expectation.allowedSupportingDocumentIds.length > 0)
+      (expectation.requiredSupportingFactSets.length > 0 ||
+        expectation.allowedSupportingFactIds.length > 0 ||
+        expectation.supportingFacts.length > 0)
     )
       context.addIssue({
         code: "custom",
@@ -133,11 +159,17 @@ export type M9b2HiddenExpectation = z.infer<typeof m9b2HiddenExpectationSchema>;
 
 export const m9b2SplitIdentitySchema = z
   .strictObject({
-    caseIdentity: digestSchema,
-    normalizedTaskIdentity: digestSchema,
+    fixtureIdentity: digestSchema,
+    entityIdentities: digestSchema.array().max(16).readonly(),
+    exactTaskTemplateIdentity: digestSchema,
+    normalizedTaskTemplateIdentity: digestSchema,
+    exactRelevantFactWordingIdentities: digestSchema.array().max(16).readonly(),
+    answerValueIdentities: digestSchema.array().max(8).readonly(),
     corpusContentIdentity: digestSchema,
     documentContentIdentities: digestSchema.array().min(1).max(64).readonly(),
     semanticContractIdentity: digestSchema,
+    taskFamily: m9b2TaskFamilySchema,
+    solutionStrategyClass: identifierSchema,
   })
   .readonly();
 export type M9b2SplitIdentity = z.infer<typeof m9b2SplitIdentitySchema>;
@@ -181,7 +213,24 @@ type PreparedCase = Readonly<{
   splitIdentity: M9b2SplitIdentity;
   snapshotDigest: string;
   chunksById: ReadonlyMap<string, M9aChunkIdentity>;
+  supportingFactsById: ReadonlyMap<string, M9b2SupportingFactIdentity>;
 }>;
+
+export const m9b2SupportingFactIdentitySchema = z
+  .strictObject({
+    factId: identifierSchema,
+    snapshotDigest: digestSchema,
+    documentId: identifierSchema,
+    chunk: m9aChunkIdentitySchema,
+    startByte: z.number().int().nonnegative(),
+    endByte: z.number().int().positive(),
+    exactTextDigest: digestSchema,
+  })
+  .refine((fact) => fact.endByte > fact.startByte)
+  .readonly();
+export type M9b2SupportingFactIdentity = z.infer<
+  typeof m9b2SupportingFactIdentitySchema
+>;
 
 type StoredSuite = Readonly<{
   suiteDigest: string;
@@ -303,9 +352,11 @@ function validateTaxonomy(
     const expectationBody = {
       responseKind: firstExpectation.responseKind,
       acceptedAnswers: firstExpectation.acceptedAnswers,
-      requiredEvidenceSets: firstExpectation.requiredEvidenceSets,
-      allowedSupportingDocumentIds:
-        firstExpectation.allowedSupportingDocumentIds,
+      supportingFacts: firstExpectation.supportingFacts,
+      requiredSupportingFactSets: firstExpectation.requiredSupportingFactSets,
+      allowedSupportingFactIds: firstExpectation.allowedSupportingFactIds,
+      entityLineageIds: firstExpectation.entityLineageIds,
+      normalizedTaskTemplate: firstExpectation.normalizedTaskTemplate,
     };
     for (const item of familyCases) {
       const expectation = expectationsByCase.get(item.id);
@@ -314,9 +365,11 @@ function validateTaxonomy(
         !canonicalEqual(expectationBody, {
           responseKind: expectation.responseKind,
           acceptedAnswers: expectation.acceptedAnswers,
-          requiredEvidenceSets: expectation.requiredEvidenceSets,
-          allowedSupportingDocumentIds:
-            expectation.allowedSupportingDocumentIds,
+          supportingFacts: expectation.supportingFacts,
+          requiredSupportingFactSets: expectation.requiredSupportingFactSets,
+          allowedSupportingFactIds: expectation.allowedSupportingFactIds,
+          entityLineageIds: expectation.entityLineageIds,
+          normalizedTaskTemplate: expectation.normalizedTaskTemplate,
         })
       )
         return invalid(
@@ -354,26 +407,32 @@ export async function prepareM9b2DevelopmentSuite(
     const expectation = expectationsByCase.get(publicCase.id);
     if (expectation === undefined)
       return invalid("M9b.2 hidden expectation is missing.");
-    const documentIds = publicCase.corpus.documents.map(
-      (document) => document.id,
+    const documentsById = new Map(
+      publicCase.corpus.documents.map((document) => [document.id, document]),
     );
-    const referencedIds = [
-      ...expectation.allowedSupportingDocumentIds,
-      ...expectation.requiredEvidenceSets.flat(),
+    const supportingFactIds = expectation.supportingFacts.map(
+      (fact) => fact.id,
+    );
+    const referencedFactIds = [
+      ...expectation.allowedSupportingFactIds,
+      ...expectation.requiredSupportingFactSets.flat(),
     ];
-    const evidenceSetIdentities = expectation.requiredEvidenceSets.map((set) =>
-      [...set].toSorted().join("\u0000"),
+    const evidenceSetIdentities = expectation.requiredSupportingFactSets.map(
+      (set) => [...set].toSorted().join("\u0000"),
     );
     if (
       !unique(expectation.acceptedAnswers.map(normalizedAnswer)) ||
-      !unique(expectation.allowedSupportingDocumentIds) ||
+      !unique(supportingFactIds) ||
+      !unique(expectation.allowedSupportingFactIds) ||
+      !unique(expectation.entityLineageIds) ||
       !unique(evidenceSetIdentities) ||
-      expectation.requiredEvidenceSets.some((set) => !unique(set)) ||
-      referencedIds.some((id) => !documentIds.includes(id)) ||
-      expectation.requiredEvidenceSets.some((set) =>
-        set.some(
-          (id) => !expectation.allowedSupportingDocumentIds.includes(id),
-        ),
+      expectation.requiredSupportingFactSets.some((set) => !unique(set)) ||
+      expectation.supportingFacts.some(
+        (fact) => !documentsById.has(fact.documentId),
+      ) ||
+      referencedFactIds.some((id) => !supportingFactIds.includes(id)) ||
+      expectation.requiredSupportingFactSets.some((set) =>
+        set.some((id) => !expectation.allowedSupportingFactIds.includes(id)),
       )
     )
       return invalid(
@@ -386,18 +445,76 @@ export async function prepareM9b2DevelopmentSuite(
     const chunks = m9aInternalInspectChunkIdentities(corpus.value);
     if (snapshot === undefined || chunks === undefined)
       return invalid("M9b.2 lost a prepared corpus identity.");
-    const caseIdentity = await digestValue({
+    const supportingFacts: Array<
+      readonly [string, M9b2SupportingFactIdentity]
+    > = [];
+    for (const fact of expectation.supportingFacts) {
+      const document = documentsById.get(fact.documentId);
+      if (document === undefined)
+        return invalid("M9b.2 supporting fact document is missing.");
+      const characterStart = document.text.indexOf(fact.exactText);
+      if (
+        characterStart < 0 ||
+        document.text.includes(fact.exactText, characterStart + 1)
+      )
+        return invalid(
+          `M9b.2 supporting fact ${fact.id} must occur exactly once.`,
+        );
+      const startByte = new TextEncoder().encode(
+        document.text.slice(0, characterStart),
+      ).byteLength;
+      const endByte =
+        startByte + new TextEncoder().encode(fact.exactText).byteLength;
+      const chunk = chunks.find(
+        (candidate) =>
+          candidate.document.documentId === fact.documentId &&
+          candidate.startByte <= startByte &&
+          candidate.endByte >= endByte,
+      );
+      const exactTextDigest = await digestValue(fact.exactText);
+      if (chunk === undefined || !exactTextDigest.ok)
+        return invalid(
+          `M9b.2 supporting fact ${fact.id} must fit one exact snapshot chunk.`,
+        );
+      supportingFacts.push([
+        fact.id,
+        m9b2SupportingFactIdentitySchema.parse({
+          factId: fact.id,
+          snapshotDigest: snapshot.snapshotDigest,
+          documentId: fact.documentId,
+          chunk,
+          startByte,
+          endByte,
+          exactTextDigest: exactTextDigest.value,
+        }),
+      ]);
+    }
+    const fixtureIdentity = await digestValue({
       id: publicCase.id,
       split: publicCase.split,
       family: publicCase.family,
       scale: publicCase.scale,
       strategyId: publicCase.strategyId,
     });
-    const normalizedTaskIdentity = await digestValue(
-      normalizedAnswer(publicCase.task),
+    const exactTaskTemplateIdentity = await digestValue(publicCase.task);
+    const normalizedTaskTemplateIdentity = await digestValue(
+      normalizedAnswer(expectation.normalizedTaskTemplate),
+    );
+    const entityIdentityResults = await Promise.all(
+      expectation.entityLineageIds.map((value) => digestValue(value)),
+    );
+    const factWordingIdentityResults = await Promise.all(
+      expectation.supportingFacts.map((fact) => digestValue(fact.exactText)),
+    );
+    const answerValueIdentityResults = await Promise.all(
+      expectation.acceptedAnswers.map((answer) =>
+        digestValue(normalizedAnswer(answer)),
+      ),
     );
     const documentContentResults = await Promise.all(
-      publicCase.corpus.documents.map((document) => digestValue(document.text)),
+      publicCase.corpus.documents.map((document) =>
+        digestValue({ title: document.title, text: document.text }),
+      ),
     );
     if (documentContentResults.some((result) => !result.ok))
       return invalid("M9b.2 document-content identity could not be derived.");
@@ -412,12 +529,17 @@ export async function prepareM9b2DevelopmentSuite(
     const semanticContractIdentity = await digestValue({
       responseKind: expectation.responseKind,
       acceptedAnswers: expectation.acceptedAnswers.map(normalizedAnswer),
-      requiredEvidenceSets: expectation.requiredEvidenceSets,
-      allowedSupportingDocumentIds: expectation.allowedSupportingDocumentIds,
+      supportingFacts: supportingFacts.map((entry) => entry[1]),
+      requiredSupportingFactSets: expectation.requiredSupportingFactSets,
+      allowedSupportingFactIds: expectation.allowedSupportingFactIds,
     });
     if (
-      !caseIdentity.ok ||
-      !normalizedTaskIdentity.ok ||
+      !fixtureIdentity.ok ||
+      !exactTaskTemplateIdentity.ok ||
+      !normalizedTaskTemplateIdentity.ok ||
+      entityIdentityResults.some((result) => !result.ok) ||
+      factWordingIdentityResults.some((result) => !result.ok) ||
+      answerValueIdentityResults.some((result) => !result.ok) ||
       !corpusContentIdentity.ok ||
       !semanticContractIdentity.ok
     )
@@ -428,14 +550,28 @@ export async function prepareM9b2DevelopmentSuite(
         publicCase,
         expectation,
         splitIdentity: m9b2SplitIdentitySchema.parse({
-          caseIdentity: caseIdentity.value,
-          normalizedTaskIdentity: normalizedTaskIdentity.value,
+          fixtureIdentity: fixtureIdentity.value,
+          entityIdentities: entityIdentityResults.flatMap((result) =>
+            result.ok ? [result.value] : [],
+          ),
+          exactTaskTemplateIdentity: exactTaskTemplateIdentity.value,
+          normalizedTaskTemplateIdentity: normalizedTaskTemplateIdentity.value,
+          exactRelevantFactWordingIdentities:
+            factWordingIdentityResults.flatMap((result) =>
+              result.ok ? [result.value] : [],
+            ),
+          answerValueIdentities: answerValueIdentityResults.flatMap((result) =>
+            result.ok ? [result.value] : [],
+          ),
           corpusContentIdentity: corpusContentIdentity.value,
           documentContentIdentities: sortedDocumentContentIdentities,
           semanticContractIdentity: semanticContractIdentity.value,
+          taskFamily: publicCase.family,
+          solutionStrategyClass: publicCase.strategyId,
         }),
         snapshotDigest: snapshot.snapshotDigest,
         chunksById: new Map(chunks.map((chunk) => [chunk.id, chunk])),
+        supportingFactsById: new Map(supportingFacts),
       }),
     ]);
   }
@@ -485,32 +621,50 @@ export function inspectM9b2PreparedCase(
       });
 }
 
+/** @internal Hidden-gold inspection used only by deterministic offline tests. */
+export function m9b2InternalInspectSupportingFacts(
+  suite: M9b2PreparedSuite,
+  caseId: string,
+): ReadonlyArray<M9b2SupportingFactIdentity> | undefined {
+  const prepared = suites.get(suite)?.cases.get(caseId);
+  return prepared === undefined
+    ? undefined
+    : Object.freeze([...prepared.supportingFactsById.values()]);
+}
+
 function scoreEvidence(
-  expectation: M9b2HiddenExpectation,
-  citedDocumentIds: ReadonlySet<string>,
+  prepared: PreparedCase,
+  citedChunkIds: ReadonlySet<string>,
 ): Readonly<{ recall: number; precision: number }> {
+  const citedFactIds = new Set(
+    [...prepared.supportingFactsById.values()]
+      .filter((fact) => citedChunkIds.has(fact.chunk.id))
+      .map((fact) => fact.factId),
+  );
   const recall =
-    expectation.requiredEvidenceSets.length === 0
+    prepared.expectation.requiredSupportingFactSets.length === 0
       ? 10_000
       : Math.max(
-          ...expectation.requiredEvidenceSets.map((set) =>
+          ...prepared.expectation.requiredSupportingFactSets.map((set) =>
             basisPoints(
-              set.filter((documentId) => citedDocumentIds.has(documentId))
-                .length,
+              set.filter((factId) => citedFactIds.has(factId)).length,
               set.length,
             ),
           ),
         );
   const precision =
-    citedDocumentIds.size === 0
-      ? expectation.responseKind === "abstain"
+    citedChunkIds.size === 0
+      ? prepared.expectation.responseKind === "abstain"
         ? 10_000
         : 0
       : basisPoints(
-          [...citedDocumentIds].filter((documentId) =>
-            expectation.allowedSupportingDocumentIds.includes(documentId),
+          [...citedChunkIds].filter((chunkId) =>
+            prepared.expectation.allowedSupportingFactIds.some(
+              (factId) =>
+                prepared.supportingFactsById.get(factId)?.chunk.id === chunkId,
+            ),
           ).length,
-          citedDocumentIds.size,
+          citedChunkIds.size,
         );
   return { recall, precision };
 }
@@ -539,10 +693,7 @@ function evaluatePreparedCase(
         ? 10_000
         : 0
       : basisPoints(uniqueValidIds.size, answer.citations.length);
-  const citedDocumentIds = new Set(
-    validCitations.map((citation) => citation.document.documentId),
-  );
-  const evidence = scoreEvidence(prepared.expectation, citedDocumentIds);
+  const evidence = scoreEvidence(prepared, uniqueValidIds);
   const abstentionCorrect =
     (prepared.expectation.responseKind === "abstain") === observedAbstention;
   const semanticSupported =
@@ -629,7 +780,7 @@ export function createM9b2OfflineEvaluator(
   };
 }
 
-export const m9b2ReliabilityFixtureSchema = z
+export const m9b2EvaluatorConformanceFixtureSchema = z
   .strictObject({
     caseId: identifierSchema,
     answer: m9aCitationConfinedAnswerSchema,
@@ -637,59 +788,58 @@ export const m9b2ReliabilityFixtureSchema = z
     expectedFailureReasons: evaluatorFailureReasonSchema.array().readonly(),
   })
   .readonly();
-export type M9b2ReliabilityFixture = z.infer<
-  typeof m9b2ReliabilityFixtureSchema
+export type M9b2EvaluatorConformanceFixture = z.infer<
+  typeof m9b2EvaluatorConformanceFixtureSchema
 >;
 
-export const m9b2ReliabilityReportSchema = z
+export const m9b2EvaluatorConformanceReportSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b2-evaluator-reliability/1"),
+    protocol: z.literal("lachesis-m9b2a-evaluator-conformance/1"),
+    classification: z.literal("deterministic-evaluator-conformance-only"),
     fixtureCount: z.number().int().positive(),
     coveredFamilies: m9b2TaskFamilySchema.array().length(8).readonly(),
     expectedAgreementBasisPoints: z.number().int().min(0).max(10_000),
     repeatabilityBasisPoints: z.number().int().min(0).max(10_000),
     passed: z.boolean(),
-    advancement: z.enum([
-      "power-analysis-eligible",
-      "stop-evaluator-unreliable",
-    ]),
+    campaignAdvancementAuthorized: z.literal(false),
+    nextRequiredGate: z.literal(
+      "separately-frozen-independently-reviewed-gold-and-evaluator-validation",
+    ),
     reportDigest: digestSchema,
   })
   .superRefine((report, context) => {
     const passed =
       report.expectedAgreementBasisPoints === 10_000 &&
       report.repeatabilityBasisPoints === 10_000;
-    if (
-      report.passed !== passed ||
-      report.advancement !==
-        (passed ? "power-analysis-eligible" : "stop-evaluator-unreliable")
-    )
+    if (report.passed !== passed)
       context.addIssue({
         code: "custom",
-        message: "M9b.2 reliability decision is inconsistent with its gates.",
+        message: "M9b.2 evaluator conformance report is inconsistent.",
       });
   })
   .readonly();
-export type M9b2ReliabilityReport = z.infer<typeof m9b2ReliabilityReportSchema>;
+export type M9b2EvaluatorConformanceReport = z.infer<
+  typeof m9b2EvaluatorConformanceReportSchema
+>;
 
-export async function auditM9b2EvaluatorReliability(
+export async function auditM9b2EvaluatorConformance(
   suite: M9b2PreparedSuite,
   values: ReadonlyArray<unknown>,
-): Promise<Result<M9b2ReliabilityReport, Diagnostic>> {
-  const fixtures = m9b2ReliabilityFixtureSchema
+): Promise<Result<M9b2EvaluatorConformanceReport, Diagnostic>> {
+  const fixtures = m9b2EvaluatorConformanceFixtureSchema
     .array()
     .min(16)
     .safeParse(values);
   const stored = suites.get(suite);
   if (!fixtures.success || stored === undefined)
-    return invalid("M9b.2 evaluator reliability fixtures are invalid.");
+    return invalid("M9b.2 evaluator conformance fixtures are invalid.");
   let agreements = 0;
   let repeats = 0;
   const covered = new Set<M9b2TaskFamily>();
   for (const fixture of fixtures.data) {
     const prepared = stored.cases.get(fixture.caseId);
     if (prepared === undefined)
-      return invalid("M9b.2 reliability fixture references an unknown case.");
+      return invalid("M9b.2 conformance fixture references an unknown case.");
     covered.add(prepared.publicCase.family);
     const first = evaluatePreparedCase(prepared, fixture.answer);
     const second = evaluatePreparedCase(prepared, fixture.answer);
@@ -704,7 +854,7 @@ export async function auditM9b2EvaluatorReliability(
     covered.has(family),
   );
   if (coveredFamilies.length !== M9B2_TASK_FAMILIES.length)
-    return invalid("M9b.2 reliability fixtures must cover every task family.");
+    return invalid("M9b.2 conformance fixtures must cover every task family.");
   const expectedAgreementBasisPoints = basisPoints(
     agreements,
     fixtures.data.length,
@@ -714,21 +864,22 @@ export async function auditM9b2EvaluatorReliability(
     expectedAgreementBasisPoints === 10_000 &&
     repeatabilityBasisPoints === 10_000;
   const body = {
-    protocol: "lachesis-m9b2-evaluator-reliability/1" as const,
+    protocol: "lachesis-m9b2a-evaluator-conformance/1" as const,
+    classification: "deterministic-evaluator-conformance-only" as const,
     fixtureCount: fixtures.data.length,
     coveredFamilies,
     expectedAgreementBasisPoints,
     repeatabilityBasisPoints,
     passed,
-    advancement: passed
-      ? ("power-analysis-eligible" as const)
-      : ("stop-evaluator-unreliable" as const),
+    campaignAdvancementAuthorized: false as const,
+    nextRequiredGate:
+      "separately-frozen-independently-reviewed-gold-and-evaluator-validation" as const,
   };
   const reportDigest = await digestValue(body);
   return reportDigest.ok
     ? {
         ok: true,
-        value: m9b2ReliabilityReportSchema.parse({
+        value: m9b2EvaluatorConformanceReportSchema.parse({
           ...body,
           reportDigest: reportDigest.value,
         }),
@@ -736,17 +887,17 @@ export async function auditM9b2EvaluatorReliability(
     : reportDigest;
 }
 
-export async function verifyM9b2ReliabilityReport(
+export async function verifyM9b2EvaluatorConformanceReport(
   suite: M9b2PreparedSuite,
   fixtures: ReadonlyArray<unknown>,
   value: unknown,
-): Promise<Result<M9b2ReliabilityReport, Diagnostic>> {
-  const parsed = m9b2ReliabilityReportSchema.safeParse(value);
-  if (!parsed.success) return invalid("M9b.2 reliability report is invalid.");
-  const recomputed = await auditM9b2EvaluatorReliability(suite, fixtures);
+): Promise<Result<M9b2EvaluatorConformanceReport, Diagnostic>> {
+  const parsed = m9b2EvaluatorConformanceReportSchema.safeParse(value);
+  if (!parsed.success) return invalid("M9b.2 conformance report is invalid.");
+  const recomputed = await auditM9b2EvaluatorConformance(suite, fixtures);
   return recomputed.ok && canonicalEqual(recomputed.value, parsed.data)
     ? { ok: true, value: parsed.data }
-    : invalid("M9b.2 reliability report does not replay from its fixtures.");
+    : invalid("M9b.2 conformance report does not replay from its fixtures.");
 }
 
 const firstAttemptStageSchema = z.enum([
@@ -801,82 +952,446 @@ export function classifyM9b2PrimaryEndpoint(
     : invalid("M9b.2 primary endpoint input is invalid.");
 }
 
-export const m9b2RunMetricsSchema = z
+const boundedUsageSchema = z.discriminatedUnion("kind", [
+  z
+    .strictObject({
+      kind: z.literal("known"),
+      inputTokens: z.number().int().nonnegative(),
+      outputTokens: z.number().int().nonnegative(),
+      wallClockMs: z.number().int().nonnegative(),
+    })
+    .readonly(),
+  z
+    .strictObject({
+      kind: z.literal("unknown"),
+      reason: z.literal("no-successful-boundary-receipt"),
+    })
+    .readonly(),
+]);
+
+const boundedMetricSchema = z.discriminatedUnion("kind", [
+  z
+    .strictObject({ kind: z.literal("known"), value: z.number().int() })
+    .readonly(),
+  z
+    .strictObject({
+      kind: z.literal("unknown"),
+      reason: z.literal("no-successful-execution-receipt"),
+    })
+    .readonly(),
+]);
+
+const measurementModelIdentitySchema = z
+  .strictObject({ id: z.string().min(1), version: z.string().min(1) })
+  .readonly();
+
+const terminalMeasurementBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b2-secondary-metrics/1"),
+    protocol: z.literal(M9B2_PERSISTENCE_PROTOCOL.record),
+    measurementProtocol: z
+      .strictObject({
+        id: z.literal(M9B2_MEASUREMENT_PROTOCOL.id),
+        version: z.literal(M9B2_MEASUREMENT_PROTOCOL.version),
+      })
+      .readonly(),
+    suiteDigest: digestSchema,
     caseId: identifierSchema,
+    sourceArmRecordDigest: digestSchema,
+    comparisonDigest: digestSchema,
+    arm: z.enum(["discovered-program", "static-one-shot"]),
+    taskDigest: digestSchema,
+    corpusSnapshotDigest: digestSchema,
+    model: measurementModelIdentitySchema,
+    evaluator: measurementModelIdentitySchema,
+    programIdentity: digestSchema.nullable(),
+    authoringRequestDigest: digestSchema,
+    executionRequestDigests: digestSchema.array().readonly(),
+    evaluationAttemptDigest: digestSchema.nullable(),
+    runAnswerDigest: digestSchema.nullable(),
     primary: m9b2PrimaryEndpointSchema,
-    retrievedEvidenceRecallBasisPoints: z.number().int().min(0).max(10_000),
-    retrievedEvidencePrecisionBasisPoints: z.number().int().min(0).max(10_000),
-    citationValidityBasisPoints: z.number().int().min(0).max(10_000),
-    bytesRead: z.number().int().nonnegative(),
-    retrievalCalls: z.number().int().nonnegative(),
-    modelCalls: z.number().int().nonnegative(),
-    compilationAccepted: z.literal(true),
-    inputTokens: z.number().int().nonnegative(),
-    outputTokens: z.number().int().nonnegative(),
-    reasoningTokens: z.literal(0),
-    latencyMs: z.number().int().nonnegative(),
-    costUsdMicros: z.literal(0),
+    evaluation: m9b2EvaluationScoreSchema.nullable(),
+    usage: z
+      .strictObject({
+        planning: z
+          .strictObject({
+            requestDigest: digestSchema,
+            reservedInputTokens: z.number().int().nonnegative(),
+            actual: boundedUsageSchema,
+          })
+          .readonly(),
+        execution: z
+          .strictObject({
+            requestDigests: digestSchema.array().readonly(),
+            reservedInputTokens: z.number().int().nonnegative(),
+            actual: boundedUsageSchema,
+          })
+          .readonly(),
+      })
+      .readonly(),
+    secondary: z
+      .strictObject({
+        retrievedEvidenceRecallBasisPoints: boundedMetricSchema,
+        retrievedEvidencePrecisionBasisPoints: boundedMetricSchema,
+        citationValidityBasisPoints: boundedMetricSchema,
+        bytesRead: boundedMetricSchema,
+        retrievalCalls: boundedMetricSchema,
+        modelCalls: boundedMetricSchema,
+        compilationAccepted: z.boolean(),
+      })
+      .readonly(),
   })
   .readonly();
-export type M9b2RunMetrics = z.infer<typeof m9b2RunMetricsSchema>;
 
-/** Extracts secondary metrics from a successful M9a run plus its planning receipt. */
-export function measureM9b2SuccessfulRun(
+export const m9b2TerminalMeasurementRecordSchema = terminalMeasurementBodySchema
+  .unwrap()
+  .safeExtend({ recordDigest: digestSchema })
+  .readonly();
+export type M9b2TerminalMeasurementRecord = z.infer<
+  typeof m9b2TerminalMeasurementRecordSchema
+>;
+export type M9b2TerminalMeasurementBinding = Readonly<{
+  suiteDigest: string;
+  caseId: string;
+  sourceArmRecordDigest: string;
+  comparisonDigest: string;
+  arm: M9b1Arm;
+  taskDigest: string;
+  corpusSnapshotDigest: string;
+  model: Readonly<{ id: string; version: string }>;
+  evaluator: Readonly<{ id: string; version: string }>;
+  programIdentity: string | null;
+}>;
+
+function programIdentityOf(record: M9b1ArmRecord): string | null {
+  if (record.authoringResponse === null) return null;
+  return record.authoringResponse.kind === "program"
+    ? record.authoringResponse.sourceDigest
+    : record.authoringResponse.derivedSourceDigest;
+}
+
+/**
+ * Derives one offline measurement only after M9b.1b has replay-verified the
+ * complete terminal arm record. It performs no retrieval, model, or evaluator
+ * dispatch.
+ */
+export async function measureM9b2VerifiedTerminalRecord(
   input: Readonly<{
     suite: M9b2PreparedSuite;
     caseId: string;
-    run: M9aRetrievalRun;
-    evaluation: M9b2EvaluationScore;
-    planningUsage: M9aModelUsage;
+    verifiedRecord: M9b1VerifiedTerminalRecord;
+    expected: Readonly<{
+      arm: M9b1Arm;
+      sourceArmRecordDigest: string;
+      comparisonDigest: string;
+      model: Readonly<{ id: string; version: string }>;
+      evaluator: Readonly<{ id: string; version: string }>;
+      programIdentity: string | null;
+    }>;
   }>,
-): Result<M9b2RunMetrics, Diagnostic> {
+): Promise<Result<M9b2TerminalMeasurementRecord, Diagnostic>> {
   const prepared = suites.get(input.suite)?.cases.get(input.caseId);
-  const planningUsage = m9aModelUsageSchema.safeParse(input.planningUsage);
-  const evaluation = m9b2EvaluationScoreSchema.safeParse(input.evaluation);
-  if (
-    prepared === undefined ||
-    !planningUsage.success ||
-    !evaluation.success ||
-    evaluation.data.caseId !== input.caseId ||
-    input.run.transcript.corpusSnapshotDigest !== prepared.snapshotDigest
-  )
-    return invalid("M9b.2 run metrics are cross-bound or invalid.");
-  const readDocumentIds = new Set(
-    input.run.visibility.readResults.flatMap((result) =>
-      result.excerpts.map((excerpt) => excerpt.chunk.document.documentId),
-    ),
+  const stored = m9b1InternalInspectVerifiedTerminalRecord(
+    input.verifiedRecord,
   );
-  const retrieved = scoreEvidence(prepared.expectation, readDocumentIds);
+  if (prepared === undefined || stored === undefined)
+    return invalid(
+      "M9b.2 requires a prepared case and verified M9b.1b record.",
+    );
+  const record = stored.result.record;
+  const taskDigest = await digestValue(prepared.publicCase.task);
+  const actualProgramIdentity = programIdentityOf(record);
+  if (
+    !taskDigest.ok ||
+    stored.task !== prepared.publicCase.task ||
+    record.taskDigest !== taskDigest.value ||
+    record.corpusSnapshotDigest !== prepared.snapshotDigest ||
+    record.arm !== input.expected.arm ||
+    record.recordDigest !== input.expected.sourceArmRecordDigest ||
+    record.comparisonDigest !== input.expected.comparisonDigest ||
+    !canonicalEqual(record.model, input.expected.model) ||
+    !canonicalEqual(record.evaluator, input.expected.evaluator) ||
+    !canonicalEqual(record.evaluator, M9B2_EVALUATOR_IDENTITY) ||
+    actualProgramIdentity !== input.expected.programIdentity
+  )
+    return invalid("M9b.2 verified terminal record is cross-bound.");
+
+  const stage = (() => {
+    switch (record.outcome.status) {
+      case "authoring-rejected-first-attempt":
+        return "authoring-rejected" as const;
+      case "compile-rejected-first-attempt":
+        return "compile-rejected" as const;
+      case "execution-failure":
+        return "execution-failed" as const;
+      case "evaluation-failure":
+        return "evaluation-failed" as const;
+      case "success":
+        return "evaluated" as const;
+    }
+  })();
+
+  let evaluation: M9b2EvaluationScore | null = null;
+  let evaluationAttemptDigest: string | null = null;
+  let runAnswerDigest: string | null = null;
+  if (
+    record.outcome.status === "success" ||
+    record.outcome.status === "evaluation-failure"
+  ) {
+    const attemptDigest = await digestValue(record.outcome.evaluationAttempt);
+    const runAnswer = stored.result.run?.answer;
+    const answerDigest =
+      runAnswer === undefined ? undefined : await digestValue(runAnswer);
+    if (!attemptDigest.ok || !answerDigest?.ok)
+      return invalid("M9b.2 could not bind the persisted evaluation attempt.");
+    evaluationAttemptDigest = attemptDigest.value;
+    runAnswerDigest = answerDigest.value;
+    if (record.outcome.status === "success") {
+      const parsedOutput = parseJson(
+        record.outcome.evaluationAttempt.serializedOutput,
+      );
+      const score = parsedOutput.ok
+        ? m9b2EvaluationScoreSchema.safeParse(parsedOutput.value)
+        : undefined;
+      const answer = m9aCitationConfinedAnswerSchema.safeParse(
+        stored.result.run?.answer,
+      );
+      if (
+        score?.success !== true ||
+        !answer.success ||
+        score.data.caseId !== input.caseId
+      )
+        return invalid("M9b.2 persisted evaluator output is invalid.");
+      const recomputed = evaluatePreparedCase(prepared, answer.data);
+      if (!canonicalEqual(recomputed, score.data))
+        return invalid(
+          "M9b.2 persisted evaluation does not match the bound run answer.",
+        );
+      evaluation = score.data;
+    }
+  }
   const primary = classifyM9b2PrimaryEndpoint({
-    terminalStage: "evaluated",
-    semanticSupported: evaluation.data.semanticSupported,
+    terminalStage: stage,
+    semanticSupported: evaluation?.semanticSupported ?? false,
   });
   if (!primary.ok) return primary;
-  const usage = input.run.transcript.retrievalUsage;
-  const parsed = m9b2RunMetricsSchema.safeParse({
-    protocol: "lachesis-m9b2-secondary-metrics/1",
+  const planningActual =
+    record.authoringResponse === null
+      ? ({
+          kind: "unknown",
+          reason: "no-successful-boundary-receipt",
+        } as const)
+      : ({
+          kind: "known",
+          inputTokens: record.authoringResponse.usage.inputTokens,
+          outputTokens: record.authoringResponse.usage.outputTokens,
+          wallClockMs: record.authoringResponse.usage.wallClockMs,
+        } as const);
+  const executionActual =
+    stored.result.run === undefined
+      ? ({
+          kind: "unknown",
+          reason: "no-successful-boundary-receipt",
+        } as const)
+      : ({
+          kind: "known",
+          inputTokens: stored.result.run.transcript.retrievalUsage.inputTokens,
+          outputTokens:
+            stored.result.run.transcript.retrievalUsage.outputTokens,
+          wallClockMs: stored.result.run.transcript.runtimeUsage.wallClockMs,
+        } as const);
+  const unknownExecutionMetric = {
+    kind: "unknown" as const,
+    reason: "no-successful-execution-receipt" as const,
+  };
+  const runUsage = stored.result.run?.transcript.retrievalUsage;
+  const retrieved =
+    stored.result.run === undefined
+      ? undefined
+      : scoreEvidence(
+          prepared,
+          new Set(
+            stored.result.run.visibility.readResults.flatMap((result) =>
+              result.excerpts.map((excerpt) => excerpt.chunk.id),
+            ),
+          ),
+        );
+  const modelCallCount =
+    stored.result.run === undefined || record.authoringResponse === null
+      ? undefined
+      : 1 +
+        stored.result.run.transcript.retrievalUsage.rootModelCalls +
+        stored.result.run.transcript.retrievalUsage.leafModelCalls;
+  const knownMetric = (value: number) => ({ kind: "known" as const, value });
+  const body = terminalMeasurementBodySchema.parse({
+    protocol: M9B2_PERSISTENCE_PROTOCOL.record,
+    measurementProtocol: {
+      id: M9B2_MEASUREMENT_PROTOCOL.id,
+      version: M9B2_MEASUREMENT_PROTOCOL.version,
+    },
+    suiteDigest: suites.get(input.suite)?.suiteDigest,
     caseId: input.caseId,
+    sourceArmRecordDigest: record.recordDigest,
+    comparisonDigest: record.comparisonDigest,
+    arm: record.arm,
+    taskDigest: record.taskDigest,
+    corpusSnapshotDigest: record.corpusSnapshotDigest,
+    model: record.model,
+    evaluator: record.evaluator,
+    programIdentity: actualProgramIdentity,
+    authoringRequestDigest: record.authoringRequest.requestDigest,
+    executionRequestDigests: record.executionRequests.map(
+      (request) => request.requestDigest,
+    ),
+    evaluationAttemptDigest,
+    runAnswerDigest,
     primary: primary.value,
-    retrievedEvidenceRecallBasisPoints: retrieved.recall,
-    retrievedEvidencePrecisionBasisPoints: retrieved.precision,
-    citationValidityBasisPoints: evaluation.data.citationValidityBasisPoints,
-    bytesRead: usage.readBytes,
-    retrievalCalls: usage.searchCalls + usage.readCalls,
-    modelCalls: 1 + usage.rootModelCalls + usage.leafModelCalls,
-    compilationAccepted: true,
-    inputTokens: planningUsage.data.inputTokens + usage.inputTokens,
-    outputTokens: planningUsage.data.outputTokens + usage.outputTokens,
-    reasoningTokens: 0,
-    latencyMs:
-      planningUsage.data.wallClockMs +
-      input.run.transcript.runtimeUsage.wallClockMs,
-    costUsdMicros: 0,
+    evaluation,
+    usage: {
+      planning: {
+        requestDigest: record.authoringRequest.requestDigest,
+        reservedInputTokens: record.authoringRequest.reservation.inputTokens,
+        actual: planningActual,
+      },
+      execution: {
+        requestDigests: record.executionRequests.map(
+          (request) => request.requestDigest,
+        ),
+        reservedInputTokens: record.executionRequests.reduce(
+          (total, request) => total + request.reservation.inputTokens,
+          0,
+        ),
+        actual: executionActual,
+      },
+    },
+    secondary: {
+      retrievedEvidenceRecallBasisPoints:
+        retrieved === undefined
+          ? unknownExecutionMetric
+          : knownMetric(retrieved.recall),
+      retrievedEvidencePrecisionBasisPoints:
+        retrieved === undefined
+          ? unknownExecutionMetric
+          : knownMetric(retrieved.precision),
+      citationValidityBasisPoints:
+        evaluation === null
+          ? unknownExecutionMetric
+          : knownMetric(evaluation.citationValidityBasisPoints),
+      bytesRead:
+        runUsage === undefined
+          ? unknownExecutionMetric
+          : knownMetric(runUsage.readBytes),
+      retrievalCalls:
+        runUsage === undefined
+          ? unknownExecutionMetric
+          : knownMetric(runUsage.searchCalls + runUsage.readCalls),
+      modelCalls:
+        modelCallCount === undefined
+          ? unknownExecutionMetric
+          : knownMetric(modelCallCount),
+      compilationAccepted: record.compilation?.status === "accepted",
+    },
   });
-  return parsed.success
+  const recordDigest = await digestValue(body);
+  return recordDigest.ok
+    ? {
+        ok: true,
+        value: m9b2TerminalMeasurementRecordSchema.parse({
+          ...body,
+          recordDigest: recordDigest.value,
+        }),
+      }
+    : recordDigest;
+}
+
+export async function verifyM9b2TerminalMeasurementRecord(
+  value: unknown,
+  binding: M9b2TerminalMeasurementBinding,
+): Promise<Result<M9b2TerminalMeasurementRecord, Diagnostic>> {
+  const parsed = m9b2TerminalMeasurementRecordSchema.safeParse(value);
+  if (!parsed.success)
+    return invalid("M9b.2 terminal measurement record is invalid.");
+  const { recordDigest, ...body } = parsed.data;
+  const digest = await digestValue(body);
+  return digest.ok &&
+    digest.value === recordDigest &&
+    parsed.data.suiteDigest === binding.suiteDigest &&
+    parsed.data.caseId === binding.caseId &&
+    parsed.data.sourceArmRecordDigest === binding.sourceArmRecordDigest &&
+    parsed.data.comparisonDigest === binding.comparisonDigest &&
+    parsed.data.arm === binding.arm &&
+    parsed.data.taskDigest === binding.taskDigest &&
+    parsed.data.corpusSnapshotDigest === binding.corpusSnapshotDigest &&
+    canonicalEqual(parsed.data.model, binding.model) &&
+    canonicalEqual(parsed.data.evaluator, binding.evaluator) &&
+    parsed.data.programIdentity === binding.programIdentity
     ? { ok: true, value: parsed.data }
-    : invalid("M9b.2 run metrics could not be constructed.");
+    : invalid("M9b.2 terminal measurement record is cross-bound or altered.");
+}
+
+const measurementStoreSchema = z
+  .strictObject({
+    protocol: z.literal(M9B2_PERSISTENCE_PROTOCOL.store),
+    records: m9b2TerminalMeasurementRecordSchema.array().readonly(),
+  })
+  .readonly();
+
+/** @internal Canonical offline persistence snapshot; no stable facade export. */
+export async function serializeM9b2MeasurementStore(
+  values: ReadonlyArray<unknown>,
+  bindings: ReadonlyArray<M9b2TerminalMeasurementBinding>,
+): Promise<Result<string, Diagnostic>> {
+  if (values.length !== bindings.length)
+    return invalid("M9b.2 measurement store bindings are incomplete.");
+  const records: Array<M9b2TerminalMeasurementRecord> = [];
+  for (const [index, value] of values.entries()) {
+    const binding = bindings[index];
+    if (binding === undefined)
+      return invalid("M9b.2 measurement store binding is missing.");
+    const verified = await verifyM9b2TerminalMeasurementRecord(value, binding);
+    if (!verified.ok) return verified;
+    records.push(verified.value);
+  }
+  if (
+    !unique(
+      records.map(
+        (record) => `${record.comparisonDigest}:${record.arm}:${record.caseId}`,
+      ),
+    )
+  )
+    return invalid("M9b.2 measurement store contains duplicate arm records.");
+  return canonicalizeJson(
+    measurementStoreSchema.parse({
+      protocol: M9B2_PERSISTENCE_PROTOCOL.store,
+      records: records.toSorted((left, right) =>
+        `${left.comparisonDigest}:${left.arm}:${left.caseId}`.localeCompare(
+          `${right.comparisonDigest}:${right.arm}:${right.caseId}`,
+        ),
+      ),
+    }),
+  );
+}
+
+/** @internal Exact canonical load validation for offline measurement records. */
+export async function loadM9b2MeasurementStore(
+  content: string,
+  bindings: ReadonlyArray<M9b2TerminalMeasurementBinding>,
+): Promise<Result<ReadonlyArray<M9b2TerminalMeasurementRecord>, Diagnostic>> {
+  const parsed = parseJson(content);
+  const store = parsed.ok
+    ? measurementStoreSchema.safeParse(parsed.value)
+    : undefined;
+  if (!parsed.ok || store?.success !== true)
+    return invalid("M9b.2 measurement store is invalid.");
+  const canonical = canonicalizeJson(store.data);
+  if (!canonical.ok || canonical.value !== content)
+    return invalid("M9b.2 measurement store is not exact canonical JSON.");
+  const reserialized = await serializeM9b2MeasurementStore(
+    store.data.records,
+    bindings,
+  );
+  return reserialized.ok && reserialized.value === content
+    ? { ok: true, value: store.data.records }
+    : invalid("M9b.2 measurement store records failed validation.");
 }
 
 export const m9b2PowerScenarioSchema = z
@@ -898,6 +1413,203 @@ export const m9b2PowerScenarioSchema = z
   })
   .readonly();
 export type M9b2PowerScenario = z.infer<typeof m9b2PowerScenarioSchema>;
+
+export const M9C_FROZEN_ESTIMAND = Object.freeze({
+  inferenceUnit: "one-semantically-independent-paired-case" as const,
+  endpoint: M9B2_PRIMARY_ENDPOINT,
+  contrast:
+    "discovered-program-minus-static-one-shot paired success probability" as const,
+  weighting: "equal-weight-across-family-by-scale-cells" as const,
+  scaleRole: "preregistered-stratum" as const,
+  clusteredScaleVariants: "reserved-for-m9d" as const,
+  stratifiedResults:
+    "descriptive-only-no-additional-superiority-claims" as const,
+});
+
+export const m9cInferenceCaseSchema = z
+  .strictObject({
+    fixtureId: identifierSchema,
+    family: m9b2TaskFamilySchema,
+    scale: m9b2CorpusScaleSchema,
+    semanticProblemIdentity: digestSchema,
+  })
+  .readonly();
+export type M9cInferenceCase = z.infer<typeof m9cInferenceCaseSchema>;
+
+export async function auditM9cInferenceUnits(
+  values: ReadonlyArray<unknown>,
+): Promise<
+  Result<
+    Readonly<{
+      protocol: "lachesis-m9b2a-m9c-inference-unit-audit/1";
+      estimand: typeof M9C_FROZEN_ESTIMAND;
+      caseCount: number;
+      cellWeight: Readonly<{ numerator: 1; denominator: 24 }>;
+      passed: true;
+      auditDigest: string;
+    }>,
+    Diagnostic
+  >
+> {
+  const cases = m9cInferenceCaseSchema
+    .array()
+    .min(1)
+    .max(10_000)
+    .safeParse(values);
+  if (!cases.success)
+    return invalid("M9c inference-unit candidates are invalid.");
+  if (
+    !unique(cases.data.map((value) => value.fixtureId)) ||
+    !unique(cases.data.map((value) => value.semanticProblemIdentity))
+  )
+    return invalid(
+      "M9c requires semantically independent cases; clustered scale variants are reserved for M9d.",
+    );
+  const cells = new Set(
+    cases.data.map((value) => `${value.family}:${value.scale}`),
+  );
+  if (cells.size !== M9B2_TASK_FAMILIES.length * M9B2_CORPUS_SCALES.length)
+    return invalid("M9c requires every family-by-scale stratum.");
+  const body = {
+    protocol: "lachesis-m9b2a-m9c-inference-unit-audit/1" as const,
+    estimand: M9C_FROZEN_ESTIMAND,
+    cases: cases.data.toSorted((left, right) =>
+      left.fixtureId.localeCompare(right.fixtureId),
+    ),
+    cellWeight: { numerator: 1 as const, denominator: 24 as const },
+    passed: true as const,
+  };
+  const auditDigest = await digestValue(body);
+  return auditDigest.ok
+    ? {
+        ok: true,
+        value: {
+          protocol: body.protocol,
+          estimand: body.estimand,
+          caseCount: cases.data.length,
+          cellWeight: body.cellWeight,
+          passed: true,
+          auditDigest: auditDigest.value,
+        },
+      }
+    : auditDigest;
+}
+
+const m9cPairedOutcomeSchema = m9cInferenceCaseSchema
+  .unwrap()
+  .safeExtend({ discoveredSuccess: z.boolean(), staticSuccess: z.boolean() })
+  .readonly();
+
+const descriptiveStratumSchema = z
+  .strictObject({
+    stratum: z.string().min(1),
+    pairedCases: z.number().int().positive(),
+    discoveredSuccessBasisPoints: z.number().int().min(0).max(10_000),
+    staticSuccessBasisPoints: z.number().int().min(0).max(10_000),
+    riskDifferenceBasisPoints: z.number().int().min(-10_000).max(10_000),
+  })
+  .readonly();
+
+export const m9cDescriptiveReportSchema = z
+  .strictObject({
+    protocol: z.literal("lachesis-m9b2a-m9c-descriptive-report/1"),
+    estimand: strictJsonValueSchema,
+    claimScope: z.literal(
+      "family-and-scale-stratified-descriptive-results-only-no-additional-superiority-claims",
+    ),
+    pairedCases: z.number().int().positive(),
+    equalCellWeightedRiskDifferenceBasisPoints: z
+      .number()
+      .int()
+      .min(-10_000)
+      .max(10_000),
+    byFamily: descriptiveStratumSchema.array().length(8).readonly(),
+    byScale: descriptiveStratumSchema.array().length(3).readonly(),
+    reportDigest: digestSchema,
+  })
+  .readonly();
+export type M9cDescriptiveReport = z.infer<typeof m9cDescriptiveReportSchema>;
+
+function describeOutcomeStratum(
+  stratum: string,
+  values: ReadonlyArray<z.infer<typeof m9cPairedOutcomeSchema>>,
+): z.infer<typeof descriptiveStratumSchema> {
+  const discovered = values.filter((value) => value.discoveredSuccess).length;
+  const staticSuccesses = values.filter((value) => value.staticSuccess).length;
+  const discoveredBasisPoints = basisPoints(discovered, values.length);
+  const staticBasisPoints = basisPoints(staticSuccesses, values.length);
+  return descriptiveStratumSchema.parse({
+    stratum,
+    pairedCases: values.length,
+    discoveredSuccessBasisPoints: discoveredBasisPoints,
+    staticSuccessBasisPoints: staticBasisPoints,
+    riskDifferenceBasisPoints: discoveredBasisPoints - staticBasisPoints,
+  });
+}
+
+export async function reportM9cPairedDescriptives(
+  values: ReadonlyArray<unknown>,
+): Promise<Result<M9cDescriptiveReport, Diagnostic>> {
+  const outcomes = m9cPairedOutcomeSchema
+    .array()
+    .min(24)
+    .max(10_000)
+    .safeParse(values);
+  if (!outcomes.success)
+    return invalid("M9c paired descriptive outcomes are invalid.");
+  const independence = await auditM9cInferenceUnits(
+    outcomes.data.map((value) => ({
+      fixtureId: value.fixtureId,
+      family: value.family,
+      scale: value.scale,
+      semanticProblemIdentity: value.semanticProblemIdentity,
+    })),
+  );
+  if (!independence.ok) return independence;
+  const cells = M9B2_TASK_FAMILIES.flatMap((family) =>
+    M9B2_CORPUS_SCALES.map((scale) =>
+      describeOutcomeStratum(
+        `${family}:${scale}`,
+        outcomes.data.filter(
+          (value) => value.family === family && value.scale === scale,
+        ),
+      ),
+    ),
+  );
+  const body = {
+    protocol: "lachesis-m9b2a-m9c-descriptive-report/1" as const,
+    estimand: strictJsonValueSchema.parse(M9C_FROZEN_ESTIMAND),
+    claimScope:
+      "family-and-scale-stratified-descriptive-results-only-no-additional-superiority-claims" as const,
+    pairedCases: outcomes.data.length,
+    equalCellWeightedRiskDifferenceBasisPoints: Math.round(
+      cells.reduce((sum, cell) => sum + cell.riskDifferenceBasisPoints, 0) /
+        cells.length,
+    ),
+    byFamily: M9B2_TASK_FAMILIES.map((family) =>
+      describeOutcomeStratum(
+        family,
+        outcomes.data.filter((value) => value.family === family),
+      ),
+    ),
+    byScale: M9B2_CORPUS_SCALES.map((scale) =>
+      describeOutcomeStratum(
+        scale,
+        outcomes.data.filter((value) => value.scale === scale),
+      ),
+    ),
+  };
+  const reportDigest = await digestValue(body);
+  return reportDigest.ok
+    ? {
+        ok: true,
+        value: m9cDescriptiveReportSchema.parse({
+          ...body,
+          reportDigest: reportDigest.value,
+        }),
+      }
+    : reportDigest;
+}
 
 const powerCaseBoundSchema = z.discriminatedUnion("kind", [
   z
@@ -928,8 +1640,11 @@ const powerScenarioResultSchema = z
 
 export const m9b2PowerReportSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b2-prospective-paired-power/1"),
+    protocol: z.literal("lachesis-m9b2a-prospective-paired-power/2"),
     method: z.literal("exact-one-sided-conditional-mcnemar-scenario-analysis"),
+    independenceAssumption: z.literal(
+      "enforced-by-final-m9c-corpus-construction-one-semantic-problem-per-paired-case",
+    ),
     familyAlphaBasisPoints: z.number().int().positive().max(5_000),
     targetPowerBasisPoints: z.number().int().positive().max(10_000),
     practicalPairedCaseCeiling: z.number().int().positive().max(2_000),
@@ -1116,8 +1831,10 @@ export async function analyzeM9b2ProspectivePower(
     });
   });
   const body = {
-    protocol: "lachesis-m9b2-prospective-paired-power/1" as const,
+    protocol: "lachesis-m9b2a-prospective-paired-power/2" as const,
     method: "exact-one-sided-conditional-mcnemar-scenario-analysis" as const,
+    independenceAssumption:
+      "enforced-by-final-m9c-corpus-construction-one-semantic-problem-per-paired-case" as const,
     ...settings.data,
     empiricalPower: {
       kind: "unknown" as const,
@@ -1186,7 +1903,7 @@ const measurementDesignBodySchema = z
       "nfkc-lowercase-en-us-collapse-whitespace-strip-terminal-punctuation/1",
     ),
     semanticRule: z.literal(
-      "exact-accepted-answer-or-abstention-plus-complete-valid-support/1",
+      "exact-answer-or-abstention-plus-snapshot-chunk-bound-support/2",
     ),
     secondaryMetrics: z
       .tuple([
@@ -1205,17 +1922,39 @@ const measurementDesignBodySchema = z
         z.literal("cost-usd-micros"),
       ])
       .readonly(),
-    reliabilityGate: z
+    evaluatorConformanceGate: z
       .strictObject({
+        classification: z.literal("deterministic-conformance-only"),
         minimumFixtureAgreementBasisPoints: z.literal(10_000),
         minimumRepeatabilityBasisPoints: z.literal(10_000),
         everyTaskFamilyRequired: z.literal(true),
+        campaignAdvancementAuthorized: z.literal(false),
+        independentGoldAndEvaluatorValidationRequired: z.literal(true),
+      })
+      .readonly(),
+    inferenceDesign: z
+      .strictObject({
+        inferenceUnit: z.literal("one-semantically-independent-paired-case"),
+        estimand: z.literal(
+          "equal-cell-weighted-discovered-minus-static-first-attempt-success-probability",
+        ),
+        scaleRole: z.literal("preregistered-stratum"),
+        clusteredScaleVariants: z.literal("reserved-for-m9d"),
+        stratifiedResults: z.literal(
+          "descriptive-only-no-additional-superiority-claims",
+        ),
+        familyScaleWeight: z
+          .strictObject({ numerator: z.literal(1), denominator: z.literal(24) })
+          .readonly(),
       })
       .readonly(),
     powerDesign: z
       .strictObject({
         method: z.literal(
           "exact-one-sided-conditional-mcnemar-scenario-analysis",
+        ),
+        independenceAssumption: z.literal(
+          "enforced-by-final-m9c-corpus-construction",
         ),
         familyAlphaBasisPoints: z.literal(500),
         targetPowerBasisPoints: z.literal(8_000),
@@ -1230,6 +1969,8 @@ const measurementDesignBodySchema = z
         developmentNamespace: z.literal("m9b2-dev"),
         eventualHeldoutNamespace: z.literal("m9b2-heldout"),
         contentAndIdentityOverlapAllowed: z.literal(false),
+        taskFamilyOverlapAllowed: z.literal(true),
+        solutionStrategyClassOverlapAllowed: z.literal(true),
         finalHeldoutCorpusMaterialized: z.literal(false),
         finalCorpusIdentityFrozen: z.literal(false),
       })
@@ -1266,7 +2007,7 @@ export async function designM9b2Measurement(): Promise<
     answerNormalization:
       "nfkc-lowercase-en-us-collapse-whitespace-strip-terminal-punctuation/1",
     semanticRule:
-      "exact-accepted-answer-or-abstention-plus-complete-valid-support/1",
+      "exact-answer-or-abstention-plus-snapshot-chunk-bound-support/2",
     secondaryMetrics: [
       "retrieved-evidence-recall",
       "retrieved-evidence-precision",
@@ -1282,13 +2023,26 @@ export async function designM9b2Measurement(): Promise<
       "latency-ms",
       "cost-usd-micros",
     ],
-    reliabilityGate: {
+    evaluatorConformanceGate: {
+      classification: "deterministic-conformance-only",
       minimumFixtureAgreementBasisPoints: 10_000,
       minimumRepeatabilityBasisPoints: 10_000,
       everyTaskFamilyRequired: true,
+      campaignAdvancementAuthorized: false,
+      independentGoldAndEvaluatorValidationRequired: true,
+    },
+    inferenceDesign: {
+      inferenceUnit: "one-semantically-independent-paired-case",
+      estimand:
+        "equal-cell-weighted-discovered-minus-static-first-attempt-success-probability",
+      scaleRole: "preregistered-stratum",
+      clusteredScaleVariants: "reserved-for-m9d",
+      stratifiedResults: "descriptive-only-no-additional-superiority-claims",
+      familyScaleWeight: { numerator: 1, denominator: 24 },
     },
     powerDesign: {
       method: "exact-one-sided-conditional-mcnemar-scenario-analysis",
+      independenceAssumption: "enforced-by-final-m9c-corpus-construction",
       familyAlphaBasisPoints: 500,
       targetPowerBasisPoints: 8_000,
       practicalPairedCaseCeiling: 480,
@@ -1298,6 +2052,8 @@ export async function designM9b2Measurement(): Promise<
       developmentNamespace: "m9b2-dev",
       eventualHeldoutNamespace: "m9b2-heldout",
       contentAndIdentityOverlapAllowed: false,
+      taskFamilyOverlapAllowed: true,
+      solutionStrategyClassOverlapAllowed: true,
       finalHeldoutCorpusMaterialized: false,
       finalCorpusIdentityFrozen: false,
     },
@@ -1343,13 +2099,11 @@ export async function auditM9b2SplitDisjointness(
     Readonly<{
       developmentCount: number;
       heldoutCount: number;
-      dimensions: ReadonlyArray<
-        | "caseIdentity"
-        | "normalizedTaskIdentity"
-        | "corpusContentIdentity"
-        | "documentContentIdentity"
-        | "semanticContractIdentity"
-      >;
+      forbiddenOverlapDimensions: ReadonlyArray<string>;
+      allowedOverlap: Readonly<{
+        taskFamilies: ReadonlyArray<M9b2TaskFamily>;
+        solutionStrategyClasses: ReadonlyArray<string>;
+      }>;
       auditDigest: string;
       passed: true;
     }>,
@@ -1369,13 +2123,14 @@ export async function auditM9b2SplitDisjointness(
   if (!development.success || !heldout.success)
     return invalid("M9b.2 split identities are invalid.");
   if (
-    !unique(development.data.map((identity) => identity.caseIdentity)) ||
-    !unique(heldout.data.map((identity) => identity.caseIdentity))
+    !unique(development.data.map((identity) => identity.fixtureIdentity)) ||
+    !unique(heldout.data.map((identity) => identity.fixtureIdentity))
   )
     return invalid("M9b.2 split case identities contain duplicates.");
   const scalarDimensions = [
-    "caseIdentity",
-    "normalizedTaskIdentity",
+    "fixtureIdentity",
+    "exactTaskTemplateIdentity",
+    "normalizedTaskTemplateIdentity",
     "corpusContentIdentity",
     "semanticContractIdentity",
   ] as const;
@@ -1390,33 +2145,66 @@ export async function auditM9b2SplitDisjointness(
         `M9b.2 development and held-out ${dimension} values overlap.`,
       );
   }
-  const developmentDocuments = new Set(
-    development.data.flatMap((identity) => identity.documentContentIdentities),
-  );
-  if (
-    heldout.data.some((identity) =>
-      identity.documentContentIdentities.some((digest) =>
-        developmentDocuments.has(digest),
-      ),
+  const vectorDimensions = [
+    "entityIdentities",
+    "exactRelevantFactWordingIdentities",
+    "answerValueIdentities",
+    "documentContentIdentities",
+  ] as const;
+  for (const dimension of vectorDimensions) {
+    const developmentSet = new Set(
+      development.data.flatMap((identity) => identity[dimension]),
+    );
+    if (
+      heldout.data.some((identity) =>
+        identity[dimension].some((digest) => developmentSet.has(digest)),
+      )
     )
-  )
-    return invalid("M9b.2 development and held-out document content overlaps.");
-  const dimensions = Object.freeze([
-    "caseIdentity",
-    "normalizedTaskIdentity",
+      return invalid(
+        `M9b.2 development and held-out ${dimension} values overlap.`,
+      );
+  }
+  const forbiddenOverlapDimensions = Object.freeze([
+    "fixtureIdentity",
+    "entityIdentity",
+    "exactTaskTemplateIdentity",
+    "normalizedTaskTemplateIdentity",
+    "exactRelevantFactWordingIdentity",
+    "answerValueIdentity",
     "corpusContentIdentity",
     "documentContentIdentity",
     "semanticContractIdentity",
   ] as const);
+  const developmentFamilies = new Set(
+    development.data.map((identity) => identity.taskFamily),
+  );
+  const developmentStrategies = new Set(
+    development.data.map((identity) => identity.solutionStrategyClass),
+  );
+  const allowedOverlap = {
+    taskFamilies: M9B2_TASK_FAMILIES.filter(
+      (family) =>
+        developmentFamilies.has(family) &&
+        heldout.data.some((identity) => identity.taskFamily === family),
+    ),
+    solutionStrategyClasses: [
+      ...new Set(
+        heldout.data
+          .map((identity) => identity.solutionStrategyClass)
+          .filter((strategy) => developmentStrategies.has(strategy)),
+      ),
+    ].toSorted(),
+  };
   const body = {
-    protocol: "lachesis-m9b2-split-disjointness-audit/1",
+    protocol: "lachesis-m9b2a-split-disjointness-audit/2",
     developmentIdentities: development.data.toSorted((left, right) =>
-      left.caseIdentity.localeCompare(right.caseIdentity),
+      left.fixtureIdentity.localeCompare(right.fixtureIdentity),
     ),
     heldoutIdentities: heldout.data.toSorted((left, right) =>
-      left.caseIdentity.localeCompare(right.caseIdentity),
+      left.fixtureIdentity.localeCompare(right.fixtureIdentity),
     ),
-    dimensions,
+    forbiddenOverlapDimensions,
+    allowedOverlap,
     passed: true as const,
   };
   const auditDigest = await digestValue(body);
@@ -1426,7 +2214,8 @@ export async function auditM9b2SplitDisjointness(
         value: {
           developmentCount: development.data.length,
           heldoutCount: heldout.data.length,
-          dimensions,
+          forbiddenOverlapDimensions,
+          allowedOverlap,
           auditDigest: auditDigest.value,
           passed: true,
         },

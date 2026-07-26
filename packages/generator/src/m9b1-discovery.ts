@@ -1413,6 +1413,23 @@ export type M9b1ArmResult = Readonly<{
   run?: M9aRetrievalRun | undefined;
 }>;
 
+const verifiedTerminalRecordBrand: unique symbol = Symbol(
+  "M9b1VerifiedTerminalRecord",
+);
+export type M9b1VerifiedTerminalRecord = Readonly<{
+  [verifiedTerminalRecordBrand]: "M9b1VerifiedTerminalRecord";
+}>;
+
+type StoredVerifiedTerminalRecord = Readonly<{
+  result: M9b1ArmResult;
+  task: string;
+}>;
+
+const verifiedTerminalRecords = new WeakMap<
+  M9b1VerifiedTerminalRecord,
+  StoredVerifiedTerminalRecord
+>();
+
 export type M9b1OfflineComparison = Readonly<{
   protocol: typeof M9B1_OFFLINE_DISCOVERY_PROTOCOL;
   comparisonDigest: string;
@@ -1549,6 +1566,37 @@ async function resumeRecord(
     ok: true,
     value: { arm: record.arm, resumed: true, record, run: replayed.value },
   };
+}
+
+/** @internal Zero-effect verification seam for offline measurement only. */
+export async function m9b1InternalVerifyTerminalRecord(
+  record: M9b1ArmRecord,
+  binding: Readonly<{
+    task: string;
+    taskDigest: string;
+    corpusSnapshotDigest: string;
+    model: M9b0ModelIdentity;
+    evaluator: M9b0ModelIdentity;
+    executionOrder: M9b1ExecutionOrder;
+  }>,
+): Promise<Result<M9b1VerifiedTerminalRecord, M9b1Failure>> {
+  const resumed = await resumeRecord(record, binding);
+  if (!resumed.ok) return resumed;
+  const token: M9b1VerifiedTerminalRecord = Object.freeze({
+    [verifiedTerminalRecordBrand]: "M9b1VerifiedTerminalRecord",
+  });
+  verifiedTerminalRecords.set(token, {
+    result: resumed.value,
+    task: binding.task,
+  });
+  return { ok: true, value: token };
+}
+
+/** @internal Opaque-token inspection for the private M9b.2 measurement layer. */
+export function m9b1InternalInspectVerifiedTerminalRecord(
+  token: M9b1VerifiedTerminalRecord,
+): StoredVerifiedTerminalRecord | undefined {
+  return verifiedTerminalRecords.get(token);
 }
 
 export async function runM9b1OfflineProgramDiscovery(

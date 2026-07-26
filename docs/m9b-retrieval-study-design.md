@@ -1,6 +1,6 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.2 offline scientific-measurement design only; M9b is not
+Status: **M9b.2a offline measurement-integrity design only; M9b is not
 materialized or authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
@@ -8,88 +8,84 @@ external corpora. M9a does not create a final corpus, campaign, preregistration,
 provider identity, credential preflight, executable live state, or authorization
 text.
 
-## M9b.2 offline scientific-measurement design
+## M9b.2a offline measurement-integrity correction
 
-The private `lachesis-m9b2-offline-scientific-measurement@1.0.0` protocol
-freezes the development-only measurement rules without changing M9a, M9b.0, or
-M9b.1b's protocol identities and without adding a generator-facade export. Its
-content-addressed design digest covers the task taxonomy, scale taxonomy, answer
-normalization, semantic-support rule, primary and secondary endpoints, evaluator
-reliability gate, prospective power method, split policy, and explicit absence
-of live authority. It does not cover or freeze a final corpus, provider, model,
-campaign, schedule, or preregistration.
+The private `lachesis-m9b2-offline-scientific-measurement@1.1.0` protocol,
+`lachesis.m9b2.offline-arm-blind-evaluator@1.1.0-development` evaluator,
+`lachesis-m9b2a-terminal-measurement-record/1` record, and
+`lachesis-m9b2a-atomic-measurement-store/1` store supersede the M9b.2 1.0.0
+development artifacts. The 1.0.0 wire formats are not reinterpreted. No symbol
+is exported by the generator facade, and M9a, M9b.0, and M9b.1b identities are
+unchanged.
 
-The offline development fixture contains 24 substrate-neutral natural-document
-cases: lookup, join, multi-hop, temporal/retraction, contradiction, aggregation,
-insufficient-evidence, and prompt-injection tasks crossed with 1x, 8x, and 32x
-distractor scales. Within each family, the public task, relevant prose, solution
-strategy, accepted response, and evidence contract stay fixed; only unrelated
-background-document volume changes. The corpus/task fixture and hidden answer
-and evidence expectations live in separate modules. These are development
-fixtures, not the eventual held-out corpus. Preparing them uses M9a's immutable,
-content-addressed corpus implementation, but no final corpus identity is frozen.
+Gold support is now an exact supporting-fact identity. Preparation locates one
+frozen fact wording in one canonical document, binds its byte span to one exact
+chunk in one content-addressed snapshot, and retains the wording digest. Recall
+is credit for required supporting facts whose exact chunks were cited; precision
+is credit only for cited chunks containing allowed supporting facts. A citation
+to an irrelevant chunk in the correct document receives neither recall nor
+precision credit. Citation validity remains a separate exact snapshot-chunk
+check.
 
-Each prepared development case derives separate case, normalized-task,
-ID-independent document-content, whole-corpus-content, and semantic-contract
-identities. The prospective split audit rejects overlap on any scalar dimension,
-rejects reuse of even one development document, and rejects duplicate case
-identities within a split. The eventual held-out namespace is reserved but has
-no materialized cases or identities. Distinct names or versions alone therefore
-cannot disguise reused task, corpus, document, or evaluator content.
+One end-to-end measurement path accepts only an opaque terminal record token
+created by M9b.1b's full zero-effect resume validator. It classifies authoring
+rejection, first compilation rejection, execution failure, evaluation failure,
+and evaluated success as first-attempt outcomes. For evaluated records it parses
+the retained evaluator output, verifies that the retained evaluator input is the
+replayed run answer, and recomputes the deterministic case score locally. It
+does not invoke the evaluator. Planning usage comes from the canonical authoring
+request and response receipt; execution usage comes from canonical bound model
+requests and the replayed transcript. Missing successful receipts are reported
+as `unknown`, never fabricated as zero.
 
-The `lachesis.m9b2.offline-arm-blind-evaluator@1.0.0-development` evaluator
-implements the existing M9b.1 external-evaluator interface. It is bound to one
-case and sees only that case's public task and submitted citation-confined
-answer; its callable interface has no arm label. Exact NFC-bound snapshot chunk
-identities are checked against the prepared corpus. A submitted answer is
-semantically supported only when:
+The measurement record binds the suite, task, snapshot, model, evaluator, arm,
+program, comparison, authoring request, execution requests, run answer,
+evaluation attempt, and source terminal-record digest. Store save/load requires
+trusted contextual bindings as well as exact canonical JSON and inner record
+digests. Re-signing a record under another task, snapshot, model, evaluator,
+program, comparison, planning receipt, evaluation receipt, or execution answer
+therefore fails closed. Verification and measurement have exactly zero model,
+retrieval, corpus, or evaluator effects.
 
-- its NFKC, lowercased, whitespace-collapsed, terminal-punctuation-stripped form
-  exactly matches a frozen accepted answer or abstention;
-- the observed answer/abstention kind is correct;
-- citations are exact chunks from the bound corpus snapshot;
-- at least one complete required-evidence set is cited;
-- every cited document belongs to the allowed support set; and
-- an abstention has no citations.
+### Frozen M9c inference unit and estimand
 
-This is a deterministic categorical evaluator for these fixtures, not a claim
-that string normalization solves open-ended semantic evaluation. Reliability
-validation requires 100% expected fixture agreement, 100% repeated-output
-identity, and coverage of all eight task families. The current 16-fixture
-positive/hostile suite passes both 100% gates; changing an expected outcome
-causes the advancement result to stop as unreliable. Reports replay from their
-fixtures and reject altered content or digests.
+The M9c inference unit is one semantically independent paired case. The primary
+estimand is the equal-family-by-scale-cell-weighted difference in first-attempt
+success probability, discovered program minus static one-shot. Each of the 24
+family × scale cells has weight 1/24. Scale is a preregistered stratum, not
+three copies of one base problem. Every eventual M9c case must have a unique
+semantic problem identity; same-problem 1x/8x/32x clusters, including the
+current development scale fixtures, are reserved for M9d and are ineligible for
+M9c inference. Family- and scale-stratified results are descriptive and do not
+create additional superiority hypotheses.
 
-The primary endpoint is frozen as
-`first-attempt-semantically-supported-end-to-end-success`. It is true only when
-authoring, first compilation, execution, and external evaluation all complete on
-the first attempt and the evaluator reports semantic support. A compile
-rejection or any earlier terminal failure is therefore a primary failure, not a
-missing observation. Secondary extraction separately records retrieved-evidence
-recall and precision, citation validity, correct abstention, bytes read,
-retrieval calls, model calls, compilation acceptance, input/output/reasoning
-tokens, latency, and cost. A real deterministic M9a run validates this
-measurement path offline.
+Prospective power retains exact one-sided conditional McNemar scenario analysis.
+Its paired-case independence assumption is enforced by final M9c corpus
+construction, not inferred from the test statistic. Empirical power remains
+`unknown`; deterministic mock outcomes are not an effect estimate.
 
-Prospective paired power uses exact one-sided conditional McNemar scenario
-analysis with family alpha 0.05, target power 0.80, and a practical ceiling of
-480 paired cases. It does not treat mock-fixture outcomes as a model effect
-estimate. Under an explicitly assumed 16% discovered-only versus 6% static-only
-discordance pattern, the method requires 146 pairs and has 99.90% power at the
-ceiling. Under a 12% versus 8% pattern, power is only 58.58% at the ceiling and
-the required sample is recorded as unknown beyond that ceiling. An 8% versus 8%
-no-effect scenario has no positive-effect sample-size result. Empirical power
-remains `unknown` because no offline development model discordance estimate
-exists.
+### Split and evaluator-validation boundaries
 
-M9b.2 therefore ends with **M9b NO-GO**. The evaluator fixture gate passes, but
-practical power is assumption-sensitive and fails under the modest scenario; the
-final held-out corpus is absent; and provider request/tokenizer/pricing
-boundaries are not frozen. This milestone creates no provider adapter, provider
-call, corpus campaign, preregistration, final corpus identity, public API,
-package version, release artifact, or superiority claim. It is AI-assisted
-architecture and measurement work, not a professional security audit,
-penetration test, compliance assessment, or scientific result.
+Development/held-out split auditing reports and rejects overlap in fixture IDs,
+stable entity-lineage identities (including renamed entities), exact task text,
+annotator-normalized task templates (including paraphrases), exact relevant-fact
+wording, normalized answer values, individual document content, whole-corpus
+content, and semantic contracts. Overlap in task-family and solution-strategy
+classes is explicitly allowed and reported because those are intended design
+strata, not held-out semantic content.
+
+The 16-fixture result is classified only as deterministic evaluator conformance:
+all-family expected-output agreement and bit-for-bit repeatability. It never
+authorizes campaign advancement. Before any campaign can advance, gold and the
+evaluator must be separately frozen, independently reviewed, and validated.
+These development fixtures are not a final corpus and no held-out identity is
+materialized.
+
+M9b.2a therefore ends with **M9b NO-GO**. It creates no provider adapter or
+call, corpus campaign, credential access, preregistration, final corpus
+identity, public API, package version, release artifact, or superiority claim.
+It is AI-assisted architecture and measurement work, not a professional security
+audit, penetration test, compliance assessment, or scientific result.
 
 ## M9b.0.2 offline boundary correction
 
