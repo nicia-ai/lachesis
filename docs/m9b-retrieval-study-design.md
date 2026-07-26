@@ -1,7 +1,7 @@
 # Prospective M9b retrieval study outline
 
-Status: **M9b.0.2 offline protocol hardening only; program discovery is not
-implemented and M9b is not materialized or authorized**.
+Status: **M9b.1 offline program-discovery boundary only; M9b is not materialized
+or authorized**.
 
 M9b would compare matched static RAG and retrieval CodeMode on fresh natural
 external corpora. M9a does not create a final corpus, campaign, preregistration,
@@ -61,14 +61,64 @@ failure kind, payload, or digest fails closed even when the outer arm record is
 re-signed. Failure records no longer rely on an unverifiable digest of discarded
 data.
 
-This protocol still executes a caller-supplied treatment source. It does not
-test program discovery and makes no claim that a root model can discover a
-better retrieval trajectory. The next substantive offline phase must add a
-program-discovery boundary in which the root model authors the restricted
-TypeScript retrieval program from only the task, frozen grammar, registered
-capability descriptions, and budget. Corpus contents, search results, and read
-results must remain unavailable during program authoring. That phase requires a
-new review before provider adapters, corpus construction, or live execution.
+M9b.0 still executes a caller-supplied treatment source. It therefore remains a
+protocol-hardening substrate rather than program-discovery evidence.
+
+## M9b.1 offline program-discovery boundary
+
+The internal `lachesis-m9b1-offline-program-discovery@1.0.0` protocol adds the
+missing first-attempt discovery boundary without changing M2, M9a, or M9b.0's
+protocol identities. It is a private generator module and is not exported by the
+package facade. The root authoring model receives exactly a public task, frozen
+grammar, public capability descriptions, and resource limits. Its canonical
+request has no corpus identity or contents, search/read results, hidden answers,
+expected citations, evaluator data, model or provider identity, or arm label.
+
+The discovered arm must return one source string. That source is immediately
+passed to M9a's existing closed-AST compiler. A first-attempt rejection retains
+the exact compiler diagnostics and digest and is terminal; no retrieval,
+execution-model, leaf-model, or evaluator session is created. There is no repair
+attempt, `eval`, `Function`, `vm`, module loading, child process, ordinary
+JavaScript execution, or new executable wire value. The capability catalog and
+`boundedFix` invariants remain those of M9a.
+
+The static control receives an independent matched root planning call and must
+return exactly one NFC search query of at most 512 UTF-8 bytes. Its fixed,
+closed-AST one-shot program receives that query as its retrieval execution
+input. The shared public task remains the authoring and external-evaluator task;
+the query identity and the control replay task are cross-bound in the terminal
+record. This keeps the planner-authored query operative without treating an
+untyped source literal as a nominal task value.
+
+Each arm has the same aggregate ceiling: 135,168 input reference tokens, 86,016
+output reference tokens, zero reasoning tokens, zero monetary cost, and 12,000
+ms of model time. Those totals include one pre-dispatch-reserved authoring or
+query-planning call plus the existing matched M9b.0 execution envelope. Exact
+canonical request and response byte usage is reconciled after every planning
+call. Runtime root and leaf calls continue through M9b.0's canonical request
+adapter and remain distinguishable from search and read events.
+
+M9b.1 requires distinct authoring, execution, and evaluator session factories
+for the two arms and accepts either frozen counterbalanced order. It uses the
+same model identity, M9a lexical retriever, evidence/read limits, leaf boundary,
+citation-confinement submission validator, and external-evaluator interface in
+both arms. The evaluator is an offline injected interface only; M9b.1 does not
+freeze evaluator data or interpret its output as proof of semantic support.
+
+Authoring requests and outputs, source or query identities, compilation
+receipts, runtime model requests, execution transcripts, private replay
+artifacts, and evaluator input/output receipts are canonicalized, digested, and
+cross-validated. Arms persist independent immutable terminal records through an
+atomic compare-and-swap store. Resume recompiles locally and replays successful
+runs without authoring, corpus, model, retrieval, leaf, or evaluator effects;
+only a missing arm runs after an asymmetric failure.
+
+The hostile offline suite covers request-boundary non-disclosure, forbidden
+capabilities, malformed and oversized source, attempted ordinary-realm access,
+counterbalanced state isolation, atomic asymmetric failure, zero-effect resume,
+and re-digested request/source/query/compilation/run/replay alterations. These
+are development regressions, not a professional security audit, penetration
+test, or compliance assessment.
 
 ## Candidate arms
 
@@ -146,8 +196,9 @@ security review confirming:
 - private replay performs zero corpus and model effects; and
 - no stable API, release, or provider boundary was widened.
 
-M9b remains **NO-GO** until the program-discovery boundary, corpus, external
-semantic/abstention evaluator, provider/model/prompt/tokenizer/pricing
-identities, randomized schedule, operational budget, preregistration, and
-explicit live authorization are frozen and independently reviewed. M9b.0.2 does
-not satisfy those live-study gates.
+M9b remains **NO-GO** until M9b.1 independently passes architecture/security
+review and the corpus, external semantic/abstention evaluator,
+provider/model/prompt/tokenizer/pricing identities, randomized schedule,
+operational budget, preregistration, and explicit live authorization are frozen
+and independently reviewed. M9b.1 does not satisfy those live-study gates and
+does not authorize provider adapters, corpus construction, or live execution.

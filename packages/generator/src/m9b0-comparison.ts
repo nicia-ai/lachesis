@@ -97,7 +97,8 @@ const M9B0_RESOURCE_ENVELOPE: CompilationPolicy = Object.freeze({
   }),
 });
 
-const M9B0_SEQUENCED_EXECUTION_PROFILE: M9aInternalExecutionProfile =
+/** @internal Private composition seam for later offline M9 experiments. */
+export const M9B0_INTERNAL_SEQUENCED_EXECUTION_PROFILE: M9aInternalExecutionProfile =
   Object.freeze({
     catalogIdentity: Object.freeze({
       id: "lachesis.m9b0.offline-sequenced-retrieval-capabilities",
@@ -121,7 +122,8 @@ const M9B0_SEQUENCED_EXECUTION_PROFILE: M9aInternalExecutionProfile =
     nonModelWallClockMs: 0,
   });
 
-const M9B0_ONE_SHOT_EXECUTION_PROFILE: M9aInternalExecutionProfile =
+/** @internal Private composition seam for later offline M9 experiments. */
+export const M9B0_INTERNAL_ONE_SHOT_EXECUTION_PROFILE: M9aInternalExecutionProfile =
   Object.freeze({
     catalogIdentity: Object.freeze({
       id: "lachesis.m9b0.offline-one-shot-capabilities",
@@ -193,7 +195,8 @@ const exactReservationSchema = z
   .readonly();
 export type M9b0ExactModelReservation = z.infer<typeof exactReservationSchema>;
 
-const boundRequestSchema = z
+/** @internal Private record schema; not exported by the package facade. */
+export const m9b0InternalBoundRequestSchema = z
   .strictObject({
     protocol: z
       .strictObject({
@@ -207,7 +210,9 @@ const boundRequestSchema = z
     reservation: exactReservationSchema,
   })
   .readonly();
-export type M9b0BoundModelRequest = z.infer<typeof boundRequestSchema>;
+export type M9b0BoundModelRequest = z.infer<
+  typeof m9b0InternalBoundRequestSchema
+>;
 
 export type M9b0OfflineModel = Readonly<{
   identity: M9b0ModelIdentity;
@@ -375,7 +380,7 @@ async function bindRequest(
     return { ok: false, error: modelFailure("Request digest failed.") };
   return {
     ok: true,
-    value: boundRequestSchema.parse({
+    value: m9b0InternalBoundRequestSchema.parse({
       protocol: {
         id: M9B0_OFFLINE_COMPARISON_PROTOCOL.id,
         version: M9B0_OFFLINE_COMPARISON_PROTOCOL.version,
@@ -413,7 +418,8 @@ function usageWithinBound(
   );
 }
 
-function createM9aAdapter(
+/** @internal Private composition seam; not exported by the package facade. */
+export function createM9b0InternalM9aAdapter(
   model: M9b0OfflineModel,
   requests: Array<M9b0BoundModelRequest>,
 ): M9aOfflineModel {
@@ -569,7 +575,8 @@ const retainedFailurePayloadSchema = z
   ])
   .readonly();
 
-const failureSummarySchema = z
+/** @internal Private record schema; not exported by the package facade. */
+export const m9b0InternalFailureSummarySchema = z
   .strictObject({
     kind: z.enum([
       "invalid-artifact",
@@ -586,7 +593,9 @@ const failureSummarySchema = z
   .refine((failure) => failure.kind === failure.payload.kind, {
     message: "Failure summary kind must match its retained payload.",
   });
-export type M9b0FailureSummary = z.infer<typeof failureSummarySchema>;
+export type M9b0FailureSummary = z.infer<
+  typeof m9b0InternalFailureSummarySchema
+>;
 
 const envelopeSchema = z
   .strictObject({
@@ -608,7 +617,7 @@ const successOutcomeSchema = z
 const failureOutcomeSchema = z
   .strictObject({
     status: z.literal("failure"),
-    failure: failureSummarySchema,
+    failure: m9b0InternalFailureSummarySchema,
   })
   .readonly();
 const outcomeSchema = z.discriminatedUnion("status", [
@@ -629,7 +638,7 @@ const armRecordBodyObjectSchema = z.strictObject({
   taskDigest: z.string().regex(/^[a-f0-9]{64}$/u),
   model: modelIdentitySchema,
   envelope: envelopeSchema,
-  modelRequests: boundRequestSchema.array().readonly(),
+  modelRequests: m9b0InternalBoundRequestSchema.array().readonly(),
   outcome: outcomeSchema,
 });
 const armRecordBodySchema = armRecordBodyObjectSchema.readonly();
@@ -757,7 +766,7 @@ async function validateRecord(
     if (!validatedRequest.ok) return validatedRequest;
   }
   if (parsed.data.outcome.status === "failure") {
-    const validatedFailure = await validateFailureSummary(
+    const validatedFailure = await validateM9b0InternalFailureSummary(
       parsed.data.outcome.failure,
     );
     if (!validatedFailure.ok) return validatedFailure;
@@ -889,7 +898,8 @@ function armOrder(
     : ["one-shot-rag", "sequenced-retrieval"];
 }
 
-async function summarizeFailure(
+/** @internal Private composition seam; not exported by the package facade. */
+export async function summarizeM9b0InternalFailure(
   failure: M9aRunFailure,
 ): Promise<Result<M9b0FailureSummary, Diagnostic>> {
   const payload = retainedFailurePayloadSchema.safeParse(failure);
@@ -903,7 +913,7 @@ async function summarizeFailure(
     };
   const failureDigest = await digestValue(payload.data);
   if (!failureDigest.ok) return failureDigest;
-  const summary = failureSummarySchema.safeParse({
+  const summary = m9b0InternalFailureSummarySchema.safeParse({
     kind: payload.data.kind,
     payload: payload.data,
     failureDigest: failureDigest.value,
@@ -919,10 +929,11 @@ async function summarizeFailure(
       };
 }
 
-async function validateFailureSummary(
+/** @internal Private composition seam; not exported by the package facade. */
+export async function validateM9b0InternalFailureSummary(
   input: unknown,
 ): Promise<Result<M9b0FailureSummary, Diagnostic>> {
-  const failure = failureSummarySchema.safeParse(input);
+  const failure = m9b0InternalFailureSummarySchema.safeParse(input);
   if (!failure.success)
     return {
       ok: false,
@@ -987,7 +998,8 @@ async function createArmRecord(
     : recordDigest;
 }
 
-async function modelRequestsMatchRun(
+/** @internal Private composition seam; not exported by the package facade. */
+export async function m9b0InternalModelRequestsMatchRun(
   requests: ReadonlyArray<M9b0BoundModelRequest>,
   run: M9aRetrievalRun,
 ): Promise<boolean> {
@@ -1058,7 +1070,7 @@ async function resumedArm(
   binding: ExpectedResumeBinding,
 ): Promise<Result<M9b0ArmResult, M9b0ComparisonFailure>> {
   if (record.outcome.status === "failure") {
-    const validatedFailure = await validateFailureSummary(
+    const validatedFailure = await validateM9b0InternalFailureSummary(
       record.outcome.failure,
     );
     if (!validatedFailure.ok)
@@ -1082,8 +1094,8 @@ async function resumedArm(
   const replayed = await replayM9aRetrievalProgramWithProfile(
     record.outcome.replayArtifact,
     record.arm === "sequenced-retrieval"
-      ? M9B0_SEQUENCED_EXECUTION_PROFILE
-      : M9B0_ONE_SHOT_EXECUTION_PROFILE,
+      ? M9B0_INTERNAL_SEQUENCED_EXECUTION_PROFILE
+      : M9B0_INTERNAL_ONE_SHOT_EXECUTION_PROFILE,
   );
   if (!replayed.ok)
     return {
@@ -1102,7 +1114,10 @@ async function resumedArm(
     replayed.value.transcript.corpusSnapshotDigest !==
       binding.corpusSnapshotDigest ||
     !sameModelIdentity(replayed.value.transcript.model, binding.model) ||
-    !(await modelRequestsMatchRun(record.modelRequests, replayed.value))
+    !(await m9b0InternalModelRequestsMatchRun(
+      record.modelRequests,
+      replayed.value,
+    ))
   )
     return {
       ok: false,
@@ -1152,11 +1167,11 @@ export async function runM9b0OfflineComparison(
   const [sequencedArtifact, oneShotArtifact] = await Promise.all([
     compileM9aRetrievalProgramWithProfile(
       input.source,
-      M9B0_SEQUENCED_EXECUTION_PROFILE,
+      M9B0_INTERNAL_SEQUENCED_EXECUTION_PROFILE,
     ),
     compileM9aRetrievalProgramWithProfile(
       M9B0_ONE_SHOT_RAG_SOURCE,
-      M9B0_ONE_SHOT_EXECUTION_PROFILE,
+      M9B0_INTERNAL_ONE_SHOT_EXECUTION_PROFILE,
     ),
   ]);
   if (!sequencedArtifact.ok || !oneShotArtifact.ok)
@@ -1260,7 +1275,7 @@ export async function runM9b0OfflineComparison(
       session.identity.id !== modelIdentity.data.id ||
       session.identity.version !== modelIdentity.data.version
     ) {
-      const failure = await summarizeFailure({
+      const failure = await summarizeM9b0InternalFailure({
         kind: "invalid-comparison",
         diagnostic: diagnostic(
           "INVALID_WIRE_SCHEMA",
@@ -1282,12 +1297,12 @@ export async function runM9b0OfflineComparison(
       const executed = await executeM9aRetrievalProgramWithReplay(artifact, {
         corpus: input.corpus,
         task: task.data,
-        model: createM9aAdapter(session, modelRequests),
+        model: createM9b0InternalM9aAdapter(session, modelRequests),
         signal: input.signal,
       });
       if (executed.ok) {
         run = executed.value.run;
-        if (!(await modelRequestsMatchRun(modelRequests, run)))
+        if (!(await m9b0InternalModelRequestsMatchRun(modelRequests, run)))
           return {
             ok: false,
             error: comparisonFailure(
@@ -1301,7 +1316,7 @@ export async function runM9b0OfflineComparison(
           replayArtifact: executed.value.replayArtifact,
         };
       } else {
-        const failure = await summarizeFailure(executed.error);
+        const failure = await summarizeM9b0InternalFailure(executed.error);
         if (!failure.ok)
           return {
             ok: false,
