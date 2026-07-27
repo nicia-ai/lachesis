@@ -32,8 +32,8 @@ import {
 } from "../internal/m9b8-prospective-redesign.js";
 import {
   dispatchM9b9InputTokenCount,
-  executeM9b9OfflineConformanceLifecycle as executeM9b9OfflineLifecycle,
-  executeM9b9OfflineLifecycle as executeM9b9AuthorityGatedLifecycle,
+  executeM9b9LiveLifecycle,
+  executeM9b9OfflineLifecycle,
   M9B9_INPUT_TOKEN_COUNT_PROTOCOL,
   type M9b9CapacityReport,
   type M9b9CapacityToken,
@@ -44,11 +44,11 @@ import {
   type M9b9LifecycleLedger,
   prepareM9b9CapacityReview,
   prepareM9b9RequestBinding,
+  recordM9b9PrerecordedInputTokenCount,
   reserveM9b9Inference,
   settleM9b9Inference,
   verifyM9b9CapacityReview,
   verifyM9b9CountReceipt,
-  verifyM9b9LifecycleLedger,
   verifyM9b9RequestBinding,
 } from "../internal/m9b9-input-token-count.js";
 import * as aiSdkFacade from "../src/index.js";
@@ -403,12 +403,6 @@ function countSettings(
   };
 }
 
-function responseFetch(
-  response: Response,
-): M9b9CountAdapterSettings["interceptedFetch"] {
-  return () => Promise.resolve(response);
-}
-
 function emptyInference(): Promise<Readonly<{ usage: null }>> {
   return Promise.resolve({ usage: null });
 }
@@ -418,35 +412,12 @@ async function receiptFor(
   inputTokens = 65_536,
 ): Promise<M9b9CountReceipt> {
   const request = requestInput ?? (await binding());
-  const dispatched = unwrap(
-    await dispatchM9b9InputTokenCount(
-      request,
-      countSettings((resource, init) => {
-        const url =
-          typeof resource === "string"
-            ? resource
-            : resource instanceof URL
-              ? resource.toString()
-              : resource.url;
-        expect(url).toBe("https://api.openai.com/v1/responses/input_tokens");
-        expect(init?.method).toBe("POST");
-        expect(init?.body).toBe(request.countRequestBytes);
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              object: "response.input_tokens",
-              input_tokens: inputTokens,
-            }),
-            { status: 200 },
-          ),
-        );
-      }),
-      new AbortController().signal,
-    ),
+  return unwrap(
+    await recordM9b9PrerecordedInputTokenCount(request, {
+      object: "response.input_tokens",
+      input_tokens: inputTokens,
+    }),
   );
-  if (dispatched.kind !== "verified")
-    throw new Error(`Expected verified count: ${dispatched.kind}`);
-  return dispatched.receipt;
 }
 
 class MemoryStore implements M9b9LedgerStore {
@@ -490,10 +461,12 @@ describe("M9b.9 offline Responses input-token count boundary", () => {
     const store = new MemoryStore();
     let countCalls = 0;
     let inferenceCalls = 0;
-    const result = await executeM9b9AuthorityGatedLifecycle({
+    const hostileInput = {
       binding: request,
       capacityToken: current.capacityToken,
       capacityReport: current.capacityReport,
+      prerecordedCount: null,
+      prerecordedInferenceUsage: null,
       availableCampaignUsdMicros: Number.MAX_SAFE_INTEGER,
       store,
       countAdapter: countSettings(() => {
@@ -507,8 +480,57 @@ describe("M9b.9 offline Responses input-token count boundary", () => {
       controllerId: "authority-hostile-controller",
       resumeAfterCrash: false,
       signal: new AbortController().signal,
+    };
+    const result = await executeM9b9OfflineLifecycle(hostileInput);
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        kind: "capacity-rejected",
+        receipt: {
+          mode: "offline-conformance",
+          countEffectPerformed: false,
+          inferenceEffectPerformed: false,
+          credentialAccessed: false,
+          networkAccessed: false,
+          dispatchStatePersisted: false,
+        },
+      },
     });
-    expect(result).toMatchObject({ ok: false, error: { kind: "validation" } });
+    expect({ saves: store.saves, countCalls, inferenceCalls }).toEqual({
+      saves: 0,
+      countCalls: 0,
+      inferenceCalls: 0,
+    });
+  });
+
+  it("requires an unavailable positive authority before every live transport callback", async () => {
+    const request = await binding();
+    const current = await fixture();
+    const store = new MemoryStore();
+    let countCalls = 0;
+    let inferenceCalls = 0;
+    const result = await executeM9b9LiveLifecycle({
+      binding: request,
+      capacityToken: current.capacityToken,
+      capacityReport: current.capacityReport,
+      availableCampaignUsdMicros: Number.MAX_SAFE_INTEGER,
+      store,
+      countAdapter: countSettings(() => {
+        countCalls += 1;
+        return Promise.resolve(new Response("{}"));
+      }),
+      inferenceTransport: () => {
+        inferenceCalls += 1;
+        return emptyInference();
+      },
+      controllerId: "unauthorized-live-controller",
+      resumeAfterCrash: false,
+      signal: new AbortController().signal,
+    });
+    expect(result).toMatchObject({
+      ok: false,
+      error: { kind: "capacity-rejected" },
+    });
     expect({ saves: store.saves, countCalls, inferenceCalls }).toEqual({
       saves: 0,
       countCalls: 0,
@@ -579,31 +601,19 @@ describe("M9b.9 offline Responses input-token count boundary", () => {
     expect(prepared.inferenceRequestBytes).toContain("json_schema");
   });
 
-  it("accepts the official-shaped count response through exactly one intercepted fetch", async () => {
+  it("maps an official-shaped prerecorded count result without transport", async () => {
     const prepared = await binding();
-    let calls = 0;
-    const outcome = unwrap(
-      await dispatchM9b9InputTokenCount(
-        prepared,
-        countSettings(() => {
-          calls += 1;
-          return Promise.resolve(
-            new Response(
-              JSON.stringify({
-                object: "response.input_tokens",
-                input_tokens: 123,
-              }),
-            ),
-          );
-        }),
-        new AbortController().signal,
-      ),
+    const receipt = unwrap(
+      await recordM9b9PrerecordedInputTokenCount(prepared, {
+        object: "response.input_tokens",
+        input_tokens: 123,
+      }),
     );
-    expect(outcome).toMatchObject({
-      kind: "verified",
-      receipt: { inputTokens: 123, modelCalls: 0, inferenceRequests: 0 },
+    expect(receipt).toMatchObject({
+      inputTokens: 123,
+      modelCalls: 0,
+      inferenceRequests: 0,
     });
-    expect(calls).toBe(1);
   });
 
   it("rejects mutation between count and inference even when re-signed", async () => {
@@ -632,88 +642,28 @@ describe("M9b.9 offline Responses input-token count boundary", () => {
       { object: "response.input_tokens", input_tokens: 922_001 },
     ];
     for (const response of invalidResponses) {
-      const outcome = unwrap(
-        await dispatchM9b9InputTokenCount(
-          prepared,
-          countSettings(responseFetch(new Response(JSON.stringify(response)))),
-          new AbortController().signal,
-        ),
-      );
-      expect(outcome.kind).toBe("rejected");
+      expect(
+        (await recordM9b9PrerecordedInputTokenCount(prepared, response)).ok,
+      ).toBe(false);
     }
   });
 
-  it("halts cancellation before dispatch with zero HTTP and model calls", async () => {
+  it("gates direct count dispatch before callback access", async () => {
     const prepared = await binding();
-    const controller = new AbortController();
-    controller.abort();
     let fetches = 0;
-    const outcome = unwrap(
-      await dispatchM9b9InputTokenCount(
-        prepared,
-        countSettings(() => {
-          fetches += 1;
-          return Promise.resolve(new Response("{}"));
-        }),
-        controller.signal,
-      ),
+    const outcome = await dispatchM9b9InputTokenCount(
+      prepared,
+      countSettings(() => {
+        fetches += 1;
+        return Promise.resolve(new Response("{}"));
+      }),
+      new AbortController().signal,
     );
     expect(outcome).toMatchObject({
-      kind: "cancelled-before-dispatch",
-      providerHttpRequests: 0,
-      modelCalls: 0,
+      ok: false,
+      error: { kind: "capacity-rejected" },
     });
     expect(fetches).toBe(0);
-  });
-
-  it("classifies timeout, transport failure, and unreadable completion as ambiguous", async () => {
-    const prepared = await binding();
-    const failures = [
-      countSettings(() => Promise.reject(new Error("transport"))),
-      countSettings(async (_resource, init) => {
-        await new Promise<void>((resolve, reject) => {
-          init?.signal?.addEventListener("abort", () => {
-            reject(new Error("timeout"));
-          });
-          setTimeout(resolve, 50);
-        });
-        return new Response("{}");
-      }, 1),
-    ];
-    for (const settings of failures) {
-      const outcome = unwrap(
-        await dispatchM9b9InputTokenCount(
-          prepared,
-          settings,
-          new AbortController().signal,
-        ),
-      );
-      expect(outcome).toMatchObject({
-        kind: "ambiguous",
-        providerHttpRequests: 1,
-        modelCalls: 0,
-      });
-    }
-  });
-
-  it("rejects malformed JSON and HTTP failures without inference", async () => {
-    const prepared = await binding();
-    const malformed = unwrap(
-      await dispatchM9b9InputTokenCount(
-        prepared,
-        countSettings(responseFetch(new Response("{"))),
-        new AbortController().signal,
-      ),
-    );
-    const http = unwrap(
-      await dispatchM9b9InputTokenCount(
-        prepared,
-        countSettings(responseFetch(new Response("{}", { status: 429 }))),
-        new AbortController().signal,
-      ),
-    );
-    expect(malformed.kind).toBe("rejected");
-    expect(http.kind).toBe("rejected");
   });
 
   it("binds and rederives count receipts against request and model identity", async () => {
@@ -868,431 +818,6 @@ describe("M9b.9 offline Responses input-token count boundary", () => {
       -3_169_686_528,
     );
     expect(report.completeExposureOverOriginalCapUsdMicros).toBe(4_921_052_160);
-  });
-
-  it("persists before count dispatch and performs zero transport on reservation persistence failure", async () => {
-    const request = await binding();
-    const current = await fixture();
-    const store = new MemoryStore();
-    store.failAtSave = 2;
-    let countCalls = 0;
-    let inferenceCalls = 0;
-    const result = await executeM9b9OfflineLifecycle({
-      binding: request,
-      capacityToken: current.capacityToken,
-      capacityReport: current.capacityReport,
-      availableCampaignUsdMicros: 6_000_000_000,
-      store,
-      countAdapter: countSettings(() => {
-        countCalls += 1;
-        return Promise.resolve(new Response("{}"));
-      }),
-      inferenceTransport: () => {
-        inferenceCalls += 1;
-        return emptyInference();
-      },
-      controllerId: "controller-a",
-      resumeAfterCrash: false,
-      signal: new AbortController().signal,
-    });
-    expect(result).toMatchObject({ ok: false, error: { kind: "persistence" } });
-    expect({ countCalls, inferenceCalls }).toEqual({
-      countCalls: 0,
-      inferenceCalls: 0,
-    });
-  });
-
-  it("persists count dispatch-started before transport and never redispatches it on resume", async () => {
-    const request = await binding();
-    const current = await fixture();
-    const store = new MemoryStore();
-    store.failAtSave = 4;
-    let countCalls = 0;
-    const run = () =>
-      executeM9b9OfflineLifecycle({
-        binding: request,
-        capacityToken: current.capacityToken,
-        capacityReport: current.capacityReport,
-        availableCampaignUsdMicros: 6_000_000_000,
-        store,
-        countAdapter: countSettings(() => {
-          countCalls += 1;
-          return Promise.resolve(
-            new Response(
-              JSON.stringify({
-                object: "response.input_tokens",
-                input_tokens: 65_536,
-              }),
-            ),
-          );
-        }),
-        inferenceTransport: emptyInference,
-        controllerId: "controller-a",
-        resumeAfterCrash: countCalls > 0,
-        signal: new AbortController().signal,
-      });
-    expect((await run()).ok).toBe(false);
-    store.failAtSave = undefined;
-    const resumed = unwrap(await run());
-    expect(resumed.events.at(-1)?.payload).toMatchObject({
-      kind: "count-ambiguous",
-      modelCalls: 0,
-      redispatchPermitted: false,
-    });
-    expect(countCalls).toBe(1);
-    const repeated = unwrap(await run());
-    expect(repeated).toEqual(resumed);
-    expect(countCalls).toBe(1);
-  });
-
-  it("halts after durable count when complete campaign capacity is insufficient", async () => {
-    const request = await binding();
-    const current = await fixture();
-    const store = new MemoryStore();
-    let inferenceCalls = 0;
-    const result = unwrap(
-      await executeM9b9OfflineLifecycle({
-        binding: request,
-        capacityToken: current.capacityToken,
-        capacityReport: current.capacityReport,
-        availableCampaignUsdMicros:
-          current.capacityReport.totals.perPair.completeExposureUsdMicros,
-        store,
-        countAdapter: countSettings(
-          responseFetch(
-            new Response(
-              JSON.stringify({
-                object: "response.input_tokens",
-                input_tokens: 65_536,
-              }),
-            ),
-          ),
-        ),
-        inferenceTransport: () => {
-          inferenceCalls += 1;
-          return emptyInference();
-        },
-        controllerId: "controller-a",
-        resumeAfterCrash: false,
-        signal: new AbortController().signal,
-      }),
-    );
-    expect(result.events.at(-1)?.payload).toMatchObject({
-      kind: "capacity-rejected",
-      inferenceRequests: 0,
-      modelCalls: 0,
-    });
-    expect(inferenceCalls).toBe(0);
-  });
-
-  it("halts when an exact count exceeds its prospectively frozen class maximum", async () => {
-    const request = await binding();
-    const current = await fixture();
-    const store = new MemoryStore();
-    let inferenceCalls = 0;
-    const result = unwrap(
-      await executeM9b9OfflineLifecycle({
-        binding: request,
-        capacityToken: current.capacityToken,
-        capacityReport: current.capacityReport,
-        availableCampaignUsdMicros: 6_000_000_000,
-        store,
-        countAdapter: countSettings(
-          responseFetch(
-            new Response(
-              JSON.stringify({
-                object: "response.input_tokens",
-                input_tokens: 65_537,
-              }),
-            ),
-          ),
-        ),
-        inferenceTransport: () => {
-          inferenceCalls += 1;
-          return emptyInference();
-        },
-        controllerId: "controller-a",
-        resumeAfterCrash: false,
-        signal: new AbortController().signal,
-      }),
-    );
-    expect(result.events.at(-1)?.payload).toMatchObject({
-      kind: "count-rejected",
-      providerHttpRequests: 1,
-      inferenceRequests: 0,
-      modelCalls: 0,
-      redispatchPermitted: false,
-    });
-    expect(inferenceCalls).toBe(0);
-  });
-
-  it("resumes a durable verified count without repeating the count effect", async () => {
-    const request = await binding();
-    const current = await fixture();
-    const store = new MemoryStore();
-    store.failAtSave = 5;
-    let countCalls = 0;
-    let inferenceCalls = 0;
-    const execute = (resumeAfterCrash: boolean) =>
-      executeM9b9OfflineLifecycle({
-        binding: request,
-        capacityToken: current.capacityToken,
-        capacityReport: current.capacityReport,
-        availableCampaignUsdMicros: 6_000_000_000,
-        store,
-        countAdapter: countSettings(() => {
-          countCalls += 1;
-          return Promise.resolve(
-            new Response(
-              JSON.stringify({
-                object: "response.input_tokens",
-                input_tokens: 65_536,
-              }),
-            ),
-          );
-        }),
-        inferenceTransport: () => {
-          inferenceCalls += 1;
-          return Promise.resolve({
-            usage: {
-              inputTokens: 65_536,
-              cachedReadTokens: 0,
-              cacheWriteTokens: 0,
-              outputTokens: 1,
-              reasoningTokens: 0,
-            },
-          });
-        },
-        controllerId: "controller-a",
-        resumeAfterCrash,
-        signal: new AbortController().signal,
-      });
-    expect(await execute(false)).toMatchObject({
-      ok: false,
-      error: { kind: "persistence" },
-    });
-    expect({ countCalls, inferenceCalls }).toEqual({
-      countCalls: 1,
-      inferenceCalls: 0,
-    });
-    store.failAtSave = undefined;
-    const resumed = unwrap(await execute(true));
-    expect(resumed.events.at(-1)?.payload).toMatchObject({ kind: "completed" });
-    expect({ countCalls, inferenceCalls }).toEqual({
-      countCalls: 1,
-      inferenceCalls: 1,
-    });
-  });
-
-  it("requires durable count and reservation before exactly one inference", async () => {
-    const request = await binding();
-    const current = await fixture();
-    const store = new MemoryStore();
-    let countCalls = 0;
-    let inferenceCalls = 0;
-    const result = unwrap(
-      await executeM9b9OfflineLifecycle({
-        binding: request,
-        capacityToken: current.capacityToken,
-        capacityReport: current.capacityReport,
-        availableCampaignUsdMicros: 6_000_000_000,
-        store,
-        countAdapter: countSettings(() => {
-          countCalls += 1;
-          return Promise.resolve(
-            new Response(
-              JSON.stringify({
-                object: "response.input_tokens",
-                input_tokens: 65_536,
-              }),
-            ),
-          );
-        }),
-        inferenceTransport: async (bytes) => {
-          inferenceCalls += 1;
-          expect(bytes).toBe(request.inferenceRequestBytes);
-          const currentLedger = await store.load(request.relationshipDigest);
-          expect(currentLedger?.events.at(-1)?.state).toBe(
-            "inference-dispatch-started",
-          );
-          return {
-            usage: {
-              inputTokens: 65_536,
-              cachedReadTokens: 0,
-              cacheWriteTokens: 0,
-              outputTokens: 1,
-              reasoningTokens: 0,
-            },
-          };
-        },
-        controllerId: "controller-a",
-        resumeAfterCrash: false,
-        signal: new AbortController().signal,
-      }),
-    );
-    expect(result.events.map((event) => event.state)).toEqual([
-      "prepared",
-      "count-reserved",
-      "count-dispatch-started",
-      "count-completed",
-      "inference-reserved",
-      "inference-dispatch-started",
-      "terminal",
-    ]);
-    expect(result.events.at(-1)?.payload).toMatchObject({ kind: "completed" });
-    expect({ countCalls, inferenceCalls }).toEqual({
-      countCalls: 1,
-      inferenceCalls: 1,
-    });
-    const replay = unwrap(
-      await executeM9b9OfflineLifecycle({
-        binding: request,
-        capacityToken: current.capacityToken,
-        capacityReport: current.capacityReport,
-        availableCampaignUsdMicros: 6_000_000_000,
-        store,
-        countAdapter: countSettings(() => {
-          countCalls += 1;
-          return Promise.resolve(new Response("{}"));
-        }),
-        inferenceTransport: () => {
-          inferenceCalls += 1;
-          return emptyInference();
-        },
-        controllerId: "controller-b",
-        resumeAfterCrash: true,
-        signal: new AbortController().signal,
-      }),
-    );
-    expect(replay).toEqual(result);
-    expect({ countCalls, inferenceCalls }).toEqual({
-      countCalls: 1,
-      inferenceCalls: 1,
-    });
-  });
-
-  it("makes inference ambiguity terminal and never redispatches", async () => {
-    const request = await binding();
-    const current = await fixture();
-    const store = new MemoryStore();
-    let inferenceCalls = 0;
-    const execute = () =>
-      executeM9b9OfflineLifecycle({
-        binding: request,
-        capacityToken: current.capacityToken,
-        capacityReport: current.capacityReport,
-        availableCampaignUsdMicros: 6_000_000_000,
-        store,
-        countAdapter: countSettings(
-          responseFetch(
-            new Response(
-              JSON.stringify({
-                object: "response.input_tokens",
-                input_tokens: 65_536,
-              }),
-            ),
-          ),
-        ),
-        inferenceTransport: () => {
-          inferenceCalls += 1;
-          return Promise.reject(new Error("lost acknowledgement"));
-        },
-        controllerId: "controller-a",
-        resumeAfterCrash: true,
-        signal: new AbortController().signal,
-      });
-    const first = unwrap(await execute());
-    expect(first.events.at(-1)?.payload).toMatchObject({
-      kind: "inference-ambiguous",
-      redispatchPermitted: false,
-    });
-    expect(unwrap(await execute())).toEqual(first);
-    expect(inferenceCalls).toBe(1);
-  });
-
-  it("rejects concurrent ownership without performing another effect", async () => {
-    const request = await binding();
-    const current = await fixture();
-    const store = new MemoryStore();
-    store.failAtSave = 4;
-    let countCalls = 0;
-    await executeM9b9OfflineLifecycle({
-      binding: request,
-      capacityToken: current.capacityToken,
-      capacityReport: current.capacityReport,
-      availableCampaignUsdMicros: 6_000_000_000,
-      store,
-      countAdapter: countSettings(() => {
-        countCalls += 1;
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              object: "response.input_tokens",
-              input_tokens: 10,
-            }),
-          ),
-        );
-      }),
-      inferenceTransport: emptyInference,
-      controllerId: "controller-a",
-      resumeAfterCrash: false,
-      signal: new AbortController().signal,
-    });
-    store.failAtSave = undefined;
-    const second = await executeM9b9OfflineLifecycle({
-      binding: request,
-      capacityToken: current.capacityToken,
-      capacityReport: current.capacityReport,
-      availableCampaignUsdMicros: 6_000_000_000,
-      store,
-      countAdapter: countSettings(() => {
-        countCalls += 1;
-        return Promise.resolve(new Response("{}"));
-      }),
-      inferenceTransport: emptyInference,
-      controllerId: "controller-b",
-      resumeAfterCrash: false,
-      signal: new AbortController().signal,
-    });
-    expect(second).toMatchObject({ ok: false, error: { kind: "persistence" } });
-    expect(countCalls).toBe(1);
-  });
-
-  it("rejects a self-consistently tampered ledger chain", async () => {
-    const request = await binding();
-    const current = await fixture();
-    const store = new MemoryStore();
-    const ledger = unwrap(
-      await executeM9b9OfflineLifecycle({
-        binding: request,
-        capacityToken: current.capacityToken,
-        capacityReport: current.capacityReport,
-        availableCampaignUsdMicros: 0,
-        store,
-        countAdapter: countSettings(
-          responseFetch(
-            new Response(
-              JSON.stringify({
-                object: "response.input_tokens",
-                input_tokens: 10,
-              }),
-            ),
-          ),
-        ),
-        inferenceTransport: emptyInference,
-        controllerId: "controller-a",
-        resumeAfterCrash: false,
-        signal: new AbortController().signal,
-      }),
-    );
-    const tampered = await resign(
-      {
-        ...ledger,
-        bindingDigest: digest("f"),
-      },
-      "ledgerDigest",
-    );
-    expect((await verifyM9b9LifecycleLedger(tampered)).ok).toBe(false);
   });
 
   it("property-checks canonical request and receipt tampering", async () => {

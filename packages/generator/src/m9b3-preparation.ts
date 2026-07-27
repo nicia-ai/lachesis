@@ -814,6 +814,23 @@ export type M9b3MaterializedSchedule = z.infer<
   typeof m9b3MaterializedScheduleSchema
 >;
 
+export type M9b3TrustedPrimaryAllocationInspection = Readonly<{
+  preparationDigest: string;
+  populationBindingDigest: string;
+  scheduleDigest: string;
+  primaryEntries: M9b3MaterializedSchedule["primaryEntries"];
+}>;
+const trustedMaterializedSchedules = new WeakMap<
+  M9b3MaterializedSchedule,
+  M9b3TrustedPrimaryAllocationInspection
+>();
+
+export function inspectM9b3TrustedPrimaryAllocation(
+  schedule: M9b3MaterializedSchedule,
+): M9b3TrustedPrimaryAllocationInspection | undefined {
+  return trustedMaterializedSchedules.get(schedule);
+}
+
 const probeCountsSchema = z
   .strictObject({
     discoveredOnly: z.number().int().nonnegative().max(24),
@@ -1563,15 +1580,18 @@ export async function materializeM9b3Schedule(
     primaryExecutionCondition: "probe-advancement-gate-passed",
   });
   const scheduleDigest = await digestValue(body);
-  return scheduleDigest.ok
-    ? {
-        ok: true,
-        value: m9b3MaterializedScheduleSchema.parse({
-          ...body,
-          scheduleDigest: scheduleDigest.value,
-        }),
-      }
-    : scheduleDigest;
+  if (!scheduleDigest.ok) return scheduleDigest;
+  const value = m9b3MaterializedScheduleSchema.parse({
+    ...body,
+    scheduleDigest: scheduleDigest.value,
+  });
+  trustedMaterializedSchedules.set(value, {
+    preparationDigest: value.preparationDigest,
+    populationBindingDigest: value.populationBindingDigest,
+    scheduleDigest: value.scheduleDigest,
+    primaryEntries: value.primaryEntries,
+  });
+  return { ok: true, value };
 }
 
 export async function verifyM9b3MaterializedSchedule(
@@ -1594,9 +1614,13 @@ export async function verifyM9b3MaterializedSchedule(
     primarySuite,
     seedReveal,
   );
-  return rederived.ok && canonicalEqual(rederived.value, parsed.data)
-    ? { ok: true, value: parsed.data }
-    : invalid("M9b.3f schedule failed complete zero-effect rederivation.");
+  if (!rederived.ok || !canonicalEqual(rederived.value, parsed.data))
+    return invalid("M9b.3f schedule failed complete zero-effect rederivation.");
+  const source = trustedMaterializedSchedules.get(rederived.value);
+  if (source === undefined)
+    return invalid("M9b.3f schedule lost its opaque allocation source.");
+  trustedMaterializedSchedules.set(parsed.data, source);
+  return { ok: true, value: parsed.data };
 }
 
 function pairedSuccessCounts(

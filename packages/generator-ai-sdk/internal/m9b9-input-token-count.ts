@@ -417,11 +417,67 @@ export type M9b9CountDispatchOutcome =
       modelCalls: 0;
     }>;
 
+export async function recordM9b9PrerecordedInputTokenCount(
+  bindingInput: unknown,
+  responseInput: unknown,
+): Promise<Result<M9b9CountReceipt, M9b9Failure>> {
+  const binding = await verifyM9b9RequestBinding(bindingInput);
+  const parsed = countResponseSchema.safeParse(responseInput);
+  if (
+    !binding.ok ||
+    !parsed.success ||
+    parsed.data.input_tokens === 0 ||
+    parsed.data.input_tokens > 922_000
+  )
+    return failure(
+      "validation",
+      "M9b.9 prerecorded count response identity or count is invalid.",
+    );
+  const rawResponseBytes = canonicalizeJson(parsed.data);
+  const rawResponseDigest = await digestValue(parsed.data);
+  const modelIdentityDigest = await digestValue(binding.value.identities.model);
+  if (!rawResponseBytes.ok || !rawResponseDigest.ok || !modelIdentityDigest.ok)
+    return failure(
+      "validation",
+      "M9b.9 prerecorded count receipt cannot be canonicalized.",
+    );
+  const body = countReceiptBodySchema.parse({
+    protocol: "lachesis-m9b9-verified-count-receipt/1",
+    bindingDigest: binding.value.bindingDigest,
+    countRequestDigest: binding.value.countRequestDigest,
+    modelIdentityDigest: modelIdentityDigest.value,
+    endpoint: M9B9_INPUT_TOKEN_COUNT_PROTOCOL.countEndpoint,
+    rawResponseBytes: rawResponseBytes.value,
+    rawResponseDigest: rawResponseDigest.value,
+    responseObject: parsed.data.object,
+    inputTokens: parsed.data.input_tokens,
+    providerHttpRequests: 1,
+    inferenceRequests: 0,
+    modelCalls: 0,
+  });
+  const receiptDigest = await digestValue(body);
+  return receiptDigest.ok
+    ? {
+        ok: true,
+        value: m9b9CountReceiptSchema.parse({
+          ...body,
+          receiptDigest: receiptDigest.value,
+        }),
+      }
+    : failure("validation", "M9b.9 count receipt digest failed.");
+}
+
 export async function dispatchM9b9InputTokenCount(
   bindingInput: unknown,
   settingsInput: unknown,
   signal: AbortSignal,
+  authority?: M9b9LiveExecutionAuthority,
 ): Promise<Result<M9b9CountDispatchOutcome, M9b9Failure>> {
+  if (!(await verifyLiveExecutionAuthority(authority)))
+    return failure(
+      "capacity-rejected",
+      "M9b.9c count transport has no positive authority artifact.",
+    );
   const binding = await verifyM9b9RequestBinding(bindingInput);
   if (!binding.ok) return binding;
   const settings = countAdapterSettingsSchema.safeParse(settingsInput);
@@ -519,41 +575,19 @@ export async function dispatchM9b9InputTokenCount(
         modelCalls: 0,
       },
     };
-  const rawResponseBytes = canonicalizeJson(parsed.data);
-  const rawResponseDigest = await digestValue(parsed.data);
-  const modelIdentityDigest = await digestValue(binding.value.identities.model);
-  if (!rawResponseBytes.ok || !rawResponseDigest.ok || !modelIdentityDigest.ok)
-    return failure(
-      "validation",
-      "M9b.9 count receipt cannot be canonicalized.",
-    );
-  const body = countReceiptBodySchema.parse({
-    protocol: "lachesis-m9b9-verified-count-receipt/1",
-    bindingDigest: binding.value.bindingDigest,
-    countRequestDigest: binding.value.countRequestDigest,
-    modelIdentityDigest: modelIdentityDigest.value,
-    endpoint: M9B9_INPUT_TOKEN_COUNT_PROTOCOL.countEndpoint,
-    rawResponseBytes: rawResponseBytes.value,
-    rawResponseDigest: rawResponseDigest.value,
-    responseObject: parsed.data.object,
-    inputTokens: parsed.data.input_tokens,
-    providerHttpRequests: 1,
-    inferenceRequests: 0,
-    modelCalls: 0,
-  });
-  const receiptDigest = await digestValue(body);
-  return receiptDigest.ok
+  const receipt = await recordM9b9PrerecordedInputTokenCount(
+    binding.value,
+    parsed.data,
+  );
+  return receipt.ok
     ? {
         ok: true,
         value: {
           kind: "verified",
-          receipt: m9b9CountReceiptSchema.parse({
-            ...body,
-            receiptDigest: receiptDigest.value,
-          }),
+          receipt: receipt.value,
         },
       }
-    : failure("validation", "M9b.9 count receipt digest failed.");
+    : receipt;
 }
 
 export async function verifyM9b9CountReceipt(
@@ -1283,7 +1317,7 @@ const ledgerEventSchema = ledgerEventBodySchema
   .readonly();
 const ledgerBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b9-durable-count-inference-ledger/1"),
+    protocol: z.literal("lachesis-m9b9c-live-authority-ledger/2"),
     attemptId: digestSchema,
     bindingDigest: digestSchema,
     events: ledgerEventSchema.array().min(1).max(8).readonly(),
@@ -1387,7 +1421,7 @@ async function ledgerFor(
   events: ReadonlyArray<M9b9LedgerEvent>,
 ): Promise<Result<M9b9LifecycleLedger, M9b9Failure>> {
   const body = ledgerBodySchema.safeParse({
-    protocol: "lachesis-m9b9-durable-count-inference-ledger/1",
+    protocol: "lachesis-m9b9c-live-authority-ledger/2",
     attemptId,
     bindingDigest,
     events,
@@ -1671,6 +1705,118 @@ export type M9b9LifecycleControllerInput = Readonly<{
   signal: AbortSignal;
 }>;
 
+export type M9b9OfflineConformanceInput = Readonly<{
+  binding: M9b9RequestBinding;
+  capacityToken: M9b9CapacityToken;
+  capacityReport: M9b9CapacityReport;
+  prerecordedCount: M9b9CountReceipt | null;
+  prerecordedInferenceUsage: M9b9InferenceUsage | null;
+}>;
+
+const offlineConformanceNoGoBodySchema = z
+  .strictObject({
+    protocol: z.literal("lachesis-m9b9c-offline-conformance-no-go/2"),
+    mode: z.literal("offline-conformance"),
+    bindingDigest: digestSchema,
+    capacityReportDigest: digestSchema,
+    decision: z.literal("no-go-no-positive-live-authority"),
+    countEffectPerformed: z.literal(false),
+    inferenceEffectPerformed: z.literal(false),
+    credentialAccessed: z.literal(false),
+    networkAccessed: z.literal(false),
+    dispatchStatePersisted: z.literal(false),
+  })
+  .readonly();
+const offlineConformanceNoGoSchema = offlineConformanceNoGoBodySchema
+  .unwrap()
+  .safeExtend({ receiptDigest: digestSchema })
+  .readonly();
+export type M9b9OfflineConformanceNoGo = z.infer<
+  typeof offlineConformanceNoGoSchema
+>;
+export type M9b9OfflineConformanceFailure = Readonly<{
+  kind: "capacity-rejected";
+  message: string;
+  receipt: M9b9OfflineConformanceNoGo;
+}>;
+
+async function offlineConformanceNoGo(
+  input: M9b9OfflineConformanceInput,
+): Promise<Result<never, M9b9Failure | M9b9OfflineConformanceFailure>> {
+  const body = offlineConformanceNoGoBodySchema.parse({
+    protocol: "lachesis-m9b9c-offline-conformance-no-go/2",
+    mode: "offline-conformance",
+    bindingDigest: input.binding.bindingDigest,
+    capacityReportDigest: input.capacityReport.reportDigest,
+    decision: "no-go-no-positive-live-authority",
+    countEffectPerformed: false,
+    inferenceEffectPerformed: false,
+    credentialAccessed: false,
+    networkAccessed: false,
+    dispatchStatePersisted: false,
+  });
+  const receiptDigest = await digestValue(body);
+  if (!receiptDigest.ok)
+    return failure("validation", "M9b.9c NO-GO receipt digest failed.");
+  const receipt = offlineConformanceNoGoSchema.parse({
+    ...body,
+    receiptDigest: receiptDigest.value,
+  });
+  return {
+    ok: false,
+    error: {
+      kind: "capacity-rejected",
+      message:
+        "M9b.9c verified authority is NO-GO; every provider effect is forbidden.",
+      receipt,
+    },
+  };
+}
+
+const liveAuthorityBrand: unique symbol = Symbol("M9b9LiveExecutionAuthority");
+const liveExecutionAuthorityBodySchema = z
+  .strictObject({
+    protocol: z.literal("lachesis-m9b9c-positive-live-execution-authority/1"),
+    campaignDigest: digestSchema,
+    experimentDigest: digestSchema,
+    populationDigest: digestSchema,
+    scheduleDigest: digestSchema,
+    modelIdentityDigest: digestSchema,
+    pricingIdentityDigest: digestSchema,
+    hardCapReceiptDigest: digestSchema,
+    completeStudyCapacityDigest: digestSchema,
+    providerAccessAuthorizationDigest: digestSchema,
+    liveExecutionAuthorizationDigest: digestSchema,
+    activation: z.literal("active"),
+    expiresAt: z.iso.datetime({ offset: true }),
+  })
+  .readonly();
+const liveExecutionAuthorityReceiptSchema = liveExecutionAuthorityBodySchema
+  .unwrap()
+  .safeExtend({ authorityDigest: digestSchema })
+  .readonly();
+type M9b9LiveExecutionAuthorityReceipt = z.infer<
+  typeof liveExecutionAuthorityReceiptSchema
+>;
+export type M9b9LiveExecutionAuthority = Readonly<{
+  [liveAuthorityBrand]: "M9b9LiveExecutionAuthority";
+  receipt: M9b9LiveExecutionAuthorityReceipt;
+}>;
+const liveAuthorities = new WeakSet<M9b9LiveExecutionAuthority>();
+
+async function verifyLiveExecutionAuthority(
+  authority: M9b9LiveExecutionAuthority | undefined,
+): Promise<boolean> {
+  if (authority === undefined || !liveAuthorities.has(authority)) return false;
+  const parsed = liveExecutionAuthorityReceiptSchema.safeParse(
+    authority.receipt,
+  );
+  if (!parsed.success) return false;
+  const { authorityDigest, ...body } = parsed.data;
+  const expectedDigest = await digestValue(body);
+  return expectedDigest.ok && expectedDigest.value === authorityDigest;
+}
+
 async function persistNext(
   store: M9b9LedgerStore,
   current: M9b9LifecycleLedger | undefined,
@@ -1694,14 +1840,16 @@ function eventPayload<T>(
   return parsed.success ? parsed.data : undefined;
 }
 
-/**
- * Historical intercepted-transport conformance seam. This is intentionally
- * distinct from the authority-gated lifecycle entry point below and carries no
- * provider or live-execution authority.
- */
-export async function executeM9b9OfflineConformanceLifecycle(
+/** No factory exists until an independently reviewed positive authority protocol does. */
+export async function executeM9b9LiveLifecycle(
   input: M9b9LifecycleControllerInput,
+  authority?: M9b9LiveExecutionAuthority,
 ): Promise<Result<M9b9LifecycleLedger, M9b9Failure>> {
+  if (!(await verifyLiveExecutionAuthority(authority)))
+    return failure(
+      "capacity-rejected",
+      "M9b.9c live execution has no positive authority artifact.",
+    );
   const binding = await verifyM9b9RequestBinding(input.binding);
   const capacity = await verifyM9b9CapacityReview(
     input.capacityToken,
@@ -1848,6 +1996,7 @@ export async function executeM9b9OfflineConformanceLifecycle(
       binding.value,
       input.countAdapter,
       input.signal,
+      authority,
     );
     if (!dispatched.ok) return dispatched;
     if (dispatched.value.kind !== "verified") {
@@ -2047,8 +2196,31 @@ export async function executeM9b9OfflineConformanceLifecycle(
  * reinterpreting this artifact.
  */
 export async function executeM9b9OfflineLifecycle(
-  input: M9b9LifecycleControllerInput,
-): Promise<Result<M9b9LifecycleLedger, M9b9Failure>> {
+  input: M9b9OfflineConformanceInput,
+): Promise<
+  Result<M9b9LifecycleLedger, M9b9Failure | M9b9OfflineConformanceFailure>
+> {
+  return executeM9b9OfflineConformanceLifecycle(input);
+}
+
+/**
+ * Offline conformance consumes only prerecorded values. It owns no store,
+ * session, credential, fetch, count-adapter, or inference-transport capability.
+ */
+export async function executeM9b9OfflineConformanceLifecycle(
+  input: M9b9OfflineConformanceInput,
+): Promise<
+  Result<M9b9LifecycleLedger, M9b9Failure | M9b9OfflineConformanceFailure>
+> {
+  if (
+    Object.hasOwn(input, "store") ||
+    Object.hasOwn(input, "countAdapter") ||
+    Object.hasOwn(input, "inferenceTransport") ||
+    Object.hasOwn(input, "credential") ||
+    Object.hasOwn(input, "session") ||
+    Object.hasOwn(input, "fetch")
+  )
+    return offlineConformanceNoGo(input);
   const binding = await verifyM9b9RequestBinding(input.binding);
   const capacity = await verifyM9b9CapacityReview(
     input.capacityToken,
@@ -2056,8 +2228,5 @@ export async function executeM9b9OfflineLifecycle(
   );
   if (!binding.ok || !capacity.ok)
     return failure("validation", "M9b.9 lifecycle inputs failed verification.");
-  return failure(
-    "validation",
-    "M9b.9 verified authority is NO-GO; transport is forbidden before any effect.",
-  );
+  return offlineConformanceNoGo(input);
 }

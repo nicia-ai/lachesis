@@ -8,7 +8,26 @@ import {
   type M9aCorpus,
   m9aInternalInspectChunkIdentities,
 } from "../../generator/src/m9a-corpus.js";
-import { M9B10B_ADAPTIVE_WITNESS_SOURCE } from "../../generator/src/m9b10b-retrieval.js";
+import {
+  type M9b2HiddenExpectation,
+  type M9b2PreparedSuite,
+  type M9b2PublicDevelopmentCase,
+  prepareM9b2DevelopmentSuite,
+} from "../../generator/src/m9b2-measurement.js";
+import {
+  deriveM9b3HistoricalDevelopmentBaseline,
+  deriveM9b3ScheduleSeedCommitment,
+  type M9b3PreparationInput,
+  type M9b3ProviderProfileInput,
+  materializeM9b3Schedule,
+  prepareM9b3OfflineStudy,
+} from "../../generator/src/m9b3-preparation.js";
+import {
+  M9B10B_ADAPTIVE_WITNESS_SOURCE,
+  M9B10B_ALGEBRA_WITNESS_SOURCE,
+} from "../../generator/src/m9b10b-retrieval.js";
+import { M9B2_PUBLIC_DEVELOPMENT_CASES } from "../../generator/tests/fixtures/m9b2-development.js";
+import { M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS } from "../../generator/tests/fixtures/m9b2-hidden.js";
 import {
   analyzeM9b10bPrimary,
   inspectM9b10bOfflineCampaignProgress,
@@ -17,12 +36,18 @@ import {
   type M9b10bCampaignScheduleEntry,
   type M9b10bCaseBinding,
   type M9b10bGold,
+  type M9b10bGroundedAnswer,
   m9b10bInternalExactFavorableTail,
   type M9b10bOfflineArmFixtures,
+  type M9b10bOfflineUsage,
   type M9b10bPairRecord,
   type M9b10bSelectedStore,
   type M9b10bTerminalArmRecord,
+  type M9b10cCaseAuthority,
   measureM9b10bPair,
+  prepareM9b10cOfflineCaseAuthority,
+  prepareM9b10cPrimaryMeasurementSet,
+  prepareM9b10cPrimaryPopulationAllocation,
   replayM9b10bPairedCase,
   runM9b10bOfflinePairedCase,
   verifyM9b10bOfflineCampaignProgress,
@@ -40,6 +65,204 @@ async function canonical(value: unknown): Promise<string> {
 
 const hex = (value: string): string =>
   value.repeat(Math.ceil(64 / value.length)).slice(0, 64);
+
+function required<T>(value: T | null | undefined): T {
+  if (value === undefined || value === null)
+    throw new Error("Missing M9b.10c fixture value.");
+  return value;
+}
+
+const scaleTargetBytes = Object.freeze({
+  "1x": 4_096,
+  "8x": 32_768,
+  "32x": 131_072,
+});
+
+function scaledCase(
+  publicCase: M9b2PublicDevelopmentCase,
+  expectation: M9b2HiddenExpectation,
+  suffix: string,
+): Readonly<{
+  publicCase: M9b2PublicDevelopmentCase;
+  expectation: M9b2HiddenExpectation;
+}> {
+  const changedFacts = expectation.supportingFacts.map((fact) => ({
+    ...fact,
+    sourceLineageId: `${fact.sourceLineageId}-${suffix}`,
+    exactText: `${fact.exactText} ${suffix}`,
+  }));
+  const documents = publicCase.corpus.documents.map((document) => ({
+    ...document,
+    title: `${document.title} ${suffix}`,
+    text: `${expectation.supportingFacts
+      .filter((fact) => fact.documentId === document.id)
+      .reduce(
+        (text, fact) =>
+          text.replace(fact.exactText, `${fact.exactText} ${suffix}`),
+        document.text,
+      )} ${suffix}`,
+  }));
+  const encoder = new TextEncoder();
+  const target = scaleTargetBytes[publicCase.scale];
+  let remaining =
+    target -
+    documents.reduce(
+      (sum, document) => sum + encoder.encode(document.text).byteLength,
+      0,
+    );
+  const padding: Array<Readonly<{ id: string; title: string; text: string }>> =
+    [];
+  let index = 0;
+  while (remaining > 0) {
+    const prefix = `${suffix}-${String(index)}-`;
+    const bytes = Math.min(60_000, remaining);
+    padding.push({
+      id: `padding-${String(index)}`,
+      title: `Natural background ${suffix} ${String(index)}`,
+      text: `${prefix}${"p".repeat(bytes - prefix.length)}`,
+    });
+    remaining -= bytes;
+    index += 1;
+  }
+  const caseId = `${publicCase.id}-${suffix}`;
+  return {
+    publicCase: {
+      ...publicCase,
+      id: caseId,
+      task: `${publicCase.task} Independent lineage ${suffix}.`,
+      corpus: {
+        ...publicCase.corpus,
+        id: `${publicCase.corpus.id}-${suffix}`,
+        documents: [...documents, ...padding],
+      },
+    },
+    expectation: {
+      ...expectation,
+      caseId,
+      acceptedAnswers: expectation.acceptedAnswers.map(
+        (answer) => `${answer} ${suffix}`,
+      ),
+      supportingFacts: changedFacts,
+      entityLineageIds: expectation.entityLineageIds.map(
+        (identity) => `${identity}-${suffix}`,
+      ),
+      sourceLineageIds: expectation.sourceLineageIds.map(
+        (identity) => `${identity}-${suffix}`,
+      ),
+      normalizedTaskTemplate: `${expectation.normalizedTaskTemplate} ${suffix}`,
+    },
+  };
+}
+
+async function scaledSuite(
+  role: "probe" | "primary",
+  waves: number,
+): Promise<M9b2PreparedSuite> {
+  const expectations = new Map(
+    M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS.map((expectation) => [
+      expectation.caseId,
+      expectation,
+    ]),
+  );
+  const cases = Array.from({ length: waves }, (_value, wave) =>
+    M9B2_PUBLIC_DEVELOPMENT_CASES.map((publicCase, index) =>
+      scaledCase(
+        publicCase,
+        required(expectations.get(publicCase.id)),
+        `${role}-${String(wave)}-${String(index)}`,
+      ),
+    ),
+  ).flat();
+  return unwrap(
+    await prepareM9b2DevelopmentSuite({
+      publicCases: cases.map((entry) => entry.publicCase),
+      hiddenExpectations: cases.map((entry) => entry.expectation),
+    }),
+  );
+}
+
+function m9b3ProviderProfile(): M9b3ProviderProfileInput {
+  return {
+    provider: { id: "offline.test-provider", version: "2026-07-27" },
+    requestProtocol: {
+      providerId: "offline.test-provider",
+      id: "offline.test-provider.responses",
+      version: "2026-07-27",
+    },
+    requestSerializer: {
+      providerId: "offline.test-provider",
+      requestProtocolId: "offline.test-provider.responses",
+      id: "offline.test-provider.canonical-request",
+      version: "1",
+      schemaDigest: hex("1"),
+    },
+    model: {
+      providerId: "offline.test-provider",
+      id: "m9b10c-offline-model",
+      revision: "1",
+      contextWindowTokens: 262_144,
+      maximumOutputTokens: 131_072,
+      reasoningMode: "disabled",
+    },
+    tokenizer: {
+      providerId: "offline.test-provider",
+      modelId: "m9b10c-offline-model",
+      id: "offline.test-exact-tokenizer",
+      version: "2026-07-27",
+      artifactDigest: hex("2"),
+      conformanceVectorDigest: hex("3"),
+      countsExactSerializedRequests: true,
+      countsExactSerializedResponses: true,
+    },
+    pricing: {
+      providerId: "offline.test-provider",
+      modelId: "m9b10c-offline-model",
+      currency: "USD",
+      inputUsdMicrosPerMillionTokens: 1_000_000,
+      outputUsdMicrosPerMillionTokens: 2_000_000,
+      reasoningUsdMicrosPerMillionTokens: 0,
+      snapshotId: "offline-pricing-2026-07-27",
+      sourceDigest: hex("4"),
+    },
+  };
+}
+
+async function primaryAllocationFixture(): Promise<
+  Awaited<ReturnType<typeof prepareM9b10cPrimaryPopulationAllocation>>
+> {
+  const development = unwrap(
+    await prepareM9b2DevelopmentSuite({
+      publicCases: M9B2_PUBLIC_DEVELOPMENT_CASES,
+      hiddenExpectations: M9B2_HIDDEN_DEVELOPMENT_EXPECTATIONS,
+    }),
+  );
+  const probe = await scaledSuite("probe", 1);
+  const primary = await scaledSuite("primary", 7);
+  const seedReveal = hex("d");
+  const scheduleSeedCommitment = unwrap(
+    await deriveM9b3ScheduleSeedCommitment(seedReveal),
+  );
+  const input: M9b3PreparationInput = {
+    providerProfile: m9b3ProviderProfile(),
+    promptBundleDigest: hex("7"),
+    scheduleSeedCommitment,
+    historicalDevelopmentBaseline: unwrap(
+      await deriveM9b3HistoricalDevelopmentBaseline(development),
+    ),
+  };
+  const preparation = unwrap(await prepareM9b3OfflineStudy(input));
+  const schedule = unwrap(
+    await materializeM9b3Schedule(
+      input,
+      preparation,
+      development,
+      probe,
+      primary,
+      seedReveal,
+    ),
+  );
+  return prepareM9b10cPrimaryPopulationAllocation(schedule);
+}
 
 class MemoryStore implements M9b10bSelectedStore {
   readonly arms = new Map<string, M9b10bTerminalArmRecord>();
@@ -93,10 +316,11 @@ type FixtureContext = Readonly<{
   corpus: M9aCorpus;
   binding: M9b10bCaseBinding;
   gold: M9b10bGold;
+  authority: M9b10cCaseAuthority;
   fixtures: Readonly<Record<M9b10bArm, M9b10bOfflineArmFixtures>>;
 }>;
 
-async function fixtureContext(): Promise<FixtureContext> {
+async function fixtureContext(variant = "1"): Promise<FixtureContext> {
   const corpus = unwrap(
     await createM9aCorpus({
       id: "m9b10b-selected",
@@ -140,8 +364,8 @@ async function fixtureContext(): Promise<FixtureContext> {
     population: "development",
     populationDigest: hex("3c"),
     scheduleDigest: hex("4d"),
-    pairId: "pair-001",
-    caseId: "case-001",
+    pairId: variant === "1" ? "pair-001" : `pair-${variant}`,
+    caseId: variant === "1" ? "case-001" : `case-${variant}`,
     family: "multi-hop",
     scale: "1x",
     task,
@@ -157,7 +381,7 @@ async function fixtureContext(): Promise<FixtureContext> {
     evaluator: {
       id: "m9b10b-local-evaluator",
       version: "1",
-      artifactDigest: hex("6f"),
+      artifactDigest: variant === "1" ? hex("6f") : hex(variant),
     },
   };
   const gold: M9b10bGold = {
@@ -218,7 +442,15 @@ async function fixtureContext(): Promise<FixtureContext> {
       },
     },
   };
-  return { corpus, binding, gold, fixtures };
+  const authority = unwrap(
+    await prepareM9b10cOfflineCaseAuthority({
+      binding,
+      corpus,
+      gold,
+      armOrder: ["discovered-program", "static-one-shot"],
+    }),
+  );
+  return { corpus, binding, gold, authority, fixtures };
 }
 
 async function runPair(store = new MemoryStore()): Promise<
@@ -257,6 +489,12 @@ async function resignRecord(
   const { recordDigest: ignored, ...body } = record;
   void ignored;
   return { ...record, recordDigest: unwrap(await digestValue(body)) };
+}
+
+async function resignPair(pair: M9b10bPairRecord): Promise<M9b10bPairRecord> {
+  const { pairDigest: ignored, ...body } = pair;
+  void ignored;
+  return { ...pair, pairDigest: unwrap(await digestValue(body)) };
 }
 
 function campaignSchedule(): ReadonlyArray<M9b10bCampaignScheduleEntry> {
@@ -346,7 +584,7 @@ describe("M9b.10b selected-topology integration", () => {
     const run = await runPair();
     const measurement = unwrap(
       await measureM9b10bPair({
-        binding: run.context.binding,
+        authority: run.context.authority,
         pair: run.pair,
         discovered: run.discovered,
         staticRecord: run.staticRecord,
@@ -357,7 +595,7 @@ describe("M9b.10b selected-topology integration", () => {
       cas: run.store.casCalls,
     };
     const replay = await replayM9b10bPairedCase({
-      binding: run.context.binding,
+      authority: run.context.authority,
       pair: run.pair,
       discovered: run.discovered,
       staticRecord: run.staticRecord,
@@ -391,7 +629,7 @@ describe("M9b.10b selected-topology integration", () => {
     });
     expect(
       await verifyM9b10bTerminalArmRecord(
-        run.context.binding,
+        run.context.authority,
         countSubstitution,
       ),
     ).toMatchObject({ ok: false });
@@ -401,7 +639,7 @@ describe("M9b.10b selected-topology integration", () => {
     });
     expect(
       await verifyM9b10bTerminalArmRecord(
-        run.context.binding,
+        run.context.authority,
         evaluatorSubstitution,
       ),
     ).toMatchObject({ ok: false });
@@ -445,8 +683,86 @@ describe("M9b.10b selected-topology integration", () => {
       evidenceTransfer,
     ])
       expect(
-        await verifyM9b10bTerminalArmRecord(run.context.binding, candidate),
+        await verifyM9b10bTerminalArmRecord(run.context.authority, candidate),
       ).toMatchObject({ ok: false });
+  });
+
+  it("rejects self-consistent foreign authoring, replaced programs, replaced queries, provider-answer substitution, and foreign evaluators", async () => {
+    const run = await runPair();
+    const foreignContext = await fixtureContext("8");
+    const foreignResult = unwrap(
+      await runM9b10bOfflinePairedCase({
+        ...foreignContext,
+        armOrder: ["discovered-program", "static-one-shot"],
+        attemptIds: {
+          "discovered-program": "foreign-discovered",
+          "static-one-shot": "foreign-static",
+        },
+        store: new MemoryStore(),
+      }),
+    );
+    if (
+      run.discovered.terminalStatus !== "evaluated" ||
+      run.staticRecord.terminalStatus !== "evaluated" ||
+      run.discovered.retrieval.arm !== "discovered-program" ||
+      run.staticRecord.retrieval.arm !== "static-one-shot" ||
+      foreignResult.arms["discovered-program"].terminalStatus !== "evaluated"
+    )
+      throw new Error("expected evaluated hostile fixtures");
+    const foreignDiscovered = foreignResult.arms["discovered-program"];
+    const changedAnswer: M9b10bGroundedAnswer = {
+      kind: "answer",
+      answerValues: ["wrong"],
+      supportingFactIds: ["fact-cobalt"],
+      citationIds: run.discovered.groundedAnswer.citationIds,
+    };
+    const candidates = [
+      await resignRecord({
+        ...run.discovered,
+        authoring: foreignDiscovered.authoring,
+      }),
+      await resignRecord({
+        ...run.discovered,
+        retrieval: {
+          ...run.discovered.retrieval,
+          source: M9B10B_ALGEBRA_WITNESS_SOURCE,
+        },
+      }),
+      await resignRecord({
+        ...run.staticRecord,
+        retrieval: { ...run.staticRecord.retrieval, query: "forged query" },
+      }),
+      await resignRecord({
+        ...run.discovered,
+        groundedAnswer: changedAnswer,
+        groundedAnswerDigest: unwrap(await digestValue(changedAnswer)),
+      }),
+      await resignRecord({
+        ...run.discovered,
+        evaluation: foreignDiscovered.evaluation,
+      }),
+    ];
+    for (const candidate of candidates)
+      expect(
+        await verifyM9b10bTerminalArmRecord(run.context.authority, candidate),
+      ).toMatchObject({ ok: false });
+  });
+
+  it("rejects a re-signed pair re-keyed to another case or arm order", async () => {
+    const run = await runPair();
+    const rekeyed = await resignPair({
+      ...run.pair,
+      caseId: "forged-case",
+      armOrder: ["static-one-shot", "discovered-program"],
+    });
+    expect(
+      await measureM9b10bPair({
+        authority: run.context.authority,
+        pair: rekeyed,
+        discovered: run.discovered,
+        staticRecord: run.staticRecord,
+      }),
+    ).toMatchObject({ ok: false });
   });
 
   it("rejects wrong snapshots, topology substitution, reused sessions, and old artifacts", async () => {
@@ -493,7 +809,7 @@ describe("M9b.10b selected-topology integration", () => {
       }),
     ).toMatchObject({ ok: false });
     expect(
-      await verifyM9b10bTerminalArmRecord(context.binding, {
+      await verifyM9b10bTerminalArmRecord(context.authority, {
         protocol: "lachesis-m9b1f-artifact-bound-program-discovery",
       }),
     ).toMatchObject({ ok: false });
@@ -580,7 +896,7 @@ describe("M9b.10b selected-topology integration", () => {
     });
     const rejectedMeasurement = unwrap(
       await measureM9b10bPair({
-        binding: context.binding,
+        authority: context.authority,
         pair: malformedRun.pair,
         discovered: rejected,
         staticRecord: malformedRun.arms["static-one-shot"],
@@ -620,6 +936,101 @@ describe("M9b.10b selected-topology integration", () => {
       requestCount: 2,
       totalConservativeConsumedUsdMicros: 1_167_360,
     });
+  });
+
+  it("consumes every authoritative moderate input, reasoning, visible, and total-output ceiling", async () => {
+    const scenarios: ReadonlyArray<
+      Readonly<{
+        variant: string;
+        arm: M9b10bArm;
+        phase: "authoring" | "answer";
+        usage: M9b10bOfflineUsage;
+        reason: string;
+      }>
+    > = [
+      {
+        variant: "a",
+        arm: "discovered-program",
+        phase: "authoring",
+        usage: {
+          inputTokens: 999_999_999,
+          outputTokens: 40,
+          reasoningTokens: 0,
+          visibleStructuredOutputTokens: 40,
+        },
+        reason: "input-token-ceiling-exceeded",
+      },
+      {
+        variant: "b",
+        arm: "static-one-shot",
+        phase: "authoring",
+        usage: {
+          inputTokens: 100,
+          outputTokens: 4_096,
+          reasoningTokens: 3_000,
+          visibleStructuredOutputTokens: 1_096,
+        },
+        reason: "reasoning-token-ceiling-exceeded",
+      },
+      {
+        variant: "c",
+        arm: "static-one-shot",
+        phase: "authoring",
+        usage: {
+          inputTokens: 100,
+          outputTokens: 4_096,
+          reasoningTokens: 0,
+          visibleStructuredOutputTokens: 1_037,
+        },
+        reason: "visible-token-ceiling-exceeded",
+      },
+      {
+        variant: "d",
+        arm: "discovered-program",
+        phase: "answer",
+        usage: {
+          inputTokens: 100,
+          outputTokens: 16_385,
+          reasoningTokens: 0,
+          visibleStructuredOutputTokens: 40,
+        },
+        reason: "output-token-ceiling-exceeded",
+      },
+    ];
+    for (const scenario of scenarios) {
+      const context = await fixtureContext(scenario.variant);
+      const selected = context.fixtures[scenario.arm];
+      const changed: M9b10bOfflineArmFixtures = {
+        ...selected,
+        [scenario.phase]: {
+          ...selected[scenario.phase],
+          usage: scenario.usage,
+        },
+      };
+      const fixtures = { ...context.fixtures, [scenario.arm]: changed };
+      const result = unwrap(
+        await runM9b10bOfflinePairedCase({
+          ...context,
+          fixtures,
+          armOrder: ["discovered-program", "static-one-shot"],
+          attemptIds: {
+            "discovered-program": `moderate-${scenario.variant}-discovered`,
+            "static-one-shot": `moderate-${scenario.variant}-static`,
+          },
+          store: new MemoryStore(),
+        }),
+      );
+      const record = result.arms[scenario.arm];
+      expect(record).toMatchObject({
+        terminalStatus: "failed",
+        failureStage: "accounting-overage",
+      });
+      const receipt =
+        scenario.phase === "authoring"
+          ? record.authoring
+          : record.groundedAnswerAttempt;
+      expect(receipt?.output.failureReasons).toContain(scenario.reason);
+    }
   });
 
   it("uses a persistent CAS lock to reject concurrent attempt identities", async () => {
@@ -697,28 +1108,39 @@ describe("M9b.10b selected-topology integration", () => {
   });
 
   it("rejects incomplete, duplicate, foreign, and post-selected primary populations", async () => {
+    const allocation = unwrap(await primaryAllocationFixture());
+    const run = await runPair();
+    const measurement = unwrap(
+      await measureM9b10bPair({
+        authority: run.context.authority,
+        pair: run.pair,
+        discovered: run.discovered,
+        staticRecord: run.staticRecord,
+      }),
+    );
     expect(
-      await analyzeM9b10bPrimary({
-        campaignDigest: hex("aa"),
-        populationDigest: hex("bb"),
-        scheduleDigest: hex("cc"),
-        expectedCaseIds: Array.from(
-          { length: 167 },
-          (_, index) => `case-${index}`,
-        ),
-        measurements: [],
+      await prepareM9b10cPrimaryMeasurementSet({
+        allocation,
+        measurements: Array.from({ length: 169 }, () => measurement),
+      }),
+    ).toMatchObject({ ok: false });
+    expect(
+      await prepareM9b10cPrimaryMeasurementSet({
+        allocation,
+        measurements: Array.from({ length: 168 }, () => measurement),
       }),
     ).toMatchObject({ ok: false });
     expect(
       await analyzeM9b10bPrimary({
-        campaignDigest: hex("aa"),
-        populationDigest: hex("bb"),
-        scheduleDigest: hex("cc"),
-        expectedCaseIds: Array.from({ length: 168 }, () => "duplicate"),
-        measurements: [],
+        measurementSet: {},
       }),
     ).toMatchObject({ ok: false });
-  });
+    expect(
+      await analyzeM9b10bPrimary({
+        measurementSet: {},
+      }),
+    ).toMatchObject({ ok: false });
+  }, 60_000);
 
   it("binds the complete frozen campaign schedule and zero-effect progress state", async () => {
     const trusted = {

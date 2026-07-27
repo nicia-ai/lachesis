@@ -40,8 +40,8 @@ import {
 } from "./m9a-corpus.js";
 
 export const M9B10B_RETRIEVAL_PROTOCOL = Object.freeze({
-  id: "lachesis-m9b10b-selected-retrieval-codemode",
-  version: "1.0.0",
+  id: "lachesis-m9b10c-selected-retrieval-proof",
+  version: "1.1.0",
   visibility: "internal-offline-conformance-only" as const,
   grammar: "closed-evidence-adaptive-retrieval-typescript/1" as const,
   execution:
@@ -506,17 +506,54 @@ export function inspectM9b10bRetrievalArtifact(
 const searchEventSchema = z
   .strictObject({
     kind: z.literal("search"),
+    eventId: z.string().regex(/^search-[12]$/u),
+    sequence: z.number().int().nonnegative().max(3),
+    previousEventDigest: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/u)
+      .nullable(),
     callIndex: z.number().int().positive().max(2),
     query: queryValidator,
+    queryOrigin: z.discriminatedUnion("kind", [
+      z
+        .strictObject({
+          kind: z.literal("task-constant"),
+          taskDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+        })
+        .readonly(),
+      z
+        .strictObject({
+          kind: z.literal("evidence-extraction"),
+          sourceReadEventId: z.string().regex(/^read-[12]$/u),
+          sourceChunkId: z.string().min(1).max(256),
+          extractedValueDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+        })
+        .readonly(),
+      z
+        .strictObject({
+          kind: z.literal("authored-static-query"),
+          queryDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+        })
+        .readonly(),
+    ]),
     result: m9aSearchResultSchema,
+    eventDigest: z.string().regex(/^[a-f0-9]{64}$/u),
   })
   .readonly();
 const readEventSchema = z
   .strictObject({
     kind: z.literal("read"),
+    eventId: z.string().regex(/^read-[12]$/u),
+    sequence: z.number().int().nonnegative().max(3),
+    previousEventDigest: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/u)
+      .nullable(),
     callIndex: z.number().int().positive().max(2),
+    sourceSearchEventId: z.string().regex(/^search-[12]$/u),
     requestChunkIds: z.string().array().max(4).readonly(),
     result: m9aReadResultSchema,
+    eventDigest: z.string().regex(/^[a-f0-9]{64}$/u),
   })
   .readonly();
 export const m9b10bRetrievalEventSchema = z.discriminatedUnion("kind", [
@@ -531,10 +568,15 @@ export const m9b10bRetrievalRunSchema = z
     protocolVersion: z.literal(M9B10B_RETRIEVAL_PROTOCOL.version),
     sourceDigest: z.string().regex(/^[a-f0-9]{64}$/u),
     compilationDigest: z.string().regex(/^[a-f0-9]{64}$/u),
+    arm: z.literal("discovered-program"),
+    pairId: z.string().min(1).max(160),
+    caseId: z.string().min(1).max(160),
     taskDigest: z.string().regex(/^[a-f0-9]{64}$/u),
     snapshotDigest: z.string().regex(/^[a-f0-9]{64}$/u),
     events: m9b10bRetrievalEventSchema.array().min(2).max(4).readonly(),
     finalEvidence: m9aReadResultSchema,
+    finalEvidenceReadEventId: z.string().regex(/^read-[12]$/u),
+    finalEvidenceDigest: z.string().regex(/^[a-f0-9]{64}$/u),
     providerModelCalls: z.literal(0),
     transcriptDigest: z.string().regex(/^[a-f0-9]{64}$/u),
     runDigest: z.string().regex(/^[a-f0-9]{64}$/u),
@@ -543,6 +585,8 @@ export const m9b10bRetrievalRunSchema = z
 export type M9b10bRetrievalRun = z.infer<typeof m9b10bRetrievalRunSchema>;
 
 type MutableContext = {
+  task: string;
+  taskDigest: string;
   searchCalls: number;
   readCalls: number;
   readBytes: number;
@@ -551,6 +595,12 @@ type MutableContext = {
 
 function executionDiagnostic(message: string): Diagnostic {
   return diagnostic("RUNTIME_SCHEMA_VIOLATION", `M9b.10b: ${message}`);
+}
+
+function canonicalEqual(left: unknown, right: unknown): boolean {
+  const leftValue = canonicalizeJson(left);
+  const rightValue = canonicalizeJson(right);
+  return leftValue.ok && rightValue.ok && leftValue.value === rightValue.value;
 }
 
 function selectReadableHits(
@@ -603,12 +653,65 @@ function createEffectHandler(
           ok: false,
           error: executionDiagnostic(`search failed: ${result.error.kind}`),
         };
-      context.events.push({
+      const taskQuery = context.task.slice(0, 512).normalize("NFC");
+      let queryOrigin:
+        z.infer<typeof searchEventSchema>["queryOrigin"] | undefined;
+      if (query.data === taskQuery)
+        queryOrigin = { kind: "task-constant", taskDigest: context.taskDigest };
+      else {
+        for (const event of context.events) {
+          if (event.kind !== "read") continue;
+          for (const excerpt of event.result.excerpts) {
+            const extracted = extractIntermediateIdentifier({
+              snapshotDigest: event.result.snapshotDigest,
+              excerpts: [excerpt],
+              totalBytes: new TextEncoder().encode(excerpt.text).byteLength,
+            });
+            if (`answer record ${extracted}` !== query.data) continue;
+            const extractedValueDigest = await digestValue(extracted);
+            if (!extractedValueDigest.ok)
+              return {
+                ok: false,
+                error: executionDiagnostic("extraction digest failed"),
+              };
+            queryOrigin = {
+              kind: "evidence-extraction",
+              sourceReadEventId: event.eventId,
+              sourceChunkId: excerpt.chunk.id,
+              extractedValueDigest: extractedValueDigest.value,
+            };
+          }
+        }
+      }
+      if (queryOrigin === undefined)
+        return {
+          ok: false,
+          error: executionDiagnostic(
+            "search query lacks a trusted dataflow origin",
+          ),
+        };
+      const eventBody = {
         kind: "search",
+        eventId: `search-${String(context.searchCalls)}`,
+        sequence: context.events.length,
+        previousEventDigest: context.events.at(-1)?.eventDigest ?? null,
         callIndex: context.searchCalls,
         query: query.data,
+        queryOrigin,
         result: result.value,
-      });
+      } as const;
+      const eventDigest = await digestValue(eventBody);
+      if (!eventDigest.ok)
+        return {
+          ok: false,
+          error: executionDiagnostic("search event digest failed"),
+        };
+      context.events.push(
+        searchEventSchema.parse({
+          ...eventBody,
+          eventDigest: eventDigest.value,
+        }),
+      );
       return {
         ok: true,
         value: { value: result.value, usage: { tokens: 0, wallClockMs: 0 } },
@@ -628,6 +731,15 @@ function createEffectHandler(
         M9B10B_RETRIEVAL_LIMITS.maximumReadBytesPerCall,
       );
       const chunks = selectReadableHits(search.data, maximumBytes);
+      const sourceSearch = context.events.find(
+        (event) =>
+          event.kind === "search" && canonicalEqual(event.result, search.data),
+      );
+      if (sourceSearch === undefined)
+        return {
+          ok: false,
+          error: executionDiagnostic("read input lacks a prior search origin"),
+        };
       const result = readM9aCorpus(
         corpus,
         { chunks, maxBytes: maximumBytes },
@@ -639,12 +751,28 @@ function createEffectHandler(
           error: executionDiagnostic(`read failed: ${result.error.kind}`),
         };
       context.readBytes += result.value.totalBytes;
-      context.events.push({
+      const eventBody = {
         kind: "read",
+        eventId: `read-${String(context.readCalls)}`,
+        sequence: context.events.length,
+        previousEventDigest: context.events.at(-1)?.eventDigest ?? null,
         callIndex: context.readCalls,
+        sourceSearchEventId: sourceSearch.eventId,
         requestChunkIds: chunks.map((chunk) => chunk.id),
         result: result.value,
-      });
+      } as const;
+      const eventDigest = await digestValue(eventBody);
+      if (!eventDigest.ok)
+        return {
+          ok: false,
+          error: executionDiagnostic("read event digest failed"),
+        };
+      context.events.push(
+        readEventSchema.parse({
+          ...eventBody,
+          eventDigest: eventDigest.value,
+        }),
+      );
       return {
         ok: true,
         value: { value: result.value, usage: { tokens: 0, wallClockMs: 0 } },
@@ -693,6 +821,8 @@ export async function executeM9b10bRetrievalProgram(
   input: Readonly<{
     corpus: M9aCorpus;
     task: string;
+    pairId: string;
+    caseId: string;
     signal?: AbortSignal | undefined;
   }>,
 ): Promise<Result<M9b10bRetrievalRun, M9b10bRetrievalFailure>> {
@@ -700,7 +830,15 @@ export async function executeM9b10bRetrievalProgram(
   const snapshot = inspectM9aCorpus(input.corpus);
   if (stored === undefined || snapshot === undefined)
     return { ok: false, error: { kind: "invalid-artifact" } };
+  const taskDigest = await digestValue({ task: input.task });
+  if (!taskDigest.ok)
+    return {
+      ok: false,
+      error: { kind: "digest-failure", diagnostic: taskDigest.error },
+    };
   const context: MutableContext = {
+    task: input.task,
+    taskDigest: taskDigest.value,
     searchCalls: 0,
     readCalls: 0,
     readBytes: 0,
@@ -723,21 +861,38 @@ export async function executeM9b10bRetrievalProgram(
         diagnostic: executionDiagnostic("program must return visible evidence"),
       },
     };
-  const taskDigest = await digestValue({ task: input.task });
-  if (!taskDigest.ok)
+  const finalRead = context.events.find(
+    (event) =>
+      event.kind === "read" && canonicalEqual(event.result, finalEvidence.data),
+  );
+  if (finalRead === undefined)
     return {
       ok: false,
-      error: { kind: "digest-failure", diagnostic: taskDigest.error },
+      error: {
+        kind: "invalid-output",
+        diagnostic: executionDiagnostic("final evidence lacks a prior read"),
+      },
+    };
+  const finalEvidenceDigest = await digestValue(finalEvidence.data);
+  if (!finalEvidenceDigest.ok)
+    return {
+      ok: false,
+      error: { kind: "digest-failure", diagnostic: finalEvidenceDigest.error },
     };
   const body = {
     protocol: M9B10B_RETRIEVAL_PROTOCOL.id,
     protocolVersion: M9B10B_RETRIEVAL_PROTOCOL.version,
     sourceDigest: stored.summary.sourceDigest,
     compilationDigest: stored.summary.compilationDigest,
+    arm: "discovered-program" as const,
+    pairId: input.pairId,
+    caseId: input.caseId,
     taskDigest: taskDigest.value,
     snapshotDigest: snapshot.snapshotDigest,
     events: Object.freeze([...context.events]),
     finalEvidence: finalEvidence.data,
+    finalEvidenceReadEventId: finalRead.eventId,
+    finalEvidenceDigest: finalEvidenceDigest.value,
     providerModelCalls: 0 as const,
   };
   const digests = await digestRunBody(body);
@@ -756,7 +911,12 @@ export async function verifyM9b10bRetrievalRun(
   artifact: M9b10bRetrievalArtifact,
   snapshot: M9aCorpusSnapshot,
   task: string,
-  run: M9b10bRetrievalRun,
+  run: unknown,
+  trusted: Readonly<{
+    pairId: string;
+    caseId: string;
+    expectedRunDigest: string;
+  }>,
 ): Promise<Result<M9b10bRetrievalRun, Diagnostic>> {
   const parsed = m9b10bRetrievalRunSchema.safeParse(run);
   const stored = artifacts.get(artifact);
@@ -776,13 +936,99 @@ export async function verifyM9b10bRetrievalRun(
     !digests.ok ||
     parsed.data.sourceDigest !== stored.summary.sourceDigest ||
     parsed.data.compilationDigest !== stored.summary.compilationDigest ||
+    parsed.data.pairId !== trusted.pairId ||
+    parsed.data.caseId !== trusted.caseId ||
     parsed.data.taskDigest !== taskDigest.value ||
     parsed.data.snapshotDigest !== snapshot.snapshotDigest ||
     parsed.data.finalEvidence.snapshotDigest !== snapshot.snapshotDigest ||
+    parsed.data.runDigest !== trusted.expectedRunDigest ||
     digests.value.transcriptDigest !== parsed.data.transcriptDigest ||
     digests.value.runDigest !== parsed.data.runDigest
   )
     return { ok: false, error: executionDiagnostic("replay lineage mismatch") };
+  let previousDigest: string | null = null;
+  const seenSearches = new Map<string, z.infer<typeof searchEventSchema>>();
+  const seenReads = new Map<string, z.infer<typeof readEventSchema>>();
+  for (const [sequence, event] of parsed.data.events.entries()) {
+    const { eventDigest: ignored, ...eventBody } = event;
+    void ignored;
+    const eventDigest = await digestValue(eventBody);
+    if (
+      !eventDigest.ok ||
+      eventDigest.value !== event.eventDigest ||
+      event.sequence !== sequence ||
+      event.previousEventDigest !== previousDigest
+    )
+      return { ok: false, error: executionDiagnostic("event chain changed") };
+    if (event.kind === "search") {
+      if (event.queryOrigin.kind === "task-constant") {
+        if (
+          event.queryOrigin.taskDigest !== taskDigest.value ||
+          event.query !== task.slice(0, 512).normalize("NFC")
+        )
+          return {
+            ok: false,
+            error: executionDiagnostic("task query changed"),
+          };
+      } else if (event.queryOrigin.kind === "evidence-extraction") {
+        const origin = event.queryOrigin;
+        const sourceRead = seenReads.get(origin.sourceReadEventId);
+        const excerpt = sourceRead?.result.excerpts.find(
+          (candidate) => candidate.chunk.id === origin.sourceChunkId,
+        );
+        if (sourceRead === undefined || excerpt === undefined)
+          return {
+            ok: false,
+            error: executionDiagnostic("foreign extraction"),
+          };
+        const extracted = extractIntermediateIdentifier({
+          snapshotDigest: sourceRead.result.snapshotDigest,
+          excerpts: [excerpt],
+          totalBytes: encoder.encode(excerpt.text).byteLength,
+        });
+        const extractedDigest = await digestValue(extracted);
+        if (
+          !extractedDigest.ok ||
+          extractedDigest.value !== origin.extractedValueDigest ||
+          event.query !== `answer record ${extracted}`
+        )
+          return {
+            ok: false,
+            error: executionDiagnostic("extraction changed"),
+          };
+      } else {
+        return {
+          ok: false,
+          error: executionDiagnostic("discovered run used static-query origin"),
+        };
+      }
+      seenSearches.set(event.eventId, event);
+    } else {
+      const sourceSearch = seenSearches.get(event.sourceSearchEventId);
+      const hitIds = new Set(
+        sourceSearch?.result.hits.map((hit) => hit.chunk.id) ?? [],
+      );
+      if (
+        sourceSearch === undefined ||
+        event.requestChunkIds.some((id) => !hitIds.has(id)) ||
+        event.result.excerpts.some(
+          (excerpt) => !event.requestChunkIds.includes(excerpt.chunk.id),
+        )
+      )
+        return { ok: false, error: executionDiagnostic("read origin changed") };
+      seenReads.set(event.eventId, event);
+    }
+    previousDigest = event.eventDigest;
+  }
+  const finalRead = seenReads.get(parsed.data.finalEvidenceReadEventId);
+  const finalDigest = await digestValue(parsed.data.finalEvidence);
+  if (
+    finalRead === undefined ||
+    !finalDigest.ok ||
+    finalDigest.value !== parsed.data.finalEvidenceDigest ||
+    !canonicalEqual(finalRead.result, parsed.data.finalEvidence)
+  )
+    return { ok: false, error: executionDiagnostic("final evidence changed") };
   const canonical = canonicalizeJson(parsed.data);
   if (!canonical.ok) return canonical;
   return { ok: true, value: parsed.data };

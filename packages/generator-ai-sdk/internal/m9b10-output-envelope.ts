@@ -206,6 +206,73 @@ const outputProfile = Object.freeze({
   }),
 });
 
+const authoritativeModerateEnvelopeBodySchema = z
+  .strictObject({
+    protocol: z.literal("lachesis-m9b10c-authoritative-moderate-envelope/1"),
+    designId: z.literal("prospective-moderate-class-specific"),
+    requestClass: requestClassSchema,
+    maximumInputTokens: z.union([z.literal(65_536), z.literal(32_768)]),
+    maximumOutputTokens: safeCountSchema,
+    maximumReasoningTokens: safeCountSchema,
+    maximumVisibleStructuredOutputTokens: safeCountSchema,
+    inputBillingClass: z.literal("cache-write-highest-applicable-class"),
+    pricingState: z.literal("input-token-count-pricing-unresolved"),
+  })
+  .readonly();
+export const m9b10AuthoritativeModerateEnvelopeSchema =
+  authoritativeModerateEnvelopeBodySchema
+    .unwrap()
+    .safeExtend({ envelopeDigest: digestSchema })
+    .readonly();
+export type M9b10AuthoritativeModerateEnvelope = z.infer<
+  typeof m9b10AuthoritativeModerateEnvelopeSchema
+>;
+
+/** Private composition boundary; this does not activate the moderate design. */
+export async function deriveM9b10AuthoritativeModerateEnvelope(
+  requestClass: M9b10RequestClass,
+): Promise<Result<M9b10AuthoritativeModerateEnvelope, M9b10Failure>> {
+  const coordinate = classCoordinate[requestClass];
+  const profile =
+    outputProfile["prospective-moderate-class-specific"][requestClass];
+  const body = authoritativeModerateEnvelopeBodySchema.parse({
+    protocol: "lachesis-m9b10c-authoritative-moderate-envelope/1",
+    designId: "prospective-moderate-class-specific",
+    requestClass,
+    maximumInputTokens: coordinate.inputTokens,
+    maximumOutputTokens: profile.maximumOutputTokens,
+    maximumReasoningTokens: profile.maximumReasoningTokens,
+    maximumVisibleStructuredOutputTokens:
+      profile.maximumVisibleStructuredOutputTokens,
+    inputBillingClass: "cache-write-highest-applicable-class",
+    pricingState: "input-token-count-pricing-unresolved",
+  });
+  const envelopeDigest = await digestValue(body);
+  return envelopeDigest.ok
+    ? {
+        ok: true,
+        value: m9b10AuthoritativeModerateEnvelopeSchema.parse({
+          ...body,
+          envelopeDigest: envelopeDigest.value,
+        }),
+      }
+    : failure("validation", "M9b.10c envelope digest failed.");
+}
+
+export async function verifyM9b10AuthoritativeModerateEnvelope(
+  value: unknown,
+): Promise<Result<M9b10AuthoritativeModerateEnvelope, M9b10Failure>> {
+  const parsed = m9b10AuthoritativeModerateEnvelopeSchema.safeParse(value);
+  if (!parsed.success)
+    return failure("validation", "M9b.10c envelope is invalid.");
+  const rebuilt = await deriveM9b10AuthoritativeModerateEnvelope(
+    parsed.data.requestClass,
+  );
+  return rebuilt.ok && canonicalEqual(rebuilt.value, parsed.data)
+    ? rebuilt
+    : failure("validation", "M9b.10c envelope identity changed.");
+}
+
 const developmentUsage = Object.freeze({
   "root-program-authoring": Object.freeze([
     ...Array.from({ length: 23 }, () => 18_000),

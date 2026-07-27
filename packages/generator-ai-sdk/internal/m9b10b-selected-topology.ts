@@ -19,6 +19,10 @@ import {
   searchM9aCorpus,
 } from "../../generator/src/m9a-corpus.js";
 import {
+  inspectM9b3TrustedPrimaryAllocation,
+  type M9b3MaterializedSchedule,
+} from "../../generator/src/m9b3-preparation.js";
+import {
   compileM9b10bRetrievalProgram,
   executeM9b10bRetrievalProgram,
   inspectM9b10bRetrievalArtifact,
@@ -30,11 +34,16 @@ import {
   verifyM9b10bRetrievalRun,
 } from "../../generator/src/m9b10b-retrieval.js";
 import { strictJsonValueSchema } from "../../generator/src/strict-json.js";
-import { M9B10_OUTPUT_ENVELOPE_PROTOCOL } from "./m9b10-output-envelope.js";
+import {
+  deriveM9b10AuthoritativeModerateEnvelope,
+  M9B10_OUTPUT_ENVELOPE_PROTOCOL,
+  m9b10AuthoritativeModerateEnvelopeSchema,
+  verifyM9b10AuthoritativeModerateEnvelope,
+} from "./m9b10-output-envelope.js";
 
 export const M9B10B_SELECTED_TOPOLOGY_PROTOCOL = Object.freeze({
-  id: "lachesis-m9b10b-offline-selected-topology-integration",
-  version: "1.0.0",
+  id: "lachesis-m9b10c-offline-selected-topology-integration",
+  version: "1.1.0",
   baselineCommit: "c71ffa4fde5f1ed84c5027bc9bc4569c26a8fbdd",
   auditProtocol: "lachesis-m9b10a-selected-topology-integration-audit@1.0.0",
   visibility: "private-offline-conformance-only" as const,
@@ -49,15 +58,15 @@ export const M9B10B_SELECTED_TOPOLOGY_PROTOCOL = Object.freeze({
 });
 
 export const M9B10B_SELECTED_MEASUREMENT_PROTOCOL = Object.freeze({
-  id: "lachesis-m9b10b-selected-topology-measurement",
-  version: "1.0.0",
+  id: "lachesis-m9b10c-selected-topology-measurement",
+  version: "1.1.0",
   primaryEndpoint:
     "first-attempt-semantically-supported-end-to-end-success" as const,
 });
 
 export const M9B10B_PRIMARY_ANALYSIS_PROTOCOL = Object.freeze({
-  id: "lachesis-m9b10b-exact-primary-mcnemar",
-  version: "1.0.0",
+  id: "lachesis-m9b10c-exact-primary-mcnemar",
+  version: "1.1.0",
   population: "primary" as const,
   pairedCases: 168 as const,
   alphaNumerator: 1 as const,
@@ -149,6 +158,120 @@ export const m9b10bGoldSchema = z
   .readonly();
 export type M9b10bGold = z.infer<typeof m9b10bGoldSchema>;
 
+const caseAuthorityBrand: unique symbol = Symbol("M9b10cCaseAuthority");
+export type M9b10cCaseAuthority = Readonly<{
+  [caseAuthorityBrand]: "M9b10cCaseAuthority";
+}>;
+type CaseAuthoritySource = {
+  binding: M9b10bCaseBinding;
+  gold: M9b10bGold;
+  armOrder: readonly [M9b10bArm, M9b10bArm];
+  expectedRunDigests: Map<M9b10bArm, string>;
+  expectedRecordDigests: Map<M9b10bArm, string>;
+  expectedPairDigest: string | undefined;
+};
+const caseAuthorities = new WeakMap<M9b10cCaseAuthority, CaseAuthoritySource>();
+
+export async function prepareM9b10cOfflineCaseAuthority(
+  input: Readonly<{
+    binding: M9b10bCaseBinding;
+    corpus: M9aCorpus;
+    gold: M9b10bGold;
+    armOrder: readonly [M9b10bArm, M9b10bArm];
+  }>,
+): Promise<Result<M9b10cCaseAuthority, M9b10bFailure>> {
+  const binding = m9b10bCaseBindingSchema.safeParse(input.binding);
+  const gold = m9b10bGoldSchema.safeParse(input.gold);
+  const snapshot = inspectM9aCorpus(input.corpus);
+  const taskDigest = await digestValue({ task: input.binding.task });
+  if (
+    !binding.success ||
+    !gold.success ||
+    snapshot === undefined ||
+    !taskDigest.ok ||
+    taskDigest.value !== binding.data.taskDigest ||
+    !canonicalEqual(snapshot, binding.data.corpusSnapshot) ||
+    input.armOrder[0] === input.armOrder[1] ||
+    binding.data.population === "primary"
+  )
+    return failure("validation", "M9b.10c case authority inputs are invalid.");
+  const token: M9b10cCaseAuthority = Object.freeze({
+    [caseAuthorityBrand]: "M9b10cCaseAuthority",
+  });
+  caseAuthorities.set(token, {
+    binding: binding.data,
+    gold: gold.data,
+    armOrder: input.armOrder,
+    expectedRunDigests: new Map(),
+    expectedRecordDigests: new Map(),
+    expectedPairDigest: undefined,
+  });
+  return { ok: true, value: token };
+}
+
+export async function prepareM9b10cPrimaryCaseAuthority(
+  input: Readonly<{
+    allocation: M9b10cPrimaryPopulationAllocation;
+    caseId: string;
+    task: string;
+    corpus: M9aCorpus;
+    semanticContractDigest: string;
+    model: z.infer<typeof modelIdentitySchema>;
+    reasoning: z.infer<typeof reasoningSchema>;
+    evaluator: z.infer<typeof artifactIdentitySchema>;
+    gold: M9b10bGold;
+  }>,
+): Promise<Result<M9b10cCaseAuthority, M9b10bFailure>> {
+  const allocation = primaryAllocations.get(input.allocation);
+  if (allocation === undefined)
+    return failure(
+      "validation",
+      "Primary case is not in the frozen allocation.",
+    );
+  const entry = allocation.entries.find(
+    (candidate) => candidate.caseId === input.caseId,
+  );
+  const snapshot = inspectM9aCorpus(input.corpus);
+  const taskDigest = await digestValue({ task: input.task });
+  if (
+    entry === undefined ||
+    snapshot?.snapshotDigest !== entry.snapshotDigest ||
+    !taskDigest.ok
+  )
+    return failure(
+      "validation",
+      "Primary case is not in the frozen allocation.",
+    );
+  const token: M9b10cCaseAuthority = Object.freeze({
+    [caseAuthorityBrand]: "M9b10cCaseAuthority",
+  });
+  caseAuthorities.set(token, {
+    binding: m9b10bCaseBindingSchema.parse({
+      semanticContractDigest: input.semanticContractDigest,
+      campaignDigest: allocation.campaignDigest,
+      population: "primary",
+      populationDigest: allocation.populationDigest,
+      scheduleDigest: allocation.scheduleDigest,
+      pairId: entry.pairId,
+      caseId: entry.caseId,
+      family: entry.family,
+      scale: entry.scale,
+      task: input.task,
+      taskDigest: taskDigest.value,
+      corpusSnapshot: snapshot,
+      model: input.model,
+      reasoning: input.reasoning,
+      evaluator: input.evaluator,
+    }),
+    gold: m9b10bGoldSchema.parse(input.gold),
+    armOrder: entry.armOrder,
+    expectedRunDigests: new Map(),
+    expectedRecordDigests: new Map(),
+    expectedPairDigest: undefined,
+  });
+  return { ok: true, value: token };
+}
+
 const usageSchema = z
   .strictObject({
     inputTokens: z.number().int().nonnegative(),
@@ -207,27 +330,11 @@ const queryOutputSchema = z
   })
   .readonly();
 
-const reservationByClass = Object.freeze({
-  "root-program-authoring": Object.freeze({
-    maximumInputTokens: 65_536,
-    maximumOutputTokens: 40_960,
-    maximumCostUsdMicros: 819_200,
-  }),
-  "static-one-shot-query-planning": Object.freeze({
-    maximumInputTokens: 65_536,
-    maximumOutputTokens: 4_096,
-    maximumCostUsdMicros: 266_240,
-  }),
-  "discovered-program-leaf-reasoning": Object.freeze({
-    maximumInputTokens: 32_768,
-    maximumOutputTokens: 16_384,
-    maximumCostUsdMicros: 348_160,
-  }),
-  "static-answer-generation": Object.freeze({
-    maximumInputTokens: 32_768,
-    maximumOutputTokens: 16_384,
-    maximumCostUsdMicros: 348_160,
-  }),
+const maximumCostByClass = Object.freeze({
+  "root-program-authoring": 819_200,
+  "static-one-shot-query-planning": 266_240,
+  "discovered-program-leaf-reasoning": 348_160,
+  "static-answer-generation": 348_160,
 });
 
 const exactRequestSchema = z
@@ -250,7 +357,7 @@ const exactRequestSchema = z
 
 const countReceiptSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-offline-count-receipt/1"),
+    protocol: z.literal("lachesis-m9b10c-offline-count-receipt/2"),
     endpoint: z.literal("POST /v1/responses/input_tokens"),
     exactRequestBytes: z.string().min(1),
     exactRequestDigest: digestSchema,
@@ -265,10 +372,11 @@ const countReceiptSchema = z
 
 const outputReceiptSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-selected-output-receipt/1"),
-    composes: z.literal("lachesis-m9b10-first-attempt-output-receipt/1"),
+    protocol: z.literal("lachesis-m9b10c-selected-output-receipt/2"),
+    composes: z.literal("lachesis-m9b10c-authoritative-moderate-envelope/1"),
     requestDigest: digestSchema,
     requestClass: requestClassSchema,
+    envelope: m9b10AuthoritativeModerateEnvelopeSchema,
     rawResponseBytes: z.string().min(1).max(131_072),
     rawResponseDigest: digestSchema,
     usage: usageSchema,
@@ -280,7 +388,10 @@ const outputReceiptSchema = z
         "noncanonical-or-malformed-json",
         "schema-rejected",
         "closed-ast-compilation-rejected",
-        "output-ceiling-exceeded",
+        "input-token-ceiling-exceeded",
+        "output-token-ceiling-exceeded",
+        "reasoning-token-ceiling-exceeded",
+        "visible-token-ceiling-exceeded",
         "usage-inconsistent",
         "provider-truncated-or-incomplete",
       ])
@@ -291,13 +402,31 @@ const outputReceiptSchema = z
   })
   .readonly();
 
+function outputHasAccountingFailure(
+  output: z.infer<typeof outputReceiptSchema>,
+): boolean {
+  return output.failureReasons.some(
+    (reason) =>
+      reason === "input-token-ceiling-exceeded" ||
+      reason === "output-token-ceiling-exceeded" ||
+      reason === "reasoning-token-ceiling-exceeded" ||
+      reason === "visible-token-ceiling-exceeded" ||
+      reason === "usage-inconsistent",
+  );
+}
+
 const reservationSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-offline-inference-reservation/1"),
+    protocol: z.literal("lachesis-m9b10c-offline-inference-reservation/2"),
     requestDigest: digestSchema,
     requestClass: requestClassSchema,
     maximumInputTokens: z.number().int().positive(),
     maximumOutputTokens: z.number().int().positive(),
+    maximumReasoningTokens: z.number().int().nonnegative(),
+    maximumVisibleStructuredOutputTokens: z.number().int().nonnegative(),
+    inputBillingClass: z.literal("cache-write-highest-applicable-class"),
+    pricingState: z.literal("input-token-count-pricing-unresolved"),
+    envelopeDigest: digestSchema,
     maximumCostUsdMicros: z.number().int().positive(),
     countPricingResolved: z.literal(false),
     reservationDigest: digestSchema,
@@ -306,7 +435,7 @@ const reservationSchema = z
 
 const settlementSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-offline-settlement/1"),
+    protocol: z.literal("lachesis-m9b10c-offline-settlement/2"),
     reservationDigest: digestSchema,
     outputReceiptDigest: digestSchema,
     status: z.literal("offline-no-provider-effect"),
@@ -319,7 +448,7 @@ const settlementSchema = z
 
 const inferenceReceiptBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-offline-inference-attempt/1"),
+    protocol: z.literal("lachesis-m9b10c-offline-inference-attempt/2"),
     mode: z.literal("offline-conformance"),
     campaignDigest: digestSchema,
     populationDigest: digestSchema,
@@ -351,12 +480,17 @@ export type M9b10bInferenceReceipt = z.infer<typeof inferenceReceiptSchema>;
 
 const staticRetrievalSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-static-one-shot-retrieval/1"),
+    protocol: z.literal("lachesis-m9b10c-static-one-shot-retrieval-proof/2"),
+    arm: z.literal("static-one-shot"),
+    pairId: identifierSchema,
+    caseId: identifierSchema,
     query: z.string().min(1).max(512),
     taskDigest: digestSchema,
     snapshotDigest: digestSchema,
     events: m9b10bRetrievalEventSchema.array().length(2).readonly(),
     finalEvidence: m9aReadResultSchema,
+    finalEvidenceReadEventId: z.literal("read-1"),
+    finalEvidenceDigest: digestSchema,
     transcriptDigest: digestSchema,
     runDigest: digestSchema,
   })
@@ -385,7 +519,7 @@ export type M9b10bRetrievalLineage = z.infer<typeof retrievalLineageSchema>;
 
 const evidenceSnapshotSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-visible-evidence/1"),
+    protocol: z.literal("lachesis-m9b10c-visible-evidence/2"),
     snapshotDigest: digestSchema,
     retrievalRunDigest: digestSchema,
     excerpts: m9aReadExcerptSchema.array().readonly(),
@@ -396,9 +530,13 @@ const evidenceSnapshotSchema = z
 
 const evaluationReceiptBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-local-blind-evaluation/1"),
+    protocol: z.literal("lachesis-m9b10c-local-blind-evaluation/2"),
     evaluator: artifactIdentitySchema,
     gold: m9b10bGoldSchema,
+    taskDigest: digestSchema,
+    expectedSupportingFactIds: identifierSchema.array().max(16).readonly(),
+    answer: answerOutputSchema,
+    evidence: evidenceSnapshotSchema,
     evaluatorInputBytes: z.string().min(1),
     evaluatorInputDigest: digestSchema,
     answerDigest: digestSchema,
@@ -581,6 +719,22 @@ async function canonicalBytes(
     : failure("validation", "M9b.10b canonical serialization failed.");
 }
 
+async function retrievalEventDigest(
+  event: M9b10bRetrievalEvent,
+): Promise<Result<string, M9b10bFailure>> {
+  const { eventDigest: ignored, ...body } = event;
+  void ignored;
+  return digestBody(body);
+}
+
+async function optionalCanonicalBytes(
+  value: unknown,
+): Promise<string | null | undefined> {
+  if (value === null) return null;
+  const bytes = await canonicalBytes(value);
+  return bytes.ok ? bytes.value : undefined;
+}
+
 function requestClasses(arm: M9b10bArm): Readonly<{
   authoring: z.infer<typeof requestClassSchema>;
   answer: z.infer<typeof requestClassSchema>;
@@ -666,7 +820,11 @@ async function buildInferenceReceipt(
     return failure("validation", "Invalid offline fixture.");
   const schemaDigest = await responseSchemaDigest(input.responseSchemaKind);
   if (!schemaDigest.ok) return schemaDigest;
-  const reservationProfile = reservationByClass[input.requestClass];
+  const envelope = await deriveM9b10AuthoritativeModerateEnvelope(
+    input.requestClass,
+  );
+  if (!envelope.ok)
+    return failure("validation", "Authoritative moderate envelope missing.");
   const exactProviderRequest = exactRequestSchema.parse({
     endpoint: "POST /v1/responses",
     model: input.binding.model,
@@ -680,7 +838,7 @@ async function buildInferenceReceipt(
       visibleEvidence: input.visibleEvidence,
     },
     responseSchemaDigest: schemaDigest.value,
-    maxOutputTokens: reservationProfile.maximumOutputTokens,
+    maxOutputTokens: envelope.value.maximumOutputTokens,
     retryLimit: 0,
   });
   const requestBytes = await canonicalBytes(exactProviderRequest);
@@ -706,7 +864,7 @@ async function buildInferenceReceipt(
   if (!countRequestDigest.ok)
     return failure("validation", "Count request digest failed.");
   const countBody = {
-    protocol: "lachesis-m9b10b-offline-count-receipt/1" as const,
+    protocol: "lachesis-m9b10c-offline-count-receipt/2" as const,
     endpoint: "POST /v1/responses/input_tokens" as const,
     exactRequestBytes: countRequestBytes.value,
     exactRequestDigest: countRequestDigest.value,
@@ -723,10 +881,18 @@ async function buildInferenceReceipt(
     receiptDigest: countDigest.value,
   });
   const reservationBody = {
-    protocol: "lachesis-m9b10b-offline-inference-reservation/1" as const,
+    protocol: "lachesis-m9b10c-offline-inference-reservation/2" as const,
     requestDigest: requestDigest.value,
     requestClass: input.requestClass,
-    ...reservationProfile,
+    maximumInputTokens: envelope.value.maximumInputTokens,
+    maximumOutputTokens: envelope.value.maximumOutputTokens,
+    maximumReasoningTokens: envelope.value.maximumReasoningTokens,
+    maximumVisibleStructuredOutputTokens:
+      envelope.value.maximumVisibleStructuredOutputTokens,
+    inputBillingClass: envelope.value.inputBillingClass,
+    pricingState: envelope.value.pricingState,
+    envelopeDigest: envelope.value.envelopeDigest,
+    maximumCostUsdMicros: maximumCostByClass[input.requestClass],
     countPricingResolved: false as const,
   };
   const reservationDigest = await digestBody(reservationBody);
@@ -774,8 +940,19 @@ async function buildInferenceReceipt(
       }
     }
   }
-  if (fixture.data.usage.outputTokens > reservationProfile.maximumOutputTokens)
-    failureReasons.push("output-ceiling-exceeded");
+  if (fixture.data.usage.inputTokens > envelope.value.maximumInputTokens)
+    failureReasons.push("input-token-ceiling-exceeded");
+  if (fixture.data.usage.outputTokens > envelope.value.maximumOutputTokens)
+    failureReasons.push("output-token-ceiling-exceeded");
+  if (
+    fixture.data.usage.reasoningTokens > envelope.value.maximumReasoningTokens
+  )
+    failureReasons.push("reasoning-token-ceiling-exceeded");
+  if (
+    fixture.data.usage.visibleStructuredOutputTokens >
+    envelope.value.maximumVisibleStructuredOutputTokens
+  )
+    failureReasons.push("visible-token-ceiling-exceeded");
   if (
     fixture.data.usage.reasoningTokens +
       fixture.data.usage.visibleStructuredOutputTokens >
@@ -788,10 +965,11 @@ async function buildInferenceReceipt(
   if (!rawDigest.ok)
     return failure("validation", "Raw response digest failed.");
   const outputBody = {
-    protocol: "lachesis-m9b10b-selected-output-receipt/1" as const,
-    composes: "lachesis-m9b10-first-attempt-output-receipt/1" as const,
+    protocol: "lachesis-m9b10c-selected-output-receipt/2" as const,
+    composes: "lachesis-m9b10c-authoritative-moderate-envelope/1" as const,
     requestDigest: requestDigest.value,
     requestClass: input.requestClass,
+    envelope: envelope.value,
     rawResponseBytes: fixture.data.rawResponseBytes,
     rawResponseDigest: rawDigest.value,
     usage: fixture.data.usage,
@@ -811,7 +989,7 @@ async function buildInferenceReceipt(
     receiptDigest: outputDigest.value,
   });
   const settlementBody = {
-    protocol: "lachesis-m9b10b-offline-settlement/1" as const,
+    protocol: "lachesis-m9b10c-offline-settlement/2" as const,
     reservationDigest: reservation.reservationDigest,
     outputReceiptDigest: output.receiptDigest,
     status: "offline-no-provider-effect" as const,
@@ -826,7 +1004,7 @@ async function buildInferenceReceipt(
     settlementDigest: settlementDigest.value,
   });
   const attemptBody = inferenceReceiptBodySchema.parse({
-    protocol: "lachesis-m9b10b-offline-inference-attempt/1",
+    protocol: "lachesis-m9b10c-offline-inference-attempt/2",
     mode: "offline-conformance",
     campaignDigest: input.binding.campaignDigest,
     populationDigest: input.binding.populationDigest,
@@ -867,10 +1045,43 @@ async function buildInferenceReceipt(
 
 async function verifyInferenceReceipt(
   receipt: M9b10bInferenceReceipt,
+  expected: Readonly<{
+    binding: M9b10bCaseBinding;
+    arm: M9b10bArm;
+    phase: "authoring" | "grounded-answer";
+    requestClass: z.infer<typeof requestClassSchema>;
+    visibleEvidence: string | null;
+    responseSchemaKind: "program" | "query" | "answer";
+  }>,
 ): Promise<Result<M9b10bInferenceReceipt, M9b10bFailure>> {
   const parsed = inferenceReceiptSchema.safeParse(receipt);
   if (!parsed.success)
     return failure("validation", "Inference receipt schema rejected.");
+  const envelope = await deriveM9b10AuthoritativeModerateEnvelope(
+    expected.requestClass,
+  );
+  const verifiedEnvelope = await verifyM9b10AuthoritativeModerateEnvelope(
+    parsed.data.output.envelope,
+  );
+  const schemaDigest = await responseSchemaDigest(expected.responseSchemaKind);
+  if (!envelope.ok || !verifiedEnvelope.ok || !schemaDigest.ok)
+    return failure("validation", "Authoritative request envelope changed.");
+  const expectedRequest = exactRequestSchema.parse({
+    endpoint: "POST /v1/responses",
+    model: expected.binding.model,
+    reasoning: expected.binding.reasoning,
+    input: {
+      instructions:
+        expected.phase === "authoring"
+          ? authoringInstructions(expected.arm)
+          : answerInstructions(),
+      task: expected.binding.task,
+      visibleEvidence: expected.visibleEvidence,
+    },
+    responseSchemaDigest: schemaDigest.value,
+    maxOutputTokens: envelope.value.maximumOutputTokens,
+    retryLimit: 0,
+  });
   const requestBytes = await canonicalBytes(parsed.data.exactProviderRequest);
   if (
     !requestBytes.ok ||
@@ -911,6 +1122,12 @@ async function verifyInferenceReceipt(
     requestClass: parsed.data.reservation.requestClass,
     maximumInputTokens: parsed.data.reservation.maximumInputTokens,
     maximumOutputTokens: parsed.data.reservation.maximumOutputTokens,
+    maximumReasoningTokens: parsed.data.reservation.maximumReasoningTokens,
+    maximumVisibleStructuredOutputTokens:
+      parsed.data.reservation.maximumVisibleStructuredOutputTokens,
+    inputBillingClass: parsed.data.reservation.inputBillingClass,
+    pricingState: parsed.data.reservation.pricingState,
+    envelopeDigest: parsed.data.reservation.envelopeDigest,
     maximumCostUsdMicros: parsed.data.reservation.maximumCostUsdMicros,
     countPricingResolved: parsed.data.reservation.countPricingResolved,
   };
@@ -921,6 +1138,7 @@ async function verifyInferenceReceipt(
     composes: parsed.data.output.composes,
     requestDigest: parsed.data.output.requestDigest,
     requestClass: parsed.data.output.requestClass,
+    envelope: parsed.data.output.envelope,
     rawResponseBytes: parsed.data.output.rawResponseBytes,
     rawResponseDigest: parsed.data.output.rawResponseDigest,
     usage: parsed.data.output.usage,
@@ -945,7 +1163,6 @@ async function verifyInferenceReceipt(
   const { attemptDigest: ignored, ...attemptBody } = parsed.data;
   void ignored;
   const attemptDigest = await digestBody(attemptBody);
-  const profile = reservationByClass[parsed.data.requestClass];
   const expectedCountBytes = await canonicalBytes({
     endpoint: "POST /v1/responses/input_tokens",
     request: parsed.data.exactProviderRequest,
@@ -986,12 +1203,36 @@ async function verifyInferenceReceipt(
           null;
     }
   }
-  if (parsed.data.output.usage.outputTokens > profile.maximumOutputTokens)
-    expectedFailureReasons.push("output-ceiling-exceeded");
+  if (parsed.data.output.usage.inputTokens > envelope.value.maximumInputTokens)
+    expectedFailureReasons.push("input-token-ceiling-exceeded");
   if (
+    parsed.data.output.usage.outputTokens > envelope.value.maximumOutputTokens
+  )
+    expectedFailureReasons.push("output-token-ceiling-exceeded");
+  if (
+    parsed.data.output.usage.reasoningTokens >
+    envelope.value.maximumReasoningTokens
+  )
+    expectedFailureReasons.push("reasoning-token-ceiling-exceeded");
+  if (
+    parsed.data.output.usage.visibleStructuredOutputTokens >
+    envelope.value.maximumVisibleStructuredOutputTokens
+  )
+    expectedFailureReasons.push("visible-token-ceiling-exceeded");
+  if (
+    parsed.data.campaignDigest !== expected.binding.campaignDigest ||
+    parsed.data.populationDigest !== expected.binding.populationDigest ||
+    parsed.data.scheduleDigest !== expected.binding.scheduleDigest ||
+    parsed.data.pairId !== expected.binding.pairId ||
+    parsed.data.caseId !== expected.binding.caseId ||
+    parsed.data.arm !== expected.arm ||
+    parsed.data.phase !== expected.phase ||
+    parsed.data.callIndex !== (expected.phase === "authoring" ? 1 : 2) ||
+    parsed.data.requestClass !== expected.requestClass ||
+    !canonicalEqual(parsed.data.exactProviderRequest, expectedRequest) ||
     parsed.data.output.usage.reasoningTokens +
       parsed.data.output.usage.visibleStructuredOutputTokens >
-    parsed.data.output.usage.outputTokens
+      parsed.data.output.usage.outputTokens
   )
     expectedFailureReasons.push("usage-inconsistent");
   if (parsed.data.output.finishReason !== "stop")
@@ -1005,11 +1246,31 @@ async function verifyInferenceReceipt(
     expectedCountDigest.value !== parsed.data.tokenCount.exactRequestDigest ||
     !reservationDigest.ok ||
     reservationDigest.value !== parsed.data.reservation.reservationDigest ||
-    !canonicalEqual(profile, {
-      maximumInputTokens: parsed.data.reservation.maximumInputTokens,
-      maximumOutputTokens: parsed.data.reservation.maximumOutputTokens,
-      maximumCostUsdMicros: parsed.data.reservation.maximumCostUsdMicros,
-    }) ||
+    !canonicalEqual(envelope.value, parsed.data.output.envelope) ||
+    !canonicalEqual(
+      {
+        maximumInputTokens: envelope.value.maximumInputTokens,
+        maximumOutputTokens: envelope.value.maximumOutputTokens,
+        maximumReasoningTokens: envelope.value.maximumReasoningTokens,
+        maximumVisibleStructuredOutputTokens:
+          envelope.value.maximumVisibleStructuredOutputTokens,
+        inputBillingClass: envelope.value.inputBillingClass,
+        pricingState: envelope.value.pricingState,
+        envelopeDigest: envelope.value.envelopeDigest,
+        maximumCostUsdMicros: maximumCostByClass[expected.requestClass],
+      },
+      {
+        maximumInputTokens: parsed.data.reservation.maximumInputTokens,
+        maximumOutputTokens: parsed.data.reservation.maximumOutputTokens,
+        maximumReasoningTokens: parsed.data.reservation.maximumReasoningTokens,
+        maximumVisibleStructuredOutputTokens:
+          parsed.data.reservation.maximumVisibleStructuredOutputTokens,
+        inputBillingClass: parsed.data.reservation.inputBillingClass,
+        pricingState: parsed.data.reservation.pricingState,
+        envelopeDigest: parsed.data.reservation.envelopeDigest,
+        maximumCostUsdMicros: parsed.data.reservation.maximumCostUsdMicros,
+      },
+    ) ||
     parsed.data.reservation.requestDigest !==
       parsed.data.exactProviderRequestDigest ||
     !rawDigest.ok ||
@@ -1073,27 +1334,65 @@ async function runStaticRetrieval(
   );
   const read = readM9aCorpus(corpus, { chunks, maxBytes: 4_096 }, signal);
   if (!read.ok) return failure("retrieval", read.error.message);
-  const events: ReadonlyArray<M9b10bRetrievalEvent> = Object.freeze([
-    { kind: "search", callIndex: 1, query, result: search.value },
-    {
-      kind: "read",
-      callIndex: 1,
-      requestChunkIds: chunks.map((chunk) => chunk.id),
-      result: read.value,
+  const queryDigest = await digestValue(query);
+  if (!queryDigest.ok)
+    return failure("validation", "Static query digest failed.");
+  const searchBody = {
+    kind: "search" as const,
+    eventId: "search-1",
+    sequence: 0,
+    previousEventDigest: null,
+    callIndex: 1,
+    query,
+    queryOrigin: {
+      kind: "authored-static-query" as const,
+      queryDigest: queryDigest.value,
     },
+    result: search.value,
+  };
+  const searchEventDigest = await digestBody(searchBody);
+  if (!searchEventDigest.ok) return searchEventDigest;
+  const readBody = {
+    kind: "read" as const,
+    eventId: "read-1",
+    sequence: 1,
+    previousEventDigest: searchEventDigest.value,
+    callIndex: 1,
+    sourceSearchEventId: "search-1",
+    requestChunkIds: chunks.map((chunk) => chunk.id),
+    result: read.value,
+  };
+  const readEventDigest = await digestBody(readBody);
+  if (!readEventDigest.ok) return readEventDigest;
+  const events: ReadonlyArray<M9b10bRetrievalEvent> = Object.freeze([
+    m9b10bRetrievalEventSchema.parse({
+      ...searchBody,
+      eventDigest: searchEventDigest.value,
+    }),
+    m9b10bRetrievalEventSchema.parse({
+      ...readBody,
+      eventDigest: readEventDigest.value,
+    }),
   ]);
+  const finalEvidenceDigest = await digestBody(read.value);
+  if (!finalEvidenceDigest.ok) return finalEvidenceDigest;
   const transcriptDigest = await digestBody({
-    protocol: "lachesis-m9b10b-static-one-shot-retrieval/1",
+    protocol: "lachesis-m9b10c-static-one-shot-retrieval-proof/2",
     events,
   });
   if (!transcriptDigest.ok) return transcriptDigest;
   const body = {
-    protocol: "lachesis-m9b10b-static-one-shot-retrieval/1" as const,
+    protocol: "lachesis-m9b10c-static-one-shot-retrieval-proof/2" as const,
+    arm: "static-one-shot" as const,
+    pairId: binding.pairId,
+    caseId: binding.caseId,
     query,
     taskDigest: binding.taskDigest,
     snapshotDigest: binding.corpusSnapshot.snapshotDigest,
     events,
     finalEvidence: read.value,
+    finalEvidenceReadEventId: "read-1" as const,
+    finalEvidenceDigest: finalEvidenceDigest.value,
     transcriptDigest: transcriptDigest.value,
   };
   const runDigest = await digestBody(body);
@@ -1111,6 +1410,7 @@ async function runStaticRetrieval(
 async function verifyStaticRetrieval(
   run: z.infer<typeof staticRetrievalSchema>,
   binding: M9b10bCaseBinding,
+  expectedRunDigest: string,
 ): Promise<Result<z.infer<typeof staticRetrievalSchema>, M9b10bFailure>> {
   const parsed = staticRetrievalSchema.safeParse(run);
   if (!parsed.success)
@@ -1122,18 +1422,49 @@ async function verifyStaticRetrieval(
   const { runDigest: ignored, ...body } = parsed.data;
   void ignored;
   const runDigest = await digestBody(body);
+  const finalEvidenceDigest = await digestBody(parsed.data.finalEvidence);
+  const queryDigest = await digestValue(parsed.data.query);
+  const firstEvent = parsed.data.events[0];
+  const secondEvent = parsed.data.events[1];
+  if (firstEvent === undefined || secondEvent === undefined)
+    return failure("validation", "Static retrieval events are incomplete.");
+  const firstEventDigest = await retrievalEventDigest(firstEvent);
+  const secondEventDigest = await retrievalEventDigest(secondEvent);
   if (
     !transcriptDigest.ok ||
     transcriptDigest.value !== parsed.data.transcriptDigest ||
     !runDigest.ok ||
     runDigest.value !== parsed.data.runDigest ||
+    parsed.data.runDigest !== expectedRunDigest ||
+    parsed.data.pairId !== binding.pairId ||
+    parsed.data.caseId !== binding.caseId ||
     parsed.data.taskDigest !== binding.taskDigest ||
     parsed.data.snapshotDigest !== binding.corpusSnapshot.snapshotDigest ||
     parsed.data.finalEvidence.snapshotDigest !==
       binding.corpusSnapshot.snapshotDigest ||
-    parsed.data.events[0]?.kind !== "search" ||
-    parsed.data.events[0].query !== parsed.data.query ||
-    parsed.data.events[1]?.kind !== "read"
+    firstEvent.kind !== "search" ||
+    firstEvent.query !== parsed.data.query ||
+    secondEvent.kind !== "read" ||
+    firstEvent.eventId !== "search-1" ||
+    firstEvent.queryOrigin.kind !== "authored-static-query" ||
+    !queryDigest.ok ||
+    firstEvent.queryOrigin.queryDigest !== queryDigest.value ||
+    secondEvent.eventId !== "read-1" ||
+    secondEvent.sourceSearchEventId !== "search-1" ||
+    !firstEventDigest.ok ||
+    firstEventDigest.value !== firstEvent.eventDigest ||
+    !secondEventDigest.ok ||
+    secondEventDigest.value !== secondEvent.eventDigest ||
+    secondEvent.previousEventDigest !== firstEvent.eventDigest ||
+    secondEvent.requestChunkIds.some(
+      (id) => !firstEvent.result.hits.some((hit) => hit.chunk.id === id),
+    ) ||
+    secondEvent.result.excerpts.some(
+      (excerpt) => !secondEvent.requestChunkIds.includes(excerpt.chunk.id),
+    ) ||
+    !finalEvidenceDigest.ok ||
+    parsed.data.finalEvidenceDigest !== finalEvidenceDigest.value ||
+    !canonicalEqual(parsed.data.finalEvidence, secondEvent.result)
   )
     return failure("validation", "Static retrieval lineage changed.");
   return { ok: true, value: parsed.data };
@@ -1145,7 +1476,7 @@ async function evidenceSnapshot(
   const run = retrieval.run;
   const retrievalRunDigest = run.runDigest;
   const body = {
-    protocol: "lachesis-m9b10b-visible-evidence/1" as const,
+    protocol: "lachesis-m9b10c-visible-evidence/2" as const,
     snapshotDigest: run.finalEvidence.snapshotDigest,
     retrievalRunDigest,
     excerpts: run.finalEvidence.excerpts,
@@ -1169,6 +1500,7 @@ async function evaluateAnswer(
     gold: M9b10bGold;
     answer: M9b10bGroundedAnswer;
     evidence: z.infer<typeof evidenceSnapshotSchema>;
+    taskDigest: string;
   }>,
 ): Promise<Result<z.infer<typeof evaluationReceiptSchema>, M9b10bFailure>> {
   const answerDigest = await digestValue(input.answer);
@@ -1176,8 +1508,12 @@ async function evaluateAnswer(
   const evaluatorInput = {
     evaluator: input.evaluator,
     goldArtifact: input.gold.artifact,
-    answerDigest: answerDigest.value,
-    evidenceDigest: input.evidence.evidenceDigest,
+    taskDigest: input.taskDigest,
+    answer: input.answer,
+    evidence: input.evidence,
+    expectedSupportingFactIds: input.gold.supportingFacts.map(
+      (fact) => fact.id,
+    ),
   };
   const evaluatorInputBytes = await canonicalBytes(evaluatorInput);
   if (!evaluatorInputBytes.ok) return evaluatorInputBytes;
@@ -1229,9 +1565,13 @@ async function evaluateAnswer(
   if (!outputDigest.ok)
     return failure("validation", "Evaluator output digest failed.");
   const body = evaluationReceiptBodySchema.parse({
-    protocol: "lachesis-m9b10b-local-blind-evaluation/1",
+    protocol: "lachesis-m9b10c-local-blind-evaluation/2",
     evaluator: input.evaluator,
     gold: input.gold,
+    taskDigest: input.taskDigest,
+    expectedSupportingFactIds: expectedFactIds,
+    answer: input.answer,
+    evidence: input.evidence,
     evaluatorInputBytes: evaluatorInputBytes.value,
     evaluatorInputDigest: evaluatorInputDigest.value,
     answerDigest: answerDigest.value,
@@ -1255,15 +1595,21 @@ async function verifyEvaluation(
   receipt: z.infer<typeof evaluationReceiptSchema>,
   answer: M9b10bGroundedAnswer,
   evidence: z.infer<typeof evidenceSnapshotSchema>,
+  trusted: Readonly<{
+    evaluator: z.infer<typeof artifactIdentitySchema>;
+    gold: M9b10bGold;
+    taskDigest: string;
+  }>,
 ): Promise<Result<z.infer<typeof evaluationReceiptSchema>, M9b10bFailure>> {
   const parsed = evaluationReceiptSchema.safeParse(receipt);
   if (!parsed.success)
     return failure("validation", "Evaluation receipt schema rejected.");
   const rebuilt = await evaluateAnswer({
-    evaluator: parsed.data.evaluator,
-    gold: parsed.data.gold,
+    evaluator: trusted.evaluator,
+    gold: trusted.gold,
     answer,
     evidence,
+    taskDigest: trusted.taskDigest,
   });
   return rebuilt.ok && canonicalEqual(rebuilt.value, parsed.data)
     ? rebuilt
@@ -1395,23 +1741,48 @@ async function failedArmRecord(
 }
 
 export async function verifyM9b10bTerminalArmRecord(
-  trustedBinding: M9b10bCaseBinding,
+  authority: M9b10cCaseAuthority,
   record: unknown,
 ): Promise<Result<M9b10bTerminalArmRecord, M9b10bFailure>> {
+  const authoritySource = caseAuthorities.get(authority);
+  if (authoritySource === undefined)
+    return failure(
+      "validation",
+      "Terminal verification requires opaque authority.",
+    );
+  const trustedBinding = authoritySource.binding;
   const parsed = m9b10bTerminalArmRecordSchema.safeParse(record);
   if (!parsed.success)
     return failure("validation", "Terminal arm record schema rejected.");
   const { recordDigest: ignored, ...body } = parsed.data;
   void ignored;
   const digest = await recordDigest(body);
+  const expectedRecordDigest = authoritySource.expectedRecordDigests.get(
+    parsed.data.arm,
+  );
   if (
     !digest.ok ||
     digest.value !== parsed.data.recordDigest ||
+    expectedRecordDigest === undefined ||
+    expectedRecordDigest !== parsed.data.recordDigest ||
     !canonicalEqual(bindingFromRecord(parsed.data), trustedBinding)
   )
     return failure("validation", "Terminal arm record identity changed.");
-  const authoring = await verifyInferenceReceipt(parsed.data.authoring);
   const classes = requestClasses(parsed.data.arm);
+  const boundVisibleEvidenceBytes = await optionalCanonicalBytes(
+    parsed.data.visibleEvidence,
+  );
+  if (boundVisibleEvidenceBytes === undefined)
+    return failure("validation", "Visible evidence is not canonical.");
+  const authoring = await verifyInferenceReceipt(parsed.data.authoring, {
+    binding: trustedBinding,
+    arm: parsed.data.arm,
+    phase: "authoring",
+    requestClass: classes.authoring,
+    visibleEvidence: null,
+    responseSchemaKind:
+      parsed.data.arm === "discovered-program" ? "program" : "query",
+  });
   if (
     !authoring.ok ||
     authoring.value.requestClass !== classes.authoring ||
@@ -1431,6 +1802,14 @@ export async function verifyM9b10bTerminalArmRecord(
     if (parsed.data.groundedAnswerAttempt !== null) {
       const answerAttempt = await verifyInferenceReceipt(
         parsed.data.groundedAnswerAttempt,
+        {
+          binding: trustedBinding,
+          arm: parsed.data.arm,
+          phase: "grounded-answer",
+          requestClass: classes.answer,
+          visibleEvidence: boundVisibleEvidenceBytes,
+          responseSchemaKind: "answer",
+        },
       );
       if (
         !answerAttempt.ok ||
@@ -1473,6 +1852,14 @@ export async function verifyM9b10bTerminalArmRecord(
   }
   const answerAttempt = await verifyInferenceReceipt(
     parsed.data.groundedAnswerAttempt,
+    {
+      binding: trustedBinding,
+      arm: parsed.data.arm,
+      phase: "grounded-answer",
+      requestClass: classes.answer,
+      visibleEvidence: boundVisibleEvidenceBytes,
+      responseSchemaKind: "answer",
+    },
   );
   if (
     !answerAttempt.ok ||
@@ -1496,6 +1883,12 @@ export async function verifyM9b10bTerminalArmRecord(
       trustedBinding.corpusSnapshot,
       trustedBinding.task,
       parsed.data.retrieval.run,
+      {
+        pairId: trustedBinding.pairId,
+        caseId: trustedBinding.caseId,
+        expectedRunDigest:
+          authoritySource.expectedRunDigests.get("discovered-program") ?? "",
+      },
     );
     const summary = inspectM9b10bRetrievalArtifact(compiled.value);
     if (
@@ -1508,6 +1901,7 @@ export async function verifyM9b10bTerminalArmRecord(
     const verified = await verifyStaticRetrieval(
       parsed.data.retrieval.run,
       trustedBinding,
+      authoritySource.expectedRunDigests.get("static-one-shot") ?? "",
     );
     const queryDigest = await digestValue(parsed.data.retrieval.query);
     if (
@@ -1523,6 +1917,11 @@ export async function verifyM9b10bTerminalArmRecord(
     parsed.data.evaluation,
     parsed.data.groundedAnswer,
     parsed.data.visibleEvidence,
+    {
+      evaluator: trustedBinding.evaluator,
+      gold: authoritySource.gold,
+      taskDigest: trustedBinding.taskDigest,
+    },
   );
   const expectedVisible = await canonicalBytes(parsed.data.visibleEvidence);
   if (
@@ -1535,6 +1934,20 @@ export async function verifyM9b10bTerminalArmRecord(
     !expectedVisible.ok ||
     answerAttempt.value.exactProviderRequest.input.visibleEvidence !==
       expectedVisible.value ||
+    !canonicalEqual(
+      answerAttempt.value.output.parsedOutput,
+      parsed.data.groundedAnswer,
+    ) ||
+    (parsed.data.retrieval.arm === "discovered-program"
+      ? !canonicalEqual(authoring.value.output.parsedOutput, {
+          source: parsed.data.retrieval.source,
+        })
+      : !canonicalEqual(authoring.value.output.parsedOutput, {
+          query: parsed.data.retrieval.query,
+        })) ||
+    parsed.data.evaluation.evaluator.artifactDigest !==
+      trustedBinding.evaluator.artifactDigest ||
+    !canonicalEqual(parsed.data.evaluation.gold, authoritySource.gold) ||
     parsed.data.totalReservedInferenceUsdMicros !==
       authoring.value.reservation.maximumCostUsdMicros +
         answerAttempt.value.reservation.maximumCostUsdMicros
@@ -1575,12 +1988,7 @@ async function buildArm(
         "closed-ast-compilation-rejected",
       )
         ? "compilation-rejection"
-        : authoring.value.receipt.output.failureReasons.includes(
-              "output-ceiling-exceeded",
-            ) ||
-            authoring.value.receipt.output.failureReasons.includes(
-              "usage-inconsistent",
-            )
+        : outputHasAccountingFailure(authoring.value.receipt.output)
           ? "accounting-overage"
           : "authoring-rejection",
       message: "Authoring first attempt was terminally rejected.",
@@ -1597,6 +2005,8 @@ async function buildArm(
     const run = await executeM9b10bRetrievalProgram(artifact, {
       corpus: input.corpus,
       task: input.binding.task,
+      pairId: input.binding.pairId,
+      caseId: input.binding.caseId,
     });
     if (!run.ok)
       return failedArmRecord({
@@ -1674,15 +2084,9 @@ async function buildArm(
       arm: input.arm,
       armOrder: input.armOrder,
       authoring: authoring.value.receipt,
-      stage:
-        answerAttempt.value.receipt.output.failureReasons.includes(
-          "output-ceiling-exceeded",
-        ) ||
-        answerAttempt.value.receipt.output.failureReasons.includes(
-          "usage-inconsistent",
-        )
-          ? "accounting-overage"
-          : "answer-rejection",
+      stage: outputHasAccountingFailure(answerAttempt.value.receipt.output)
+        ? "accounting-overage"
+        : "answer-rejection",
       message: "Grounded answer first attempt was terminally rejected.",
       retrieval,
       visibleEvidence: evidence.value,
@@ -1693,6 +2097,7 @@ async function buildArm(
     gold: input.gold,
     answer: answer.data,
     evidence: evidence.value,
+    taskDigest: input.binding.taskDigest,
   });
   if (!evaluation.ok) return evaluation;
   const answerDigest = await digestValue(answer.data);
@@ -1736,7 +2141,7 @@ async function buildArm(
 
 const campaignLockBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-campaign-global-lock/1"),
+    protocol: z.literal("lachesis-m9b10c-campaign-global-lock/2"),
     campaignDigest: digestSchema,
     status: z.enum(["idle", "active"]),
     generation: z.number().int().nonnegative(),
@@ -1840,7 +2245,7 @@ async function acquireLock(
       return { ok: true, value: current };
   }
   const next = await makeLock({
-    protocol: "lachesis-m9b10b-campaign-global-lock/1",
+    protocol: "lachesis-m9b10c-campaign-global-lock/2",
     campaignDigest: input.campaignDigest,
     status: "active",
     generation: (current?.generation ?? -1) + 1,
@@ -1869,7 +2274,7 @@ async function releaseLock(
   active: M9b10bCampaignLock,
 ): Promise<Result<M9b10bCampaignLock, M9b10bFailure>> {
   const idle = await makeLock({
-    protocol: "lachesis-m9b10b-campaign-global-lock/1",
+    protocol: "lachesis-m9b10c-campaign-global-lock/2",
     campaignDigest: active.campaignDigest,
     status: "idle",
     generation: active.generation + 1,
@@ -1892,7 +2297,7 @@ async function releaseLock(
 
 export const m9b10bPairRecordSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-terminal-pair/1"),
+    protocol: z.literal("lachesis-m9b10c-terminal-pair/2"),
     campaignDigest: digestSchema,
     population: populationSchema,
     populationDigest: digestSchema,
@@ -1911,10 +2316,11 @@ export type M9b10bPairRecord = z.infer<typeof m9b10bPairRecordSchema>;
 
 export async function runM9b10bOfflinePairedCase(
   input: Readonly<{
-    binding: M9b10bCaseBinding;
+    authority: M9b10cCaseAuthority;
     corpus: M9aCorpus;
-    gold: M9b10bGold;
-    armOrder: readonly [M9b10bArm, M9b10bArm];
+    binding?: M9b10bCaseBinding | undefined;
+    gold?: M9b10bGold | undefined;
+    armOrder?: readonly [M9b10bArm, M9b10bArm] | undefined;
     fixtures: Readonly<Record<M9b10bArm, M9b10bOfflineArmFixtures>>;
     attemptIds: Readonly<Record<M9b10bArm, string>>;
     store: M9b10bSelectedStore;
@@ -1928,8 +2334,10 @@ export async function runM9b10bOfflinePairedCase(
     M9b10bFailure
   >
 > {
-  const binding = m9b10bCaseBindingSchema.safeParse(input.binding);
-  const gold = m9b10bGoldSchema.safeParse(input.gold);
+  const authoritySource = caseAuthorities.get(input.authority);
+  if (authoritySource === undefined)
+    return failure("validation", "Paired execution requires opaque authority.");
+  const binding = authoritySource.binding;
   const snapshot = inspectM9aCorpus(input.corpus);
   const uniqueSessions = new Set([
     input.fixtures["discovered-program"].authoring.sessionId,
@@ -1938,11 +2346,14 @@ export async function runM9b10bOfflinePairedCase(
     input.fixtures["static-one-shot"].answer.sessionId,
   ]);
   if (
-    !binding.success ||
-    !gold.success ||
     snapshot === undefined ||
-    !canonicalEqual(snapshot, binding.data.corpusSnapshot) ||
-    input.armOrder[0] === input.armOrder[1] ||
+    !canonicalEqual(snapshot, binding.corpusSnapshot) ||
+    (input.binding !== undefined &&
+      !canonicalEqual(input.binding, authoritySource.binding)) ||
+    (input.gold !== undefined &&
+      !canonicalEqual(input.gold, authoritySource.gold)) ||
+    (input.armOrder !== undefined &&
+      !canonicalEqual(input.armOrder, authoritySource.armOrder)) ||
     uniqueSessions.size !== 4
   )
     return failure(
@@ -1950,15 +2361,15 @@ export async function runM9b10bOfflinePairedCase(
       "Paired-case inputs are not matched and isolated.",
     );
   const records = new Map<M9b10bArm, M9b10bTerminalArmRecord>();
-  for (const arm of input.armOrder) {
+  for (const arm of authoritySource.armOrder) {
     const stored = await input.store.loadArm(
-      binding.data.campaignDigest,
-      binding.data.pairId,
+      binding.campaignDigest,
+      binding.pairId,
       arm,
     );
     if (stored !== undefined) {
       const verified = await verifyM9b10bTerminalArmRecord(
-        binding.data,
+        input.authority,
         stored,
       );
       if (!verified.ok || verified.value.arm !== arm)
@@ -1971,21 +2382,27 @@ export async function runM9b10bOfflinePairedCase(
     }
     const active = await acquireLock({
       store: input.store,
-      campaignDigest: binding.data.campaignDigest,
+      campaignDigest: binding.campaignDigest,
       attemptId: input.attemptIds[arm],
-      pairId: binding.data.pairId,
+      pairId: binding.pairId,
       arm,
     });
     if (!active.ok) return active;
     const built = await buildArm({
-      binding: binding.data,
+      binding,
       corpus: input.corpus,
-      gold: gold.data,
+      gold: authoritySource.gold,
       arm,
-      armOrder: input.armOrder,
+      armOrder: authoritySource.armOrder,
       fixtures: input.fixtures[arm],
     });
     if (!built.ok) return built;
+    if (built.value.retrieval !== null)
+      authoritySource.expectedRunDigests.set(
+        arm,
+        built.value.retrieval.run.runDigest,
+      );
+    authoritySource.expectedRecordDigests.set(arm, built.value.recordDigest);
     const saved = await input.store.saveArm(built.value);
     if (!saved)
       return failure("persistence", "Terminal arm persistence failed.");
@@ -1998,14 +2415,14 @@ export async function runM9b10bOfflinePairedCase(
   if (discovered === undefined || staticRecord === undefined)
     return failure("incomplete-pair", "Pair requires two terminal arms.");
   const body = {
-    protocol: "lachesis-m9b10b-terminal-pair/1" as const,
-    campaignDigest: binding.data.campaignDigest,
-    population: binding.data.population,
-    populationDigest: binding.data.populationDigest,
-    scheduleDigest: binding.data.scheduleDigest,
-    pairId: binding.data.pairId,
-    caseId: binding.data.caseId,
-    armOrder: input.armOrder,
+    protocol: "lachesis-m9b10c-terminal-pair/2" as const,
+    campaignDigest: binding.campaignDigest,
+    population: binding.population,
+    populationDigest: binding.populationDigest,
+    scheduleDigest: binding.scheduleDigest,
+    pairId: binding.pairId,
+    caseId: binding.caseId,
+    armOrder: authoritySource.armOrder,
     discoveredRecordDigest: discovered.recordDigest,
     staticRecordDigest: staticRecord.recordDigest,
     complete: true as const,
@@ -2017,6 +2434,7 @@ export async function runM9b10bOfflinePairedCase(
     ...body,
     pairDigest: pairDigest.value,
   });
+  authoritySource.expectedPairDigest = pair.pairDigest;
   return {
     ok: true,
     value: {
@@ -2064,8 +2482,103 @@ export const m9b10bMeasurementSchema = measurementBodySchema
   .safeExtend({ measurementDigest: digestSchema })
   .readonly();
 export type M9b10bMeasurement = z.infer<typeof m9b10bMeasurementSchema>;
+
+const primaryAllocationBrand: unique symbol = Symbol(
+  "M9b10cPrimaryPopulationAllocation",
+);
+export type M9b10cPrimaryPopulationAllocation = Readonly<{
+  [primaryAllocationBrand]: "M9b10cPrimaryPopulationAllocation";
+}>;
+type PrimaryAllocationEntry = Readonly<{
+  caseId: string;
+  pairId: string;
+  family: z.infer<typeof familySchema>;
+  scale: z.infer<typeof scaleSchema>;
+  snapshotDigest: string;
+  armOrder: readonly [M9b10bArm, M9b10bArm];
+}>;
+type PrimaryAllocationSource = Readonly<{
+  campaignDigest: string;
+  populationDigest: string;
+  scheduleDigest: string;
+  analysisIdentity: string;
+  entries: ReadonlyArray<PrimaryAllocationEntry>;
+}>;
+const primaryAllocations = new WeakMap<object, PrimaryAllocationSource>();
+const primaryMeasurementSetBrand: unique symbol = Symbol(
+  "M9b10cPrimaryMeasurementSet",
+);
+export type M9b10cPrimaryMeasurementSet = Readonly<{
+  [primaryMeasurementSetBrand]: "M9b10cPrimaryMeasurementSet";
+}>;
+const primaryMeasurementSets = new WeakMap<
+  object,
+  Readonly<{
+    allocation: M9b10cPrimaryPopulationAllocation;
+    measurements: ReadonlyArray<M9b10bMeasurement>;
+  }>
+>();
+
+export async function prepareM9b10cPrimaryPopulationAllocation(
+  schedule: M9b3MaterializedSchedule,
+): Promise<Result<M9b10cPrimaryPopulationAllocation, M9b10bFailure>> {
+  const inspected = inspectM9b3TrustedPrimaryAllocation(schedule);
+  if (inspected === undefined)
+    return failure(
+      "validation",
+      "Primary allocation requires an opaque verified M9b.3 schedule.",
+    );
+  const populationDigests = new Set(
+    inspected.primaryEntries.map((entry) => entry.inventoryDigest),
+  );
+  if (populationDigests.size !== 1)
+    return failure("validation", "Primary inventory identity is inconsistent.");
+  const populationDigest = inspected.primaryEntries[0]?.inventoryDigest;
+  if (populationDigest === undefined)
+    return failure("validation", "Primary inventory is empty.");
+  const campaignDigest = await digestBody({
+    protocol: "lachesis-m9b10c-primary-campaign-root/1",
+    preparationDigest: inspected.preparationDigest,
+    populationBindingDigest: inspected.populationBindingDigest,
+    scheduleDigest: inspected.scheduleDigest,
+  });
+  if (!campaignDigest.ok) return campaignDigest;
+  const entries = inspected.primaryEntries.map((entry) => {
+    const armOrder: readonly [M9b10bArm, M9b10bArm] = Object.freeze([
+      entry.firstArm,
+      entry.secondArm,
+    ]);
+    return Object.freeze({
+      caseId: entry.caseId,
+      pairId: entry.caseOrderKey,
+      family: entry.family,
+      scale: entry.scale,
+      snapshotDigest: entry.snapshotDigest,
+      armOrder,
+    });
+  });
+  const analysisIdentity = await digestBody({
+    protocol: M9B10B_PRIMARY_ANALYSIS_PROTOCOL,
+    campaignDigest: campaignDigest.value,
+    populationDigest,
+    scheduleDigest: inspected.scheduleDigest,
+    entries,
+  });
+  if (!analysisIdentity.ok) return analysisIdentity;
+  const token: M9b10cPrimaryPopulationAllocation = Object.freeze({
+    [primaryAllocationBrand]: "M9b10cPrimaryPopulationAllocation",
+  });
+  primaryAllocations.set(token, {
+    campaignDigest: campaignDigest.value,
+    populationDigest,
+    scheduleDigest: inspected.scheduleDigest,
+    analysisIdentity: analysisIdentity.value,
+    entries: Object.freeze(entries),
+  });
+  return { ok: true, value: token };
+}
 type TrustedMeasurementSource = Readonly<{
-  binding: M9b10bCaseBinding;
+  authority: M9b10cCaseAuthority;
   pair: M9b10bPairRecord;
   discovered: M9b10bTerminalArmRecord;
   staticRecord: M9b10bTerminalArmRecord;
@@ -2074,18 +2587,22 @@ const trustedMeasurements = new WeakMap<object, TrustedMeasurementSource>();
 
 export async function measureM9b10bPair(
   input: Readonly<{
-    binding: M9b10bCaseBinding;
+    authority: M9b10cCaseAuthority;
     pair: M9b10bPairRecord;
     discovered: M9b10bTerminalArmRecord;
     staticRecord: M9b10bTerminalArmRecord;
   }>,
 ): Promise<Result<M9b10bMeasurement, M9b10bFailure>> {
+  const authoritySource = caseAuthorities.get(input.authority);
+  if (authoritySource === undefined)
+    return failure("validation", "Measurement requires opaque case authority.");
+  const binding = authoritySource.binding;
   const discovered = await verifyM9b10bTerminalArmRecord(
-    input.binding,
+    input.authority,
     input.discovered,
   );
   const staticRecord = await verifyM9b10bTerminalArmRecord(
-    input.binding,
+    input.authority,
     input.staticRecord,
   );
   const pair = m9b10bPairRecordSchema.safeParse(input.pair);
@@ -2096,30 +2613,43 @@ export async function measureM9b10bPair(
     discovered.value.arm !== "discovered-program" ||
     staticRecord.value.arm !== "static-one-shot" ||
     pair.data.discoveredRecordDigest !== discovered.value.recordDigest ||
-    pair.data.staticRecordDigest !== staticRecord.value.recordDigest
+    pair.data.staticRecordDigest !== staticRecord.value.recordDigest ||
+    pair.data.campaignDigest !== binding.campaignDigest ||
+    pair.data.population !== binding.population ||
+    pair.data.populationDigest !== binding.populationDigest ||
+    pair.data.scheduleDigest !== binding.scheduleDigest ||
+    pair.data.pairId !== binding.pairId ||
+    pair.data.caseId !== binding.caseId ||
+    !canonicalEqual(pair.data.armOrder, authoritySource.armOrder)
   )
     return failure("validation", "Measurement inputs are not a verified pair.");
   const { pairDigest: ignoredPair, ...pairBody } = pair.data;
   void ignoredPair;
   const pairDigest = await digestBody(pairBody);
-  const modelDigest = await digestValue(input.binding.model);
-  const evaluatorDigest = await digestValue(input.binding.evaluator);
-  if (!pairDigest.ok || !modelDigest.ok || !evaluatorDigest.ok)
+  const modelDigest = await digestValue(binding.model);
+  const evaluatorDigest = await digestValue(binding.evaluator);
+  if (
+    !pairDigest.ok ||
+    !modelDigest.ok ||
+    !evaluatorDigest.ok ||
+    authoritySource.expectedPairDigest === undefined ||
+    pairDigest.value !== authoritySource.expectedPairDigest
+  )
     return failure("validation", "Measurement identities failed.");
   const body = measurementBodySchema.parse({
     protocol: M9B10B_SELECTED_MEASUREMENT_PROTOCOL.id,
     protocolVersion: M9B10B_SELECTED_MEASUREMENT_PROTOCOL.version,
     endpoint: M9B10B_SELECTED_MEASUREMENT_PROTOCOL.primaryEndpoint,
-    campaignDigest: input.binding.campaignDigest,
-    population: input.binding.population,
-    populationDigest: input.binding.populationDigest,
-    scheduleDigest: input.binding.scheduleDigest,
-    pairId: input.binding.pairId,
-    caseId: input.binding.caseId,
-    family: input.binding.family,
-    scale: input.binding.scale,
-    taskDigest: input.binding.taskDigest,
-    corpusSnapshotDigest: input.binding.corpusSnapshot.snapshotDigest,
+    campaignDigest: binding.campaignDigest,
+    population: binding.population,
+    populationDigest: binding.populationDigest,
+    scheduleDigest: binding.scheduleDigest,
+    pairId: binding.pairId,
+    caseId: binding.caseId,
+    family: binding.family,
+    scale: binding.scale,
+    taskDigest: binding.taskDigest,
+    corpusSnapshotDigest: binding.corpusSnapshot.snapshotDigest,
     modelDigest: modelDigest.value,
     evaluatorDigest: evaluatorDigest.value,
     pairDigest: pairDigest.value,
@@ -2145,7 +2675,7 @@ export async function measureM9b10bPair(
     measurementDigest: measurementDigest.value,
   });
   trustedMeasurements.set(measurement, {
-    binding: input.binding,
+    authority: input.authority,
     pair: input.pair,
     discovered: input.discovered,
     staticRecord: input.staticRecord,
@@ -2155,7 +2685,7 @@ export async function measureM9b10bPair(
 
 export async function verifyM9b10bMeasurement(
   trusted: Readonly<{
-    binding: M9b10bCaseBinding;
+    authority: M9b10cCaseAuthority;
     pair: M9b10bPairRecord;
     discovered: M9b10bTerminalArmRecord;
     staticRecord: M9b10bTerminalArmRecord;
@@ -2173,6 +2703,47 @@ export async function verifyM9b10bMeasurement(
     );
   trustedMeasurements.set(rebuilt.value, trusted);
   return rebuilt;
+}
+
+export async function prepareM9b10cPrimaryMeasurementSet(
+  input: Readonly<{
+    allocation: M9b10cPrimaryPopulationAllocation;
+    measurements: ReadonlyArray<M9b10bMeasurement>;
+  }>,
+): Promise<Result<M9b10cPrimaryMeasurementSet, M9b10bFailure>> {
+  const allocation = primaryAllocations.get(input.allocation);
+  if (allocation === undefined || input.measurements.length !== 168)
+    return failure(
+      "validation",
+      "Primary measurement set requires the complete frozen inventory.",
+    );
+  const expectedIds = new Set(allocation.entries.map((entry) => entry.caseId));
+  const receivedIds = input.measurements.map(
+    (measurement) => measurement.caseId,
+  );
+  if (
+    new Set(receivedIds).size !== 168 ||
+    receivedIds.some((caseId) => !expectedIds.has(caseId))
+  )
+    return failure("validation", "Primary measurement inventory changed.");
+  for (const measurement of input.measurements) {
+    const trusted = trustedMeasurements.get(measurement);
+    if (trusted === undefined)
+      return failure(
+        "validation",
+        "Primary measurement is not opaque verified.",
+      );
+    const verified = await verifyM9b10bMeasurement(trusted, measurement);
+    if (!verified.ok) return verified;
+  }
+  const token: M9b10cPrimaryMeasurementSet = Object.freeze({
+    [primaryMeasurementSetBrand]: "M9b10cPrimaryMeasurementSet",
+  });
+  primaryMeasurementSets.set(token, {
+    allocation: input.allocation,
+    measurements: Object.freeze([...input.measurements]),
+  });
+  return { ok: true, value: token };
 }
 
 function binomialCoefficient(n: number, k: number): bigint {
@@ -2242,6 +2813,7 @@ const primaryReportBodySchema = z
     population: z.literal("primary"),
     populationDigest: digestSchema,
     scheduleDigest: digestSchema,
+    analysisIdentity: digestSchema,
     pairedCases: z.literal(168),
     measurementDigests: digestSchema.array().length(168).readonly(),
     bothSucceed: z.number().int().nonnegative().max(168),
@@ -2282,25 +2854,24 @@ export type M9b10bPrimaryReport = z.infer<typeof m9b10bPrimaryReportSchema>;
 
 export async function analyzeM9b10bPrimary(
   input: Readonly<{
-    campaignDigest: string;
-    populationDigest: string;
-    scheduleDigest: string;
-    expectedCaseIds: ReadonlyArray<string>;
-    measurements: ReadonlyArray<M9b10bMeasurement>;
+    measurementSet: object;
   }>,
 ): Promise<Result<M9b10bPrimaryReport, M9b10bFailure>> {
-  if (
-    input.expectedCaseIds.length !== 168 ||
-    new Set(input.expectedCaseIds).size !== 168 ||
-    input.measurements.length !== 168
-  )
+  const measurementSet = primaryMeasurementSets.get(input.measurementSet);
+  const allocation =
+    measurementSet === undefined
+      ? undefined
+      : primaryAllocations.get(measurementSet.allocation);
+  if (allocation === undefined || measurementSet === undefined)
     return failure(
       "validation",
-      "Primary analysis requires exactly 168 frozen cases.",
+      "Primary analysis requires the opaque complete 168-case allocation.",
     );
-  const expected = new Set(input.expectedCaseIds);
+  const expected = new Map(
+    allocation.entries.map((entry) => [entry.caseId, entry]),
+  );
   const measurements: Array<M9b10bMeasurement> = [];
-  for (const measurement of input.measurements) {
+  for (const measurement of measurementSet.measurements) {
     const trusted = trustedMeasurements.get(measurement);
     if (trusted === undefined)
       return failure(
@@ -2309,15 +2880,28 @@ export async function analyzeM9b10bPrimary(
       );
     const verified = await verifyM9b10bMeasurement(trusted, measurement);
     if (!verified.ok) return verified;
+    const authority = caseAuthorities.get(trusted.authority);
+    const expectedEntry = expected.get(verified.value.caseId);
+    if (authority === undefined || expectedEntry === undefined)
+      return failure("validation", "Primary measurement is foreign.");
+    if (
+      authority.binding.pairId !== expectedEntry.pairId ||
+      authority.binding.family !== expectedEntry.family ||
+      authority.binding.scale !== expectedEntry.scale ||
+      authority.binding.corpusSnapshot.snapshotDigest !==
+        expectedEntry.snapshotDigest ||
+      !canonicalEqual(authority.armOrder, expectedEntry.armOrder)
+    )
+      return failure("validation", "Primary measurement is foreign.");
     measurements.push(verified.value);
   }
   if (
     measurements.some(
       (measurement) =>
         measurement.population !== "primary" ||
-        measurement.campaignDigest !== input.campaignDigest ||
-        measurement.populationDigest !== input.populationDigest ||
-        measurement.scheduleDigest !== input.scheduleDigest ||
+        measurement.campaignDigest !== allocation.campaignDigest ||
+        measurement.populationDigest !== allocation.populationDigest ||
+        measurement.scheduleDigest !== allocation.scheduleDigest ||
         !expected.has(measurement.caseId),
     ) ||
     new Set(measurements.map((measurement) => measurement.caseId)).size !== 168
@@ -2378,10 +2962,11 @@ export async function analyzeM9b10bPrimary(
   const body = primaryReportBodySchema.parse({
     protocol: M9B10B_PRIMARY_ANALYSIS_PROTOCOL.id,
     protocolVersion: M9B10B_PRIMARY_ANALYSIS_PROTOCOL.version,
-    campaignDigest: input.campaignDigest,
+    campaignDigest: allocation.campaignDigest,
     population: "primary",
-    populationDigest: input.populationDigest,
-    scheduleDigest: input.scheduleDigest,
+    populationDigest: allocation.populationDigest,
+    scheduleDigest: allocation.scheduleDigest,
+    analysisIdentity: allocation.analysisIdentity,
     pairedCases: 168,
     measurementDigests: measurements
       .map((measurement) => measurement.measurementDigest)
@@ -2433,7 +3018,7 @@ export async function verifyM9b10bPrimaryReport(
 
 export async function replayM9b10bPairedCase(
   input: Readonly<{
-    binding: M9b10bCaseBinding;
+    authority: M9b10cCaseAuthority;
     pair: M9b10bPairRecord;
     discovered: M9b10bTerminalArmRecord;
     staticRecord: M9b10bTerminalArmRecord;
@@ -2442,7 +3027,7 @@ export async function replayM9b10bPairedCase(
 ): Promise<Result<M9b10bMeasurement, M9b10bFailure>> {
   return verifyM9b10bMeasurement(
     {
-      binding: input.binding,
+      authority: input.authority,
       pair: input.pair,
       discovered: input.discovered,
       staticRecord: input.staticRecord,
@@ -2469,7 +3054,7 @@ export type M9b10bCampaignScheduleEntry = z.infer<
 
 const campaignProgressBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b10b-offline-campaign-progress/1"),
+    protocol: z.literal("lachesis-m9b10c-offline-campaign-progress/2"),
     campaignDigest: digestSchema,
     scheduleDigest: digestSchema,
     scheduleInventoryDigest: digestSchema,
@@ -2500,7 +3085,7 @@ export type M9b10bCampaignProgress = z.infer<
 >;
 
 export type M9b10bCompletedPair = Readonly<{
-  binding: M9b10bCaseBinding;
+  authority: M9b10cCaseAuthority;
   pair: M9b10bPairRecord;
   discovered: M9b10bTerminalArmRecord;
   staticRecord: M9b10bTerminalArmRecord;
@@ -2553,7 +3138,7 @@ export async function inspectM9b10bOfflineCampaignProgress(
       "Primary allocation is not seven per frozen cell.",
     );
   const scheduleInventoryDigest = await digestValue({
-    protocol: "lachesis-m9b10b-selected-schedule-inventory/1",
+    protocol: "lachesis-m9b10c-selected-schedule-inventory/2",
     campaignDigest: input.campaignDigest,
     scheduleDigest: input.scheduleDigest,
     entries: entries.data,
@@ -2564,16 +3149,19 @@ export async function inspectM9b10bOfflineCampaignProgress(
   let terminalHalt = false;
   for (const [index, completed] of input.completed.entries()) {
     const expected = entries.data[index];
+    const completedAuthority = caseAuthorities.get(completed.authority);
+    if (expected === undefined || completedAuthority === undefined)
+      return failure("validation", "Completed pair is foreign to schedule.");
     if (
-      expected === undefined ||
-      completed.binding.campaignDigest !== input.campaignDigest ||
-      completed.binding.scheduleDigest !== input.scheduleDigest ||
-      completed.binding.population !== expected.population ||
-      completed.binding.populationDigest !== expected.populationDigest ||
-      completed.binding.pairId !== expected.pairId ||
-      completed.binding.caseId !== expected.caseId ||
-      completed.binding.family !== expected.family ||
-      completed.binding.scale !== expected.scale ||
+      completedAuthority.binding.campaignDigest !== input.campaignDigest ||
+      completedAuthority.binding.scheduleDigest !== input.scheduleDigest ||
+      completedAuthority.binding.population !== expected.population ||
+      completedAuthority.binding.populationDigest !==
+        expected.populationDigest ||
+      completedAuthority.binding.pairId !== expected.pairId ||
+      completedAuthority.binding.caseId !== expected.caseId ||
+      completedAuthority.binding.family !== expected.family ||
+      completedAuthority.binding.scale !== expected.scale ||
       !canonicalEqual(completed.pair.armOrder, expected.armOrder)
     )
       return failure(
@@ -2618,7 +3206,7 @@ export async function inspectM9b10bOfflineCampaignProgress(
         ? ("halted-at-probe-gate" as const)
         : ("ready-for-next-offline-case" as const);
   const body = campaignProgressBodySchema.parse({
-    protocol: "lachesis-m9b10b-offline-campaign-progress/1",
+    protocol: "lachesis-m9b10c-offline-campaign-progress/2",
     campaignDigest: input.campaignDigest,
     scheduleDigest: input.scheduleDigest,
     scheduleInventoryDigest: scheduleInventoryDigest.value,
@@ -2663,7 +3251,7 @@ export async function verifyM9b10bOfflineCampaignProgress(
 
 export const M9B10B_OUTPUT_RECEIPT_COMPOSITION = Object.freeze({
   historicalProtocol: `${M9B10_OUTPUT_ENVELOPE_PROTOCOL.id}@${M9B10_OUTPUT_ENVELOPE_PROTOCOL.version}`,
-  selectedReceipt: "lachesis-m9b10b-selected-output-receipt/1",
+  selectedReceipt: "lachesis-m9b10c-selected-output-receipt/2",
   interpretation:
     "append-only selected-profile receipt; historical M9b.10 receipt identity is not reinterpreted",
 });
