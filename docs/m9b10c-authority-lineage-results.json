@@ -1,0 +1,179 @@
+{
+  "artifact": "lachesis-m9b10c-authority-lineage-results",
+  "version": "1.0.0",
+  "recordedAt": "2026-07-27",
+  "baseline": {
+    "commit": "16d36fc19d4fbb311394206beb2c64914690eb27"
+  },
+  "audit": {
+    "commit": "7434a979567b95a598eecb0b85a16eb6a636079e",
+    "protocol": "lachesis-m9b10b-post-correction-audit@1.0.0",
+    "decision": "post-correction-review-no-go",
+    "jsonSha256": "bb9997c16f0015c9407244ab80be964a54cc7ff1549f47f5258de6e16f74e9b6",
+    "markdownSha256": "552c85dd7945cf2db2f983a8e0e70dae64a3d4f88bd5122d3f4f4929df1a1805"
+  },
+  "implementation": {
+    "commit": "1267d8143df2b049d939f4d81e844de2e9f4e694",
+    "tree": "a9f86eea2a5f066d08bff83ad1eb4485c65a2929"
+  },
+  "decision": "authority-lineage-review-pass-pricing-blocked",
+  "protocols": {
+    "offlineAuthorityRejection": "lachesis-m9b9c-offline-conformance-no-go/2",
+    "positiveLiveAuthority": "lachesis-m9b9c-positive-live-execution-authority/1",
+    "liveLedger": "lachesis-m9b9c-live-authority-ledger/2",
+    "moderateEnvelopeComposition": "lachesis-m9b10c-authoritative-moderate-envelope/1",
+    "retrievalProof": "lachesis-m9b10c-selected-retrieval-proof@1.1.0",
+    "integration": "lachesis-m9b10c-offline-selected-topology-integration@1.1.0",
+    "measurement": "lachesis-m9b10c-selected-topology-measurement@1.1.0",
+    "primaryAnalysis": "lachesis-m9b10c-exact-primary-mcnemar@1.1.0",
+    "countReceipt": "lachesis-m9b10c-offline-count-receipt/2",
+    "inferenceReservation": "lachesis-m9b10c-offline-inference-reservation/2",
+    "outputReceipt": "lachesis-m9b10c-selected-output-receipt/2",
+    "settlement": "lachesis-m9b10c-offline-settlement/2",
+    "inferenceAttempt": "lachesis-m9b10c-offline-inference-attempt/2",
+    "staticRetrievalProof": "lachesis-m9b10c-static-one-shot-retrieval-proof/2",
+    "visibleEvidence": "lachesis-m9b10c-visible-evidence/2",
+    "evaluation": "lachesis-m9b10c-local-blind-evaluation/2",
+    "campaignLock": "lachesis-m9b10c-campaign-global-lock/2",
+    "terminalPair": "lachesis-m9b10c-terminal-pair/2",
+    "scheduleInventory": "lachesis-m9b10c-selected-schedule-inventory/2",
+    "campaignProgress": "lachesis-m9b10c-offline-campaign-progress/2"
+  },
+  "scientificIdentityJudgment": {
+    "unchanged": [
+      "four-call paired treatment topology",
+      "two inference calls per arm",
+      "moderate output envelope values",
+      "same model and reasoning effort across arms",
+      "first-attempt paired estimand",
+      "24-cell equal family-by-scale weighting",
+      "168-case primary population size",
+      "one-sided exact conditional McNemar analysis and alpha 0.05",
+      "zero retries and concurrency one",
+      "prospective power design"
+    ],
+    "advanced": [
+      "private lifecycle authority records",
+      "private envelope-composition receipt",
+      "private terminal arm and child provenance records",
+      "private retrieval proof, pair, measurement, replay, schedule, progress, and analysis records"
+    ],
+    "reason": "Only authority, provenance, envelope-composition, and complete-population verification semantics changed; no treatment, endpoint, allocation, model, reasoning, population, or power parameter changed."
+  },
+  "closedFindings": [
+    "offline conformance accepts no effect-capable value and every transport-capable source entry point requires an unavailable opaque positive live authority",
+    "terminal authoring, grounded-answer, evaluation, retrieval, pair, and measurement fragments are contextually cross-bound to an opaque trusted case authority",
+    "retrieval event chains prove task/evidence query origin, prior-search reads, prior-read final evidence, and independently trusted run roots",
+    "selected-topology reservations derive every input, output, reasoning, visible-output, cache-class, and unresolved-pricing limit from the authoritative moderate profile",
+    "primary analysis consumes only an opaque complete measurement-set token derived from the exact 168-case M9b.3 allocation"
+  ],
+  "effects": {
+    "providerCalls": 0,
+    "countCalls": 0,
+    "credentialAccesses": 0,
+    "networkAccesses": 0,
+    "corpusMaterialized": false,
+    "preregistered": false,
+    "publicExportsAdded": 0
+  },
+  "verification": {
+    "runtime": {
+      "node": "v24.18.0",
+      "pnpm": "10.33.0"
+    },
+    "focusedM9": {
+      "files": 14,
+      "testsPassed": 289,
+      "testsFailed": 0
+    },
+    "repositorySerial": {
+      "files": 46,
+      "testsPassed": 732,
+      "testsFailed": 0
+    },
+    "coverage": {
+      "files": 46,
+      "testsPassed": 732,
+      "testsFailed": 0,
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    },
+    "strictTypecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "trackedFileFormatting": "passed",
+    "nodeWorkersSmoke": "passed",
+    "examples": "7/7 passed",
+    "cliContract": "6/6 passed",
+    "loadSmoke": {
+      "records": 128,
+      "recordElapsedMs": 1087.471,
+      "replayElapsedMs": 385.471,
+      "concurrency": 32,
+      "classification": "descriptive-only"
+    },
+    "sourceSafetyAudit": "passed",
+    "publicApiAudit": {
+      "status": "passed",
+      "generatorExportCount": 317,
+      "generatorExportDigest": "bf6a0476cbf3643705da8133e3173cbce771d765c979a7b198b586e2b6bda830"
+    },
+    "releaseChecksumAudit": "passed",
+    "historicalM8Audits": "passed",
+    "historicalM8bStage4PackedVerification": {
+      "status": "pre-existing-packed-fixture-missing",
+      "focusedTestsPassed": "63/63",
+      "explanation": "The command reached its offline packed-consumer step, where pnpm could not open the expected nicia-ai-lachesis-cli-0.1.0.tgz fixture. M9b.10c changed neither that script nor the historical package fixture."
+    },
+    "auditEvidenceChecksums": "passed",
+    "packageArtifactAudit": {
+      "status": "expected-frozen-alpha-mismatch",
+      "deterministicAcrossThreePacks": true,
+      "explanation": "The private generator implementation changes local packed bytes relative to the frozen published alpha digest; no package version or release artifact changed."
+    },
+    "m7cPreregistrationAudit": {
+      "status": "pre-existing-public-documentation-binding-mismatch",
+      "explanation": "The frozen M7c audit rejects current public documentation; M9b.10c did not alter that documentation or preregistration record."
+    },
+    "defaultParallelTestAttempt": {
+      "status": "load-timeout-only",
+      "assertionFailures": 0,
+      "timeouts": 3,
+      "explanation": "Two unchanged historical M9 tests and the new primary-inventory test exceeded their wall-clock timeout under default parallel load. The new test received an explicit 60-second ceiling; the complete serial and coverage suites passed."
+    },
+    "gitDiffCheck": "passed",
+    "protectedPaths": [".DS_Store", "paper/"],
+    "protectedPathsTouched": false
+  },
+  "authority": {
+    "countEndpointPricingResolved": false,
+    "moderateEnvelopeActivated": false,
+    "providerHardCapActivated": false,
+    "corpusMaterializationAuthorized": false,
+    "preregistrationAuthorized": false,
+    "credentialAccessAuthorized": false,
+    "providerAccessAuthorized": false,
+    "networkAccessAuthorized": false,
+    "probeAuthorized": false,
+    "liveExecutionAuthorized": false,
+    "releaseAuthorized": false
+  },
+  "nonclaims": [
+    "no model-quality, retrieval-superiority, RLM-superiority, RAG-superiority, or compositional-generalization claim",
+    "no natural-corpus, held-out-corpus, provider, pricing, probe, or campaign result",
+    "no claim that POST /v1/responses/input_tokens is free or billable",
+    "no professional security-audit, penetration-test, compliance, or production-readiness claim"
+  ],
+  "sourceChecksums": {
+    "packages/generator-ai-sdk/internal/m9b10-output-envelope.ts": "91eebc4578764917c24689a12565385f1cfac5855288bd533874b2ce18eed51a",
+    "packages/generator-ai-sdk/internal/m9b10b-selected-topology.ts": "f21ec84ed1163eb2ae9b78350eaf480704596dad9f2a764502a80f690a17640e",
+    "packages/generator-ai-sdk/internal/m9b9-input-token-count.ts": "64059c7810134ea0f25c19fd88543efbb1063925db1f413b8a30a79608236a91",
+    "packages/generator-ai-sdk/tests/m9b10b-selected-topology.test.ts": "2707e3ee03fc72ea2eedf6f0611dc30b4504592c9da7e63585b48e7887da6f54",
+    "packages/generator-ai-sdk/tests/m9b9-input-token-count.test.ts": "e9e344bce58091d1f97ac88538e08b7e25b6c4182650c0949c15e0b9d4895f3b",
+    "packages/generator/src/m9b10b-retrieval.ts": "2e0944a9c94e9c98bacead95a85d3beb62ec086fd14ec3075281c0cd502c6f8b",
+    "packages/generator/src/m9b3-preparation.ts": "0ec98e0dd68bf194a94fcbe971241404b6202f44c29fdd319fad3d953a82e585",
+    "packages/generator/tests/m9b10b-retrieval.test.ts": "f2d3b5d1487821a1f3b34175cfd44c0c5e058720c705d739a512a8e445e3d141"
+  }
+}
