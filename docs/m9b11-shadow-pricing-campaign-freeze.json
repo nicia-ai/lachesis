@@ -1,0 +1,333 @@
+{
+  "artifact": "lachesis-m9b11-shadow-pricing-campaign-freeze",
+  "version": "1.0.0",
+  "recordedAt": "2026-07-27",
+  "baselineCommit": "ff039c63207a91fda896ef99fd88144c51269e4a",
+  "inheritedDecision": "authority-lineage-review-pass-pricing-blocked",
+  "decision": "shadow-priced-campaign-go-for-offline-preregistration-preparation",
+  "protocols": {
+    "campaignFreeze": "lachesis-m9b11-offline-shadow-priced-campaign-freeze@1.0.0",
+    "publicCountEvidence": "lachesis-m9b11-public-count-evidence/1",
+    "campaignIdentity": "lachesis-m9b11-prospective-campaign-identity/1",
+    "shadowPricingIdentity": "lachesis-m9b11-shadow-pricing-identity/1",
+    "hardCapPolicy": "lachesis-m9b11-prospective-hard-cap-policy/1",
+    "countReservation": "lachesis-m9b11-count-shadow-reservation/1",
+    "reservationPersistence": "lachesis-m9b11-reservation-persistence/1",
+    "countAttempt": "lachesis-m9b11-count-shadow-attempt/1",
+    "countEffectIdentity": "lachesis-m9b11-count-effect-identity/1",
+    "countOnlyProbe": "lachesis-m9b11-count-only-probe-design/1",
+    "pricingKillGateDecision": "lachesis-m9b11-pricing-kill-gate-decision/1"
+  },
+  "identities": {
+    "campaignIdentityDigest": "9d846ccda3cd17dbbd0287fdb411c1ae44dd7bd8437576af312592167de1080d",
+    "publicCountEvidenceDigest": "22481a9af1304ec46a6e18b6e23b70be608393c46db5153ae490e6f635c94ab1",
+    "pricingIdentityDigest": "b011a5f394498918f3c50bd6ab8cb567f0504ddd859492ebb87132b802c86ee5",
+    "hardCapPolicyDigest": "e0db3ba6b488e7b08f902ba0037808192a788247fedc72950b1208fbd4202202",
+    "campaignReportDigest": "79e03015c7c1f6c4b2296e7b6e8ac5f37556dd90fd2bf96d4460c227dc4ed090"
+  },
+  "publicDocumentationFinding": {
+    "sources": [
+      {
+        "url": "https://developers.openai.com/api/docs/guides/token-counting",
+        "retrievedAt": "2026-07-27",
+        "scope": "token-counting-guide"
+      },
+      {
+        "url": "https://developers.openai.com/api/reference/resources/responses/subresources/input_tokens/methods/count",
+        "retrievedAt": "2026-07-27",
+        "scope": "input-token-count-api-reference"
+      },
+      {
+        "url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+        "retrievedAt": "2026-07-27",
+        "scope": "responses-api-reference"
+      }
+    ],
+    "established": [
+      "the endpoint returns the exact model-visible input count",
+      "the count includes structural formatting tokens",
+      "the endpoint is intended for context validation and cost estimation",
+      "the response fields are object and input_tokens"
+    ],
+    "notPublished": [
+      "an explicit endpoint price",
+      "an explicit zero-dollar statement",
+      "a failure-billing matrix",
+      "a cache classification",
+      "a service-tier rule"
+    ],
+    "finding": "public-documentation-suggests-free-operational-behavior-but-does-not-establish-it-contractually",
+    "uncertainty": "count-endpoint-pricing-and-undocumented-fee-behavior-remain-unknown"
+  },
+  "shadowAccounting": {
+    "rule": "retain each exact returned input_tokens count at the request class's highest frozen input rate, regardless of provider-reported count charge",
+    "actualBillingClaim": "none",
+    "rateClass": "cache-write-highest-applicable-class",
+    "rateUsdMicrosPerMillionTokens": 3125000,
+    "rounding": "ceil-per-count-request",
+    "countAndInferenceBillingDistinct": true,
+    "sameExactCountPreparesInferenceReservation": true,
+    "ambiguousCountConsumesFullClassReservation": true
+  },
+  "requestClasses": [
+    {
+      "requestClass": "root-program-authoring",
+      "maximumInputTokens": 65536,
+      "maximumOutputTokens": 40960,
+      "maximumReasoningTokens": 10099,
+      "maximumCountShadowReservationUsdMicros": 204800,
+      "maximumInferenceReservationUsdMicros": 819200,
+      "moderateEnvelopeDigest": "93aaaa720876732eba55e7dc9ec4307bf84953ab1db843e38aca564ca3c7ed22"
+    },
+    {
+      "requestClass": "static-one-shot-query-planning",
+      "maximumInputTokens": 65536,
+      "maximumOutputTokens": 4096,
+      "maximumReasoningTokens": 2048,
+      "maximumCountShadowReservationUsdMicros": 204800,
+      "maximumInferenceReservationUsdMicros": 266240,
+      "moderateEnvelopeDigest": "0aa9cac9db4a2128d7b7cd4ec4213406d5747c087c46c46fa71d66c925eab9dd"
+    },
+    {
+      "requestClass": "discovered-program-leaf-reasoning",
+      "maximumInputTokens": 32768,
+      "maximumOutputTokens": 16384,
+      "maximumReasoningTokens": 6144,
+      "maximumCountShadowReservationUsdMicros": 102400,
+      "maximumInferenceReservationUsdMicros": 348160,
+      "moderateEnvelopeDigest": "65ebba81a82fda44306bb32ac4c21bbcfd5d492421ecc6421a30e5186479a564"
+    },
+    {
+      "requestClass": "static-answer-generation",
+      "maximumInputTokens": 32768,
+      "maximumOutputTokens": 16384,
+      "maximumReasoningTokens": 6144,
+      "maximumCountShadowReservationUsdMicros": 102400,
+      "maximumInferenceReservationUsdMicros": 348160,
+      "moderateEnvelopeDigest": "e3417ed3a26d881fd406770caa8002afaee298061dcb4877a78aca312c427017"
+    }
+  ],
+  "capacity": {
+    "perPair": {
+      "pairs": 1,
+      "countRequests": 4,
+      "inferenceCalls": 4,
+      "providerHttpRequests": 8,
+      "maximumCountedInputTokens": 196608,
+      "inferenceUsdMicros": 1781760,
+      "countShadowUsdMicros": 614400,
+      "operationalUsdMicros": 2396160
+    },
+    "probe": {
+      "pairs": 24,
+      "countRequests": 96,
+      "inferenceCalls": 96,
+      "providerHttpRequests": 192,
+      "maximumCountedInputTokens": 4718592,
+      "inferenceUsdMicros": 42762240,
+      "countShadowUsdMicros": 14745600,
+      "operationalUsdMicros": 57507840
+    },
+    "primary": {
+      "pairs": 168,
+      "countRequests": 672,
+      "inferenceCalls": 672,
+      "providerHttpRequests": 1344,
+      "maximumCountedInputTokens": 33030144,
+      "inferenceUsdMicros": 299335680,
+      "countShadowUsdMicros": 103219200,
+      "operationalUsdMicros": 402554880
+    },
+    "campaign": {
+      "pairs": 192,
+      "countRequests": 768,
+      "inferenceCalls": 768,
+      "modelCalls": 768,
+      "providerHttpRequests": 1536,
+      "maximumCountedInputTokens": 37748736,
+      "inferenceUsdMicros": 342097920,
+      "countShadowUsdMicros": 117964800,
+      "operationalUsdMicros": 460062720
+    }
+  },
+  "budget": {
+    "selectedOutputEnvelope": "moderate",
+    "moderateInferenceCeilingUsd": "342.097920",
+    "countShadowContingencyUsd": "117.964800",
+    "completeOperationalCampaignCeilingUsd": "460.062720",
+    "prospectiveProviderHardCapUsd": "500.000000",
+    "headroomUsd": "39.937280",
+    "supersededConditionalProviderCapUsd": "400.000000",
+    "hardCapActivated": false,
+    "campaignActivated": false,
+    "retryLimit": 0,
+    "maximumConcurrency": 1
+  },
+  "ambiguousEffectRule": {
+    "reasons": [
+      "timeout",
+      "cancellation",
+      "interrupted-transport",
+      "malformed-response",
+      "possible-dispatch-without-durable-response",
+      "persistence-failure-after-possible-effect"
+    ],
+    "fullClassReservationRetained": true,
+    "inferenceDispatched": false,
+    "automaticRetry": false,
+    "pairHalted": true,
+    "campaignHalted": true
+  },
+  "killGates": [
+    "count-response-contract-drift",
+    "authoritative-count-price-or-structure-change",
+    "observed-count-spend-exceeds-shadow",
+    "fixed-per-call-charge",
+    "multiplier-exceeds-shadow-rule",
+    "provider-hard-cap-not-independently-verified",
+    "project-spend-nonzero-before-activation",
+    "provider-pricing-drift",
+    "provider-model-limits-drift"
+  ],
+  "residualRisk": {
+    "providerSpendEnforcementMayLag": true,
+    "arbitraryUndocumentedFeesGuaranteedCovered": false,
+    "liveActivationRequiresExplicitUserRiskAcceptance": true,
+    "projectSpendMustBeginUsd": "0.000000",
+    "dedicatedProjectExclusiveToCampaign": true,
+    "practicalExposureControls": [
+      "concurrency-one",
+      "zero-retries",
+      "per-effect-persistence",
+      "shadow-reservations",
+      "terminal-kill-gates"
+    ]
+  },
+  "countOnlyProbe": {
+    "freshDedicatedProject": true,
+    "initialSpendUsd": "0.000000",
+    "verifiedProviderHardCapUsd": "500.000000",
+    "oneRequestPerFrozenClass": true,
+    "maximumCountRequests": 4,
+    "inferenceCalls": 0,
+    "retries": 0,
+    "maximumConcurrency": 1,
+    "observationIntervalMs": 86400000,
+    "durableResponseAndLatencyRequired": true,
+    "providerSpendReconciliationRequired": true,
+    "stopOnChargeOrAmbiguity": true,
+    "establishesContractualGuarantee": false,
+    "executionAuthorized": false
+  },
+  "scientificProtocol": {
+    "unchanged": true,
+    "topology": "selected-m9b8-m9b10c-four-call-paired",
+    "model": "gpt-5.6-terra",
+    "reasoning": "frozen-unchanged-from-m9b10c",
+    "outputEnvelope": "moderate",
+    "probePairs": 24,
+    "primaryPairs": 168,
+    "allocation": "equal-family-by-scale-24-cells",
+    "estimand": "paired-first-attempt-semantically-supported-end-to-end-success",
+    "analysis": "one-sided-exact-conditional-mcnemar-alpha-0.05",
+    "probeAdvancement": "frozen-m9b3f-rule",
+    "retrievalLimits": "frozen-m9b10c-limits",
+    "retryLimit": 0,
+    "maximumConcurrency": 1,
+    "completePairAndPopulationGating": true
+  },
+  "preregistrationNonclaims": [
+    "count-endpoint pricing is not explicitly classified by the cited public documentation",
+    "the study does not claim that counting is contractually free",
+    "every count effect receives a conservative retained shadow charge",
+    "the 500 USD provider cap is prospective and not activated",
+    "unexpected count pricing is a frozen kill gate",
+    "a separately authorized count-only operational probe must precede inference",
+    "incomplete, ambiguous, and halted records remain reportable",
+    "no post-hoc budget, population, envelope, or retry change is permitted"
+  ],
+  "effects": {
+    "providerCalls": 0,
+    "countCalls": 0,
+    "inferenceCalls": 0,
+    "credentialAccesses": 0,
+    "networkAccesses": 0,
+    "projectsCreated": 0,
+    "corpusMaterialized": false,
+    "externallyPreregistered": false,
+    "publicExportsAdded": 0
+  },
+  "verification": {
+    "runtime": {
+      "node": "v24.18.0",
+      "pnpm": "10.33.0"
+    },
+    "focusedM9": {
+      "files": 15,
+      "testsPassed": 303,
+      "testsFailed": 0
+    },
+    "repositorySerial": {
+      "files": 47,
+      "testsPassed": 746,
+      "testsFailed": 0
+    },
+    "coverage": {
+      "files": 47,
+      "testsPassed": 746,
+      "testsFailed": 0,
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    },
+    "strictTypecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "formatting": "passed",
+    "nodeWorkersSmoke": "passed",
+    "examples": "7/7 passed",
+    "cliContract": "6/6 passed",
+    "loadSmoke": "passed-descriptive-only",
+    "sourceSafetyAudit": "passed",
+    "publicApiAudit": {
+      "status": "passed",
+      "generatorExportCount": 317,
+      "generatorExportDigest": "bf6a0476cbf3643705da8133e3173cbce771d765c979a7b198b586e2b6bda830"
+    },
+    "releaseChecksumAudit": "passed",
+    "historicalM8Audits": "passed",
+    "historicalM8bStage4PackedVerification": {
+      "status": "pre-existing-packed-fixture-missing",
+      "focusedTestsPassed": "63/63",
+      "explanation": "The command reached its offline packed-consumer step, where pnpm could not open the expected nicia-ai-lachesis-cli-0.1.0.tgz fixture. M9b.11 changed neither that script nor the historical package fixture."
+    },
+    "packageArtifactAudit": {
+      "status": "expected-frozen-alpha-mismatch",
+      "deterministicAcrossThreePacks": true
+    },
+    "m7cPreregistrationAudit": "pre-existing-public-documentation-binding-mismatch",
+    "gitDiffCheck": "passed",
+    "protectedPaths": [".DS_Store", "paper/"],
+    "protectedPathsTouched": false
+  },
+  "authority": {
+    "offlinePreregistrationPreparationAuthorized": true,
+    "externalRegistrationAuthorized": false,
+    "corpusMaterializationAuthorized": false,
+    "projectAccessAuthorized": false,
+    "credentialAccessAuthorized": false,
+    "providerAccessAuthorized": false,
+    "countProbeExecutionAuthorized": false,
+    "inferenceAuthorized": false,
+    "campaignActivationAuthorized": false,
+    "publicationAuthorized": false,
+    "pushAuthorized": false
+  },
+  "sourceChecksums": {
+    "packages/generator-ai-sdk/internal/m9b11-shadow-pricing.ts": "0640689784afea7a76ee6290972f1d373cfbadd43f3f040ef3740a83a6c6098c",
+    "packages/generator-ai-sdk/tests/m9b11-shadow-pricing.test.ts": "33c2d406b4d0ee7319f03fbb60318dfe60b01879bd44e9ac99d49c05d6794a9a",
+    "packages/generator-ai-sdk/internal/m9b10-output-envelope.ts": "91eebc4578764917c24689a12565385f1cfac5855288bd533874b2ce18eed51a",
+    "docs/m9b10c-authority-lineage-results.json": "39a20acd5bba87abddbe7108bd0adf0e875e046d76272255f7cf501979f0fcd3"
+  }
+}
