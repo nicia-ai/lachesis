@@ -1,0 +1,224 @@
+{
+  "protocol": {
+    "id": "lachesis-m9b10a-selected-topology-integration-audit",
+    "version": "1.0.0",
+    "visibility": "private-offline-audit-only"
+  },
+  "baseline": {
+    "commit": "c71ffa4fde5f1ed84c5027bc9bc4569c26a8fbdd",
+    "tree": "cfff6ccea1c6b11f36d865d548d8fb74af7ad3c0"
+  },
+  "decision": "integration-review-no-go",
+  "findings": [
+    {
+      "id": "m9b10a-p1-1-selected-topology-not-executable",
+      "priority": "P1",
+      "title": "The M9b.8 selected topology is not executable",
+      "sources": [
+        "packages/generator-ai-sdk/internal/m9b8-prospective-redesign.ts:775-830",
+        "packages/generator/src/m9b1-discovery.ts:832"
+      ],
+      "evidence": "M9b.8 freezes a prospective topology and capacity decision, while the runnable M9b.1 path still selects the historical M9b.0 execution profiles. No connected selected-topology orchestrator exists."
+    },
+    {
+      "id": "m9b10a-p1-2-no-evidence-derived-adaptation",
+      "priority": "P1",
+      "title": "The retrieval-only treatment cannot adapt to intermediate evidence",
+      "sources": [
+        "packages/generator/src/m9b1-discovery.ts:83-110",
+        "packages/generator/src/m9a-retrieval.ts:443"
+      ],
+      "evidence": "The frozen authoring grammar exposes only the existing invoke/map/fold/boundedFix algebra and the reference refinement operation appends evidence rather than extracting a bounded value for a later query."
+    },
+    {
+      "id": "m9b10a-p1-3-no-go-can-reach-dispatch",
+      "priority": "P1",
+      "title": "M9b.9 can dispatch despite verified NO-GO authority",
+      "sources": [
+        "packages/generator-ai-sdk/internal/m9b9-input-token-count.ts:975-1000",
+        "packages/generator-ai-sdk/internal/m9b9-input-token-count.ts:1697-1964"
+      ],
+      "evidence": "The verified report fixes provider and live authority to false, but the lifecycle function does not consume those authority fields before its transport path. Caller-supplied available capacity is therefore not a sufficient authority boundary."
+    },
+    {
+      "id": "m9b10a-p1-4-provider-output-lineage-incomplete",
+      "priority": "P1",
+      "title": "Provider output is not bound through evidence, arm persistence, and measurement",
+      "sources": [
+        "packages/generator-ai-sdk/internal/m9b10-output-envelope.ts:951-1090",
+        "packages/generator/src/m9b2-measurement.ts:1382-1420"
+      ],
+      "evidence": "The M9b.10 receipt binds the raw response and output-envelope decision, but there is no selected-topology terminal record that carries the exact request through retrieval evidence, evaluation, accounting settlement, and the new measurement boundary."
+    },
+    {
+      "id": "m9b10a-p1-5-primary-analyzer-missing",
+      "priority": "P1",
+      "title": "The frozen 168-pair primary McNemar analysis has no implementation",
+      "sources": [
+        "packages/generator/src/m9b3-preparation.ts:445",
+        "packages/generator/src/m9b2-measurement.ts:2676-2810"
+      ],
+      "evidence": "Preparation freezes 168 primary pairs and alpha 0.05, while the implemented analysis at the cited measurement boundary is prospective power analysis rather than the exact full-population selected-topology primary test."
+    }
+  ],
+  "boundaryMatrix": [
+    {
+      "boundary": "restricted source to closed AST",
+      "component": "M9a/M9b.1 compiler",
+      "status": "passed-component"
+    },
+    {
+      "boundary": "closed AST to adaptive evidence-derived query",
+      "component": "selected retrieval profile",
+      "status": "missing-composition"
+    },
+    {
+      "boundary": "program authoring to local retrieval",
+      "component": "selected orchestrator",
+      "status": "missing-composition"
+    },
+    {
+      "boundary": "static query authoring to one-shot retrieval",
+      "component": "selected orchestrator",
+      "status": "missing-composition"
+    },
+    {
+      "boundary": "retrieval transcript to visible evidence",
+      "component": "selected terminal lineage",
+      "status": "missing-composition"
+    },
+    {
+      "boundary": "provider request to count receipt",
+      "component": "M9b.9",
+      "status": "passed-component"
+    },
+    {
+      "boundary": "provider request to output receipt",
+      "component": "M9b.10",
+      "status": "passed-component"
+    },
+    {
+      "boundary": "verified NO-GO to zero transport",
+      "component": "M9b.9 authority gate",
+      "status": "failed-composition"
+    },
+    {
+      "boundary": "arm terminal record to paired measurement",
+      "component": "selected measurement",
+      "status": "missing-composition"
+    },
+    {
+      "boundary": "frozen primary population to exact test",
+      "component": "selected primary analyzer",
+      "status": "missing-composition"
+    },
+    {
+      "boundary": "terminal replay to zero effects",
+      "component": "selected replay",
+      "status": "missing-composition"
+    },
+    {
+      "boundary": "pricing source to campaign authority",
+      "component": "count endpoint pricing",
+      "status": "externally-unresolved"
+    }
+  ],
+  "protocolInventory": [
+    {
+      "id": "lachesis-m9b1f-artifact-bound-program-discovery",
+      "version": "1.0.0",
+      "role": "historical offline arm execution"
+    },
+    {
+      "id": "lachesis-m9b2-offline-scientific-measurement",
+      "version": "1.2.0",
+      "role": "historical offline measurement"
+    },
+    {
+      "id": "lachesis-m9b3f-offline-prospective-study-preparation",
+      "version": "1.0.0",
+      "role": "population, schedule, estimand, and probe preparation"
+    },
+    {
+      "id": "lachesis-m9b4-offline-effect-ledger",
+      "version": "1.2.0",
+      "role": "attempt effect accounting"
+    },
+    {
+      "id": "lachesis-m9b5-openai-responses-offline-conformance",
+      "version": "1.2.0",
+      "role": "intercepted Responses adapter contract"
+    },
+    {
+      "id": "lachesis-m9b6-conservative-pre-dispatch-accounting",
+      "version": "1.0.0",
+      "role": "conservative billing classes"
+    },
+    {
+      "id": "lachesis-m9b8-offline-prospective-accounting-redesign",
+      "version": "1.0.0",
+      "role": "selected prospective topology"
+    },
+    {
+      "id": "lachesis-m9b9-offline-responses-input-token-count",
+      "version": "1.0.0",
+      "role": "intercepted exact-input-count boundary"
+    },
+    {
+      "id": "lachesis-m9b10-offline-output-envelope-review",
+      "version": "1.0.0",
+      "role": "prospective output-envelope reliability review"
+    }
+  ],
+  "capacityReproductionUsdMicros": {
+    "m9b7ConservativeCampaign": 3639570432,
+    "m9b8SelectedTopologyCampaign": 1869330432,
+    "m9b9InferenceOnlyCampaign": 613416960,
+    "m9b9UnresolvedCountEffectCampaign": 4425600000,
+    "m9b10ModerateIfCountingConfirmedFree": 342097920,
+    "prospectiveProviderHardCapIfCountingConfirmedFree": 400000000,
+    "prospectiveHeadroomIfCountingConfirmedFree": 57902080,
+    "activationState": "not-activated-pricing-unresolved"
+  },
+  "passedComponentProperties": [
+    "closed-AST compilation without an ordinary JavaScript realm",
+    "immutable content-addressed corpus and deterministic retrieval",
+    "per-arm artifact-bound durable persistence and zero-effect resume",
+    "provider-neutral effect ledger with conservative ambiguity settlement",
+    "intercepted Responses request, response, usage, pricing, and cancellation conformance",
+    "prospective population, schedule, evaluator, gold, power, and capacity identities",
+    "class-specific output-envelope structural and development-fixture conformance"
+  ],
+  "missingComposedProperties": [
+    "executable selected two-call topology",
+    "evidence-derived adaptive local retrieval",
+    "fail-closed authority before any transport effect",
+    "campaign-global exclusion across attempt identities",
+    "provider-to-evidence-to-evaluation-to-accounting terminal lineage",
+    "new selected-topology measurement",
+    "exact complete-population 168-pair one-sided conditional McNemar analyzer",
+    "complete paired-case zero-effect replay"
+  ],
+  "requiredProspectiveAmendment": "Add a separately versioned private M9b.10b selected-topology integration that composes the frozen prospective identities without reinterpreting M9a through M9b.10 artifacts, remains entirely offline, and stops with count-endpoint pricing unresolved.",
+  "nonclaims": [
+    "no model-quality or retrieval-superiority claim",
+    "no corpus-generalization claim",
+    "no security-audit, penetration-test, or compliance claim",
+    "no provider-access, live-execution, preregistration, or production-readiness authority",
+    "no claim that POST /v1/responses/input_tokens is free or billable",
+    "no activation of the moderate envelope or prospective provider cap"
+  ],
+  "sourceChecksums": {
+    "packages/generator/src/m9a-corpus.ts": "ac6539cad66edf144a810ddc5737025c27be330af8183c06197abf895910bd7b",
+    "packages/generator/src/m9a-retrieval.ts": "717ca92e754c00e3941d5848c68757af52d647a8097f7bfdc1ce249ca4b03ec1",
+    "packages/generator/src/m9b1-discovery.ts": "74739cf7e87f70f8941efbfac0994a6f3ae536a0c307bb0c645ae6b8af55bed7",
+    "packages/generator/src/m9b2-measurement.ts": "e98aa65266d9ad5164ef06d4e23d6400fea8c9188f8696b416b1896abe8c4d88",
+    "packages/generator/src/m9b3-preparation.ts": "ec06e41a167f9cd12d2ed3ca9dc92a2591597060526a6f9505a6ea9db0ee3025",
+    "packages/generator-ai-sdk/internal/m9b8-prospective-redesign.ts": "346637a6c55fe1bd22157d039e27e0bac602cfa7aa3c88eef5f9298303289e29",
+    "packages/generator-ai-sdk/internal/m9b9-input-token-count.ts": "6b7851120d7ea1203fd3456e54004d25e404e15fd156e2590d9eecf880d424c4",
+    "packages/generator-ai-sdk/internal/m9b10-output-envelope.ts": "3bd15236db6ea8e992d7fbd71e9565d182dadfde4c14f7ac673d9e84b808f76f",
+    "docs/m9b8-offline-prospective-accounting-redesign.json": "61f0b18110c39457172e500b461ac0b01b4d242cf77d319015b672237c76c6ae",
+    "docs/m9b9-offline-input-token-count-conformance.json": "26ec564bc9062023e51186efce8ed0f8f511a671c58461a57953b8cd1af8b75e",
+    "docs/m9b10-offline-output-envelope-review.json": "c46fa9ba238e7a2ac38462532e4c2d57eae5db9f94d54e0b8acfd5f9d64d7998"
+  }
+}
