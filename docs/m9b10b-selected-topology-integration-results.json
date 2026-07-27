@@ -1,0 +1,210 @@
+{
+  "artifact": "lachesis-m9b10b-selected-topology-integration-results",
+  "version": "1.0.0",
+  "recordedAt": "2026-07-27",
+  "baseline": {
+    "commit": "c71ffa4fde5f1ed84c5027bc9bc4569c26a8fbdd",
+    "tree": "cfff6ccea1c6b11f36d865d548d8fb74af7ad3c0"
+  },
+  "audit": {
+    "protocol": "lachesis-m9b10a-selected-topology-integration-audit@1.0.0",
+    "commit": "1ee7b9ba92a544f77cf4d909b33d6b9ff97e4b32",
+    "decision": "integration-review-no-go",
+    "recordDigest": "e0589b5228171dee84e4b5e45e662a384c34c293ec2e3366ddd5b328fc077e3f"
+  },
+  "implementation": {
+    "commit": "aef254143b7efa647b2e916cd255e153c2cf208b",
+    "tree": "6b4a1f2b3a733000b2cbae2df57b183167e03085"
+  },
+  "decision": "selected-topology-integration-pass-with-narrow-nonprotocol-fixes-pricing-blocked",
+  "protocols": {
+    "retrieval": "lachesis-m9b10b-selected-retrieval-codemode@1.0.0",
+    "integration": "lachesis-m9b10b-offline-selected-topology-integration@1.0.0",
+    "countReceipt": "lachesis-m9b10b-offline-count-receipt/1",
+    "inferenceReservation": "lachesis-m9b10b-offline-inference-reservation/1",
+    "outputReceipt": "lachesis-m9b10b-selected-output-receipt/1",
+    "settlement": "lachesis-m9b10b-offline-settlement/1",
+    "inferenceAttempt": "lachesis-m9b10b-offline-inference-attempt/1",
+    "staticRetrieval": "lachesis-m9b10b-static-one-shot-retrieval/1",
+    "visibleEvidence": "lachesis-m9b10b-visible-evidence/1",
+    "localEvaluation": "lachesis-m9b10b-local-blind-evaluation/1",
+    "campaignLock": "lachesis-m9b10b-campaign-global-lock/1",
+    "terminalPair": "lachesis-m9b10b-terminal-pair/1",
+    "measurement": "lachesis-m9b10b-selected-topology-measurement@1.0.0",
+    "primaryAnalysis": "lachesis-m9b10b-exact-primary-mcnemar@1.0.0",
+    "scheduleInventory": "lachesis-m9b10b-selected-schedule-inventory/1",
+    "campaignProgress": "lachesis-m9b10b-offline-campaign-progress/1"
+  },
+  "closedRetrievalProfile": {
+    "grammar": "closed-evidence-adaptive-retrieval-typescript/1",
+    "execution": "closed AST interpreted locally with corpus search/read as the only effects",
+    "maximumSourceBytes": 14400,
+    "maximumOperationCalls": 64,
+    "maximumSearchCalls": 2,
+    "maximumReadCalls": 2,
+    "maximumSearchResultsPerCall": 4,
+    "maximumReadBytesPerCall": 2048,
+    "maximumTotalReadBytes": 4096,
+    "maximumExtractedUtf8Bytes": 64,
+    "maximumQueryUtf8Bytes": 512,
+    "maximumBoundedFixLimit": 4,
+    "providerOrModelCapabilities": 0,
+    "ordinaryJavaScriptRealm": false
+  },
+  "selectedTopology": {
+    "mode": "offline-conformance",
+    "selectedEnvelope": "moderate-not-activated",
+    "providerCallsPerArm": 2,
+    "providerCallsPerPair": 4,
+    "retryLimit": 0,
+    "maximumConcurrency": 1,
+    "sameModelAndReasoningAcrossArms": true,
+    "independentArmSessions": true,
+    "providerEffectPerformed": false,
+    "credentialAccessed": false,
+    "networkAccessed": false,
+    "tokenCountEffectPerformed": false
+  },
+  "capacityUsdMicros": {
+    "request": {
+      "rootProgramAuthoring": 819200,
+      "staticQueryAuthoring": 266240,
+      "discoveredGroundedAnswer": 348160,
+      "staticGroundedAnswer": 348160
+    },
+    "arm": {
+      "discoveredProgram": 1167360,
+      "staticOneShot": 614400
+    },
+    "pair": 1781760,
+    "probe24Pairs": 42762240,
+    "primary168Pairs": 299335680,
+    "campaign192Pairs": 342097920,
+    "prospectiveProviderHardCapIfCountingConfirmedFree": 400000000,
+    "prospectiveHeadroomIfCountingConfirmedFree": 57902080,
+    "unresolvedCountEffectCampaign": 4425600000,
+    "completeConservativeExposure": 4767697920,
+    "activationState": "not-activated-pricing-unresolved"
+  },
+  "functionalEvidence": [
+    "a closed program searches from the task, reads intermediate evidence, extracts the bounded identifier ZX-41, constructs an evidence-derived query, and retrieves answer evidence",
+    "a predetermined static query that cannot consume the intermediate identifier fails on the same synthetic snapshot",
+    "evidence strings remain untrusted query operands and cannot select capabilities or execute code",
+    "the discovered and static arms each retain exactly two offline provider-shaped request receipts",
+    "each arm is durably persisted before the other arm begins, and valid resume has zero repeated effects",
+    "terminal records bind requests, responses, count receipts, reservations, retrieval, evidence, answers, evaluation, settlement, and primary outcome",
+    "paired measurement accepts only rederived opposite-arm records for one pair",
+    "the primary analyzer requires the complete frozen 168-case population and computes the one-sided conditional McNemar tail exactly",
+    "complete paired and campaign-progress verification performs zero external, corpus, evaluator, credential, or persistence effects"
+  ],
+  "hostileEvidence": [
+    "verified NO-GO authority cannot be overridden by caller capacity",
+    "false provider or live authority cannot reach the historical M9b.9 transport path",
+    "persistent CAS campaign exclusion rejects concurrent attempt identities",
+    "cross-arm count receipts and cross-request provider responses reject",
+    "program, corpus snapshot, retrieval transcript, evidence-derived query, visible evidence, answer, evaluator, arm, and measurement transfers reject",
+    "missing-arm pairs, missing or duplicate primary pairs, foreign population cases, schedule substitutions, and post-outcome subsets reject",
+    "malformed, truncated, ambiguous, and overage outcomes remain terminal first-attempt records",
+    "prompt injection is retained as evidence data and provider/model AST capabilities reject",
+    "unbounded evidence extraction rejects before retrieval",
+    "incorrect McNemar direction, tail, and floating-point boundary substitutions reject",
+    "old-version artifacts reject at the new protocol boundaries",
+    "terminal replay counters remain exactly zero"
+  ],
+  "narrowNonprotocolFix": {
+    "file": "packages/generator/src/codemode.ts",
+    "description": "Preserve the known collection maximum through filter so the already-bounded result remains statically bounded; filter remains cardinality non-increasing.",
+    "wireProtocolChanged": false,
+    "publicApiChanged": false
+  },
+  "verification": {
+    "runtime": {
+      "node": "v24.18.0",
+      "pnpm": "10.33.0"
+    },
+    "focusedM9": {
+      "files": 14,
+      "testsPassed": 294,
+      "testsFailed": 0
+    },
+    "repositoryTests": {
+      "files": 46,
+      "testsPassed": 737,
+      "testsFailed": 0
+    },
+    "coverage": {
+      "files": 46,
+      "testsPassed": 737,
+      "testsFailed": 0,
+      "statementsPercent": 90,
+      "branchesPercent": 80.91,
+      "functionsPercent": 97.44,
+      "linesPercent": 93.71,
+      "note": "The first full coverage attempt encountered one unrelated existing M3b1 five-second timeout; the exact test passed immediately without a timeout change and the complete coverage rerun passed."
+    },
+    "strictTypecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "changedFileFormatting": "passed",
+    "nodeAndWorkersSmoke": "passed",
+    "cliContractTests": "passed-within-complete-suite",
+    "examples": "7/7 passed",
+    "loadSmoke": {
+      "records128ElapsedMs": 534.322,
+      "replay128ElapsedMs": 241.351,
+      "concurrency32ElapsedMs": 133.599,
+      "classification": "descriptive-only"
+    },
+    "sourceSafetyAudit": "passed",
+    "publicApiAudit": {
+      "status": "passed",
+      "generatorExportCount": 317,
+      "generatorExportDigest": "bf6a0476cbf3643705da8133e3173cbce771d765c979a7b198b586e2b6bda830"
+    },
+    "releaseChecksumAudit": "passed",
+    "packageArtifactAudit": {
+      "status": "expected-frozen-alpha-mismatch",
+      "explanation": "The local generator source amendment changes its reproducible packed bytes relative to the historical published alpha checksum. No package version, release metadata, dist-tag, or published artifact was changed."
+    },
+    "historicalM9ChecksumAudit": {
+      "status": "expected-four-source-mismatches-in-m9b5-manifest",
+      "explanation": "Immutable M9b.5 evidence still verifies its own documents and pinned SDK, while correctly detecting later append-only changes to M9b.4/M9b.5 source and tests. All other historical M9b manifests verified."
+    },
+    "gitDiffCheck": "passed",
+    "protectedPaths": [".DS_Store", "paper/"],
+    "protectedPathsTouched": false
+  },
+  "authority": {
+    "countEndpointPricingResolved": false,
+    "moderateEnvelopeActivated": false,
+    "providerHardCapActivated": false,
+    "corpusMaterializationAuthorized": false,
+    "externalRegistrationAuthorized": false,
+    "credentialAccessAuthorized": false,
+    "providerAccessAuthorized": false,
+    "tokenCountCallsAuthorized": false,
+    "modelCallsAuthorized": false,
+    "networkAccessAuthorized": false,
+    "probeAuthorized": false,
+    "liveExecutionAuthorized": false,
+    "releaseAuthorized": false
+  },
+  "nonclaims": [
+    "no model-quality, retrieval-superiority, RLM-superiority, RAG-superiority, or compositional-generalization claim",
+    "no natural-corpus or held-out-corpus result",
+    "no claim that POST /v1/responses/input_tokens is free or billable",
+    "no security-audit, penetration-test, compliance, production-readiness, or provider-conformance authorization claim",
+    "no preregistration, corpus-materialization, credential, provider, probe, campaign, release, or live-execution authority"
+  ],
+  "sourceChecksums": {
+    "packages/generator/src/codemode.ts": "c060428fe06ee7683ac240629b09d2ac7172491adfc371637f9b51d4177d7a61",
+    "packages/generator/src/m9b10b-retrieval.ts": "6df8d6c8f72f948be4d371a592bae643a575ad6e7fadff7f779198cf9c7c4e11",
+    "packages/generator/tests/m9b10b-retrieval.test.ts": "3d13633fdc9372682ff507fa6064e225c220eb13020296d5039fc6b9fb0cf34a",
+    "packages/generator-ai-sdk/internal/m9b9-input-token-count.ts": "aab16e511aa8dcd36b512098ecf5f788b230b232aa481f7611210677e2adc7f4",
+    "packages/generator-ai-sdk/tests/m9b9-input-token-count.test.ts": "e929d62f6e810bfe39294ed82cba2cd04ae5db9423fae7eb5ee4275f8dcd4ce9",
+    "packages/generator-ai-sdk/internal/m9b10b-selected-topology.ts": "db6078fb6f000d707737d0f291f6c98ec9a68ea071ca0eaf267247f626636300",
+    "packages/generator-ai-sdk/tests/m9b10b-selected-topology.test.ts": "e9602ea9c2fe16957e65134ad023b7d0dc5deef697511ae01376ccf960c3834b",
+    "docs/m9b10a-selected-topology-integration-audit.json": "e0589b5228171dee84e4b5e45e662a384c34c293ec2e3366ddd5b328fc077e3f",
+    "docs/m9b10a-selected-topology-integration-audit.md": "d54703081f72c728d760f6d3bdeeef5e98d8eabfc4e27ab3ca8b83bc8a25d8e9"
+  }
+}
