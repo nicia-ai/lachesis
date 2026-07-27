@@ -76,7 +76,8 @@ const serializerIdentitySchema = artifactIdentitySchema
   .unwrap()
   .safeExtend({ providerId: identifierSchema })
   .readonly();
-const identityProfileSchema = z
+/** @internal Private composition seam for offline protocol verification. */
+export const m9b5IdentityProfileSchema = z
   .strictObject({
     provider: providerIdentitySchema,
     model: modelIdentitySchema,
@@ -207,7 +208,7 @@ const vectorInputSchema = z
     instructions: z.string().min(1).max(131_072),
     input: z.string().min(1).max(524_288),
     maximumOutputTokens: z.number().int().positive().max(1_000_000),
-    identities: identityProfileSchema,
+    identities: m9b5IdentityProfileSchema,
   })
   .readonly();
 
@@ -221,7 +222,7 @@ const vectorBodySchema = z
     phase: phaseSchema,
     callIndex: z.number().int().nonnegative(),
     attemptCoordinateDigest: digestSchema,
-    identities: identityProfileSchema,
+    identities: m9b5IdentityProfileSchema,
     modelVisible: z
       .strictObject({ instructions: z.string(), input: z.string() })
       .readonly(),

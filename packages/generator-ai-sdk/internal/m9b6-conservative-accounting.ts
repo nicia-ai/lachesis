@@ -307,6 +307,16 @@ function capForToken(
   return parsed?.success === true ? parsed.data : undefined;
 }
 
+/** @internal Private composition seam for offline campaign-capacity review. */
+export function inspectM9b6VerifiedHardCapReceipt(
+  token: M9b6VerifiedHardCapToken,
+): Result<M9b6HardCapReceipt, M9b6Failure> {
+  const receipt = capForToken(token);
+  return receipt === undefined
+    ? failure("validation", "Invalid or unavailable M9b.6 hard-cap capability.")
+    : { ok: true, value: receipt };
+}
+
 function scientificEnvelopeForToken(
   token: M9b6FrozenScientificEnvelopeToken,
 ): M9b6ScientificEnvelope | undefined {

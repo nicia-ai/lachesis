@@ -1,0 +1,243 @@
+{
+  "protocol": {
+    "id": "lachesis-m9b7-offline-campaign-capacity-review",
+    "version": "1.0.0",
+    "baselineCommit": "4401bef2c912d9b8fd4349c74fad78ffb75a8dea"
+  },
+  "privateDependencies": {
+    "preparation": "lachesis-m9b3f-offline-prospective-study-preparation@1.0.0",
+    "effectLedger": "lachesis-m9b4-offline-effect-ledger@1.2.0",
+    "adapter": "lachesis-m9b5-openai-responses-offline-conformance@1.2.0",
+    "accounting": "lachesis-m9b6-conservative-pre-dispatch-accounting@1.0.0",
+    "historicalArtifactsReinterpreted": false
+  },
+  "reservationBasis": {
+    "maximumInputTokensPerRequest": 922000,
+    "maximumModelOutputTokens": 128000,
+    "contextWindowTokens": 1050000,
+    "longContextThresholdTokens": 272000,
+    "inputMultiplierMicros": 2000000,
+    "outputMultiplierMicros": 1500000,
+    "inputUsdMicrosPerMillionTokens": 1000000,
+    "cachedInputUsdMicrosPerMillionTokens": 250000,
+    "cacheWriteInputUsdMicrosPerMillionTokens": 1250000,
+    "selectedInputBillingClass": "cache-write-highest-permitted-rate",
+    "outputUsdMicrosPerMillionTokens": 2000000,
+    "arithmetic": "exact-bigint-ceiling-per-request-safe-number-aggregate",
+    "maximumConcurrency": 1,
+    "retryLimit": 0
+  },
+  "requestClasses": [
+    {
+      "requestClass": "root-program-authoring",
+      "arm": "discovered-program",
+      "phase": "authoring",
+      "requestsPerPair": 1,
+      "maximumInputTokensPerRequest": 922000,
+      "maximumOutputTokensPerRequest": 65536,
+      "maximumCostUsdMicrosPerRequest": 2501608
+    },
+    {
+      "requestClass": "discovered-program-leaf-reasoning",
+      "arm": "discovered-program",
+      "phase": "execution",
+      "requestsPerPair": 5,
+      "maximumInputTokensPerRequest": 922000,
+      "maximumOutputTokensPerRequest": 4096,
+      "maximumCostUsdMicrosPerRequest": 2317288
+    },
+    {
+      "requestClass": "static-one-shot-query-planning",
+      "arm": "static-one-shot",
+      "phase": "authoring",
+      "requestsPerPair": 1,
+      "maximumInputTokensPerRequest": 922000,
+      "maximumOutputTokensPerRequest": 65536,
+      "maximumCostUsdMicrosPerRequest": 2501608
+    },
+    {
+      "requestClass": "static-answer-generation",
+      "arm": "static-one-shot",
+      "phase": "execution",
+      "requestsPerPair": 1,
+      "maximumInputTokensPerRequest": 922000,
+      "maximumOutputTokensPerRequest": 20480,
+      "maximumCostUsdMicrosPerRequest": 2366440
+    }
+  ],
+  "totals": {
+    "perPair": {
+      "requestCount": 8,
+      "maximumInputTokens": 7376000,
+      "maximumOutputTokens": 172032,
+      "maximumCostUsdMicros": 18956096
+    },
+    "perArm": {
+      "discoveredProgram": {
+        "requestCount": 1152,
+        "maximumInputTokens": 1062144000,
+        "maximumOutputTokens": 16515072,
+        "maximumCostUsdMicros": 2704905216
+      },
+      "staticOneShot": {
+        "requestCount": 384,
+        "maximumInputTokens": 354048000,
+        "maximumOutputTokens": 16515072,
+        "maximumCostUsdMicros": 934665216
+      }
+    },
+    "perPhase": {
+      "authoring": {
+        "requestCount": 384,
+        "maximumInputTokens": 354048000,
+        "maximumOutputTokens": 25165824,
+        "maximumCostUsdMicros": 960617472
+      },
+      "execution": {
+        "requestCount": 1152,
+        "maximumInputTokens": 1062144000,
+        "maximumOutputTokens": 7864320,
+        "maximumCostUsdMicros": 2678952960
+      },
+      "evaluation": {
+        "requestCount": 0,
+        "maximumInputTokens": 0,
+        "maximumOutputTokens": 0,
+        "maximumCostUsdMicros": 0
+      }
+    },
+    "probe": {
+      "pairedCases": 24,
+      "requestCount": 192,
+      "maximumInputTokens": 177024000,
+      "maximumOutputTokens": 4128768,
+      "maximumCostUsdMicros": 454946304
+    },
+    "primary": {
+      "pairedCases": 168,
+      "requestCount": 1344,
+      "maximumInputTokens": 1239168000,
+      "maximumOutputTokens": 28901376,
+      "maximumCostUsdMicros": 3184624128
+    },
+    "providerModelAndCampaign": {
+      "pairedCases": 192,
+      "requestCount": 1536,
+      "maximumInputTokens": 1416192000,
+      "maximumOutputTokens": 33030144,
+      "maximumCostUsdMicros": 3639570432
+    }
+  },
+  "completionSafety": {
+    "completePairReservationBeforeFirstArm": true,
+    "completePhaseCapacityBeforeFirstDispatch": true,
+    "completePopulationCapacityBeforeFirstDispatch": true,
+    "asymmetricPartialPairsForbidden": true,
+    "outcomeDependentStoppingForbidden": true,
+    "postHocPopulationReductionForbidden": true,
+    "armSpecificBudgetExhaustionForbidden": true,
+    "ambiguousAndOverage": "full-pair-reservation-retained-overage-adds-verified-excess-and-progression-halted",
+    "resume": "zero-effect-rederived-next-missing-arm-or-next-exact-pair",
+    "materializedScheduleDigest": "absent-out-of-scope-and-blocking"
+  },
+  "originalDesign": {
+    "frozenCampaignCapUsdMicros": 117964800,
+    "requiredCampaignCapUsdMicros": 3639570432,
+    "shortfallUsdMicros": 3521605632,
+    "requiredToFrozenRatioRoundedUpFourDecimals": 30.8531,
+    "verifiedCurrentHardCapReceipt": "absent",
+    "decision": "campaign-capacity-no-go"
+  },
+  "dominantCostDrivers": [
+    "request-count-and-call-topology",
+    "full-model-input-maximum",
+    "highest-input-cache-class",
+    "long-context-multipliers",
+    "output-ceilings"
+  ],
+  "alternative": {
+    "protocol": "lachesis-m9b7-cap-only-alternative/1",
+    "designId": "raise-cap-preserve-scientific-design",
+    "requiredCampaignCapUsdMicros": 3639570432,
+    "changedParameters": ["campaign-cap"],
+    "scientificComparability": "preserved",
+    "primaryPairs": 168,
+    "alphaBasisPoints": 500,
+    "targetPowerBasisPoints": 8000,
+    "powerStatus": "unchanged-prospective-target-pending-frozen-probe",
+    "activated": false,
+    "liveAuthority": false
+  },
+  "officialSources": [
+    {
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+      "use": "model input/output limits, long-context threshold and multipliers, cache-write multiplier"
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/guides/spend-limits",
+      "use": "hard-limit 429 behavior and non-instantaneous enforcement"
+    }
+  ],
+  "verification": {
+    "node": "v24.18.0",
+    "focusedM9b4ToM9b7": {
+      "tests": 86,
+      "passed": 86
+    },
+    "allM9": {
+      "tests": 212,
+      "passed": 212
+    },
+    "repository": {
+      "testFiles": 41,
+      "tests": 655,
+      "passed": 655
+    },
+    "coverage": {
+      "statements": "90.04% (12215/13566)",
+      "branches": "81.10% (8401/10358)",
+      "functions": "97.33% (2589/2660)",
+      "lines": "93.77% (11652/12426)"
+    },
+    "strictTypecheck": "pass",
+    "lint": "pass",
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersSmokeDryRun": "pass",
+    "cliValidInvalidSmoke": "pass",
+    "sourceSafety": "pass",
+    "publicApi": "pass-no-new-facade-exports",
+    "releaseChecksums": "pass",
+    "changedFileFormatting": "pass",
+    "gitDiffCheck": "pass",
+    "knownHistoricalNonGreen": [
+      "audit:m7c-preregistration-public-documentation-binding-differs",
+      "audit:packages-generator-differs-from-frozen-alpha5-tarball"
+    ]
+  },
+  "artifactDigests": {
+    "m9b6AccountingImplementationSha256": "860906dd6fdbc78545802b447409b14e23582ee4ca0bfe0a0d49bc5eebd40d03",
+    "m9b7CapacityImplementationSha256": "c9c4fd6cc79c57b37851facabc0069e59de0cf484f8a7f6525c0da73925e0bcc",
+    "m9b5AdapterImplementationSha256": "577442e0ca9d8d7595b68ca1d6ee6b417226da07c4d26414797561957e97b98d",
+    "m9b7FocusedTestSha256": "5878979c7cbc2c2a5c6485e6298ce36c3f3908455ed21379bf241bd2d313bc44",
+    "humanReportSha256": "e7dfa715a331801334f9054a7769f28ef9ed945e53f59d4a1957e3b45c54b730",
+    "studyDesignSha256": "dc7441e6e86ed602e81481ff0dbc8fe3437ed11192fafdb57879edff224b19b3"
+  },
+  "effects": {
+    "networkRequests": 0,
+    "providerRequests": 0,
+    "credentialsRead": 0,
+    "corpusOrGoldAccesses": 0,
+    "publicExportsAdded": 0,
+    "externalRegistrationWrites": 0
+  },
+  "decision": "campaign-capacity-no-go",
+  "nextSeparatelyAuthorizedScope": "offline-preregistration-package-only-after-new-cap-and-separate-review",
+  "nonclaims": [
+    "no corpus or preregistration claim",
+    "no provider entitlement or availability claim",
+    "no financial authorization claim",
+    "no model-quality or retrieval-superiority claim",
+    "no production-readiness or professional-security-audit claim"
+  ]
+}

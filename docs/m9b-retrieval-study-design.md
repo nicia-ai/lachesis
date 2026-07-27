@@ -509,3 +509,33 @@ The M9b.6 decision is
 **NO-GO** for corpus construction, final gold or evaluator materialization,
 external preregistration, credentials, provider access, protocol probes, live
 execution, or any superiority claim.
+
+## M9b.7 conservative campaign-capacity review
+
+The private `lachesis-m9b7-offline-campaign-capacity-review@1.0.0` composes
+M9b.3f, M9b.5, and M9b.6 without materializing a corpus or creating execution
+state. It rederives four request-class reservations and every pair, arm, phase,
+provider/model, probe, primary, and campaign total using exact integer
+micro-dollar arithmetic.
+
+Under the frozen GPT-5.6 Terra limits and cache/long-context billing classes,
+the 1,536-attempt campaign requires 3,639,570,432 USD µ. M9b.3f froze only
+117,964,800 USD µ. The original design is therefore immutable
+`campaign-capacity-no-go`; M9b remains NO-GO.
+
+The completion gate commits a whole pair before its first arm and requires the
+remainder of a population before that population begins. A persisted partial
+pair can resume only its missing opposite arm. Ambiguity retains the full
+reservation; overage additionally retains any verified excess charge. Both halt.
+Concurrency remains one and retries remain zero. Population or schedule changes,
+asymmetric exhaustion, and post-outcome reduction reject through opaque-token
+rederivation.
+
+One frozen prospective alternative changes only the campaign cap to the exact
+required amount. It preserves the 192-pair allocation, request topology, model,
+outputs, schedule protocol, estimand, and probe gate, so the prospective power
+target remains unchanged but unmeasured. It is not activated. A new cap binding,
+fresh verified hard-cap receipt, materialized schedule/request identities, and
+separate review are required before even an offline preregistration package can
+advance. No corpus, registration, credential, provider-call, probe, or live
+authority follows from M9b.7.
