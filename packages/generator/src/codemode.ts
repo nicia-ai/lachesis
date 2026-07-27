@@ -866,6 +866,7 @@ function analyzeExpression(
         };
       outputSchema = sourceSchema;
       calls = source.value.maximumItems ?? 0;
+      maximumItems = source.value.maximumItems;
     } else if (expression.method === "fold") {
       const collection =
         sourceSchema === null
@@ -939,7 +940,11 @@ function analyzeExpression(
       }
     }
     const output = catalog.schemas.get(referenceKey(outputSchema));
-    if (output?.kind.kind === "collection" && expression.method !== "map") {
+    if (
+      output?.kind.kind === "collection" &&
+      expression.method !== "map" &&
+      expression.method !== "filter"
+    ) {
       const declared =
         operation.kind === "function" || operation.kind === "effect"
           ? operation.maxOutputItems

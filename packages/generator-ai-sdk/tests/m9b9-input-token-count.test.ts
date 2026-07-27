@@ -32,7 +32,8 @@ import {
 } from "../internal/m9b8-prospective-redesign.js";
 import {
   dispatchM9b9InputTokenCount,
-  executeM9b9OfflineLifecycle,
+  executeM9b9OfflineConformanceLifecycle as executeM9b9OfflineLifecycle,
+  executeM9b9OfflineLifecycle as executeM9b9AuthorityGatedLifecycle,
   M9B9_INPUT_TOKEN_COUNT_PROTOCOL,
   type M9b9CapacityReport,
   type M9b9CapacityToken,
@@ -483,6 +484,38 @@ async function resign(
 }
 
 describe("M9b.9 offline Responses input-token count boundary", () => {
+  it("rejects the verified NO-GO report before persistence or either transport", async () => {
+    const request = await binding();
+    const current = await fixture();
+    const store = new MemoryStore();
+    let countCalls = 0;
+    let inferenceCalls = 0;
+    const result = await executeM9b9AuthorityGatedLifecycle({
+      binding: request,
+      capacityToken: current.capacityToken,
+      capacityReport: current.capacityReport,
+      availableCampaignUsdMicros: Number.MAX_SAFE_INTEGER,
+      store,
+      countAdapter: countSettings(() => {
+        countCalls += 1;
+        return Promise.resolve(new Response("{}"));
+      }),
+      inferenceTransport: () => {
+        inferenceCalls += 1;
+        return emptyInference();
+      },
+      controllerId: "authority-hostile-controller",
+      resumeAfterCrash: false,
+      signal: new AbortController().signal,
+    });
+    expect(result).toMatchObject({ ok: false, error: { kind: "validation" } });
+    expect({ saves: store.saves, countCalls, inferenceCalls }).toEqual({
+      saves: 0,
+      countCalls: 0,
+      inferenceCalls: 0,
+    });
+  });
+
   it("keeps every M9b.9 seam private", () => {
     expect("M9B9_INPUT_TOKEN_COUNT_PROTOCOL" in aiSdkFacade).toBe(false);
     expect("prepareM9b9RequestBinding" in aiSdkFacade).toBe(false);

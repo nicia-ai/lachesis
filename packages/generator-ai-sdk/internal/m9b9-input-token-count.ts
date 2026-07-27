@@ -1694,7 +1694,12 @@ function eventPayload<T>(
   return parsed.success ? parsed.data : undefined;
 }
 
-export async function executeM9b9OfflineLifecycle(
+/**
+ * Historical intercepted-transport conformance seam. This is intentionally
+ * distinct from the authority-gated lifecycle entry point below and carries no
+ * provider or live-execution authority.
+ */
+export async function executeM9b9OfflineConformanceLifecycle(
   input: M9b9LifecycleControllerInput,
 ): Promise<Result<M9b9LifecycleLedger, M9b9Failure>> {
   const binding = await verifyM9b9RequestBinding(input.binding);
@@ -2031,5 +2036,28 @@ export async function executeM9b9OfflineLifecycle(
   return failure(
     "validation",
     "M9b.9 lifecycle did not reach a terminal state.",
+  );
+}
+
+/**
+ * Fail-closed authority boundary for the frozen M9b.9 report. The only trusted
+ * M9b.9 report is explicitly NO-GO, so verification can never reach session,
+ * persistence, credential, count, or inference effects. A later live protocol
+ * must introduce independently reviewed positive authority rather than
+ * reinterpreting this artifact.
+ */
+export async function executeM9b9OfflineLifecycle(
+  input: M9b9LifecycleControllerInput,
+): Promise<Result<M9b9LifecycleLedger, M9b9Failure>> {
+  const binding = await verifyM9b9RequestBinding(input.binding);
+  const capacity = await verifyM9b9CapacityReview(
+    input.capacityToken,
+    input.capacityReport,
+  );
+  if (!binding.ok || !capacity.ok)
+    return failure("validation", "M9b.9 lifecycle inputs failed verification.");
+  return failure(
+    "validation",
+    "M9b.9 verified authority is NO-GO; transport is forbidden before any effect.",
   );
 }
