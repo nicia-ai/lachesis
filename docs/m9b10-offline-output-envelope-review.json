@@ -1,0 +1,165 @@
+{
+  "artifact": "lachesis-m9b10-offline-output-envelope-review-evidence",
+  "version": "1.0.0",
+  "baselineCommit": "1e03871af204a0de4b9c140e3b71e07ef11cdd92",
+  "decision": "campaign-capacity-remains-no-go",
+  "protocols": {
+    "review": "lachesis-m9b10-offline-output-envelope-review@1.0.0",
+    "firstAttemptReceipt": "lachesis-m9b10-first-attempt-output-receipt/1",
+    "inheritedCapacity": "lachesis-m9b9-offline-responses-input-token-count@1.0.0"
+  },
+  "population": {
+    "probePairs": 24,
+    "primaryPairs": 168,
+    "campaignPairs": 192,
+    "requestsPerPair": 4,
+    "inferenceRequests": 768,
+    "primaryEndpoint": "first-attempt-semantically-supported-end-to-end-success",
+    "inferenceUnit": "independent-paired-case"
+  },
+  "pricing": {
+    "cacheWriteInputUsdMicrosPerMillionTokens": 3125000,
+    "outputUsdMicrosPerMillionTokens": 15000000,
+    "reasoningUsdMicrosPerMillionTokens": 0,
+    "longContextThresholdTokens": 272000,
+    "inputMultiplierMicros": 1000000,
+    "outputMultiplierMicros": 1000000,
+    "providerMaxOutputIncludesVisibleAndNonvisibleTokens": true,
+    "countPricingRule": "unresolved"
+  },
+  "structuralContracts": {
+    "visibleTokenBoundProvenance": "prospective-controller-allocation-not-exact-tokenizer-proof-provider-truncation-fails",
+    "program": {
+      "maximumBindings": 14,
+      "maximumOperationCalls": 64,
+      "maximumExpressionDepth": 2,
+      "maximumBoundedFixLimit": 4,
+      "maximumIdentifierUtf8Bytes": 64,
+      "maximumReferenceUtf8Bytes": 160,
+      "maximumCanonicalLiteralUtf8Bytes": 128,
+      "maximumArgumentsPerOperation": 4,
+      "fixedWrapperAndSchemaUtf8Bytes": 2048,
+      "perBindingUtf8Bytes": 864,
+      "recursionGrammarUtf8Bytes": 256,
+      "maximumSourceUtf8Bytes": 14400,
+      "maximumVisibleStructuredOutputTokens": 28813
+    },
+    "staticQuery": {
+      "maximumQueries": 1,
+      "maximumQueryUtf8Bytes": 512,
+      "maximumVisibleStructuredOutputTokens": 1036
+    },
+    "groundedAnswer": {
+      "maximumAnswerValues": 8,
+      "maximumAnswerValueUtf8Bytes": 256,
+      "maximumSupportingFactIds": 16,
+      "maximumCitationIds": 16,
+      "maximumEvidenceIdUtf8Bytes": 96,
+      "typedInsufficientEvidenceOutcome": true,
+      "maximumVisibleStructuredOutputTokens": 8192
+    }
+  },
+  "acceptedM9b9Dominance": {
+    "inputReservationUsdMicros": 117964800,
+    "outputReservationUsdMicros": 495452160,
+    "outputShareBasisPoints": 8078,
+    "authoringOutputReservationUsdMicros": 377487360,
+    "groundedOutputReservationUsdMicros": 117964800,
+    "residualCapacityAfterInputAtOriginalCapUsdMicros": 0
+  },
+  "designs": [
+    {
+      "id": "accepted-m9b9-current",
+      "outputCeilings": {
+        "rootProgramAuthoring": 65536,
+        "staticQueryAuthoring": 65536,
+        "discoveredGroundedAnswer": 20480,
+        "staticGroundedAnswer": 20480
+      },
+      "campaignInferenceReservationUsdMicros": 613416960,
+      "classCampaignContributionsUsdMicros": {
+        "rootProgramAuthoring": 228065280,
+        "staticQueryAuthoring": 228065280,
+        "discoveredGroundedAnswer": 78643200,
+        "staticGroundedAnswer": 78643200
+      },
+      "unresolvedCountPricingExposureUsdMicros": 4425600000,
+      "completeExposureUsdMicros": 5039016960,
+      "developmentFixtureTruncations": 0
+    },
+    {
+      "id": "prospective-moderate-class-specific",
+      "outputCeilings": {
+        "rootProgramAuthoring": 40960,
+        "staticQueryAuthoring": 4096,
+        "discoveredGroundedAnswer": 16384,
+        "staticGroundedAnswer": 16384
+      },
+      "campaignInferenceReservationUsdMicros": 342097920,
+      "classCampaignContributionsUsdMicros": {
+        "rootProgramAuthoring": 157286400,
+        "staticQueryAuthoring": 51118080,
+        "discoveredGroundedAnswer": 66846720,
+        "staticGroundedAnswer": 66846720
+      },
+      "unresolvedCountPricingExposureUsdMicros": 4425600000,
+      "completeExposureUsdMicros": 4767697920,
+      "developmentFixtureTruncations": 0
+    },
+    {
+      "id": "prospective-aggressive-class-specific",
+      "outputCeilings": {
+        "rootProgramAuthoring": 32768,
+        "staticQueryAuthoring": 2048,
+        "discoveredGroundedAnswer": 12288,
+        "staticGroundedAnswer": 12288
+      },
+      "campaignInferenceReservationUsdMicros": 289013760,
+      "classCampaignContributionsUsdMicros": {
+        "rootProgramAuthoring": 133693440,
+        "staticQueryAuthoring": 45219840,
+        "discoveredGroundedAnswer": 55050240,
+        "staticGroundedAnswer": 55050240
+      },
+      "unresolvedCountPricingExposureUsdMicros": 4425600000,
+      "completeExposureUsdMicros": 4714613760,
+      "developmentFixtureTruncations": 2
+    }
+  ],
+  "firstAttemptPolicy": {
+    "truncatedOrIncomplete": "terminal-primary-endpoint-failure",
+    "exactResponseAndUsageRetained": true,
+    "retries": 0,
+    "exclusionPermitted": false,
+    "replacementPermitted": false,
+    "postHocCeilingIncreasePermitted": false
+  },
+  "probeGate": {
+    "completeResponsesRequired": 96,
+    "maximumTruncatedOrIncompleteResponses": 0,
+    "failureDecision": "halt-no-primary-no-ceiling-change-no-retry-no-replacement"
+  },
+  "scientificBoundary": {
+    "populationUnchanged": true,
+    "estimandUnchanged": true,
+    "pairedAllocationUnchanged": true,
+    "alphaUnchanged": true,
+    "powerTargetUnchanged": true,
+    "targetPowerBasisPoints": 8000,
+    "primaryPairedCases": 168,
+    "matchedModelAndReasoningModeAcrossArms": true,
+    "fixedVisibleReasoningRatioAssumed": false,
+    "developmentFixtureEvidenceGeneralizes": false
+  },
+  "authority": {
+    "overallPreregistrationReadiness": false,
+    "countPricingResolutionRequired": true,
+    "campaignCapChangeRequiredForAnyPositiveOutputEnvelope": true,
+    "corpusMaterializationAuthorized": false,
+    "externalRegistrationAuthorized": false,
+    "credentialsAuthorized": false,
+    "providerAccessAuthorized": false,
+    "probeAuthorized": false,
+    "liveExecutionAuthorized": false
+  }
+}

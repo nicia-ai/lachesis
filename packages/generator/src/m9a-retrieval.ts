@@ -27,6 +27,8 @@ import {
   compileCodeModeWithDialect,
   executeCodeMode,
   inspectCodeModeArtifact,
+  inspectInternalCodeModeArtifactStructure,
+  type InternalCodeModeArtifactStructure,
 } from "./codemode.js";
 import {
   inspectM9aCorpus,
@@ -854,6 +856,16 @@ export function inspectM9aRetrievalArtifact(
   artifact: M9aRetrievalArtifact,
 ): M9aRetrievalArtifactSummary | undefined {
   return artifacts.get(artifact)?.summary;
+}
+
+/** @internal Private closed-AST structure seam for prospective M9 reviews. */
+export function inspectM9aRetrievalArtifactStructure(
+  artifact: M9aRetrievalArtifact,
+): InternalCodeModeArtifactStructure | undefined {
+  const stored = artifacts.get(artifact);
+  return stored === undefined
+    ? undefined
+    : inspectInternalCodeModeArtifactStructure(stored.inner);
 }
 
 type MutableExecutionContext = {

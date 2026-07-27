@@ -1,6 +1,7 @@
 import { parse } from "@babel/parser";
 import * as t from "@babel/types";
 import {
+  canonicalizeJson,
   canonicalizeSemanticObligations,
   type Catalog,
   type CompilationPolicy,
@@ -1250,6 +1251,105 @@ export function inspectCodeModeArtifact(
   artifact: CodeModeArtifact,
 ): CodeModeArtifactSummary | undefined {
   return artifacts.get(artifact)?.summary;
+}
+
+/**
+ * Private structural inspection seam for experimental, closed-AST envelope
+ * reviews. It is intentionally not re-exported from the package facade.
+ */
+export type InternalCodeModeArtifactStructure = Readonly<{
+  bindingCount: number;
+  maximumIdentifierUtf8Bytes: number;
+  maximumReferenceUtf8Bytes: number;
+  maximumCanonicalLiteralUtf8Bytes: number;
+  maximumArgumentsPerOperation: number;
+  maximumBoundedFixLimit: number;
+  maximumExpressionDepth: 2;
+}>;
+
+function utf8Bytes(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
+
+function literalBytes(value: ValueExpression): number {
+  if (value.kind !== "literal") return 0;
+  const canonical = canonicalizeJson(value.value);
+  return canonical.ok ? utf8Bytes(canonical.value) : Number.MAX_SAFE_INTEGER;
+}
+
+function valueIdentifierBytes(value: ValueExpression): number {
+  return value.kind === "literal" ? 0 : utf8Bytes(value.name);
+}
+
+/** @internal Closed-AST metrics only; performs no execution or reparsing. */
+export function inspectInternalCodeModeArtifactStructure(
+  artifact: CodeModeArtifact,
+): InternalCodeModeArtifactStructure | undefined {
+  const stored = artifacts.get(artifact);
+  if (stored === undefined) return undefined;
+  let maximumIdentifierUtf8Bytes = 0;
+  let maximumReferenceUtf8Bytes = 0;
+  let maximumCanonicalLiteralUtf8Bytes = 0;
+  let maximumArgumentsPerOperation = 0;
+  let maximumBoundedFixLimit = 0;
+  for (const binding of stored.program.bindings) {
+    maximumIdentifierUtf8Bytes = Math.max(
+      maximumIdentifierUtf8Bytes,
+      utf8Bytes(binding.name),
+    );
+    const expression = binding.expression;
+    const values =
+      expression.kind === "select"
+        ? [expression.condition, expression.primary, expression.fallback]
+        : [expression.source];
+    for (const value of values) {
+      maximumIdentifierUtf8Bytes = Math.max(
+        maximumIdentifierUtf8Bytes,
+        valueIdentifierBytes(value),
+      );
+      maximumCanonicalLiteralUtf8Bytes = Math.max(
+        maximumCanonicalLiteralUtf8Bytes,
+        literalBytes(value),
+      );
+    }
+    if (expression.kind === "operation") {
+      maximumReferenceUtf8Bytes = Math.max(
+        maximumReferenceUtf8Bytes,
+        utf8Bytes(referenceKey(expression.operation)),
+      );
+      maximumArgumentsPerOperation = Math.max(maximumArgumentsPerOperation, 2);
+    } else if (expression.kind === "select") {
+      maximumArgumentsPerOperation = Math.max(maximumArgumentsPerOperation, 3);
+    } else {
+      maximumReferenceUtf8Bytes = Math.max(
+        maximumReferenceUtf8Bytes,
+        utf8Bytes(referenceKey(expression.step)),
+        utf8Bytes(referenceKey(expression.measure)),
+      );
+      maximumArgumentsPerOperation = Math.max(maximumArgumentsPerOperation, 4);
+      maximumBoundedFixLimit = Math.max(
+        maximumBoundedFixLimit,
+        expression.limit,
+      );
+    }
+  }
+  maximumIdentifierUtf8Bytes = Math.max(
+    maximumIdentifierUtf8Bytes,
+    valueIdentifierBytes(stored.program.root),
+  );
+  maximumCanonicalLiteralUtf8Bytes = Math.max(
+    maximumCanonicalLiteralUtf8Bytes,
+    literalBytes(stored.program.root),
+  );
+  return Object.freeze({
+    bindingCount: stored.program.bindings.length,
+    maximumIdentifierUtf8Bytes,
+    maximumReferenceUtf8Bytes,
+    maximumCanonicalLiteralUtf8Bytes,
+    maximumArgumentsPerOperation,
+    maximumBoundedFixLimit,
+    maximumExpressionDepth: 2,
+  });
 }
 
 type MutableUsage = {
