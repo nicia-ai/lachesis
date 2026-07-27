@@ -1,0 +1,73 @@
+{
+  "protocol": {
+    "id": "lachesis-m9b10b-post-correction-audit",
+    "version": "1.0.0",
+    "visibility": "private-offline-audit-only"
+  },
+  "baseline": {
+    "commit": "16d36fc19d4fbb311394206beb2c64914690eb27",
+    "tree": "6f048f0940a01916c1429208602744fc7e30e1de"
+  },
+  "decision": "post-correction-review-no-go",
+  "findings": [
+    {
+      "id": "m9b10b-post-p1-1-no-go-dispatch-bypass",
+      "priority": "P1",
+      "title": "The verified NO-GO capacity artifact remains bypassable",
+      "source": "packages/generator-ai-sdk/internal/m9b9-input-token-count.ts:1702-1972",
+      "evidence": "The retained offline conformance lifecycle accepts transport-capable callbacks and can invoke both count and inference effects after validating the frozen NO-GO capacity artifact."
+    },
+    {
+      "id": "m9b10b-post-p1-2-terminal-cross-binding",
+      "priority": "P1",
+      "title": "Terminal fragments are independently valid but not cross-bound",
+      "source": "packages/generator-ai-sdk/internal/m9b10b-selected-topology.ts:1413-1542",
+      "evidence": "Foreign authoring requests, replaced authored programs, replaced persisted answers, and foreign evaluator receipts can remain self-consistent and pass terminal verification."
+    },
+    {
+      "id": "m9b10b-post-p1-3-retrieval-and-pair-provenance",
+      "priority": "P1",
+      "title": "Retrieval and pair replay treat re-signing as provenance",
+      "source": "packages/generator/src/m9b10b-retrieval.ts:755-788; packages/generator-ai-sdk/internal/m9b10b-selected-topology.ts:2075-2108",
+      "evidence": "A mutated second query and a re-keyed pair can be accepted after recomputing their inner digests because verification lacks independently trusted run and schedule roots."
+    },
+    {
+      "id": "m9b10b-post-p1-4-envelope-composition",
+      "priority": "P1",
+      "title": "The selected topology incompletely reimplements the moderate envelope",
+      "source": "packages/generator-ai-sdk/internal/m9b10b-selected-topology.ts:210-231,777-786",
+      "evidence": "Input, reasoning, and visible-output overages can pass because the selected receipt enforces only total output and does not consume the authoritative M9b.10 moderate receipt."
+    },
+    {
+      "id": "m9b10b-post-p1-5-primary-population-selection",
+      "priority": "P1",
+      "title": "Primary analysis accepts a caller-selected balanced population",
+      "source": "packages/generator-ai-sdk/internal/m9b10b-selected-topology.ts:2283-2325",
+      "evidence": "The analyzer accepts caller-provided expected case and population identities, allowing a balanced 168-case subset to be selected from a larger verified measurement pool."
+    }
+  ],
+  "verifiedProperties": [
+    "one private paired-case orchestrator",
+    "two inference-shaped attempts per successful arm",
+    "local closed-AST evidence-adaptive retrieval",
+    "local one-shot static retrieval",
+    "retrieval capability catalog excludes model and provider effects",
+    "durable first-arm persistence before second-arm execution",
+    "campaign-global compare-and-swap exclusion",
+    "exact integer one-sided conditional McNemar arithmetic",
+    "token-count pricing remains unresolved and cannot default to zero",
+    "no public export, package-version, provider, corpus, or preregistration authority"
+  ],
+  "requiredCorrection": "Add a private M9b.10c amendment that makes offline conformance structurally effect-free, cross-binds every terminal fragment, verifies retrieval and pair replay against trusted roots, consumes the authoritative moderate envelope, and derives the complete primary inventory from an opaque frozen allocation token.",
+  "nonclaims": [
+    "no model-quality or retrieval-superiority claim",
+    "no professional security-audit, penetration-test, or compliance claim",
+    "no provider-access, live-execution, corpus-materialization, preregistration, or production-readiness authority",
+    "no claim that POST /v1/responses/input_tokens is free or billable"
+  ],
+  "sourceChecksums": {
+    "packages/generator-ai-sdk/internal/m9b9-input-token-count.ts": "aab16e511aa8dcd36b512098ecf5f788b230b232aa481f7611210677e2adc7f4",
+    "packages/generator-ai-sdk/internal/m9b10b-selected-topology.ts": "db6078fb6f000d707737d0f291f6c98ec9a68ea071ca0eaf267247f626636300",
+    "packages/generator/src/m9b10b-retrieval.ts": "6df8d6c8f72f948be4d371a592bae643a575ad6e7fadff7f779198cf9c7c4e11"
+  }
+}
