@@ -1,8 +1,10 @@
-d6e9b2b05b7bd14bc2f1a22e2167b6eb10d00daf3e3fae6fd0d0dfc0a84efa0b  docs/m9b5-offline-provider-adapter-conformance.json
-c955aa27157f2196f48801a2cc471024c9e8291ef74c7d02a24e63c196c0eb7e  docs/m9b5-offline-provider-adapter-conformance.md
+5bef8ea2a80ebb3f452adbc7c9d4a693728cd4ca85b3a7a7361304fe880e3e51  docs/m9b5-offline-provider-adapter-conformance.json
+126d6385dad705496f0d83d2e72a36766d59dc803a2c3cd214f99561768b9f99  docs/m9b5-offline-provider-adapter-conformance.md
 f28af0d2f9332ff7937f49eba05c8084fcf121a93d226d87d588189ffed687e4  packages/generator-ai-sdk/package.json
-e4137376fc96de1276c013f42eaf9a3f2f048b9f0e9cc8b00f4aa83919446693  packages/generator-ai-sdk/src/m9b5-openai-responses.ts
-4e7a5e8d4fb2e61aea244abe7b82c10751ae442ae43b580979079a4373d55979  packages/generator-ai-sdk/tests/m9b5-openai-responses.test.ts
+0efc6f43640fc86a714ff92490e082a7a02888a629e506c90b2c57da5841d79e  packages/generator-ai-sdk/src/m9b5-openai-responses.ts
+78a6096eca3ef9ca64ef14b74303a95373e3fbf4bee9916fab38d162c11c9eba  packages/generator-ai-sdk/tests/m9b5-openai-responses.test.ts
+9f489b9d6ee6e003c5e34927de9b29f13add6c620601407ca0719c613af771f0  packages/generator/src/m9b4-effect-ledger.ts
+9dea030aec1643f45c1a8097e6e8bc6be79abcbef9aa7cbf245219b46207b76f  packages/generator/tests/m9b4-effect-ledger.test.ts
 d0d40ad70fe2c4d0b4731cbc9f3a7c0ee79a1545a52b93c5bb8825932f8bd26f  node_modules/.pnpm/@ai-sdk+openai@4.0.15_zod@4.4.3/node_modules/@ai-sdk/openai/package.json
 5362764d1aa17a019fb7317e1052bd27932a318dd5cf291e5e017e63873e7558  node_modules/.pnpm/@ai-sdk+openai@4.0.15_zod@4.4.3/node_modules/@ai-sdk/openai/dist/index.js
 0f8390f2bf9e0e4dc968291d606323f85b604bb371db2cadec5fa664eeea966a  node_modules/.pnpm/@ai-sdk+openai@4.0.15_zod@4.4.3/node_modules/@ai-sdk/openai/dist/index.d.ts

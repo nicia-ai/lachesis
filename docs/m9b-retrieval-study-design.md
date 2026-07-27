@@ -464,13 +464,16 @@ and is never redispatched. Complete receipts reconcile exact bound usage; all
 campaign, provider, phase, arm, and request accounting is rederived from the
 canonical event chain.
 
-M9b.5 subsequently passed the independently testable offline OpenAI Responses
-request, intercepted transport, raw response/usage, cancellation, zero-retry,
-identity, and private M9b.4 structural-composition boundaries under
-`lachesis-m9b5-openai-responses-offline-conformance@1.0.0`. It added no public
-export and made zero network calls.
+M9b.5a subsequently passed the independently testable offline OpenAI Responses
+request, intercepted transport, decision-relevant raw-response projection,
+cache-aware usage/pricing, cancellation, zero-retry, identity, and private M9b.4
+structural-composition boundaries under
+`lachesis-m9b5-openai-responses-offline-conformance@1.1.0`. The private M9b.4
+wire identity advances to 1.1.0/revision 2 for the billing-class fields rather
+than reinterpreting its accepted 1.0.0 records. It added no public export and
+made zero network calls.
 
-M9b remains **NO-GO** after M9b.5. Neither the pinned provider package nor the
+M9b remains **NO-GO** after M9b.5a. Neither the pinned provider package nor the
 official Responses contract supplies an independently reproducible, versioned,
 offline count for the exact serialized Responses input and its provider-side
 framing. Request bytes, a generic encoding, synthetic counts, and reported usage

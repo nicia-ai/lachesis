@@ -12,7 +12,7 @@ import { strictJsonValueSchema } from "./strict-json.js";
 
 export const M9B4_EFFECT_LEDGER_PROTOCOL = Object.freeze({
   id: "lachesis-m9b4-offline-effect-ledger",
-  version: "1.0.0",
+  version: "1.1.0",
   visibility: "internal-offline-controller-only" as const,
   retryPolicy:
     "exactly-one-transport-invocation-zero-automatic-retries" as const,
@@ -45,6 +45,8 @@ const pricingIdentitySchema = artifactIdentitySchema
   .safeExtend({
     providerId: identifierSchema,
     inputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
+    cachedInputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
+    cacheWriteInputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
     outputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
     reasoningUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
   })
@@ -115,7 +117,7 @@ const campaignInputSchema = z
 const campaignBodySchema = campaignInputSchema
   .unwrap()
   .safeExtend({
-    protocol: z.literal("lachesis-m9b4-offline-effect-ledger-campaign/1"),
+    protocol: z.literal("lachesis-m9b4-offline-effect-ledger-campaign/2"),
     budgetEnvelopeDigest: digestSchema,
   })
   .readonly();
@@ -154,7 +156,7 @@ const attemptInputSchema = z
 const attemptBodySchema = attemptInputSchema
   .unwrap()
   .safeExtend({
-    protocol: z.literal("lachesis-m9b4-effect-attempt/1"),
+    protocol: z.literal("lachesis-m9b4-effect-attempt/2"),
     campaignDigest: digestSchema,
     budgetEnvelopeDigest: digestSchema,
     reservationDigest: digestSchema,
@@ -170,6 +172,8 @@ export type M9b4Attempt = z.infer<typeof m9b4AttemptSchema>;
 export const m9b4UsageSchema = z
   .strictObject({
     inputTokens: z.number().int().nonnegative(),
+    cachedInputTokens: z.number().int().nonnegative(),
+    cacheWriteInputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),
     reasoningTokens: z.number().int().nonnegative(),
     wallClockMs: z.number().int().nonnegative(),
@@ -378,7 +382,7 @@ type DerivedAttempt =
 
 const ledgerSnapshotBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b4-effect-ledger-snapshot/1"),
+    protocol: z.literal("lachesis-m9b4-effect-ledger-snapshot/2"),
     campaignDigest: digestSchema,
     events: eventSchema.array().readonly(),
   })
@@ -428,6 +432,9 @@ const accountingSliceSchema = z
     reservedAttempts: z.number().int().nonnegative(),
     ...resourceCeilingSchema.unwrap().shape,
     chargedInputTokens: z.number().int().nonnegative(),
+    chargedUncachedInputTokens: z.number().int().nonnegative(),
+    chargedCachedInputTokens: z.number().int().nonnegative(),
+    chargedCacheWriteInputTokens: z.number().int().nonnegative(),
     chargedOutputTokens: z.number().int().nonnegative(),
     chargedReasoningTokens: z.number().int().nonnegative(),
     chargedWallClockMs: z.number().int().nonnegative(),
@@ -441,7 +448,7 @@ const accountingSliceSchema = z
   .readonly();
 export const m9b4AccountingStatusSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b4-rederived-accounting/1"),
+    protocol: z.literal("lachesis-m9b4-rederived-accounting/2"),
     campaignDigest: digestSchema,
     eventCount: z.number().int().nonnegative(),
     ledgerHead: digestSchema.nullable(),
@@ -476,6 +483,9 @@ export const m9b4AccountingStatusSchema = z
         requestDigest: digestSchema,
         reservedAttempts: z.number().int().nonnegative(),
         chargedInputTokens: z.number().int().nonnegative(),
+        chargedUncachedInputTokens: z.number().int().nonnegative(),
+        chargedCachedInputTokens: z.number().int().nonnegative(),
+        chargedCacheWriteInputTokens: z.number().int().nonnegative(),
         chargedOutputTokens: z.number().int().nonnegative(),
         chargedReasoningTokens: z.number().int().nonnegative(),
         chargedWallClockMs: z.number().int().nonnegative(),
@@ -522,21 +532,105 @@ function priceUsage(
   pricing: z.infer<typeof pricingIdentitySchema>,
   usage: Readonly<{
     inputTokens: number;
+    cachedInputTokens: number;
+    cacheWriteInputTokens: number;
     outputTokens: number;
     reasoningTokens: number;
   }>,
 ): Result<number, Diagnostic> {
-  const numerator =
-    usage.inputTokens * pricing.inputUsdMicrosPerMillionTokens +
-    usage.outputTokens * pricing.outputUsdMicrosPerMillionTokens +
-    usage.reasoningTokens * pricing.reasoningUsdMicrosPerMillionTokens;
+  const uncachedInputTokens =
+    usage.inputTokens - usage.cachedInputTokens - usage.cacheWriteInputTokens;
+  if (uncachedInputTokens < 0)
+    return {
+      ok: false,
+      error: invalid("M9b.4 cached and cache-write input exceed total input."),
+    };
+  const numerators = [
+    uncachedInputTokens * pricing.inputUsdMicrosPerMillionTokens,
+    usage.cachedInputTokens * pricing.cachedInputUsdMicrosPerMillionTokens,
+    usage.cacheWriteInputTokens *
+      pricing.cacheWriteInputUsdMicrosPerMillionTokens,
+    usage.outputTokens * pricing.outputUsdMicrosPerMillionTokens,
+    usage.reasoningTokens * pricing.reasoningUsdMicrosPerMillionTokens,
+  ];
+  const numerator = numerators.reduce(
+    (total, component) => total + component,
+    0,
+  );
   const cost = Math.ceil(numerator / 1_000_000);
-  return Number.isSafeInteger(numerator) && Number.isSafeInteger(cost)
+  return numerators.every(Number.isSafeInteger) &&
+    Number.isSafeInteger(numerator) &&
+    Number.isSafeInteger(cost)
     ? { ok: true, value: cost }
     : {
         ok: false,
         error: invalid("M9b.4 pricing exceeds safe integer bounds."),
       };
+}
+
+function maximumInputBreakdown(
+  pricing: z.infer<typeof pricingIdentitySchema>,
+  inputTokens: number,
+): Readonly<{
+  cachedInputTokens: number;
+  cacheWriteInputTokens: number;
+}> {
+  const rates = [
+    pricing.inputUsdMicrosPerMillionTokens,
+    pricing.cachedInputUsdMicrosPerMillionTokens,
+    pricing.cacheWriteInputUsdMicrosPerMillionTokens,
+  ];
+  const maximumRate = Math.max(...rates);
+  const cachedInputTokens =
+    pricing.cachedInputUsdMicrosPerMillionTokens === maximumRate &&
+    pricing.inputUsdMicrosPerMillionTokens !== maximumRate
+      ? inputTokens
+      : 0;
+  return {
+    cachedInputTokens,
+    cacheWriteInputTokens:
+      pricing.cacheWriteInputUsdMicrosPerMillionTokens === maximumRate &&
+      pricing.inputUsdMicrosPerMillionTokens !== maximumRate &&
+      cachedInputTokens === 0
+        ? inputTokens
+        : 0,
+  };
+}
+
+function maximumUsage(
+  pricing: z.infer<typeof pricingIdentitySchema>,
+  usage: Readonly<{
+    inputTokens: number;
+    outputTokens: number;
+    reasoningTokens: number;
+    wallClockMs: number;
+  }>,
+): Result<M9b4Usage, Diagnostic> {
+  const { cachedInputTokens, cacheWriteInputTokens } = maximumInputBreakdown(
+    pricing,
+    usage.inputTokens,
+  );
+  const cost = priceUsage(pricing, {
+    inputTokens: usage.inputTokens,
+    cachedInputTokens,
+    cacheWriteInputTokens,
+    outputTokens: usage.outputTokens,
+    reasoningTokens: usage.reasoningTokens,
+  });
+  return cost.ok
+    ? {
+        ok: true,
+        value: {
+          inputTokens: usage.inputTokens,
+          cachedInputTokens,
+          cacheWriteInputTokens,
+          outputTokens: usage.outputTokens,
+          reasoningTokens: usage.reasoningTokens,
+          wallClockMs: usage.wallClockMs,
+          costUsdMicros: cost.value,
+        },
+      }
+    : cost;
 }
 
 async function validateCampaign(
@@ -566,7 +660,7 @@ export async function prepareM9b4Campaign(
   const budgetEnvelopeDigest = await digestValue(parsed.data.budgetEnvelope);
   if (!budgetEnvelopeDigest.ok) return budgetEnvelopeDigest;
   const body = campaignBodySchema.parse({
-    protocol: "lachesis-m9b4-offline-effect-ledger-campaign/1",
+    protocol: "lachesis-m9b4-offline-effect-ledger-campaign/2",
     ...parsed.data,
     budgetEnvelopeDigest: budgetEnvelopeDigest.value,
   });
@@ -639,10 +733,11 @@ async function validateAttempt(
     parsed.data.requestDigest,
   );
   const reservationDigest = await digestValue(parsed.data.reservation);
-  const expectedMaximum = priceUsage(parsed.data.pricingSnapshot, {
+  const expectedMaximum = maximumUsage(parsed.data.pricingSnapshot, {
     inputTokens: parsed.data.reservation.maximumInputTokens,
     outputTokens: parsed.data.reservation.maximumOutputTokens,
     reasoningTokens: parsed.data.reservation.maximumReasoningTokens,
+    wallClockMs: parsed.data.reservation.maximumWallClockMs,
   });
   const { attemptId: _attemptId, ...body } = parsed.data;
   void _attemptId;
@@ -661,7 +756,8 @@ async function validateAttempt(
     parsed.data.provider.id !== parsed.data.pricingSnapshot.providerId ||
     parsed.data.requestInputTokens !==
       parsed.data.reservation.maximumInputTokens ||
-    parsed.data.reservation.maximumCostUsdMicros !== expectedMaximum.value
+    parsed.data.reservation.maximumCostUsdMicros !==
+      expectedMaximum.value.costUsdMicros
   )
     return {
       ok: false,
@@ -687,7 +783,7 @@ export async function prepareM9b4Attempt(
   const reservationDigest = await digestValue(parsed.data.reservation);
   if (!reservationDigest.ok) return reservationDigest;
   const body = attemptBodySchema.parse({
-    protocol: "lachesis-m9b4-effect-attempt/1",
+    protocol: "lachesis-m9b4-effect-attempt/2",
     campaignDigest: campaign.value.campaignDigest,
     budgetEnvelopeDigest: campaign.value.budgetEnvelopeDigest,
     ...parsed.data,
@@ -781,6 +877,8 @@ function validateUsage(
   const cost = priceUsage(attempt.pricingSnapshot, usage.data);
   return cost.ok &&
     usage.data.inputTokens === attempt.requestInputTokens &&
+    usage.data.cachedInputTokens + usage.data.cacheWriteInputTokens <=
+      usage.data.inputTokens &&
     usage.data.inputTokens <= attempt.reservation.maximumInputTokens &&
     usage.data.outputTokens <= attempt.reservation.maximumOutputTokens &&
     usage.data.reasoningTokens <= attempt.reservation.maximumReasoningTokens &&
@@ -1036,7 +1134,7 @@ async function appendEvent(
   const attempts = await deriveLedger(campaign, events);
   if (!attempts.ok) return attempts;
   const snapshotBody = ledgerSnapshotBodySchema.parse({
-    protocol: "lachesis-m9b4-effect-ledger-snapshot/1",
+    protocol: "lachesis-m9b4-effect-ledger-snapshot/2",
     campaignDigest: campaign.campaignDigest,
     events,
   });
@@ -1070,6 +1168,8 @@ function chargeOf(state: DerivedAttempt): Readonly<{
 }> {
   const zero = {
     inputTokens: 0,
+    cachedInputTokens: 0,
+    cacheWriteInputTokens: 0,
     outputTokens: 0,
     reasoningTokens: 0,
     wallClockMs: 0,
@@ -1077,19 +1177,35 @@ function chargeOf(state: DerivedAttempt): Readonly<{
   };
   if (state.state === "prepared") return { reserved: false, usage: zero };
   const reservation = state.prepared.attempt.reservation;
-  const maximum = {
+  const maximum = maximumUsage(state.prepared.attempt.pricingSnapshot, {
     inputTokens: reservation.maximumInputTokens,
     outputTokens: reservation.maximumOutputTokens,
     reasoningTokens: reservation.maximumReasoningTokens,
     wallClockMs: reservation.maximumWallClockMs,
-    costUsdMicros: reservation.maximumCostUsdMicros,
-  };
+  });
+  if (!maximum.ok) {
+    const inputBreakdown = maximumInputBreakdown(
+      state.prepared.attempt.pricingSnapshot,
+      reservation.maximumInputTokens,
+    );
+    return {
+      reserved: true,
+      usage: {
+        inputTokens: reservation.maximumInputTokens,
+        ...inputBreakdown,
+        outputTokens: reservation.maximumOutputTokens,
+        reasoningTokens: reservation.maximumReasoningTokens,
+        wallClockMs: reservation.maximumWallClockMs,
+        costUsdMicros: reservation.maximumCostUsdMicros,
+      },
+    };
+  }
   return {
     reserved: true,
     usage:
       state.state === "reconciled"
-        ? (state.reconciled.settlement.chargedUsage ?? maximum)
-        : maximum,
+        ? (state.reconciled.settlement.chargedUsage ?? maximum.value)
+        : maximum.value,
   };
 }
 
@@ -1099,6 +1215,10 @@ function sumUsage(
   return charges.reduce<M9b4Usage>(
     (total, charge) => ({
       inputTokens: total.inputTokens + charge.usage.inputTokens,
+      cachedInputTokens:
+        total.cachedInputTokens + charge.usage.cachedInputTokens,
+      cacheWriteInputTokens:
+        total.cacheWriteInputTokens + charge.usage.cacheWriteInputTokens,
       outputTokens: total.outputTokens + charge.usage.outputTokens,
       reasoningTokens: total.reasoningTokens + charge.usage.reasoningTokens,
       wallClockMs: total.wallClockMs + charge.usage.wallClockMs,
@@ -1106,6 +1226,8 @@ function sumUsage(
     }),
     {
       inputTokens: 0,
+      cachedInputTokens: 0,
+      cacheWriteInputTokens: 0,
       outputTokens: 0,
       reasoningTokens: 0,
       wallClockMs: 0,
@@ -1128,6 +1250,12 @@ function accountingSlice(
     maximumWallClockMs: ceiling.maximumWallClockMs,
     maximumCostUsdMicros: ceiling.maximumCostUsdMicros,
     chargedInputTokens: charged.inputTokens,
+    chargedUncachedInputTokens:
+      charged.inputTokens -
+      charged.cachedInputTokens -
+      charged.cacheWriteInputTokens,
+    chargedCachedInputTokens: charged.cachedInputTokens,
+    chargedCacheWriteInputTokens: charged.cacheWriteInputTokens,
     chargedOutputTokens: charged.outputTokens,
     chargedReasoningTokens: charged.reasoningTokens,
     chargedWallClockMs: charged.wallClockMs,
@@ -1185,6 +1313,12 @@ async function accountingStatus(
       requestDigest,
       reservedAttempts: charges.filter((charge) => charge.reserved).length,
       chargedInputTokens: charged.inputTokens,
+      chargedUncachedInputTokens:
+        charged.inputTokens -
+        charged.cachedInputTokens -
+        charged.cacheWriteInputTokens,
+      chargedCachedInputTokens: charged.cachedInputTokens,
+      chargedCacheWriteInputTokens: charged.cacheWriteInputTokens,
       chargedOutputTokens: charged.outputTokens,
       chargedReasoningTokens: charged.reasoningTokens,
       chargedWallClockMs: charged.wallClockMs,
@@ -1192,7 +1326,7 @@ async function accountingStatus(
     };
   });
   const body = {
-    protocol: "lachesis-m9b4-rederived-accounting/1" as const,
+    protocol: "lachesis-m9b4-rederived-accounting/2" as const,
     campaignDigest: campaign.campaignDigest,
     eventCount: ledger.events.length,
     ledgerHead: ledger.events.at(-1)?.digest ?? null,

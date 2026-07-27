@@ -128,6 +128,8 @@ const PRICING = Object.freeze({
   artifactDigest: "4".repeat(64),
   providerId: PROVIDER.id,
   inputUsdMicrosPerMillionTokens: 1_000_000,
+  cachedInputUsdMicrosPerMillionTokens: 500_000,
+  cacheWriteInputUsdMicrosPerMillionTokens: 1_000_000,
   outputUsdMicrosPerMillionTokens: 2_000_000,
   reasoningUsdMicrosPerMillionTokens: 3_000_000,
 });
@@ -208,6 +210,8 @@ function successfulTransport(outputTokens = 2, reasoningTokens = 1): unknown {
     output: { answer: "offline" },
     usage: {
       inputTokens: 10,
+      cachedInputTokens: 0,
+      cacheWriteInputTokens: 0,
       outputTokens,
       reasoningTokens,
       wallClockMs: 20,
@@ -383,6 +387,9 @@ describe("M9b.4 offline effect ledger", () => {
       maximumCostUsdMicros: 1_000,
       reservedAttempts: 1,
       chargedInputTokens: 10,
+      chargedUncachedInputTokens: 10,
+      chargedCachedInputTokens: 0,
+      chargedCacheWriteInputTokens: 0,
       chargedOutputTokens: 2,
       chargedReasoningTokens: 1,
       chargedWallClockMs: 20,
@@ -678,6 +685,8 @@ describe("M9b.4 offline effect ledger", () => {
         },
         usage: {
           inputTokens: 10,
+          cachedInputTokens: 0,
+          cacheWriteInputTokens: 0,
           outputTokens: 0,
           reasoningTokens: 0,
           wallClockMs: 10,
@@ -732,6 +741,8 @@ describe("M9b.4 offline effect ledger", () => {
         output: { answer: "offline" },
         usage: {
           inputTokens: 10,
+          cachedInputTokens: 0,
+          cacheWriteInputTokens: 0,
           outputTokens: 6,
           reasoningTokens: 0,
           wallClockMs: 10,
@@ -977,6 +988,9 @@ describe("M9b.4 offline effect ledger", () => {
     expect(status.total.chargedCostUsdMicros).toBe(34);
     expect(status.total).toMatchObject({
       chargedInputTokens: 20,
+      chargedUncachedInputTokens: 20,
+      chargedCachedInputTokens: 0,
+      chargedCacheWriteInputTokens: 0,
       chargedOutputTokens: 4,
       chargedReasoningTokens: 2,
       chargedWallClockMs: 40,
@@ -996,12 +1010,87 @@ describe("M9b.4 offline effect ledger", () => {
         (entry) =>
           entry.reservedAttempts === 1 &&
           entry.chargedInputTokens === 10 &&
+          entry.chargedUncachedInputTokens === 10 &&
+          entry.chargedCachedInputTokens === 0 &&
+          entry.chargedCacheWriteInputTokens === 0 &&
           entry.chargedOutputTokens === 2 &&
           entry.chargedReasoningTokens === 1 &&
           entry.chargedWallClockMs === 20 &&
           entry.chargedCostUsdMicros === 17,
       ),
     ).toBe(true);
+  });
+
+  it("rederives uncached, cached, and cache-write billing classes", async () => {
+    const campaignValue = await campaign();
+    const attemptValue = await attempt(campaignValue);
+    const memory = memoryLedger();
+    const result = unwrap(
+      await executeM9b4EffectAttempt({
+        campaign: campaignValue,
+        attempt: attemptValue,
+        persistence: memory.persistence,
+        createSession: sessionFactory(emptyCounters(), {
+          kind: "success",
+          output: { answer: "offline" },
+          usage: {
+            inputTokens: 10,
+            cachedInputTokens: 3,
+            cacheWriteInputTokens: 2,
+            outputTokens: 0,
+            reasoningTokens: 0,
+            wallClockMs: 20,
+            costUsdMicros: 9,
+          },
+        }),
+      }),
+    );
+
+    expect(result.accounting.total).toMatchObject({
+      chargedInputTokens: 10,
+      chargedUncachedInputTokens: 5,
+      chargedCachedInputTokens: 3,
+      chargedCacheWriteInputTokens: 2,
+      chargedCostUsdMicros: 9,
+    });
+  });
+
+  it("charges overlapping input billing classes as conservative ambiguity", async () => {
+    const campaignValue = await campaign();
+    const attemptValue = await attempt(campaignValue);
+    const result = unwrap(
+      await executeM9b4EffectAttempt({
+        campaign: campaignValue,
+        attempt: attemptValue,
+        persistence: memoryLedger().persistence,
+        createSession: sessionFactory(emptyCounters(), {
+          kind: "success",
+          output: { answer: "offline" },
+          usage: {
+            inputTokens: 10,
+            cachedInputTokens: 6,
+            cacheWriteInputTokens: 5,
+            outputTokens: 0,
+            reasoningTokens: 0,
+            wallClockMs: 20,
+            costUsdMicros: 9,
+          },
+        }),
+      }),
+    );
+
+    expect(result).toMatchObject({
+      terminal: "ambiguous",
+      accounting: {
+        total: {
+          chargedInputTokens: 10,
+          chargedUncachedInputTokens: 10,
+          chargedCachedInputTokens: 0,
+          chargedCacheWriteInputTokens: 0,
+          chargedCostUsdMicros: 26,
+        },
+      },
+    });
   });
 
   it("property-checks exact pricing reconciliation within the frozen reservation", async () => {

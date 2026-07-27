@@ -5,9 +5,11 @@ conformance does not; M9b remains NO-GO**.
 
 M9b.5 adds one private provider-specific boundary in
 `@nicia-ai/lachesis-generator-ai-sdk`. Its protocol identity is
-`lachesis-m9b5-openai-responses-offline-conformance@1.0.0`. It is not exported
-from the package entry point and does not change M9b.4, a stable facade, a
-package version, or a release artifact.
+`lachesis-m9b5-openai-responses-offline-conformance@1.1.0`. It is not exported
+from the package entry point and does not change a stable facade, package
+version, or release artifact. The private M9b.4 ledger advances to 1.1.0 with
+revision-2 persisted identities because cache-aware usage changes its private
+wire semantics; accepted 1.0.0 artifacts are not reinterpreted.
 
 This milestone used the real installed `@ai-sdk/openai@4.0.15` Responses model
 through an intercepted `fetch`. It made no network request, read no environment
@@ -62,14 +64,21 @@ cross-binds both through its unchanged attempt identity derivation.
 ## Raw response and usage boundary
 
 The adapter validates the captured raw response independently of the SDK's
-normalized result. A success requires a completed response, exact returned
-model, response ID, exactly one assistant message, exactly one `output_text`, no
-annotations or tool output, strict non-transforming JSON, the exact
-request-class output schema, and complete integer usage. Input, output, total,
-and reasoning-token fields must be internally consistent; reasoning tokens must
-be zero. Cost is recomputed with M9b.4's integer ceiling rule and the frozen
-pricing snapshot. Locally measured monotonic elapsed time is the only duration
-accepted.
+normalized result. It strictly projects only decision-relevant fields, so valid
+pinned-contract metadata such as `service_tier`, `reasoning`, message `phase`,
+output-text `logprobs`, and extended usage details cannot invalidate an
+otherwise conforming response. A success still requires a completed response,
+exact returned model, response ID, exactly one assistant message, exactly one
+`output_text`, no unexpected output item, strict non-transforming structured
+JSON, the exact request-class output schema, and complete integer usage.
+
+Usage retains total input, cached-read input, cache-write input, output, total,
+and reasoning-token fields. Cache classes must be present, disjoint, and within
+total input; reasoning tokens must be zero. Cost is recomputed from uncached,
+cached-read, cache-write, and output rates using M9b.4's integer ceiling rule
+and frozen pricing identity. The conservative reservation prices every input
+token at the highest frozen input-class rate. Locally measured monotonic elapsed
+time is the only duration accepted.
 
 The response ID, returned model, class, and structured output are retained in
 the M9b.4 completed output receipt. Missing, malformed, duplicate, hostile-key,
@@ -88,7 +97,7 @@ no retry. The synthetic credential appears only in the in-memory Authorization
 header observed by the interception; it is absent from request vectors,
 receipts, reports, errors, and durable ledger content.
 
-Private structural tests compose the adapter with the unchanged M9b.4 source
+Private structural tests compose the adapter with the cache-aware M9b.4 source
 module without a public export. Reservation and `dispatch-started` persist
 before session creation and fetch. Valid usage settles exactly. Malformed and
 over-reservation responses are conservatively charged ambiguity. Post-reserve
@@ -117,9 +126,9 @@ explicitly not tokenizer evidence.
 ## Decision and nonclaims
 
 - **PASS:** offline request construction, canonical transport bytes, single
-  invocation, zero retry, cancellation propagation, raw response validation,
-  usage/pricing mapping, identity drift rejection, and private M9b.4 structural
-  composition.
+  invocation, zero retry, cancellation propagation, decision-relevant raw
+  response validation, cache-aware usage/pricing mapping, identity drift
+  rejection, and private M9b.4 structural composition.
 - **NO-GO:** exact offline tokenizer conformance and consequently campaign-ready
   adapter status.
 - **NO-GO:** corpus materialization, credentials, provider calls, external

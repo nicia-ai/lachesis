@@ -8,7 +8,7 @@ import { z } from "zod";
 
 export const M9B5_OPENAI_RESPONSES_PROTOCOL = Object.freeze({
   id: "lachesis-m9b5-openai-responses-offline-conformance",
-  version: "1.0.0",
+  version: "1.1.0",
   visibility: "private-offline-conformance-only" as const,
   sdk: Object.freeze({
     package: "@ai-sdk/openai",
@@ -63,6 +63,8 @@ const pricingIdentitySchema = artifactIdentitySchema
   .safeExtend({
     providerId: identifierSchema,
     inputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
+    cachedInputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
+    cacheWriteInputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
     outputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
     reasoningUsdMicrosPerMillionTokens: z.literal(0),
   })
@@ -393,14 +395,14 @@ async function validateVector(
 }
 
 const outputTextPartSchema = z
-  .strictObject({
+  .object({
     type: z.literal("output_text"),
     text: z.string(),
-    annotations: z.array(z.never()),
+    annotations: z.array(strictJsonValueSchema),
   })
   .readonly();
 const responseMessageSchema = z
-  .strictObject({
+  .object({
     type: z.literal("message"),
     id: identifierSchema,
     role: z.literal("assistant"),
@@ -409,20 +411,23 @@ const responseMessageSchema = z
   })
   .readonly();
 const usageSchema = z
-  .strictObject({
+  .object({
     input_tokens: z.number().int().nonnegative(),
     input_tokens_details: z
-      .strictObject({ cached_tokens: z.number().int().nonnegative() })
+      .object({
+        cached_tokens: z.number().int().nonnegative(),
+        cache_write_tokens: z.number().int().nonnegative(),
+      })
       .readonly(),
     output_tokens: z.number().int().nonnegative(),
     output_tokens_details: z
-      .strictObject({ reasoning_tokens: z.number().int().nonnegative() })
+      .object({ reasoning_tokens: z.number().int().nonnegative() })
       .readonly(),
     total_tokens: z.number().int().nonnegative(),
   })
   .readonly();
 const rawResponseSchema = z
-  .strictObject({
+  .object({
     id: identifierSchema,
     object: z.literal("response"),
     created_at: z.number().int().nonnegative(),
@@ -431,14 +436,14 @@ const rawResponseSchema = z
     output: z.array(responseMessageSchema).max(1),
     usage: usageSchema,
     error: z
-      .strictObject({
+      .object({
         code: identifierSchema,
         message: z.string().min(1).max(2_048),
       })
       .readonly()
       .nullable(),
     incomplete_details: z
-      .strictObject({ reason: identifierSchema })
+      .object({ reason: identifierSchema })
       .readonly()
       .nullable(),
   })
@@ -446,6 +451,8 @@ const rawResponseSchema = z
 
 type M9b5Usage = Readonly<{
   inputTokens: number;
+  cachedInputTokens: number;
+  cacheWriteInputTokens: number;
   outputTokens: number;
   reasoningTokens: number;
   wallClockMs: number;
@@ -474,17 +481,37 @@ function pricedUsage(
 ): M9b5Usage | undefined {
   if (
     usage.total_tokens !== usage.input_tokens + usage.output_tokens ||
+    usage.input_tokens_details.cached_tokens +
+      usage.input_tokens_details.cache_write_tokens >
+      usage.input_tokens ||
     usage.output_tokens_details.reasoning_tokens > usage.output_tokens
   )
     return undefined;
   const pricing = vector.identities.pricingSnapshot;
-  const numerator =
-    usage.input_tokens * pricing.inputUsdMicrosPerMillionTokens +
-    usage.output_tokens * pricing.outputUsdMicrosPerMillionTokens;
+  const uncachedInputTokens =
+    usage.input_tokens -
+    usage.input_tokens_details.cached_tokens -
+    usage.input_tokens_details.cache_write_tokens;
+  const numerators = [
+    uncachedInputTokens * pricing.inputUsdMicrosPerMillionTokens,
+    usage.input_tokens_details.cached_tokens *
+      pricing.cachedInputUsdMicrosPerMillionTokens,
+    usage.input_tokens_details.cache_write_tokens *
+      pricing.cacheWriteInputUsdMicrosPerMillionTokens,
+    usage.output_tokens * pricing.outputUsdMicrosPerMillionTokens,
+  ];
+  const numerator = numerators.reduce(
+    (total, component) => total + component,
+    0,
+  );
   const costUsdMicros = Math.ceil(numerator / 1_000_000);
-  return Number.isSafeInteger(numerator) && Number.isSafeInteger(costUsdMicros)
+  return numerators.every(Number.isSafeInteger) &&
+    Number.isSafeInteger(numerator) &&
+    Number.isSafeInteger(costUsdMicros)
     ? {
         inputTokens: usage.input_tokens,
+        cachedInputTokens: usage.input_tokens_details.cached_tokens,
+        cacheWriteInputTokens: usage.input_tokens_details.cache_write_tokens,
         outputTokens: usage.output_tokens,
         reasoningTokens: usage.output_tokens_details.reasoning_tokens,
         wallClockMs,
@@ -536,7 +563,7 @@ function mapRawResponse(
   return {
     kind: "success",
     output: {
-      protocol: "lachesis-m9b5-openai-responses-completed-output/1",
+      protocol: "lachesis-m9b5-openai-responses-completed-output/2",
       responseId: parsed.data.id,
       returnedModel: parsed.data.model,
       requestClass: vector.requestClass,

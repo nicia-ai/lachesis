@@ -1,8 +1,8 @@
 {
   "protocol": {
     "id": "lachesis-m9b5-openai-responses-offline-conformance",
-    "version": "1.0.0",
-    "baselineCommit": "f13991720eede12d5c702cfc3dd633086669f875"
+    "version": "1.1.0",
+    "baselineCommit": "69a40de27b02c9453db97756f259bfda581409b5"
   },
   "target": {
     "provider": "OpenAI",
@@ -24,6 +24,14 @@
       "url": "https://api.openai.com/v1/responses",
       "openApiVersion": "2.3.0",
       "use": "official OpenAPI operation inspection only; no implementation or test request"
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+      "use": "cache-write multiplier and model capability review"
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/guides/latest-model",
+      "use": "cached-read and cache-write usage accounting guidance"
     }
   ],
   "installedArtifactDigests": {
@@ -31,8 +39,10 @@
     "providerImplementationSha256": "5362764d1aa17a019fb7317e1052bd27932a318dd5cf291e5e017e63873e7558",
     "providerDeclarationsSha256": "0f8390f2bf9e0e4dc968291d606323f85b604bb371db2cadec5fa664eeea966a",
     "adapterPackageJsonSha256": "f28af0d2f9332ff7937f49eba05c8084fcf121a93d226d87d588189ffed687e4",
-    "adapterImplementationSha256": "e4137376fc96de1276c013f42eaf9a3f2f048b9f0e9cc8b00f4aa83919446693",
-    "focusedTestSha256": "4e7a5e8d4fb2e61aea244abe7b82c10751ae442ae43b580979079a4373d55979"
+    "adapterImplementationSha256": "0efc6f43640fc86a714ff92490e082a7a02888a629e506c90b2c57da5841d79e",
+    "focusedTestSha256": "78a6096eca3ef9ca64ef14b74303a95373e3fbf4bee9916fab38d162c11c9eba",
+    "effectLedgerImplementationSha256": "9f489b9d6ee6e003c5e34927de9b29f13add6c620601407ca0719c613af771f0",
+    "effectLedgerTestSha256": "9dea030aec1643f45c1a8097e6e8bc6be79abcbef9aa7cbf245219b46207b76f"
   },
   "requestClasses": [
     "root-program-authoring",
@@ -71,18 +81,22 @@
       "one output_text",
       "strict request-class JSON output",
       "input_tokens",
+      "input_tokens_details.cached_tokens",
+      "input_tokens_details.cache_write_tokens",
       "output_tokens",
       "output_tokens_details.reasoning_tokens=0",
       "total_tokens",
       "locally measured wall clock",
-      "locally rederived price"
+      "locally rederived billing-class price"
     ],
+    "projectionPolicy": "strictly validate decision-relevant fields while ignoring valid non-decision metadata; reject every unexpected output item",
     "indeterminateOutcome": "M9b.4 ambiguous and full reservation charge",
     "typedFailureRequirement": "determinate non-completed status plus complete usage"
   },
   "results": {
     "requestTransportConformance": "pass-offline-intercepted",
     "responseUsageConformance": "pass-offline-synthetic",
+    "cacheBillingConformance": "pass-offline-synthetic",
     "cancellationZeroRetryConformance": "pass-offline-intercepted",
     "m9b4StructuralComposition": "pass-offline-synthetic-accounting-only",
     "exactOfflineTokenizerConformance": "no-go"
@@ -98,6 +112,11 @@
       "post-dispatch provider usage",
       "unaccounted online input-token-count request"
     ]
+  },
+  "privateLedgerDependency": {
+    "protocol": "lachesis-m9b4-offline-effect-ledger@1.1.0",
+    "persistedWireRevision": 2,
+    "historicalArtifactsReinterpreted": false
   },
   "effects": {
     "networkRequests": 0,

@@ -6,10 +6,10 @@ effect and durable persistence can be separated by a crash. It does not include
 a provider adapter, credentials, network access, a corpus, study execution, or
 live authorization.
 
-The internal protocol identity is `lachesis-m9b4-offline-effect-ledger@1.0.0`.
-The campaign, attempt, ledger snapshot, event-chain, receipt, settlement, and
-rederived-accounting identities are new M9b.4 identities. No earlier M9 artifact
-is reinterpreted.
+The cache-aware internal protocol identity is
+`lachesis-m9b4-offline-effect-ledger@1.1.0`. Campaign, attempt, ledger snapshot,
+and rederived-accounting wire identities use revision 2. The accepted 1.0.0
+artifacts remain historical and are not reinterpreted.
 
 ## State machine
 
@@ -36,11 +36,14 @@ never redispatch. The same no-redispatch rule applies to `completed`, `failed`,
 `ambiguous`, and `reconciled` records.
 
 A complete success or typed provider failure retains exact provider-reported
-usage. Usage must match the request input count, remain within every reserved
-maximum, and reproduce cost from the bound immutable pricing snapshot. Missing,
-malformed, over-limit, or price-inconsistent usage is ambiguous. Ambiguity is a
-terminal first-attempt outcome: unsuccessful, unscorable, non-repairable, and
-charged at the full authorization.
+usage. Total input is partitioned into uncached, cached-read, and cache-write
+tokens; the two reported cache classes must be present, nonnegative, disjoint,
+and no larger in aggregate than total input. Usage must match the request input
+count, remain within every reserved maximum, and reproduce cost from all bound
+billing-class rates in the immutable pricing snapshot. Missing, malformed,
+over-limit, overlapping, or price-inconsistent usage is ambiguous. Ambiguity is
+a terminal first-attempt outcome: unsuccessful, unscorable, non-repairable, and
+charged at the full authorization using the highest frozen input billing rate.
 
 ## Attempt and ledger bindings
 
@@ -93,17 +96,19 @@ effects in either case.
 
 Accounting is never accepted as a caller-authored summary. It is rederived from
 the verified ledger for the whole campaign and independently for every provider,
-phase, arm, and request digest. Until a terminal receipt is durably reconciled,
-the active charge remains the maximum reservation. Remaining capacity and the
-accounting receipt digest are recomputed on every inspection.
+phase, arm, and request digest. Each slice separately reports total, uncached,
+cached-read, and cache-write input tokens. Until a terminal receipt is durably
+reconciled, the active charge remains the maximum reservation. Remaining
+capacity and the accounting receipt digest are recomputed on every inspection.
 
-The focused offline suite contains 20 tests. It covers pre-dispatch persistence
+The focused offline suite contains 22 tests. It covers pre-dispatch persistence
 failures, crashes around dispatch, commit-without-ack behavior, response and
 settlement persistence failures, complete and failed receipts, malformed and
-inconsistent usage, concurrent controllers, tampering, every resumable state,
-asymmetric arm ambiguity, exact accounting, zero-effect repeated resume, and a
-property check of pricing reconciliation. All transports are deterministic
-in-process interceptions with zero network access.
+inconsistent usage, cache billing-class reconciliation, overlapping-class
+rejection, concurrent controllers, tampering, every resumable state, asymmetric
+arm ambiguity, exact accounting, zero-effect repeated resume, and a property
+check of pricing reconciliation. All transports are deterministic in-process
+interceptions with zero network access.
 
 ## Decision
 

@@ -53,6 +53,8 @@ const IDENTITIES: M9b5IdentityProfile = Object.freeze({
     artifactDigest: digest("4"),
     providerId: "openai-responses-offline-intercept",
     inputUsdMicrosPerMillionTokens: 1_000_000,
+    cachedInputUsdMicrosPerMillionTokens: 250_000,
+    cacheWriteInputUsdMicrosPerMillionTokens: 1_250_000,
     outputUsdMicrosPerMillionTokens: 2_000_000,
     reasoningUsdMicrosPerMillionTokens: 0,
   }),
@@ -160,7 +162,10 @@ function rawResponse(
       overrides.usage === undefined
         ? {
             input_tokens: 10,
-            input_tokens_details: { cached_tokens: 0 },
+            input_tokens_details: {
+              cached_tokens: 0,
+              cache_write_tokens: 0,
+            },
             output_tokens: 4,
             output_tokens_details: { reasoning_tokens: 0 },
             total_tokens: 14,
@@ -284,7 +289,7 @@ describe("M9b.5 offline OpenAI Responses adapter conformance", () => {
     expect(result).toEqual({
       kind: "success",
       output: {
-        protocol: "lachesis-m9b5-openai-responses-completed-output/1",
+        protocol: "lachesis-m9b5-openai-responses-completed-output/2",
         responseId: "resp_offline_001",
         returnedModel: IDENTITIES.model.version,
         requestClass: prepared.requestClass,
@@ -292,12 +297,88 @@ describe("M9b.5 offline OpenAI Responses adapter conformance", () => {
       },
       usage: {
         inputTokens: 10,
+        cachedInputTokens: 0,
+        cacheWriteInputTokens: 0,
         outputTokens: 4,
         reasoningTokens: 0,
         wallClockMs: 5,
         costUsdMicros: 18,
       },
     });
+  });
+
+  it("accepts an official-shaped response projection and prices every input billing class", async () => {
+    const prepared = await vector();
+    const seen = observation();
+    const response = {
+      id: "resp_official_shaped_001",
+      object: "response",
+      created_at: 1_785_000_000,
+      completed_at: 1_785_000_001,
+      status: "completed",
+      model: IDENTITIES.model.version,
+      service_tier: "default",
+      reasoning: { effort: "none", summary: null },
+      output: [
+        {
+          type: "message",
+          id: "msg_official_shaped_001",
+          role: "assistant",
+          status: "completed",
+          phase: "final_answer",
+          content: [
+            {
+              type: "output_text",
+              text: unwrap(canonicalizeJson(outputFor(prepared.requestClass))),
+              annotations: [
+                {
+                  type: "file_citation",
+                  index: 0,
+                  file_id: "file_offline_001",
+                  filename: "offline.txt",
+                },
+              ],
+              logprobs: [],
+            },
+          ],
+        },
+      ],
+      usage: {
+        input_tokens: 10,
+        input_tokens_details: {
+          cached_tokens: 3,
+          cache_write_tokens: 2,
+          orchestration_input_cached_tokens: 0,
+        },
+        output_tokens: 4,
+        output_tokens_details: {
+          reasoning_tokens: 0,
+          accepted_prediction_tokens: 0,
+        },
+        total_tokens: 14,
+      },
+      error: null,
+      incomplete_details: null,
+      parallel_tool_calls: true,
+      store: false,
+      truncation: "disabled",
+      metadata: {},
+    };
+    const session = await sessionFor(prepared, responseFetch(response, seen));
+
+    await expect(
+      session.invoke(invokeInput(prepared), new AbortController().signal),
+    ).resolves.toMatchObject({
+      kind: "success",
+      usage: {
+        inputTokens: 10,
+        cachedInputTokens: 3,
+        cacheWriteInputTokens: 2,
+        outputTokens: 4,
+        costUsdMicros: 17,
+      },
+    });
+    expect(seen.count).toBe(1);
   });
 
   it("rejects cross-bound vectors, re-signed request drift, and retry drift", async () => {
@@ -347,11 +428,41 @@ describe("M9b.5 offline OpenAI Responses adapter conformance", () => {
     ["returned model mismatch", { model: "different-model" }],
     ["missing usage", { usage: null }],
     [
-      "malformed usage",
+      "missing cache-write usage",
       {
         usage: {
           input_tokens: 10,
           input_tokens_details: { cached_tokens: 0 },
+          output_tokens: 4,
+          output_tokens_details: { reasoning_tokens: 0 },
+          total_tokens: 14,
+        },
+      },
+    ],
+    [
+      "overlapping input billing classes",
+      {
+        usage: {
+          input_tokens: 10,
+          input_tokens_details: {
+            cached_tokens: 6,
+            cache_write_tokens: 5,
+          },
+          output_tokens: 4,
+          output_tokens_details: { reasoning_tokens: 0 },
+          total_tokens: 14,
+        },
+      },
+    ],
+    [
+      "malformed usage",
+      {
+        usage: {
+          input_tokens: 10,
+          input_tokens_details: {
+            cached_tokens: 0,
+            cache_write_tokens: 0,
+          },
           output_tokens: 4,
           output_tokens_details: { reasoning_tokens: 0 },
           total_tokens: 99,
@@ -363,7 +474,10 @@ describe("M9b.5 offline OpenAI Responses adapter conformance", () => {
       {
         usage: {
           input_tokens: 10,
-          input_tokens_details: { cached_tokens: 0 },
+          input_tokens_details: {
+            cached_tokens: 0,
+            cache_write_tokens: 0,
+          },
           output_tokens: 4,
           output_tokens_details: { reasoning_tokens: 1 },
           total_tokens: 14,
@@ -659,7 +773,7 @@ async function effectAttempt(
         maximumOutputTokens: 64,
         maximumReasoningTokens: 0,
         maximumWallClockMs: 1_000,
-        maximumCostUsdMicros: 138,
+        maximumCostUsdMicros: 141,
       },
     }),
   );
@@ -830,7 +944,10 @@ describe("M9b.5 private M9b.4 structural composition", () => {
       rawResponse("static-answer-generation", {
         usage: {
           input_tokens: 10,
-          input_tokens_details: { cached_tokens: 0 },
+          input_tokens_details: {
+            cached_tokens: 0,
+            cache_write_tokens: 0,
+          },
           output_tokens: 65,
           output_tokens_details: { reasoning_tokens: 0 },
           total_tokens: 75,
@@ -863,7 +980,7 @@ describe("M9b.5 private M9b.4 structural composition", () => {
           total: {
             chargedInputTokens: 10,
             chargedOutputTokens: 64,
-            chargedCostUsdMicros: 138,
+            chargedCostUsdMicros: 141,
           },
         },
       },
