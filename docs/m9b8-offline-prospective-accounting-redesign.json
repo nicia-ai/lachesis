@@ -1,0 +1,213 @@
+{
+  "protocol": {
+    "id": "lachesis-m9b8-offline-prospective-accounting-redesign",
+    "version": "1.0.0",
+    "visibility": "private-offline-review-only",
+    "baselineCommit": "f3f23f7141fb3a12c06bda8d44e59d0ea6431664"
+  },
+  "decision": "topology-redesign-go-for-offline-preregistration-preparation",
+  "m9bStatus": "NO-GO",
+  "fullModelReservationAudit": {
+    "contextWindowTokens": 1050000,
+    "maximumInputTokens": 922000,
+    "maximumOutputTokens": 128000,
+    "exactCanonicalRequestBytes": "known-per-request",
+    "exactLocalProviderTokenCount": "unavailable",
+    "providerFramingBound": "unavailable",
+    "reportedUsage": "post-dispatch-only",
+    "conclusion": "922000-is-a-safe-fallback-not-the-tightest-request-specific-bound"
+  },
+  "alternatives": [
+    {
+      "id": "proportional-byte-envelope",
+      "status": "rejected-unproven-token-and-framing-bound",
+      "exactUtf8Bytes": true,
+      "exactProviderTokens": false,
+      "maximumCostUsdMicros": null
+    },
+    {
+      "id": "official-input-token-count",
+      "status": "compatible-official-boundary-requires-separate-intercepted-adapter-and-ledger",
+      "provider": "openai",
+      "route": "POST /v1/responses/input_tokens",
+      "openApiVersion": "2.3.0",
+      "requiredModel": "gpt-5.6-terra",
+      "sameResponsesInputShape": true,
+      "includesRequestStructureTokens": true,
+      "installedSdk": "@ai-sdk/openai@4.0.15",
+      "installedSdkSupport": false,
+      "providerEffect": true,
+      "maximumCostUsdMicros": null
+    },
+    {
+      "id": "matched-two-call-arms-local-retrieval",
+      "status": "selected-prospective-design",
+      "maximumCostUsdMicros": 1869330432
+    },
+    {
+      "id": "m9b7-raise-cap-preserve-eight-call-topology",
+      "status": "inactive-higher-exposure-reference",
+      "activated": false,
+      "maximumCostUsdMicros": 3639570432
+    }
+  ],
+  "selectedTopology": {
+    "prospectiveCodeModeProfile": "retrieval-only-local-capabilities-no-model-or-provider-dispatch-inside-program",
+    "programOutput": "bounded-evidence-slice-and-retrieval-transcript-for-one-grounded-answer-call",
+    "leafModelCallsDuringLocalRetrieval": 0,
+    "discoveredProgram": [
+      "model-authored-retrieval-program",
+      "deterministic-local-closed-ast-retrieval",
+      "model-grounded-answer",
+      "deterministic-local-evaluation"
+    ],
+    "staticOneShot": [
+      "model-authored-single-search-query",
+      "deterministic-local-one-shot-retrieval",
+      "model-grounded-answer",
+      "deterministic-local-evaluation"
+    ],
+    "requestProfiles": [
+      {
+        "arm": "discovered-program",
+        "phase": "authoring",
+        "adapterRequestClass": "root-program-authoring",
+        "maximumInputTokens": 922000,
+        "maximumOutputTokens": 65536,
+        "maximumReasoningTokens": 0,
+        "maximumCostUsdMicros": 2501608
+      },
+      {
+        "arm": "discovered-program",
+        "phase": "grounded-answer",
+        "adapterRequestClass": "discovered-program-leaf-reasoning",
+        "maximumInputTokens": 922000,
+        "maximumOutputTokens": 20480,
+        "maximumReasoningTokens": 0,
+        "maximumCostUsdMicros": 2366440
+      },
+      {
+        "arm": "static-one-shot",
+        "phase": "authoring",
+        "adapterRequestClass": "static-one-shot-query-planning",
+        "maximumInputTokens": 922000,
+        "maximumOutputTokens": 65536,
+        "maximumReasoningTokens": 0,
+        "maximumCostUsdMicros": 2501608
+      },
+      {
+        "arm": "static-one-shot",
+        "phase": "grounded-answer",
+        "adapterRequestClass": "static-answer-generation",
+        "maximumInputTokens": 922000,
+        "maximumOutputTokens": 20480,
+        "maximumReasoningTokens": 0,
+        "maximumCostUsdMicros": 2366440
+      }
+    ]
+  },
+  "capacity": {
+    "perPair": {
+      "pairedCases": 1,
+      "requestCount": 4,
+      "maximumInputTokens": 3688000,
+      "maximumOutputTokens": 172032,
+      "maximumReasoningTokens": 0,
+      "maximumCostUsdMicros": 9736096
+    },
+    "perArmCampaign": {
+      "pairedCases": 192,
+      "requestCount": 384,
+      "maximumInputTokens": 354048000,
+      "maximumOutputTokens": 16515072,
+      "maximumReasoningTokens": 0,
+      "maximumCostUsdMicros": 934665216
+    },
+    "authoringPhase": {
+      "pairedCases": 192,
+      "requestCount": 384,
+      "maximumInputTokens": 354048000,
+      "maximumOutputTokens": 25165824,
+      "maximumReasoningTokens": 0,
+      "maximumCostUsdMicros": 960617472
+    },
+    "groundedAnswerPhase": {
+      "pairedCases": 192,
+      "requestCount": 384,
+      "maximumInputTokens": 354048000,
+      "maximumOutputTokens": 7864320,
+      "maximumReasoningTokens": 0,
+      "maximumCostUsdMicros": 908712960
+    },
+    "probe": {
+      "pairedCases": 24,
+      "requestCount": 96,
+      "maximumInputTokens": 88512000,
+      "maximumOutputTokens": 4128768,
+      "maximumReasoningTokens": 0,
+      "maximumCostUsdMicros": 233666304
+    },
+    "primary": {
+      "pairedCases": 168,
+      "requestCount": 672,
+      "maximumInputTokens": 619584000,
+      "maximumOutputTokens": 28901376,
+      "maximumReasoningTokens": 0,
+      "maximumCostUsdMicros": 1635664128
+    },
+    "campaign": {
+      "pairedCases": 192,
+      "requestCount": 768,
+      "maximumInputTokens": 708096000,
+      "maximumOutputTokens": 33030144,
+      "maximumReasoningTokens": 0,
+      "maximumCostUsdMicros": 1869330432,
+      "expectedDescriptiveSpend": "unknown-before-provider-usage-observations"
+    },
+    "savingsAgainstM9b7UsdMicros": 1770240000,
+    "m9b7ExposureBasisPointsRoundedUp": 5137
+  },
+  "science": {
+    "estimand": "paired-first-attempt-semantically-supported-success-difference-discovered-program-minus-static-one-shot",
+    "probePairs": 24,
+    "primaryPairs": 168,
+    "alphaBasisPoints": 500,
+    "targetPowerBasisPoints": 8000,
+    "powerStatus": "unchanged-prospective-target-pending-frozen-probe",
+    "allocation": "equal-family-by-scale-full-suite-paired",
+    "searchCallsPerArm": 4,
+    "readCallsPerArm": 4,
+    "readBytesPerArm": 4096,
+    "evaluatorProviderCalls": 0
+  },
+  "settlement": {
+    "retries": 0,
+    "maximumConcurrency": 1,
+    "ambiguous": "charge-full-reservation-halt-unscorable-no-redispatch",
+    "overage": "charge-full-reservation-plus-verified-excess-halt-unscorable-no-redispatch"
+  },
+  "activationRequirements": [
+    "new-prospective-cap-binding",
+    "implement-and-review-retrieval-only-codemode-profile",
+    "fresh-verified-hard-cap-receipt",
+    "materialized-schedule-and-request-identities",
+    "separate-offline-preregistration-review"
+  ],
+  "authority": {
+    "offlinePreregistrationPackagePreparationAuthorized": true,
+    "corpusConstructionAuthorized": false,
+    "externalRegistrationAuthorized": false,
+    "credentialsAuthorized": false,
+    "providerAccessAuthorized": false,
+    "probeAuthorized": false,
+    "liveExecutionAuthorized": false
+  },
+  "nonclaims": [
+    "no-model-quality-claim",
+    "no-rlm-or-rag-superiority-claim",
+    "no-exact-local-tokenizer-claim",
+    "no-expected-spend-claim",
+    "no-production-readiness-claim",
+    "no-professional-security-audit-claim"
+  ]
+}

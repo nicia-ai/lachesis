@@ -539,3 +539,45 @@ fresh verified hard-cap receipt, materialized schedule/request identities, and
 separate review are required before even an offline preregistration package can
 advance. No corpus, registration, credential, provider-call, probe, or live
 authority follows from M9b.7.
+
+## M9b.8 prospective accounting and topology redesign
+
+M9b.8 preserves M9b.7's `campaign-capacity-no-go` record and leaves its
+$3,639.570432 cap-only alternative inactive. The private
+`lachesis-m9b8-offline-prospective-accounting-redesign@1.0.0` review establishes
+that the 922,000-token input reservation is a safe full-model fallback, not a
+tight request-specific count. Canonical request bytes are exact, but no accepted
+local byte/token proof or provider-framing bound makes a proportional OpenAI
+reservation conservative.
+
+The official `POST /v1/responses/input_tokens` boundary can count the exact
+model-visible Responses input, including request-structure tokens. The pinned
+`@ai-sdk/openai@4.0.15` adapter does not expose it, and the count itself is a
+provider effect. Any use therefore requires a separately reviewed intercepted
+adapter and M9b.4/M9b.6 ledger integration; M9b.8 performs no such call.
+
+The selected prospective redesign uses two matched model calls per arm. The
+discovered arm authors one restricted retrieval program, executes its closed AST
+locally through a prospective retrieval-only capability profile with no model or
+provider dispatch inside the program, then makes one grounded-answer call. The
+program returns only a bounded evidence slice and retrieval transcript. The
+static arm authors one bounded query, retrieves locally once, then makes the
+same grounded-answer call. Both use the same model, 65,536-token authoring
+ceiling, 20,480-token answer ceiling, retriever, evidence limits, evaluator,
+concurrency-one controller, and zero-retry policy. The frozen treatment remains
+retrieval-program discovery versus one model-authored static query.
+
+Across 24 probe and 168 primary pairs, the redesign contains 768 requests and an
+exact conservative maximum of 1,869,330,432 USD µ. Expected spend remains
+unknown. The 168-pair primary target, alpha 0.05, power target 0.80, balanced
+family × scale allocation, exact conditional McNemar test, and probe gate remain
+unchanged and prospective.
+
+The M9b.8 decision is
+`topology-redesign-go-for-offline-preregistration-preparation`. It authorizes
+only a separately reviewed offline preregistration package. A new prospective
+cap binding, implemented and reviewed retrieval-only CodeMode profile, fresh
+verified hard-cap receipt, and materialized schedule/request identities remain
+mandatory. M9b is still **NO-GO** for corpus construction, external
+registration, credentials, provider access, a probe, live execution, or any
+superiority claim.
