@@ -12,7 +12,7 @@ import { strictJsonValueSchema } from "./strict-json.js";
 
 export const M9B4_EFFECT_LEDGER_PROTOCOL = Object.freeze({
   id: "lachesis-m9b4-offline-effect-ledger",
-  version: "1.1.0",
+  version: "1.2.0",
   visibility: "internal-offline-controller-only" as const,
   retryPolicy:
     "exactly-one-transport-invocation-zero-automatic-retries" as const,
@@ -49,6 +49,9 @@ const pricingIdentitySchema = artifactIdentitySchema
     cacheWriteInputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
     outputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
     reasoningUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
+    longContextThresholdTokens: z.number().int().positive(),
+    longContextInputMultiplierMicros: z.number().int().min(1_000_000),
+    longContextOutputMultiplierMicros: z.number().int().min(1_000_000),
   })
   .readonly();
 
@@ -83,6 +86,7 @@ const armCapSchema = resourceCeilingSchema
 const budgetEnvelopeSchema = z
   .strictObject({
     maximumAttempts: z.number().int().positive(),
+    maximumConcurrentAttempts: z.literal(1),
     ...resourceCeilingSchema.unwrap().shape,
     providers: providerCapSchema.array().min(1).readonly(),
     phases: phaseCapSchema.array().length(3).readonly(),
@@ -117,7 +121,7 @@ const campaignInputSchema = z
 const campaignBodySchema = campaignInputSchema
   .unwrap()
   .safeExtend({
-    protocol: z.literal("lachesis-m9b4-offline-effect-ledger-campaign/2"),
+    protocol: z.literal("lachesis-m9b4-offline-effect-ledger-campaign/3"),
     budgetEnvelopeDigest: digestSchema,
   })
   .readonly();
@@ -145,7 +149,7 @@ const attemptInputSchema = z
     callIndex: z.number().int().nonnegative(),
     serializedRequest: z.string().min(1).max(1_048_576),
     requestDigest: digestSchema,
-    requestInputTokens: z.number().int().nonnegative(),
+    reservedInputTokenCeiling: z.number().int().nonnegative(),
     provider: providerIdentitySchema,
     model: modelIdentitySchema,
     tokenizer: tokenizerIdentitySchema,
@@ -156,7 +160,7 @@ const attemptInputSchema = z
 const attemptBodySchema = attemptInputSchema
   .unwrap()
   .safeExtend({
-    protocol: z.literal("lachesis-m9b4-effect-attempt/2"),
+    protocol: z.literal("lachesis-m9b4-effect-attempt/3"),
     campaignDigest: digestSchema,
     budgetEnvelopeDigest: digestSchema,
     reservationDigest: digestSchema,
@@ -250,8 +254,12 @@ const settlementBodySchema = z
   .strictObject({
     attemptId: digestSchema,
     terminalEventDigest: digestSchema,
-    terminal: z.enum(["completed", "failed", "ambiguous"]),
-    accountingBasis: z.enum(["provider-reported", "authorized-conservative"]),
+    terminal: z.enum(["completed", "failed", "overage", "ambiguous"]),
+    accountingBasis: z.enum([
+      "provider-reported",
+      "provider-reported-overage",
+      "authorized-conservative",
+    ]),
     chargedUsage: m9b4UsageSchema.nullable(),
     chargedCostUsdMicros: z.number().int().nonnegative(),
   })
@@ -297,6 +305,28 @@ const failedEventPayloadSchema = z
     receipt: failedReceiptSchema,
   })
   .readonly();
+const overageReceiptBodySchema = z
+  .strictObject({
+    ...receiptBindingShape,
+    kind: z.literal("overage"),
+    reason: z.enum([
+      "provider-input-framing-or-accounting-overage",
+      "provider-output-reasoning-time-or-cost-overage",
+    ]),
+  })
+  .readonly();
+const overageReceiptSchema = overageReceiptBodySchema
+  .unwrap()
+  .safeExtend({ receiptDigest: digestSchema })
+  .readonly();
+const overageEventPayloadSchema = z
+  .strictObject({
+    kind: z.literal("overage"),
+    attemptId: digestSchema,
+    dispatchEventDigest: digestSchema,
+    receipt: overageReceiptSchema,
+  })
+  .readonly();
 const ambiguousEventPayloadSchema = z
   .strictObject({
     kind: z.literal("ambiguous"),
@@ -324,6 +354,7 @@ const eventPayloadSchema = z.discriminatedUnion("kind", [
   dispatchEventPayloadSchema,
   completedEventPayloadSchema,
   failedEventPayloadSchema,
+  overageEventPayloadSchema,
   ambiguousEventPayloadSchema,
   reconciledEventPayloadSchema,
 ]);
@@ -338,6 +369,7 @@ const eventSchema = z.discriminatedUnion("kind", [
   dispatchEventPayloadSchema.unwrap().safeExtend(eventChainShape).readonly(),
   completedEventPayloadSchema.unwrap().safeExtend(eventChainShape).readonly(),
   failedEventPayloadSchema.unwrap().safeExtend(eventChainShape).readonly(),
+  overageEventPayloadSchema.unwrap().safeExtend(eventChainShape).readonly(),
   ambiguousEventPayloadSchema.unwrap().safeExtend(eventChainShape).readonly(),
   reconciledEventPayloadSchema.unwrap().safeExtend(eventChainShape).readonly(),
 ]);
@@ -347,8 +379,10 @@ type ReservedEvent = Extract<M9b4LedgerEvent, { kind: "reserved" }>;
 type DispatchEvent = Extract<M9b4LedgerEvent, { kind: "dispatch-started" }>;
 type CompletedEvent = Extract<M9b4LedgerEvent, { kind: "completed" }>;
 type FailedEvent = Extract<M9b4LedgerEvent, { kind: "failed" }>;
+type OverageEvent = Extract<M9b4LedgerEvent, { kind: "overage" }>;
 type AmbiguousEvent = Extract<M9b4LedgerEvent, { kind: "ambiguous" }>;
-type TerminalEvent = CompletedEvent | FailedEvent | AmbiguousEvent;
+type TerminalEvent =
+  CompletedEvent | FailedEvent | OverageEvent | AmbiguousEvent;
 type ReconciledEvent = Extract<M9b4LedgerEvent, { kind: "reconciled" }>;
 
 type DerivedAttempt =
@@ -365,7 +399,7 @@ type DerivedAttempt =
       dispatch: DispatchEvent;
     }>
   | Readonly<{
-      state: "completed" | "failed" | "ambiguous";
+      state: "completed" | "failed" | "overage" | "ambiguous";
       prepared: PreparedEvent;
       reserved: ReservedEvent;
       dispatch: DispatchEvent;
@@ -382,7 +416,7 @@ type DerivedAttempt =
 
 const ledgerSnapshotBodySchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b4-effect-ledger-snapshot/2"),
+    protocol: z.literal("lachesis-m9b4-effect-ledger-snapshot/3"),
     campaignDigest: digestSchema,
     events: eventSchema.array().readonly(),
   })
@@ -448,11 +482,41 @@ const accountingSliceSchema = z
   .readonly();
 export const m9b4AccountingStatusSchema = z
   .strictObject({
-    protocol: z.literal("lachesis-m9b4-rederived-accounting/2"),
+    protocol: z.literal("lachesis-m9b4-rederived-accounting/3"),
     campaignDigest: digestSchema,
     eventCount: z.number().int().nonnegative(),
     ledgerHead: digestSchema.nullable(),
     attempts: z.number().int().nonnegative(),
+    attemptStates: z
+      .strictObject({
+        attemptId: digestSchema,
+        requestDigest: digestSchema,
+        arm: m9b4ArmSchema,
+        phase: m9b4PhaseSchema,
+        callIndex: z.number().int().nonnegative(),
+        lifecycle: z.enum([
+          "prepared",
+          "reserved",
+          "dispatch-started",
+          "terminal",
+          "reconciled",
+        ]),
+        terminal: z
+          .enum(["completed", "failed", "overage", "ambiguous"])
+          .nullable(),
+      })
+      .readonly()
+      .array()
+      .readonly(),
+    terminalCounts: z
+      .strictObject({
+        completed: z.number().int().nonnegative(),
+        failed: z.number().int().nonnegative(),
+        overage: z.number().int().nonnegative(),
+        ambiguous: z.number().int().nonnegative(),
+      })
+      .readonly(),
+    progressionHalted: z.boolean(),
     total: accountingSliceSchema,
     providers: z
       .strictObject({
@@ -503,7 +567,7 @@ export type M9b4ExecutionResult = Readonly<{
   protocol: typeof M9B4_EFFECT_LEDGER_PROTOCOL;
   attemptId: string;
   state: "reconciled";
-  terminal: "completed" | "failed" | "ambiguous";
+  terminal: "completed" | "failed" | "overage" | "ambiguous";
   successful: boolean;
   scorable: boolean;
   repairable: false;
@@ -545,23 +609,38 @@ function priceUsage(
       ok: false,
       error: invalid("M9b.4 cached and cache-write input exceed total input."),
     };
+  const longContext = usage.inputTokens > pricing.longContextThresholdTokens;
+  const inputMultiplier = longContext
+    ? pricing.longContextInputMultiplierMicros
+    : 1_000_000;
+  const outputMultiplier = longContext
+    ? pricing.longContextOutputMultiplierMicros
+    : 1_000_000;
   const numerators = [
-    uncachedInputTokens * pricing.inputUsdMicrosPerMillionTokens,
-    usage.cachedInputTokens * pricing.cachedInputUsdMicrosPerMillionTokens,
-    usage.cacheWriteInputTokens *
-      pricing.cacheWriteInputUsdMicrosPerMillionTokens,
-    usage.outputTokens * pricing.outputUsdMicrosPerMillionTokens,
-    usage.reasoningTokens * pricing.reasoningUsdMicrosPerMillionTokens,
+    BigInt(uncachedInputTokens) *
+      BigInt(pricing.inputUsdMicrosPerMillionTokens) *
+      BigInt(inputMultiplier),
+    BigInt(usage.cachedInputTokens) *
+      BigInt(pricing.cachedInputUsdMicrosPerMillionTokens) *
+      BigInt(inputMultiplier),
+    BigInt(usage.cacheWriteInputTokens) *
+      BigInt(pricing.cacheWriteInputUsdMicrosPerMillionTokens) *
+      BigInt(inputMultiplier),
+    BigInt(usage.outputTokens) *
+      BigInt(pricing.outputUsdMicrosPerMillionTokens) *
+      BigInt(outputMultiplier),
+    BigInt(usage.reasoningTokens) *
+      BigInt(pricing.reasoningUsdMicrosPerMillionTokens) *
+      BigInt(outputMultiplier),
   ];
   const numerator = numerators.reduce(
     (total, component) => total + component,
-    0,
+    0n,
   );
-  const cost = Math.ceil(numerator / 1_000_000);
-  return numerators.every(Number.isSafeInteger) &&
-    Number.isSafeInteger(numerator) &&
-    Number.isSafeInteger(cost)
-    ? { ok: true, value: cost }
+  const denominator = 1_000_000_000_000n;
+  const cost = (numerator + denominator - 1n) / denominator;
+  return cost <= BigInt(Number.MAX_SAFE_INTEGER)
+    ? { ok: true, value: Number(cost) }
     : {
         ok: false,
         error: invalid("M9b.4 pricing exceeds safe integer bounds."),
@@ -660,7 +739,7 @@ export async function prepareM9b4Campaign(
   const budgetEnvelopeDigest = await digestValue(parsed.data.budgetEnvelope);
   if (!budgetEnvelopeDigest.ok) return budgetEnvelopeDigest;
   const body = campaignBodySchema.parse({
-    protocol: "lachesis-m9b4-offline-effect-ledger-campaign/2",
+    protocol: "lachesis-m9b4-offline-effect-ledger-campaign/3",
     ...parsed.data,
     budgetEnvelopeDigest: budgetEnvelopeDigest.value,
   });
@@ -712,7 +791,7 @@ async function attemptIdentityBody(
     phase: attempt.phase,
     callIndex: attempt.callIndex,
     requestDigest: attempt.requestDigest,
-    requestInputTokens: attempt.requestInputTokens,
+    reservedInputTokenCeiling: attempt.reservedInputTokenCeiling,
     provider: attempt.provider,
     model: attempt.model,
     tokenizer: attempt.tokenizer,
@@ -754,7 +833,7 @@ async function validateAttempt(
     parsed.data.provider.id !== parsed.data.model.providerId ||
     parsed.data.provider.id !== parsed.data.tokenizer.providerId ||
     parsed.data.provider.id !== parsed.data.pricingSnapshot.providerId ||
-    parsed.data.requestInputTokens !==
+    parsed.data.reservedInputTokenCeiling !==
       parsed.data.reservation.maximumInputTokens ||
     parsed.data.reservation.maximumCostUsdMicros !==
       expectedMaximum.value.costUsdMicros
@@ -783,7 +862,7 @@ export async function prepareM9b4Attempt(
   const reservationDigest = await digestValue(parsed.data.reservation);
   if (!reservationDigest.ok) return reservationDigest;
   const body = attemptBodySchema.parse({
-    protocol: "lachesis-m9b4-effect-attempt/2",
+    protocol: "lachesis-m9b4-effect-attempt/3",
     campaignDigest: campaign.value.campaignDigest,
     budgetEnvelopeDigest: campaign.value.budgetEnvelopeDigest,
     ...parsed.data,
@@ -808,7 +887,7 @@ function coordinateKey(attempt: M9b4Attempt): string {
 
 function terminalState(
   event: TerminalEvent,
-): "completed" | "failed" | "ambiguous" {
+): "completed" | "failed" | "overage" | "ambiguous" {
   return event.kind;
 }
 
@@ -827,7 +906,7 @@ async function validateCompletedReceipt(
   const { receiptDigest: _receiptDigest, ...body } = receipt;
   void _receiptDigest;
   const receiptDigest = await digestValue(body);
-  const usage = validateUsage(attempt, receipt.usage);
+  const usage = validateReportedUsage(attempt, receipt.usage);
   return strict?.success === true &&
     canonical?.ok === true &&
     canonical.value === receipt.serializedOutput &&
@@ -835,6 +914,7 @@ async function validateCompletedReceipt(
     outputDigest.value === receipt.outputDigest &&
     receiptDigest.ok &&
     usage.ok &&
+    usageOverageReason(attempt, receipt.usage) === undefined &&
     receiptDigest.value === receipt.receiptDigest &&
     receipt.attemptId === attempt.attemptId &&
     receipt.requestDigest === attempt.requestDigest &&
@@ -853,9 +933,10 @@ async function validateFailedReceipt(
   const { receiptDigest: _receiptDigest, ...body } = receipt;
   void _receiptDigest;
   const receiptDigest = await digestValue(body);
-  const usage = validateUsage(attempt, receipt.usage);
+  const usage = validateReportedUsage(attempt, receipt.usage);
   return receiptDigest.ok &&
     usage.ok &&
+    usageOverageReason(attempt, receipt.usage) === undefined &&
     receiptDigest.value === receipt.receiptDigest &&
     receipt.attemptId === attempt.attemptId &&
     receipt.requestDigest === attempt.requestDigest &&
@@ -867,7 +948,32 @@ async function validateFailedReceipt(
     : { ok: false, error: invalid("M9b.4 failed receipt is cross-bound.") };
 }
 
-function validateUsage(
+async function validateOverageReceipt(
+  attempt: M9b4Attempt,
+  receipt: z.infer<typeof overageReceiptSchema>,
+): Promise<Result<void, Diagnostic>> {
+  const { receiptDigest: _receiptDigest, ...body } = receipt;
+  void _receiptDigest;
+  const receiptDigest = await digestValue(body);
+  const usage = validateReportedUsage(attempt, receipt.usage);
+  const reason = usage.ok
+    ? usageOverageReason(attempt, usage.value)
+    : undefined;
+  return receiptDigest.ok &&
+    usage.ok &&
+    reason === receipt.reason &&
+    receiptDigest.value === receipt.receiptDigest &&
+    receipt.attemptId === attempt.attemptId &&
+    receipt.requestDigest === attempt.requestDigest &&
+    canonicalEqual(receipt.provider, attempt.provider) &&
+    canonicalEqual(receipt.model, attempt.model) &&
+    canonicalEqual(receipt.tokenizer, attempt.tokenizer) &&
+    canonicalEqual(receipt.pricingSnapshot, attempt.pricingSnapshot)
+    ? { ok: true, value: undefined }
+    : { ok: false, error: invalid("M9b.4 overage receipt is cross-bound.") };
+}
+
+function validateReportedUsage(
   attempt: M9b4Attempt,
   usageInput: unknown,
 ): Result<M9b4Usage, Diagnostic> {
@@ -876,22 +982,30 @@ function validateUsage(
     return { ok: false, error: invalid("M9b.4 provider usage is malformed.") };
   const cost = priceUsage(attempt.pricingSnapshot, usage.data);
   return cost.ok &&
-    usage.data.inputTokens === attempt.requestInputTokens &&
     usage.data.cachedInputTokens + usage.data.cacheWriteInputTokens <=
       usage.data.inputTokens &&
-    usage.data.inputTokens <= attempt.reservation.maximumInputTokens &&
-    usage.data.outputTokens <= attempt.reservation.maximumOutputTokens &&
-    usage.data.reasoningTokens <= attempt.reservation.maximumReasoningTokens &&
-    usage.data.wallClockMs <= attempt.reservation.maximumWallClockMs &&
-    usage.data.costUsdMicros === cost.value &&
-    usage.data.costUsdMicros <= attempt.reservation.maximumCostUsdMicros
+    usage.data.costUsdMicros === cost.value
     ? { ok: true, value: usage.data }
     : {
         ok: false,
         error: invalid(
-          "M9b.4 provider usage is inconsistent with its reservation.",
+          "M9b.4 provider usage or billing classes are inconsistent.",
         ),
       };
+}
+
+function usageOverageReason(
+  attempt: M9b4Attempt,
+  usage: M9b4Usage,
+): z.infer<typeof overageReceiptBodySchema>["reason"] | undefined {
+  if (usage.inputTokens > attempt.reservation.maximumInputTokens)
+    return "provider-input-framing-or-accounting-overage";
+  return usage.outputTokens > attempt.reservation.maximumOutputTokens ||
+    usage.reasoningTokens > attempt.reservation.maximumReasoningTokens ||
+    usage.wallClockMs > attempt.reservation.maximumWallClockMs ||
+    usage.costUsdMicros > attempt.reservation.maximumCostUsdMicros
+    ? "provider-output-reasoning-time-or-cost-overage"
+    : undefined;
 }
 
 async function deriveLedger(
@@ -985,6 +1099,7 @@ async function deriveLedger(
     if (
       event.kind === "completed" ||
       event.kind === "failed" ||
+      event.kind === "overage" ||
       event.kind === "ambiguous"
     ) {
       if (
@@ -1006,7 +1121,12 @@ async function deriveLedger(
                 current.prepared.attempt,
                 event.receipt,
               )
-            : { ok: true as const, value: undefined };
+            : event.kind === "overage"
+              ? await validateOverageReceipt(
+                  current.prepared.attempt,
+                  event.receipt,
+                )
+              : { ok: true as const, value: undefined };
       if (!receipt.ok) return receipt;
       attempts.set(event.attemptId, {
         state: event.kind,
@@ -1020,6 +1140,7 @@ async function deriveLedger(
     if (
       current.state !== "completed" &&
       current.state !== "failed" &&
+      current.state !== "overage" &&
       current.state !== "ambiguous"
     )
       return {
@@ -1033,14 +1154,24 @@ async function deriveLedger(
     const expectedTerminal = terminalState(current.terminal);
     const expectedUsage =
       current.terminal.kind === "completed" ||
-      current.terminal.kind === "failed"
+      current.terminal.kind === "failed" ||
+      current.terminal.kind === "overage"
         ? current.terminal.receipt.usage
         : null;
     const expectedCost =
-      expectedUsage?.costUsdMicros ??
-      current.prepared.attempt.reservation.maximumCostUsdMicros;
+      current.terminal.kind === "overage"
+        ? Math.max(
+            current.terminal.receipt.usage.costUsdMicros,
+            current.prepared.attempt.reservation.maximumCostUsdMicros,
+          )
+        : (expectedUsage?.costUsdMicros ??
+          current.prepared.attempt.reservation.maximumCostUsdMicros);
     const expectedBasis =
-      expectedUsage === null ? "authorized-conservative" : "provider-reported";
+      expectedUsage === null
+        ? "authorized-conservative"
+        : current.terminal.kind === "overage"
+          ? "provider-reported-overage"
+          : "provider-reported";
     if (
       !settlementDigest.ok ||
       settlementDigest.value !== event.settlement.settlementDigest ||
@@ -1134,7 +1265,7 @@ async function appendEvent(
   const attempts = await deriveLedger(campaign, events);
   if (!attempts.ok) return attempts;
   const snapshotBody = ledgerSnapshotBodySchema.parse({
-    protocol: "lachesis-m9b4-effect-ledger-snapshot/2",
+    protocol: "lachesis-m9b4-effect-ledger-snapshot/3",
     campaignDigest: campaign.campaignDigest,
     events,
   });
@@ -1204,7 +1335,12 @@ function chargeOf(state: DerivedAttempt): Readonly<{
     reserved: true,
     usage:
       state.state === "reconciled"
-        ? (state.reconciled.settlement.chargedUsage ?? maximum.value)
+        ? state.reconciled.settlement.chargedUsage === null
+          ? maximum.value
+          : {
+              ...state.reconciled.settlement.chargedUsage,
+              costUsdMicros: state.reconciled.settlement.chargedCostUsdMicros,
+            }
         : maximum.value,
   };
 }
@@ -1275,6 +1411,40 @@ async function accountingStatus(
   ledger: LoadedLedger,
 ): Promise<Result<M9b4AccountingStatus, Diagnostic>> {
   const states = [...ledger.attempts.values()];
+  const attemptStates = states
+    .map((state) => ({
+      attemptId: state.prepared.attempt.attemptId,
+      requestDigest: state.prepared.attempt.requestDigest,
+      arm: state.prepared.attempt.arm,
+      phase: state.prepared.attempt.phase,
+      callIndex: state.prepared.attempt.callIndex,
+      lifecycle:
+        state.state === "completed" ||
+        state.state === "failed" ||
+        state.state === "overage" ||
+        state.state === "ambiguous"
+          ? ("terminal" as const)
+          : state.state,
+      terminal:
+        state.state === "reconciled"
+          ? terminalState(state.terminal)
+          : state.state === "completed" ||
+              state.state === "failed" ||
+              state.state === "overage" ||
+              state.state === "ambiguous"
+            ? state.state
+            : null,
+    }))
+    .toSorted((left, right) => left.attemptId.localeCompare(right.attemptId));
+  const terminalCounts = {
+    completed: attemptStates.filter((state) => state.terminal === "completed")
+      .length,
+    failed: attemptStates.filter((state) => state.terminal === "failed").length,
+    overage: attemptStates.filter((state) => state.terminal === "overage")
+      .length,
+    ambiguous: attemptStates.filter((state) => state.terminal === "ambiguous")
+      .length,
+  };
   const providers = campaign.budgetEnvelope.providers.map((cap) => ({
     provider: cap.provider,
     accounting: accountingSlice(
@@ -1326,11 +1496,15 @@ async function accountingStatus(
     };
   });
   const body = {
-    protocol: "lachesis-m9b4-rederived-accounting/2" as const,
+    protocol: "lachesis-m9b4-rederived-accounting/3" as const,
     campaignDigest: campaign.campaignDigest,
     eventCount: ledger.events.length,
     ledgerHead: ledger.events.at(-1)?.digest ?? null,
     attempts: states.length,
+    attemptStates,
+    terminalCounts,
+    progressionHalted:
+      terminalCounts.overage > 0 || terminalCounts.ambiguous > 0,
     total: accountingSlice(campaign.budgetEnvelope, states),
     providers,
     phases,
@@ -1381,6 +1555,11 @@ function reservationFitsCampaign(
     (cap) => cap.arm === attempt.arm,
   );
   const maximum = attempt.reservation;
+  const activeAttempts = states.filter(
+    (state) =>
+      state.prepared.attempt.attemptId !== attempt.attemptId &&
+      (state.state === "reserved" || state.state === "dispatch-started"),
+  ).length;
   const fits = (
     selected: ReadonlyArray<DerivedAttempt>,
     ceiling: z.infer<typeof resourceCeilingSchema>,
@@ -1403,6 +1582,7 @@ function reservationFitsCampaign(
     providerCap !== undefined &&
     phaseCap !== undefined &&
     armCap !== undefined &&
+    activeAttempts < campaign.budgetEnvelope.maximumConcurrentAttempts &&
     states.length <= campaign.budgetEnvelope.maximumAttempts &&
     fits(states, campaign.budgetEnvelope) &&
     fits(
@@ -1507,6 +1687,34 @@ async function createFailedReceipt(
     : receiptDigest;
 }
 
+async function createOverageReceipt(
+  attempt: M9b4Attempt,
+  usage: M9b4Usage,
+  reason: z.infer<typeof overageReceiptBodySchema>["reason"],
+): Promise<Result<z.infer<typeof overageReceiptSchema>, Diagnostic>> {
+  const body = overageReceiptBodySchema.parse({
+    kind: "overage",
+    attemptId: attempt.attemptId,
+    requestDigest: attempt.requestDigest,
+    provider: attempt.provider,
+    model: attempt.model,
+    tokenizer: attempt.tokenizer,
+    pricingSnapshot: attempt.pricingSnapshot,
+    usage,
+    reason,
+  });
+  const receiptDigest = await digestValue(body);
+  return receiptDigest.ok
+    ? {
+        ok: true,
+        value: overageReceiptSchema.parse({
+          ...body,
+          receiptDigest: receiptDigest.value,
+        }),
+      }
+    : receiptDigest;
+}
+
 async function appendAmbiguous(
   persistence: M9b4AtomicPersistence,
   campaign: M9b4Campaign,
@@ -1526,11 +1734,13 @@ async function reconcile(
   campaign: M9b4Campaign,
   state: Extract<
     DerivedAttempt,
-    { state: "completed" | "failed" | "ambiguous" }
+    { state: "completed" | "failed" | "overage" | "ambiguous" }
   >,
 ): Promise<Result<LoadedLedger, Diagnostic>> {
   const usage =
-    state.terminal.kind === "completed" || state.terminal.kind === "failed"
+    state.terminal.kind === "completed" ||
+    state.terminal.kind === "failed" ||
+    state.terminal.kind === "overage"
       ? state.terminal.receipt.usage
       : null;
   const body = settlementBodySchema.parse({
@@ -1538,11 +1748,20 @@ async function reconcile(
     terminalEventDigest: state.terminal.digest,
     terminal: terminalState(state.terminal),
     accountingBasis:
-      usage === null ? "authorized-conservative" : "provider-reported",
+      usage === null
+        ? "authorized-conservative"
+        : state.terminal.kind === "overage"
+          ? "provider-reported-overage"
+          : "provider-reported",
     chargedUsage: usage,
     chargedCostUsdMicros:
-      usage?.costUsdMicros ??
-      state.prepared.attempt.reservation.maximumCostUsdMicros,
+      state.terminal.kind === "overage"
+        ? Math.max(
+            state.terminal.receipt.usage.costUsdMicros,
+            state.prepared.attempt.reservation.maximumCostUsdMicros,
+          )
+        : (usage?.costUsdMicros ??
+          state.prepared.attempt.reservation.maximumCostUsdMicros),
   });
   const settlementDigest = await digestValue(body);
   if (!settlementDigest.ok) return settlementDigest;
@@ -1590,7 +1809,7 @@ async function resultFor(
       state: "reconciled",
       terminal,
       successful: terminal === "completed",
-      scorable: terminal !== "ambiguous",
+      scorable: terminal !== "ambiguous" && terminal !== "overage",
       repairable: false,
       resumed,
       transportInvoked,
@@ -1604,7 +1823,7 @@ async function reconcileAndReturn(
   persistence: M9b4AtomicPersistence,
   state: Extract<
     DerivedAttempt,
-    { state: "completed" | "failed" | "ambiguous" }
+    { state: "completed" | "failed" | "overage" | "ambiguous" }
   >,
   resumed: boolean,
   transportInvoked: boolean,
@@ -1713,6 +1932,7 @@ export async function executeM9b4EffectAttempt(
   if (
     state?.state === "completed" ||
     state?.state === "failed" ||
+    state?.state === "overage" ||
     state?.state === "ambiguous"
   )
     return reconcileAndReturn(
@@ -1796,7 +2016,10 @@ export async function executeM9b4EffectAttempt(
       resumed,
       true,
     );
-  const usage = validateUsage(attempt.value, transportResult.data.usage);
+  const usage = validateReportedUsage(
+    attempt.value,
+    transportResult.data.usage,
+  );
   if (!usage.ok)
     return ambiguousAndReturn(
       campaign.value,
@@ -1806,6 +2029,43 @@ export async function executeM9b4EffectAttempt(
       resumed,
       true,
     );
+  const overageReason = usageOverageReason(attempt.value, usage.value);
+  if (overageReason !== undefined) {
+    const overageReceipt = await createOverageReceipt(
+      attempt.value,
+      usage.value,
+      overageReason,
+    );
+    if (!overageReceipt.ok)
+      return ambiguousAndReturn(
+        campaign.value,
+        input.persistence,
+        dispatchState,
+        "transport-outcome-invalid",
+        resumed,
+        true,
+      );
+    ledger = await appendEvent(input.persistence, campaign.value, {
+      kind: "overage",
+      attemptId: attempt.value.attemptId,
+      dispatchEventDigest: dispatchState.dispatch.digest,
+      receipt: overageReceipt.value,
+    });
+    if (!ledger.ok) return controllerFailure("storage", ledger.error);
+    const overageState = ledger.value.attempts.get(attempt.value.attemptId);
+    return overageState?.state === "overage"
+      ? reconcileAndReturn(
+          campaign.value,
+          input.persistence,
+          overageState,
+          resumed,
+          true,
+        )
+      : controllerFailure(
+          "validation",
+          invalid("M9b.4 overage receipt did not persist."),
+        );
+  }
   const terminalPayload =
     transportResult.data.kind === "success"
       ? await createCompletedReceipt(

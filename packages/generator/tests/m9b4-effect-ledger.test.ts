@@ -132,6 +132,9 @@ const PRICING = Object.freeze({
   cacheWriteInputUsdMicrosPerMillionTokens: 1_000_000,
   outputUsdMicrosPerMillionTokens: 2_000_000,
   reasoningUsdMicrosPerMillionTokens: 3_000_000,
+  longContextThresholdTokens: 272_000,
+  longContextInputMultiplierMicros: 2_000_000,
+  longContextOutputMultiplierMicros: 1_500_000,
 });
 
 function campaignInput(maximumCostUsdMicros = 1_000): M9b4CampaignInput {
@@ -146,6 +149,7 @@ function campaignInput(maximumCostUsdMicros = 1_000): M9b4CampaignInput {
     campaignId: "offline-m9b4-campaign",
     budgetEnvelope: {
       maximumAttempts: 12,
+      maximumConcurrentAttempts: 1,
       ...ceiling,
       providers: [{ provider: PROVIDER, ...ceiling }],
       phases: [
@@ -182,7 +186,7 @@ async function attempt(
       ...overrides,
       serializedRequest,
       requestDigest,
-      requestInputTokens: 10,
+      reservedInputTokenCeiling: 10,
       provider: PROVIDER,
       model: MODEL,
       tokenizer: TOKENIZER,
@@ -345,7 +349,7 @@ describe("M9b.4 offline effect ledger", () => {
       callIndex: 0,
       serializedRequest: '{ "prompt": "not-canonical" }',
       requestDigest: "0".repeat(64),
-      requestInputTokens: 10,
+      reservedInputTokenCeiling: 10,
       provider: PROVIDER,
       model: MODEL,
       tokenizer: TOKENIZER,
@@ -734,22 +738,6 @@ describe("M9b.4 offline effect ledger", () => {
         usage: { inputTokens: "ten" },
       },
     ],
-    [
-      "inconsistent",
-      {
-        kind: "success",
-        output: { answer: "offline" },
-        usage: {
-          inputTokens: 10,
-          cachedInputTokens: 0,
-          cacheWriteInputTokens: 0,
-          outputTokens: 6,
-          reasoningTokens: 0,
-          wallClockMs: 10,
-          costUsdMicros: 22,
-        },
-      },
-    ],
   ])(
     "classifies %s usage as conservative ambiguity",
     async (_label, result) => {
@@ -770,6 +758,39 @@ describe("M9b.4 offline effect ledger", () => {
       expect(counters.transports).toBe(1);
     },
   );
+
+  it("retains complete provider usage for a typed reservation overage", async () => {
+    const campaignValue = await campaign();
+    const attemptValue = await attempt(campaignValue);
+    const outcome = unwrap(
+      await executeM9b4EffectAttempt({
+        campaign: campaignValue,
+        attempt: attemptValue,
+        persistence: memoryLedger().persistence,
+        createSession: sessionFactory(emptyCounters(), {
+          kind: "success",
+          output: { answer: "offline" },
+          usage: {
+            inputTokens: 10,
+            cachedInputTokens: 0,
+            cacheWriteInputTokens: 0,
+            outputTokens: 6,
+            reasoningTokens: 0,
+            wallClockMs: 10,
+            costUsdMicros: 22,
+          },
+        }),
+      }),
+    );
+    expect(outcome).toMatchObject({
+      terminal: "overage",
+      successful: false,
+      scorable: false,
+      accounting: {
+        total: { chargedOutputTokens: 6, chargedCostUsdMicros: 26 },
+      },
+    });
+  });
 
   it("allows only one concurrent controller to win an attempt identity", async () => {
     const campaignValue = await campaign();
@@ -805,12 +826,13 @@ describe("M9b.4 offline effect ledger", () => {
     expect(counters.transports).toBe(1);
   });
 
-  it("fails closed on request, reservation, receipt, usage, and chain tampering", async () => {
+  it("fails closed on request, reservation, receipt, usage, settlement, and chain tampering", async () => {
     const mutations = [
       "request",
       "reservation",
       "receipt",
       "usage",
+      "settlement",
       "chain",
     ] as const;
     for (const mutation of mutations) {
@@ -876,6 +898,22 @@ describe("M9b.4 offline effect ledger", () => {
                 receipt: {
                   ...receiptBody,
                   receiptDigest: unwrap(await digestValue(receiptBody)),
+                },
+              };
+            }
+            if (mutation === "settlement" && event.kind === "reconciled") {
+              const changedSettlement = {
+                ...event.settlement,
+                chargedCostUsdMicros: event.settlement.chargedCostUsdMicros + 1,
+              };
+              const { settlementDigest: _settlementDigest, ...settlementBody } =
+                changedSettlement;
+              void _settlementDigest;
+              return {
+                ...event,
+                settlement: {
+                  ...settlementBody,
+                  settlementDigest: unwrap(await digestValue(settlementBody)),
                 },
               };
             }

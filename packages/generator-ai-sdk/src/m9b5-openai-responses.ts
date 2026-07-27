@@ -8,7 +8,7 @@ import { z } from "zod";
 
 export const M9B5_OPENAI_RESPONSES_PROTOCOL = Object.freeze({
   id: "lachesis-m9b5-openai-responses-offline-conformance",
-  version: "1.1.0",
+  version: "1.2.0",
   visibility: "private-offline-conformance-only" as const,
   sdk: Object.freeze({
     package: "@ai-sdk/openai",
@@ -67,6 +67,9 @@ const pricingIdentitySchema = artifactIdentitySchema
     cacheWriteInputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
     outputUsdMicrosPerMillionTokens: z.number().int().nonnegative(),
     reasoningUsdMicrosPerMillionTokens: z.literal(0),
+    longContextThresholdTokens: z.number().int().positive(),
+    longContextInputMultiplierMicros: z.number().int().min(1_000_000),
+    longContextOutputMultiplierMicros: z.number().int().min(1_000_000),
   })
   .readonly();
 const serializerIdentitySchema = artifactIdentitySchema
@@ -370,7 +373,7 @@ export async function prepareM9b5ConformanceVector(
     : invalid("M9b.5 request envelope could not be bound.");
 }
 
-async function validateVector(
+export async function validateM9b5ConformanceVector(
   input: unknown,
 ): Promise<Result<M9b5ConformanceVector, M9b5PreparationFailure>> {
   const parsed = m9b5ConformanceVectorSchema.safeParse(input);
@@ -492,22 +495,34 @@ function pricedUsage(
     usage.input_tokens -
     usage.input_tokens_details.cached_tokens -
     usage.input_tokens_details.cache_write_tokens;
+  const longContext = usage.input_tokens > pricing.longContextThresholdTokens;
+  const inputMultiplier = longContext
+    ? pricing.longContextInputMultiplierMicros
+    : 1_000_000;
+  const outputMultiplier = longContext
+    ? pricing.longContextOutputMultiplierMicros
+    : 1_000_000;
   const numerators = [
-    uncachedInputTokens * pricing.inputUsdMicrosPerMillionTokens,
-    usage.input_tokens_details.cached_tokens *
-      pricing.cachedInputUsdMicrosPerMillionTokens,
-    usage.input_tokens_details.cache_write_tokens *
-      pricing.cacheWriteInputUsdMicrosPerMillionTokens,
-    usage.output_tokens * pricing.outputUsdMicrosPerMillionTokens,
+    BigInt(uncachedInputTokens) *
+      BigInt(pricing.inputUsdMicrosPerMillionTokens) *
+      BigInt(inputMultiplier),
+    BigInt(usage.input_tokens_details.cached_tokens) *
+      BigInt(pricing.cachedInputUsdMicrosPerMillionTokens) *
+      BigInt(inputMultiplier),
+    BigInt(usage.input_tokens_details.cache_write_tokens) *
+      BigInt(pricing.cacheWriteInputUsdMicrosPerMillionTokens) *
+      BigInt(inputMultiplier),
+    BigInt(usage.output_tokens) *
+      BigInt(pricing.outputUsdMicrosPerMillionTokens) *
+      BigInt(outputMultiplier),
   ];
   const numerator = numerators.reduce(
     (total, component) => total + component,
-    0,
+    0n,
   );
-  const costUsdMicros = Math.ceil(numerator / 1_000_000);
-  return numerators.every(Number.isSafeInteger) &&
-    Number.isSafeInteger(numerator) &&
-    Number.isSafeInteger(costUsdMicros)
+  const denominator = 1_000_000_000_000n;
+  const costUsdMicros = (numerator + denominator - 1n) / denominator;
+  return costUsdMicros <= BigInt(Number.MAX_SAFE_INTEGER)
     ? {
         inputTokens: usage.input_tokens,
         cachedInputTokens: usage.input_tokens_details.cached_tokens,
@@ -515,7 +530,7 @@ function pricedUsage(
         outputTokens: usage.output_tokens,
         reasoningTokens: usage.output_tokens_details.reasoning_tokens,
         wallClockMs,
-        costUsdMicros,
+        costUsdMicros: Number(costUsdMicros),
       }
     : undefined;
 }
@@ -563,7 +578,7 @@ function mapRawResponse(
   return {
     kind: "success",
     output: {
-      protocol: "lachesis-m9b5-openai-responses-completed-output/2",
+      protocol: "lachesis-m9b5-openai-responses-completed-output/3",
       responseId: parsed.data.id,
       returnedModel: parsed.data.model,
       requestClass: vector.requestClass,
@@ -649,7 +664,7 @@ export async function createM9b5OpenAiResponsesSession(
   vectorInput: M9b5ConformanceVector,
   settingsInput: unknown,
 ): Promise<Result<M9b5TransportSession, M9b5PreparationFailure>> {
-  const vector = await validateVector(vectorInput);
+  const vector = await validateM9b5ConformanceVector(vectorInput);
   if (!vector.ok) return vector;
   const settings = sessionSettingsSchema.safeParse(settingsInput);
   if (!settings.success)

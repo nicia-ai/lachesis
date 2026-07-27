@@ -1,0 +1,192 @@
+{
+  "protocol": {
+    "id": "lachesis-m9b6-conservative-pre-dispatch-accounting",
+    "version": "1.0.0",
+    "baselineCommit": "1685b3b504abdd22bdd80aaca45a9418535c50c5"
+  },
+  "privateDependencies": {
+    "effectLedger": {
+      "id": "lachesis-m9b4-offline-effect-ledger",
+      "version": "1.2.0",
+      "persistedWireRevision": 3
+    },
+    "openAiResponsesAdapter": {
+      "id": "lachesis-m9b5-openai-responses-offline-conformance",
+      "version": "1.2.0",
+      "installedProviderPackage": "@ai-sdk/openai@4.0.15",
+      "installedRuntimePackage": "ai@7.0.28"
+    },
+    "historicalArtifactsReinterpreted": false
+  },
+  "necessityAnalysis": {
+    "exactProviderTokenizationRequiredForEstimand": false,
+    "priorUse": "pre-dispatch-budget-safety",
+    "replacement": "reserve-full-provider-model-input-maximum",
+    "scientificInclusionUsesReportedTokens": false,
+    "exactCrossArmRequestByteEqualityRequired": false,
+    "matchedBoundary": "equal-controller-envelopes"
+  },
+  "accountingModel": {
+    "exact": [
+      "canonical-provider-request-json",
+      "provider-request-sha256",
+      "provider-request-utf8-byte-length",
+      "instructions-task-schema-model-settings-reasoning-output-cap",
+      "provider-reported-usage-classes-after-dispatch",
+      "tiered-cost-rederivation-after-dispatch"
+    ],
+    "conservative": [
+      "full-provider-model-input-maximum",
+      "highest-uncached-cached-read-or-cache-write-input-rate",
+      "applicable-long-context-input-and-output-multipliers",
+      "maximum-output-reasoning-wall-time-and-cost-reservation"
+    ],
+    "unknown": [
+      "provider-side-responses-framing-tokens",
+      "provider-hard-cap-propagation-overshoot"
+    ],
+    "oneTokenPerByteUsed": false,
+    "safeArithmetic": "exact-internal-bigint-with-safe-final-number-conversion",
+    "automaticRetryLimit": 0,
+    "maximumConcurrency": 1
+  },
+  "hardCapBoundary": {
+    "required": true,
+    "scope": "provider-project",
+    "currency": "USD",
+    "softAlertsAccepted": false,
+    "staleReceiptsAccepted": false,
+    "serializedReceiptAloneIsAuthority": false,
+    "offlineOpaqueCapabilityRequired": true,
+    "providerEnforcement": "429-insufficient_quota-after-tracked-limit",
+    "providerEnforcementInstantaneous": false,
+    "providerDocumentedOvershootBound": "unknown",
+    "exactFinancialBoundSource": "full-model-input-output-reservation-plus-local-zero-retry-single-concurrency-ledger",
+    "role": "independent-outer-stop-control-and-defense-in-depth"
+  },
+  "terminalPolicy": {
+    "ambiguous": {
+      "charged": "full-reservation",
+      "redispatch": false,
+      "scorable": false,
+      "campaignProgression": "halted"
+    },
+    "overage": {
+      "charged": "maximum-of-full-reservation-and-provider-reported-cost",
+      "providerUsageRetained": true,
+      "redispatch": false,
+      "successful": false,
+      "scorable": false,
+      "campaignProgression": "halted"
+    }
+  },
+  "officialSources": [
+    {
+      "url": "https://developers.openai.com/api/docs/guides/spend-limits",
+      "use": "hard-limit versus alert semantics, 429 behavior, and non-instantaneous propagation"
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/guides/production-best-practices#managing-billing-limits",
+      "use": "hard spend limit as traffic-stopping monthly cap"
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+      "use": "model input/output limits, long-context pricing, and cache-write multiplier"
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/guides/latest-model",
+      "use": "cached-read and cache-write usage classes"
+    }
+  ],
+  "hostileCoverage": [
+    "ascii-multibyte-combining-escape-and-hostile-key-bytes",
+    "noncanonical-equivalent-representation",
+    "post-reservation-request-and-provider-visible-field-mutation",
+    "cap-absence-softness-staleness-project-currency-capacity-and-drift",
+    "safe-integer-and-reservation-overflow",
+    "highest-cache-class-and-long-context-pricing",
+    "missing-and-overlapping-usage-classes",
+    "provider-framing-or-accounting-overage",
+    "ambiguity-full-charge-and-zero-redispatch",
+    "reservation-cap-ledger-and-settlement-tampering",
+    "zero-effect-resume",
+    "arm-order-and-scientific-envelope-substitution",
+    "post-outcome-token-filter-rejection",
+    "concurrency-and-zero-retry",
+    "old-protocol-artifact-rejection"
+  ],
+  "verification": {
+    "node": "v24.18.0",
+    "focusedM9b4ToM9b6": {
+      "files": 3,
+      "passed": 69,
+      "failed": 0
+    },
+    "allM9": {
+      "files": 8,
+      "passed": 195,
+      "failed": 0
+    },
+    "repository": {
+      "files": 104,
+      "passed": 638,
+      "failed": 0
+    },
+    "coverage": {
+      "statementsPercent": 90.04,
+      "branchesPercent": 81.1,
+      "functionsPercent": 97.33,
+      "linesPercent": 93.77
+    },
+    "formatChangedFiles": "pass",
+    "formatRepository": "blocked-only-by-pre-existing-untracked-paper/README.md",
+    "typecheck": "pass",
+    "lint": "pass",
+    "build": "pass",
+    "nodeAndWorkersSmokes": "pass",
+    "cliValidInvalidSmokes": "pass",
+    "examples": "pass-7",
+    "loadBaseline": "pass-descriptive-only",
+    "sourceSafety": "pass",
+    "publicApiAudit": "pass-no-new-export",
+    "releaseChecksums": "pass",
+    "diffCheck": "pass",
+    "knownHistoricalNonGreen": [
+      "audit:m7c-preregistration: M7c public documentation binding differs",
+      "audit:packages: @nicia-ai/lachesis-generator differs from frozen alpha.5 tarball digest"
+    ]
+  },
+  "artifactDigests": {
+    "effectLedgerImplementationSha256": "4ca8585edd78a2b39a14b45a8f14133a67bf5514bec8c3750337c36a690f9af7",
+    "effectLedgerTestSha256": "b8965b9ded1fbe1f71171d7d07265e93995911400dff3e02af2d61ffccd5b71d",
+    "adapterImplementationSha256": "62d3d2f7fa33057caa48aa643ce792faef96a122c0b86445c2a45fddff77f993",
+    "adapterTestSha256": "4a07b7956ea853e251f794c316647386303457d3f26e7e6c2895d12de5493640",
+    "m9b6ImplementationSha256": "699d27d9bfc5f0bb3c152181a1d2bdcf401f834339fa52631d318dc76c80cac7",
+    "m9b6TestSha256": "6509b92376ec2f40a3a52effae0ceed3d9745f8cca54a3257b408c2c7774479c",
+    "humanReportSha256": "14c07f0b378afb6e0c942e95c10eeaa3f4added8267dcba20a356e16f5a8fcab"
+  },
+  "effects": {
+    "networkRequests": 0,
+    "providerRequests": 0,
+    "credentialsRead": 0,
+    "providerProjectsAccessed": 0,
+    "corpusOrGoldMaterializations": 0,
+    "preregistrations": 0,
+    "publicExportsAdded": 0,
+    "packageVersionsChanged": 0,
+    "releasesPrepared": 0
+  },
+  "decision": "conservative-accounting-go-for-offline-campaign-preparation",
+  "m9bStatus": "NO-GO",
+  "nextAuthorizedScope": "separately-reviewed-offline-campaign-preparation-only",
+  "forbiddenNextScope": [
+    "corpus-construction",
+    "gold-or-evaluator-materialization",
+    "external-preregistration",
+    "credentials",
+    "provider-access",
+    "synthetic-or-protocol-probes",
+    "live-execution",
+    "superiority-claims"
+  ]
+}

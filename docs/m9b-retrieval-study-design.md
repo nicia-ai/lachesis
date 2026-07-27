@@ -483,3 +483,29 @@ schedule, empirical discordance result, external preregistration, credential,
 spending authority, or explicit live authorization exists. The next permitted
 step is review of this accounting blocker, not corpus construction or live
 execution.
+
+## M9b.6 conservative accounting disposition
+
+M9b.6 resolves the accounting blocker for further **offline preparation only**
+without claiming an exact provider tokenizer. Exact canonical provider request
+bytes and UTF-8 lengths remain bound through M9b.5. Pre-dispatch accounting now
+reserves the full provider-documented model input maximum, the maximum output
+and reasoning envelopes, the highest input billing class, and applicable
+long-context multipliers. Complete usage settles exactly as reported; ambiguity
+retains the full reservation, while a complete receipt outside the reservation
+becomes a typed, conservatively charged, unscorable, campaign-halting overage.
+
+Scientific matching uses prospectively frozen equal controller envelopes, not
+post-response token counts and not exact cross-arm request-byte equality. The
+provider project hard-limit receipt is a required independent stop boundary, but
+its documented propagation delay and unknown overshoot remain explicit.
+Per-attempt boundedness comes from the full model limit, one concurrent call,
+zero retry, and the durable local ledger. See
+`docs/m9b6-conservative-pre-dispatch-accounting.md` for the complete necessity
+analysis and threat model.
+
+The M9b.6 decision is
+`conservative-accounting-go-for-offline-campaign-preparation`. M9b remains
+**NO-GO** for corpus construction, final gold or evaluator materialization,
+external preregistration, credentials, provider access, protocol probes, live
+execution, or any superiority claim.

@@ -57,6 +57,9 @@ const IDENTITIES: M9b5IdentityProfile = Object.freeze({
     cacheWriteInputUsdMicrosPerMillionTokens: 1_250_000,
     outputUsdMicrosPerMillionTokens: 2_000_000,
     reasoningUsdMicrosPerMillionTokens: 0,
+    longContextThresholdTokens: 272_000,
+    longContextInputMultiplierMicros: 2_000_000,
+    longContextOutputMultiplierMicros: 1_500_000,
   }),
   serializer: Object.freeze({
     id: "ai-sdk-openai-responses-canonical-intercept",
@@ -289,7 +292,7 @@ describe("M9b.5 offline OpenAI Responses adapter conformance", () => {
     expect(result).toEqual({
       kind: "success",
       output: {
-        protocol: "lachesis-m9b5-openai-responses-completed-output/2",
+        protocol: "lachesis-m9b5-openai-responses-completed-output/3",
         responseId: "resp_offline_001",
         returnedModel: IDENTITIES.model.version,
         requestClass: prepared.requestClass,
@@ -735,6 +738,7 @@ async function campaign(maximumCostUsdMicros = 10_000): Promise<M9b4Campaign> {
       campaignId: "m9b5-offline-composition",
       budgetEnvelope: {
         maximumAttempts: 4,
+        maximumConcurrentAttempts: 1,
         ...ceiling,
         providers: [{ provider: IDENTITIES.provider, ...ceiling }],
         phases: [
@@ -763,7 +767,7 @@ async function effectAttempt(
       callIndex: vectorValue.callIndex,
       serializedRequest: vectorValue.serializedRequest,
       requestDigest: vectorValue.requestDigest,
-      requestInputTokens: 10,
+      reservedInputTokenCeiling: 10,
       provider: IDENTITIES.provider,
       model: IDENTITIES.model,
       tokenizer: IDENTITIES.tokenizer,
@@ -934,27 +938,7 @@ describe("M9b.5 private M9b.4 structural composition", () => {
     expect(seen.count).toBe(1);
   });
 
-  it.each([
-    [
-      "malformed response",
-      rawResponse("static-answer-generation", { usage: null }),
-    ],
-    [
-      "over-reservation usage",
-      rawResponse("static-answer-generation", {
-        usage: {
-          input_tokens: 10,
-          input_tokens_details: {
-            cached_tokens: 0,
-            cache_write_tokens: 0,
-          },
-          output_tokens: 65,
-          output_tokens_details: { reasoning_tokens: 0 },
-          total_tokens: 75,
-        },
-      }),
-    ],
-  ])("charges %s as ledger ambiguity", async (_name, responseValue) => {
+  it("charges malformed usage as ledger ambiguity", async () => {
     const campaignValue = await campaign();
     const prepared = await vector();
     const attempt = await effectAttempt(campaignValue, prepared);
@@ -962,7 +946,10 @@ describe("M9b.5 private M9b.4 structural composition", () => {
     const seen = observation();
     const session = await sessionFor(
       prepared,
-      responseFetch(responseValue, seen),
+      responseFetch(
+        rawResponse("static-answer-generation", { usage: null }),
+        seen,
+      ),
       attempt.attemptId,
     );
     const result = await executeM9b4EffectAttempt({
@@ -980,6 +967,54 @@ describe("M9b.5 private M9b.4 structural composition", () => {
           total: {
             chargedInputTokens: 10,
             chargedOutputTokens: 64,
+            chargedCostUsdMicros: 141,
+          },
+        },
+      },
+    });
+    expect(seen.count).toBe(1);
+  });
+
+  it("retains provider-reported usage for a typed output overage", async () => {
+    const campaignValue = await campaign();
+    const prepared = await vector();
+    const attempt = await effectAttempt(campaignValue, prepared);
+    const seen = observation();
+    const session = await sessionFor(
+      prepared,
+      responseFetch(
+        rawResponse("static-answer-generation", {
+          usage: {
+            input_tokens: 10,
+            input_tokens_details: {
+              cached_tokens: 0,
+              cache_write_tokens: 0,
+            },
+            output_tokens: 65,
+            output_tokens_details: { reasoning_tokens: 0 },
+            total_tokens: 75,
+          },
+        }),
+        seen,
+      ),
+      attempt.attemptId,
+    );
+    const result = await executeM9b4EffectAttempt({
+      campaign: campaignValue,
+      attempt,
+      persistence: memoryLedger().persistence,
+      createSession: () => session,
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      value: {
+        terminal: "overage",
+        successful: false,
+        scorable: false,
+        accounting: {
+          total: {
+            chargedInputTokens: 10,
+            chargedOutputTokens: 65,
             chargedCostUsdMicros: 141,
           },
         },
