@@ -581,3 +581,38 @@ verified hard-cap receipt, and materialized schedule/request identities remain
 mandatory. M9b is still **NO-GO** for corpus construction, external
 registration, credentials, provider access, a probe, live execution, or any
 superiority claim.
+
+## M9b.9 offline Responses input-token count conformance
+
+M9b.9 advances only private persistence and conformance identities. One
+immutable prospective Responses request is the source for both the exact
+`POST /v1/responses/input_tokens` request and the later inference request. The
+canonical bodies, endpoints, model, instructions, input/messages, tools,
+structured-output schema, provider settings, output ceiling, and relationship
+receipt are cross-bound. Count transport uses one injected intercepted fetch;
+there is no SDK retry, controller retry, credential access, network, or model
+call.
+
+The durable count effect is reserved and marked `dispatch-started` before
+transport. Its verified receipt is persisted before exact-count inference
+reservation or complete-campaign capacity admission. Count and inference HTTP
+effects have separate accounting, ambiguity, and no-redispatch terminals.
+Provider input usage below the count retains both values; usage above the count
+is an accounting overage; missing usage retains the full reservation.
+
+The official primary sources establish exact model-visible count semantics but
+do not state that the count operation is free or publish a separate count price.
+M9b.9 therefore reserves each count effect at the full input maximum, highest
+input class, and long-context multiplier. The 192-pair campaign has 768 count
+HTTP requests, 768 inference/model calls, and a maximum 1,536 provider HTTP
+requests. Exact-count inference reservations total
+$613.416960, while the
+unresolved count-effect liability is $4,425.600000,
+producing a conservative $5,039.016960 complete exposure.
+
+The deterministic decision is `token-count-pricing-unknown-no-go`. This
+supersedes M9b.8's conditional preparation authority: M9b remains **NO-GO** for
+offline preregistration preparation, corpus materialization, external
+registration, credentials, provider access, a probe, live execution, or any
+superiority claim. See `docs/m9b9-offline-input-token-count-conformance.md` and
+its machine-readable companion for the full boundary and totals.

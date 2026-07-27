@@ -1,0 +1,145 @@
+{
+  "artifact": "lachesis-m9b9-offline-input-token-count-conformance-evidence",
+  "version": "1.0.0",
+  "baselineCommit": "1ad21e08dac6b9b02400a888e486b8f18241b760",
+  "decision": "token-count-pricing-unknown-no-go",
+  "protocols": {
+    "controller": "lachesis-m9b9-offline-responses-input-token-count@1.0.0",
+    "requestBinding": "lachesis-m9b9-single-source-request-binding/1",
+    "countReceipt": "lachesis-m9b9-verified-count-receipt/1",
+    "inferenceReservation": "lachesis-m9b9-exact-count-inference-reservation/1",
+    "inferenceSettlement": "lachesis-m9b9-inference-settlement/1",
+    "effectLedger": "lachesis-m9b9-durable-count-inference-ledger/1"
+  },
+  "officialContract": {
+    "countEndpoint": "POST /v1/responses/input_tokens",
+    "inferenceEndpoint": "POST /v1/responses",
+    "openApiVersion": "2.3.0",
+    "countSemantics": "exact-provider-returned-model-visible-input-count",
+    "billingStatus": "not-specified-by-pinned-primary-sources",
+    "pricingTreatment": "unresolved-charge-full-model-input-at-highest-input-class-and-long-context-multiplier",
+    "installedSdk": "@ai-sdk/openai@4.0.15",
+    "installedSdkExposesCountOperation": false,
+    "installedSdkSourceDigest": "a543dc8f867af10291594fe151b98ec6e91dbede39e174fb6822d79a26771bc4"
+  },
+  "frozenModelAndPricing": {
+    "model": "gpt-5.6-terra",
+    "maximumInputTokens": 922000,
+    "maximumOutputTokens": 128000,
+    "contextWindowTokens": 1050000,
+    "longContextThresholdTokens": 272000,
+    "uncachedInputUsdMicrosPerMillionTokens": 2500000,
+    "cachedReadUsdMicrosPerMillionTokens": 250000,
+    "cacheWriteUsdMicrosPerMillionTokens": 3125000,
+    "outputUsdMicrosPerMillionTokens": 15000000,
+    "longContextInputMultiplierMicros": 2000000,
+    "longContextOutputMultiplierMicros": 1500000
+  },
+  "frozenClassMaxima": [
+    {
+      "requestClass": "root-program-authoring",
+      "countedInputTokens": 65536,
+      "maximumOutputTokens": 65536,
+      "inferenceReservationUsdMicros": 1187840,
+      "unresolvedCountEffectReservationUsdMicros": 5762500
+    },
+    {
+      "requestClass": "static-one-shot-query-planning",
+      "countedInputTokens": 65536,
+      "maximumOutputTokens": 65536,
+      "inferenceReservationUsdMicros": 1187840,
+      "unresolvedCountEffectReservationUsdMicros": 5762500
+    },
+    {
+      "requestClass": "discovered-program-leaf-reasoning",
+      "countedInputTokens": 32768,
+      "maximumOutputTokens": 20480,
+      "inferenceReservationUsdMicros": 409600,
+      "unresolvedCountEffectReservationUsdMicros": 5762500
+    },
+    {
+      "requestClass": "static-answer-generation",
+      "countedInputTokens": 32768,
+      "maximumOutputTokens": 20480,
+      "inferenceReservationUsdMicros": 409600,
+      "unresolvedCountEffectReservationUsdMicros": 5762500
+    }
+  ],
+  "capacity": {
+    "perPair": {
+      "pairedCases": 1,
+      "countEndpointCalls": 4,
+      "inferenceCalls": 4,
+      "providerHttpRequests": 8,
+      "modelCalls": 4,
+      "countedInputTokens": 196608,
+      "maximumOutputTokens": 172032,
+      "inferenceReservationUsdMicros": 3194880,
+      "unresolvedCountEffectReservationUsdMicros": 23050000,
+      "completeExposureUsdMicros": 26244880
+    },
+    "probe": {
+      "pairedCases": 24,
+      "countEndpointCalls": 96,
+      "inferenceCalls": 96,
+      "providerHttpRequests": 192,
+      "modelCalls": 96,
+      "countedInputTokens": 4718592,
+      "maximumOutputTokens": 4128768,
+      "inferenceReservationUsdMicros": 76677120,
+      "unresolvedCountEffectReservationUsdMicros": 553200000,
+      "completeExposureUsdMicros": 629877120
+    },
+    "primary": {
+      "pairedCases": 168,
+      "countEndpointCalls": 672,
+      "inferenceCalls": 672,
+      "providerHttpRequests": 1344,
+      "modelCalls": 672,
+      "countedInputTokens": 33030144,
+      "maximumOutputTokens": 28901376,
+      "inferenceReservationUsdMicros": 536739840,
+      "unresolvedCountEffectReservationUsdMicros": 3872400000,
+      "completeExposureUsdMicros": 4409139840
+    },
+    "campaign": {
+      "pairedCases": 192,
+      "countEndpointCalls": 768,
+      "inferenceCalls": 768,
+      "providerHttpRequests": 1536,
+      "modelCalls": 768,
+      "countedInputTokens": 37748736,
+      "maximumOutputTokens": 33030144,
+      "inferenceReservationUsdMicros": 613416960,
+      "unresolvedCountEffectReservationUsdMicros": 4425600000,
+      "completeExposureUsdMicros": 5039016960
+    }
+  },
+  "comparisons": {
+    "m9b8ExposureUsdMicros": 1869330432,
+    "conditionalInferenceReductionFromM9b8UsdMicros": 1255913472,
+    "completeExposureReductionFromM9b8UsdMicros": -3169686528,
+    "originalCampaignCapUsdMicros": 117964800,
+    "completeExposureOverOriginalCapUsdMicros": 4921052160
+  },
+  "controller": {
+    "maximumConcurrency": 1,
+    "countRetries": 0,
+    "inferenceRetries": 0,
+    "countIsProviderHttpEffect": true,
+    "countIsModelInference": false,
+    "dispatchStartedPersistedBeforeEachTransport": true,
+    "ambiguousEffects": "full-reservation-terminal-unscorable-no-redispatch",
+    "overage": "settle-actual-terminal-unscorable-no-redispatch",
+    "completeCampaignCapacityRequiredBeforeInference": true
+  },
+  "authority": {
+    "offlinePreregistrationPreparationAuthorized": false,
+    "corpusMaterializationAuthorized": false,
+    "externalRegistrationAuthorized": false,
+    "credentialsAuthorized": false,
+    "providerAccessAuthorized": false,
+    "probeAuthorized": false,
+    "liveExecutionAuthorized": false
+  }
+}
