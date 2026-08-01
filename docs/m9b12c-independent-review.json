@@ -1,0 +1,35 @@
+{
+  "protocol": "lachesis-m9b12c-independent-review-evidence/1",
+  "reviewedCommit": "c9e50ff3db56f898184dc9b7be934b1f1c0560df",
+  "reviewedTree": "ef9f3847a6f0eb7d1a5a519c4acc90cd6a2354fd",
+  "decision": "m9b12c-independent-review-no-go",
+  "blockingFindings": [
+    {
+      "id": "process-local-authority-not-durable",
+      "priority": "P1",
+      "confidence": 10,
+      "disposition": "blocking"
+    },
+    {
+      "id": "revalidation-not-atomic-with-admission",
+      "priority": "P1",
+      "confidence": 10,
+      "disposition": "blocking"
+    },
+    {
+      "id": "observer-identity-caller-selectable",
+      "priority": "P1",
+      "confidence": 9,
+      "disposition": "blocking"
+    }
+  ],
+  "predecessorDisposition": "superseded-unregistered-process-durability-identity-admission-incomplete",
+  "effects": {
+    "externalRegistrations": 0,
+    "corpusAccesses": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "networkCalls": 0,
+    "pushes": 0
+  }
+}
