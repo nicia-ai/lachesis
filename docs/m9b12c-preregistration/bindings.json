@@ -1,0 +1,81 @@
+{
+  "protocol": "lachesis-m9b12c-binding-inventory/1",
+  "packageProtocol": "lachesis-m9b12c-offline-preregistration-package@1.0.0",
+  "quarantineProtocol": "lachesis-m9b12c-retired-corpus-quarantine@1.0.0",
+  "quarantineHistoryProtocol": "lachesis-m9b12c-append-only-quarantine-history/1",
+  "externalRegistrationProtocol": "lachesis-m9b12c-append-only-external-registration/1",
+  "baselineCommit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+  "baselineTree": "8609e77370ceefaffbd06752f1fc343903839c23",
+  "implementationCommit": "f0856caa195a352914a5dcba31a069e7bbd348e1",
+  "implementationTree": "69e2ad71dcd8864c96b3943b610f3ff6ebe092b9",
+  "preregistrationDigest": "62cff37dae7332855b8f7a8f9583f5b5f0917adde2d9b2c019603fb101392fc3",
+  "implementation": {
+    "source": "packages/generator-ai-sdk/internal/m9b12c-preregistration.ts",
+    "sourceSha256": "a0807da046da588eee8a0adb595baf76d0560e049f512cf2ab89d49b3d9263f8",
+    "test": "packages/generator-ai-sdk/tests/m9b12c-preregistration.test.ts",
+    "testSha256": "ac1c3976ac72374ff49b5b310e18c33c7d1fd003fc56627a443929d3129fad23"
+  },
+  "linearSupersession": [
+    {
+      "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+      "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+      "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+      "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+      "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+      "independentReviewDecision": "independent-preregistration-review-pass-with-narrow-corrections",
+      "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+      "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+      "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+      "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+      "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+      "independentReviewDecision": "m9b12a-independent-review-no-go",
+      "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+      "commit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+      "tree": "8609e77370ceefaffbd06752f1fc343903839c23",
+      "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+      "checksumManifestDigest": "ed9d3a0fda5c0bb753f17dcc01370281406ec6bfd4cc157f8927c6d2d892face",
+      "independentReviewDecision": "m9b12b-independent-review-no-go",
+      "status": "superseded-unregistered-quarantine-history-not-durable"
+    }
+  ],
+  "sourceCommitBinding": {
+    "sourceCommit": null,
+    "sourceTree": null,
+    "procedure": "external-record-binds-reviewed-source-commit-and-tree-after-independent-review"
+  },
+  "durableHistory": {
+    "opaqueAuthorityOwnedRepository": true,
+    "callerSuppliedHistory": false,
+    "completeChainValidation": true,
+    "trustedHeadMatchOnReload": true,
+    "compareAndSwapAppend": true,
+    "appendBeforeTerminalReceipt": true,
+    "staleAuthorizationRevalidation": true,
+    "permanentMonotonicQuarantine": true
+  },
+  "canonicalModel": {
+    "influenceBearingRoles": 12,
+    "isolationChannels": 16,
+    "contaminationAncestorKinds": 18,
+    "forbiddenAccessClasses": 20,
+    "oneRegistrationConstructor": true,
+    "oneHistoryFormatConstructor": true,
+    "denyByDefault": true
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "scheduleInstances": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  },
+  "liveAuthorityAvailable": false
+}
