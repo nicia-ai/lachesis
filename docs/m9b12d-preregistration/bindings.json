@@ -1,0 +1,112 @@
+{
+  "protocol": "lachesis-m9b12d-binding-inventory/1",
+  "packageProtocol": "lachesis-m9b12d-offline-preregistration-package@1.0.0",
+  "quarantineProtocol": "lachesis-m9b12d-retired-corpus-quarantine@1.0.0",
+  "durableAuthorityProtocol": "lachesis-m9b12d-durable-quarantine-authority/1",
+  "trustedObserverIdentityProtocol": "lachesis-m9b12d-trusted-observer-identity/1",
+  "atomicAdmissionProtocol": "lachesis-m9b12d-atomic-role-effect-admission/1",
+  "externalRegistrationProtocol": "lachesis-m9b12d-append-only-external-registration/1",
+  "requiredProviderEffectLedgerProtocol": "lachesis-m9b4-offline-effect-ledger@1.2.0",
+  "baselineCommit": "c9e50ff3db56f898184dc9b7be934b1f1c0560df",
+  "baselineTree": "ef9f3847a6f0eb7d1a5a519c4acc90cd6a2354fd",
+  "reviewEvidenceCommit": "d1dc6c58538ca67e7c96656bca6afa94ac011c4d",
+  "implementationCommit": "abe5a35fb76045811b0f8d33fee34a0f64d6c9aa",
+  "implementationTree": "d924b263809a45ed1f459cebb34ce740c14ff181",
+  "preregistrationDigest": "ed991e11ccc6c9129bdb6509dd011b28006b4420d59bf4290d2dac11765ccef0",
+  "inheritedStudyFieldsDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "implementation": {
+    "preregistrationSource": {
+      "path": "packages/generator-ai-sdk/internal/m9b12d-preregistration.ts",
+      "sha256": "823266a129658772852581922b084ea13d7b6160824bbd6fe643f566a2c79744"
+    },
+    "durableAuthoritySource": {
+      "path": "packages/generator-ai-sdk/internal/m9b12d-durable-authority-node.ts",
+      "sha256": "5c01b83be3dda67e28a6b26d9423bd82b21d09b269c3061ca481e2baf7089b4c"
+    },
+    "preregistrationTest": {
+      "path": "packages/generator-ai-sdk/tests/m9b12d-preregistration.test.ts",
+      "sha256": "c52dbc9c8a882cf01612f9c0e46f561a4c958ffb3f3db79805785c052144d8fa"
+    },
+    "durableAuthorityTest": {
+      "path": "packages/generator-ai-sdk/tests/m9b12d-durable-authority.test.ts",
+      "sha256": "d86449c0e26666159635f403e3b9b970592fc5915aee8df5009f9afc4cc73394"
+    },
+    "crossProcessTest": {
+      "path": "packages/generator-ai-sdk/tests/m9b12d-cross-process.test.ts",
+      "sha256": "970932b0b6afef0c4f7c1075e019c45e97f17cb77d598860e15e5c25d8b9bfe1"
+    },
+    "processWorkerTest": {
+      "path": "packages/generator-ai-sdk/tests/m9b12d-process-worker.test.ts",
+      "sha256": "c0f2d338c9f5e090fc1e5f9f1a98763843181f74504546148a4d6eb4b44825fd"
+    }
+  },
+  "linearSupersession": [
+    {
+      "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+      "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+      "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+      "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+      "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+      "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+      "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+      "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+      "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+      "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+      "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+      "commit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+      "tree": "8609e77370ceefaffbd06752f1fc343903839c23",
+      "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+      "checksumManifestDigest": "ed9d3a0fda5c0bb753f17dcc01370281406ec6bfd4cc157f8927c6d2d892face",
+      "status": "superseded-unregistered-quarantine-history-not-durable"
+    },
+    {
+      "protocol": "lachesis-m9b12c-offline-preregistration-package@1.0.0",
+      "commit": "c9e50ff3db56f898184dc9b7be934b1f1c0560df",
+      "tree": "ef9f3847a6f0eb7d1a5a519c4acc90cd6a2354fd",
+      "preregistrationDigest": "62cff37dae7332855b8f7a8f9583f5b5f0917adde2d9b2c019603fb101392fc3",
+      "checksumManifestDigest": "65cca06be59f863b7d5256bdac7fc57d4653d2404ce9d8047bb863d0dc5dbc46",
+      "independentReviewDecision": "m9b12c-independent-review-no-go",
+      "status": "superseded-unregistered-process-durability-identity-admission-incomplete"
+    }
+  ],
+  "storageAuthority": {
+    "adapter": "private-node-sqlite-plus-separate-trusted-anchor",
+    "createAndOpenDistinct": true,
+    "openExistingMayInitialize": false,
+    "databaseTransaction": "begin-immediate-revision-state-digest-cas",
+    "databaseMode": "0600",
+    "anchorMode": "0600",
+    "parentMode": "0700",
+    "rollbackReplacementWrongAnchorAndSymlinksFailClosed": true
+  },
+  "trustedIdentity": {
+    "domain": "controller-issued-study-principal-and-launch-allocation",
+    "normalization": "unicode-nfkc-trim-lowercase-en-us-collapse-whitespace",
+    "callerMaySelectObserverIdentity": false,
+    "durableMapping": true
+  },
+  "atomicAdmission": {
+    "linearizationPoint": "durable-admission-effect-started-event-commit",
+    "oneTimeLaunchAndAdmission": true,
+    "reusablePermissionExposed": false,
+    "ambiguousStateReadmissionPermitted": false,
+    "providerEffectsPermitted": false
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "scheduleInstances": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "networkCalls": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  },
+  "studyAuthorityStoreCreated": false
+}

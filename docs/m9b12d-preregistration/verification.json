@@ -1,0 +1,115 @@
+{
+  "protocol": "lachesis-m9b12d-offline-verification/1",
+  "node": "24.18.1",
+  "decision": "m9b12d-corrected-package-ready-for-independent-review",
+  "preregistrationDigest": "ed991e11ccc6c9129bdb6509dd011b28006b4420d59bf4290d2dac11765ccef0",
+  "reviewEvidenceCommit": "d1dc6c58538ca67e7c96656bca6afa94ac011c4d",
+  "implementationCommit": "abe5a35fb76045811b0f8d33fee34a0f64d6c9aa",
+  "implementationTree": "d924b263809a45ed1f459cebb34ce740c14ff181",
+  "results": {
+    "predecessorPreservation": {
+      "m9b12": "byte-identical; 18/18 checksum entries passed",
+      "m9b12a": "byte-identical; 22/22 checksum entries passed",
+      "m9b12b": "byte-identical; 22/22 checksum entries passed",
+      "m9b12c": "byte-identical; 24/24 checksum entries passed"
+    },
+    "canonicalDigestIndependentReproduction": "exact",
+    "nestedStandaloneRegistrationCanonicalEquality": "exact",
+    "scientificFinancialInheritanceCanonicalEquality": "exact",
+    "durableAuthority": {
+      "explicitCreateOpenAndNoSilentInitialization": "passed",
+      "processAExitProcessBReopen": "passed",
+      "processBEmptyStoreRecreation": "rejected",
+      "rollbackReplacementWrongAnchor": "rejected",
+      "missingTruncatedMalformedAndUnexpectedSchema": "rejected",
+      "modesOwnershipTypeAndSymlinkPolicy": "passed",
+      "eventRemovalReorderDuplicateAlterationForkAndUnsupportedState": "rejected"
+    },
+    "trustedIdentity": {
+      "callerCommitmentAliasAndPrincipalOverrides": "rejected",
+      "caseWhitespaceUnicodeAndEncodingEquivalence": "stable observer key",
+      "roleSessionHandleInventoryAndRestartRotation": "quarantine retained",
+      "unknownExpiredConflictingCallerAndOtherObserverHandles": "rejected",
+      "duplicateAndConcurrentAllocationIssuance": "one winner"
+    },
+    "atomicAdmission": {
+      "positiveOneTimeAdmission": "passed; one durable start and one intercepted effect",
+      "duplicateConcurrentAdmission": "one winner",
+      "quarantineWins": "admission rejected before effect",
+      "admissionWins": "truthful durable chain order",
+      "failureBeforeCommit": "no admission consumed",
+      "databaseOnlyCommit": "authority failed closed",
+      "crashAfterStartBeforeEffect": "unresolved start audited ambiguous; no readmission",
+      "crashAfterEffectBeforeTerminal": "unresolved start audited ambiguous; no redispatch",
+      "caughtEffectFailure": "durable ambiguous terminal; no redispatch",
+      "providerEffectsPermitted": false,
+      "requiredProviderEffectLedgerProtocol": "lachesis-m9b4-offline-effect-ledger@1.2.0"
+    },
+    "allRoleTerminalAssertions": "12/12 passed including materializer and study-operator",
+    "focusedM9b12d": {
+      "files": 4,
+      "passed": 34,
+      "failed": 0
+    },
+    "focusedM9": {
+      "files": 23,
+      "passed": 491,
+      "failed": 0
+    },
+    "repositorySuite": {
+      "mode": "maxWorkers=1",
+      "files": 55,
+      "passed": 934,
+      "failed": 0
+    },
+    "repositoryCoverage": {
+      "files": 55,
+      "passed": 934,
+      "failed": 0,
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    },
+    "formatting": {
+      "m9b12dPackageAndChangedSources": "passed",
+      "wholeWorkspaceObservation": "pre-existing protected untracked paper/README.md is not formatted"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "nodeWorkersSmoke": "passed",
+    "examples": "7/7 passed",
+    "loadSmoke": "passed at 128 records; descriptive only",
+    "cliM8b0": "6/6 passed",
+    "cliValidInvalidSmokes": "passed",
+    "sourceSafety": "passed",
+    "secretScan": "passed",
+    "publicApi": "passed; generator facade remains 317 exports",
+    "releaseChecksums": "passed",
+    "m8bHistory": "passed",
+    "packedPublicPackages": {
+      "status": "pre-existing-baseline-failure",
+      "observation": "current generator package source set differs from the frozen alpha.5 tarball inventory; public package inputs are unchanged from reviewed commit c9e50ff3db56f898184dc9b7be934b1f1c0560df"
+    },
+    "m7cPreregistrationAudit": {
+      "status": "pre-existing-baseline-failure",
+      "observation": "bound docs/public-alpha.md expects 11d4527f... but reviewed baseline and current bytes hash to 394deb69..."
+    },
+    "financialArithmetic": "342.097920 + 117.964800 = 460.062720; hard cap 500.000000; headroom 39.937280",
+    "diffCheck": "passed"
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "goldMaterializations": 0,
+    "scheduleInstances": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "networkCalls": 0,
+    "externalRegistrations": 0,
+    "publications": 0,
+    "pushes": 0
+  }
+}
