@@ -1,0 +1,16 @@
+{
+  "protocol": "lachesis-m9b12a-append-only-supersession/1",
+  "supersedingProtocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+  "supersedingPreregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+  "supersedesProtocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+  "supersedesCommit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+  "supersedesTree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+  "supersedesDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+  "originalStatus": "superseded-unregistered-retired-corpus-policy-incomplete",
+  "originalExternallyRegistered": false,
+  "reviewDecision": "independent-preregistration-review-pass-with-narrow-corrections",
+  "finding": "retired-or-previously-contaminated-corpus-access-was-not-an-explicit-quarantine-event",
+  "correctionScope": "retired-corpus-quarantine-policy-only",
+  "originalBytesModified": false,
+  "reinterpretOriginalArtifacts": false
+}

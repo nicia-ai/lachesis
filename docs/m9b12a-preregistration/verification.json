@@ -1,0 +1,94 @@
+{
+  "protocol": "lachesis-m9b12a-offline-verification/1",
+  "node": "24.18.1",
+  "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+  "decision": "corrected-preregistration-package-ready-for-independent-review",
+  "results": {
+    "originalPackage": {
+      "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+      "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+      "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+      "checksumManifestSha256": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+      "gitDiff": "empty",
+      "checksumManifest": "passed"
+    },
+    "focusedM9b12a": {
+      "files": 1,
+      "passed": 10,
+      "failed": 0
+    },
+    "focusedM9": {
+      "files": 17,
+      "passed": 327,
+      "failed": 0
+    },
+    "repositoryTestsSerialized": {
+      "files": 49,
+      "passed": 770,
+      "failed": 0
+    },
+    "repositoryDefaultParallelObservation": {
+      "passed": 768,
+      "timedOut": 2,
+      "classification": "pre-existing five-second benchmark timeouts; the complete maxWorkers=1 rerun passed 770/770"
+    },
+    "coverage": {
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    },
+    "formatting": {
+      "trackedRepositoryAndM9b12a": "passed",
+      "wholeWorkspaceObservation": "pre-existing protected untracked paper/README.md is not formatted"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "nodeWorkersSmoke": "passed",
+    "examples": "7/7 passed",
+    "loadSmoke": "passed; 128 records; descriptive only",
+    "cliM8b0": "6/6 passed",
+    "sourceSafety": "passed",
+    "publicApi": {
+      "status": "passed",
+      "generatorFacadeExports": 317,
+      "digest": "bf6a0476cbf3643705da8133e3173cbce771d765c979a7b198b586e2b6bda830"
+    },
+    "releaseChecksums": "passed",
+    "m8bHistory": "passed",
+    "machineArtifactRederivation": "exact canonical match",
+    "scientificAndAuthorityPreservation": "passed",
+    "retiredIdentityOrContentDisclosureAudit": "passed; none present",
+    "diffCheck": "passed"
+  },
+  "historicalExpectedFailures": [
+    {
+      "command": "pnpm audit:m7c-preregistration",
+      "observed": "M7c public documentation binding differs.",
+      "classification": "pre-existing historical binding failure"
+    },
+    {
+      "command": "pnpm audit:packages",
+      "observed": "@nicia-ai/lachesis-generator differs from its frozen tarball digest after deterministic three-run packing.",
+      "classification": "expected frozen alpha-package mismatch"
+    },
+    {
+      "command": "pnpm verify:m8b1-stage4",
+      "observed": "63/63 focused tests passed, then nicia-ai-lachesis-cli-0.1.0.tgz was absent.",
+      "classification": "pre-existing historical packed-artifact absence"
+    }
+  ],
+  "effects": {
+    "retiredMaterialAccesses": 0,
+    "networkCalls": 0,
+    "providerCalls": 0,
+    "countCalls": 0,
+    "credentialAccesses": 0,
+    "corpusMaterializations": 0,
+    "goldMaterializations": 0,
+    "scheduleInstances": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  }
+}

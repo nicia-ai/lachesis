@@ -1,0 +1,67 @@
+{
+  "protocol": "lachesis-m9b12a-binding-inventory/1",
+  "baselineCommit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+  "baselineTree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+  "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+  "supersession": {
+    "originalProtocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+    "originalPreregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+    "originalChecksumManifestSha256": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+    "originalStatus": "superseded-unregistered-retired-corpus-policy-incomplete",
+    "originalBytesModified": false
+  },
+  "implementation": {
+    "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+    "retiredCorpusPolicy": "lachesis-m9b12a-retired-corpus-quarantine@1.0.0",
+    "source": "packages/generator-ai-sdk/internal/m9b12a-preregistration.ts",
+    "sourceSha256": "a080775182e73f2d0178a8ec1b29d29a55336bb7d73c9f645ee4d77f6c1e11b2",
+    "test": "packages/generator-ai-sdk/tests/m9b12a-preregistration.test.ts",
+    "testSha256": "ea0e252d3932b6773054e3d3053f3a14d23bde038ca89a9cac78fffacd165d7d"
+  },
+  "inheritedBindings": {
+    "preparation": {
+      "protocol": "lachesis-m9b3f-offline-prospective-study-preparation@1.0.0",
+      "probeGate": "lachesis-m9b3f-probe-advancement-gate/1",
+      "schedule": "lachesis-m9b3f-paired-counterbalance-schedule/1",
+      "materializedSchedule": "lachesis-m9b3f-materialized-schedule/1",
+      "sourceSha256": "0ec98e0dd68bf194a94fcbe971241404b6202f44c29fdd319fad3d953a82e585"
+    },
+    "topology": {
+      "protocol": "lachesis-m9b10c-offline-selected-topology-integration@1.1.0",
+      "measurement": "lachesis-m9b10c-selected-topology-measurement@1.1.0",
+      "analyzer": "lachesis-m9b10c-exact-primary-mcnemar@1.1.0",
+      "sourceSha256": "f21ec84ed1163eb2ae9b78350eaf480704596dad9f2a764502a80f690a17640e"
+    },
+    "primaryPopulation": {
+      "scheduleInspection": "inspectM9b3TrustedPrimaryAllocation",
+      "allocationFactory": "prepareM9b10cPrimaryPopulationAllocation",
+      "measurementSetFactory": "prepareM9b10cPrimaryMeasurementSet",
+      "analyzer": "analyzeM9b10bPrimary",
+      "opaqueComplete168CaseTokenRequired": true,
+      "tokenPresent": false
+    },
+    "envelope": {
+      "protocol": "lachesis-m9b10c-authoritative-moderate-envelope/1",
+      "sourceSha256": "91eebc4578764917c24689a12565385f1cfac5855288bd533874b2ce18eed51a"
+    },
+    "pricing": {
+      "protocol": "lachesis-m9b11-offline-shadow-priced-campaign-freeze@1.0.0",
+      "reportDigest": "79e03015c7c1f6c4b2296e7b6e8ac5f37556dd90fd2bf96d4460c227dc4ed090",
+      "campaignIdentityDigest": "9d846ccda3cd17dbbd0287fdb411c1ae44dd7bd8437576af312592167de1080d",
+      "pricingIdentityDigest": "b011a5f394498918f3c50bd6ab8cb567f0504ddd859492ebb87132b802c86ee5",
+      "hardCapPolicyDigest": "e0db3ba6b488e7b08f902ba0037808192a788247fedc72950b1208fbd4202202",
+      "sourceSha256": "0640689784afea7a76ee6290972f1d373cfbadd43f3f040ef3740a83a6c6098c"
+    }
+  },
+  "effects": {
+    "retiredMaterialAccesses": 0,
+    "networkCalls": 0,
+    "providerCalls": 0,
+    "countCalls": 0,
+    "credentialAccesses": 0,
+    "corpusMaterializations": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  },
+  "liveAuthorityAvailable": false
+}
