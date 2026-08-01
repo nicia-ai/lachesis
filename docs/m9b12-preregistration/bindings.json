@@ -1,0 +1,47 @@
+{
+  "protocol": "lachesis-m9b12-binding-inventory/1",
+  "baselineCommit": "0096c1ff119ab6556edd8c9bacbd618a78b573cd",
+  "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+  "implementation": {
+    "source": "packages/generator-ai-sdk/internal/m9b12-preregistration.ts",
+    "sourceSha256": "1eb18be7b29f9b2315a8a6c0eae11792d6bc8c04e1e7d17ee26c54428f1463ce",
+    "test": "packages/generator-ai-sdk/tests/m9b12-preregistration.test.ts",
+    "testSha256": "d5d7e73a16e9b88f473db30043a8a256e652fed23b591ad883c3f98c69cfa444"
+  },
+  "bindings": {
+    "preparation": {
+      "protocol": "lachesis-m9b3f-offline-prospective-study-preparation@1.0.0",
+      "probeGate": "lachesis-m9b3f-probe-advancement-gate/1",
+      "schedule": "lachesis-m9b3f-paired-counterbalance-schedule/1",
+      "materializedSchedule": "lachesis-m9b3f-materialized-schedule/1",
+      "sourceSha256": "0ec98e0dd68bf194a94fcbe971241404b6202f44c29fdd319fad3d953a82e585"
+    },
+    "topology": {
+      "protocol": "lachesis-m9b10c-offline-selected-topology-integration@1.1.0",
+      "measurement": "lachesis-m9b10c-selected-topology-measurement@1.1.0",
+      "analyzer": "lachesis-m9b10c-exact-primary-mcnemar@1.1.0",
+      "sourceSha256": "f21ec84ed1163eb2ae9b78350eaf480704596dad9f2a764502a80f690a17640e"
+    },
+    "primaryPopulation": {
+      "scheduleInspection": "inspectM9b3TrustedPrimaryAllocation",
+      "allocationFactory": "prepareM9b10cPrimaryPopulationAllocation",
+      "measurementSetFactory": "prepareM9b10cPrimaryMeasurementSet",
+      "analyzer": "analyzeM9b10bPrimary",
+      "opaqueComplete168CaseTokenRequired": true,
+      "tokenPresent": false
+    },
+    "envelope": {
+      "protocol": "lachesis-m9b10c-authoritative-moderate-envelope/1",
+      "sourceSha256": "91eebc4578764917c24689a12565385f1cfac5855288bd533874b2ce18eed51a"
+    },
+    "pricing": {
+      "protocol": "lachesis-m9b11-offline-shadow-priced-campaign-freeze@1.0.0",
+      "reportDigest": "79e03015c7c1f6c4b2296e7b6e8ac5f37556dd90fd2bf96d4460c227dc4ed090",
+      "campaignIdentityDigest": "9d846ccda3cd17dbbd0287fdb411c1ae44dd7bd8437576af312592167de1080d",
+      "pricingIdentityDigest": "b011a5f394498918f3c50bd6ab8cb567f0504ddd859492ebb87132b802c86ee5",
+      "hardCapPolicyDigest": "e0db3ba6b488e7b08f902ba0037808192a788247fedc72950b1208fbd4202202",
+      "sourceSha256": "0640689784afea7a76ee6290972f1d373cfbadd43f3f040ef3740a83a6c6098c"
+    }
+  },
+  "liveAuthorityAvailable": false
+}

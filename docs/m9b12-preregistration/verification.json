@@ -1,0 +1,72 @@
+{
+  "protocol": "lachesis-m9b12-offline-verification/1",
+  "node": "24.18.1",
+  "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+  "decision": "preregistration-package-ready-awaiting-external-authorization",
+  "results": {
+    "focusedM9b12": {
+      "files": 1,
+      "passed": 14,
+      "failed": 0
+    },
+    "focusedM9": {
+      "files": 16,
+      "passed": 317,
+      "failed": 0
+    },
+    "repositoryTests": {
+      "files": 48,
+      "passed": 760,
+      "failed": 0
+    },
+    "coverage": {
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "nodeWorkersSmoke": "passed",
+    "examples": "7/7 passed",
+    "loadSmoke": "passed; 128 records; descriptive only",
+    "cliM8b0": "6/6 passed",
+    "sourceSafety": "passed",
+    "publicApi": {
+      "status": "passed",
+      "generatorFacadeExports": 317,
+      "digest": "bf6a0476cbf3643705da8133e3173cbce771d765c979a7b198b586e2b6bda830"
+    },
+    "releaseChecksums": "passed",
+    "m8bHistory": "passed",
+    "machineArtifactRederivation": "exact match",
+    "diffCheck": "passed"
+  },
+  "historicalExpectedFailures": [
+    {
+      "command": "pnpm audit:m7c-preregistration",
+      "observed": "M7c public documentation binding differs.",
+      "classification": "pre-existing historical binding failure"
+    },
+    {
+      "command": "pnpm audit:packages",
+      "observed": "@nicia-ai/lachesis-generator differs from its frozen tarball digest.",
+      "classification": "expected frozen alpha-package mismatch after deterministic three-run packing"
+    },
+    {
+      "command": "pnpm verify:m8b1-stage4",
+      "observed": "63/63 focused tests passed, then nicia-ai-lachesis-cli-0.1.0.tgz was absent.",
+      "classification": "pre-existing historical packed-artifact absence"
+    }
+  ],
+  "effects": {
+    "networkCalls": 0,
+    "providerCalls": 0,
+    "countCalls": 0,
+    "credentialAccesses": 0,
+    "corpusMaterializations": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  }
+}

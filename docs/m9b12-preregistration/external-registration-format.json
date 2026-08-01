@@ -1,0 +1,16 @@
+{
+  "protocol": "lachesis-m9b12-proposed-append-only-external-registration/1",
+  "status": "format-only-no-record-present",
+  "requiredFields": [
+    "registration-service",
+    "registration-record-id",
+    "registered-at",
+    "preregistration-digest",
+    "artifact-checksum-manifest-digest",
+    "registrant-attestation"
+  ],
+  "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+  "amendmentRule": "append-only-new-identity-no-reinterpretation-of-registered-artifacts",
+  "registrationRecord": null,
+  "submissionAuthorized": false
+}
