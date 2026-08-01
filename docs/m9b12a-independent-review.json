@@ -1,0 +1,51 @@
+{
+  "protocol": "lachesis-m9b12a-independent-review@1.0.0",
+  "reviewedCommit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+  "reviewedTree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+  "reviewedPackage": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+  "reviewedPreregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+  "reviewedChecksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+  "decision": "m9b12a-independent-review-no-go",
+  "disposition": "superseded-unregistered-retired-corpus-enforcement-incomplete",
+  "findings": [
+    {
+      "id": "external-registration-contract-conflict",
+      "severity": "p1",
+      "correction": "derive nested and standalone registration values from one canonical M9b.12b constructor"
+    },
+    {
+      "id": "missing-observer-or-inventory-can-allow-start",
+      "severity": "p1",
+      "correction": "deny by default unless every required proof is complete and affirmative"
+    },
+    {
+      "id": "observer-exclusion-role-model-incomplete",
+      "severity": "p1",
+      "correction": "derive exclusions from one canonical influence-bearing role model"
+    },
+    {
+      "id": "isolation-and-lineage-enumerations-incomplete",
+      "severity": "p2",
+      "correction": "use separate exhaustive isolation-channel and contamination-ancestor schemas"
+    },
+    {
+      "id": "aggregate-hostile-tests-mask-trigger-failures",
+      "severity": "p2",
+      "correction": "test every rejection trigger in isolation with exact deterministic reasons"
+    }
+  ],
+  "preservation": {
+    "m9b12BytesModified": false,
+    "m9b12aBytesModified": false,
+    "scientificProtocolAccepted": true,
+    "financialProtocolAccepted": true
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "providerCalls": 0,
+    "credentialAccesses": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  }
+}
