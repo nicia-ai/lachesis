@@ -1,0 +1,17 @@
+{
+  "protocol": "lachesis-m9b12d-linear-supersession/1",
+  "ordering": [
+    "lachesis-m9b12-offline-preregistration-package@1.0.0",
+    "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+    "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+    "lachesis-m9b12c-offline-preregistration-package@1.0.0",
+    "lachesis-m9b12d-offline-preregistration-package@1.0.0"
+  ],
+  "m9b12Disposition": "superseded-unregistered-retired-corpus-policy-incomplete",
+  "m9b12aDisposition": "superseded-unregistered-retired-corpus-enforcement-incomplete",
+  "m9b12bDisposition": "superseded-unregistered-quarantine-history-not-durable",
+  "m9b12cDisposition": "superseded-unregistered-process-durability-identity-admission-incomplete",
+  "registrablePackage": "lachesis-m9b12d-offline-preregistration-package@1.0.0",
+  "predecessorBytesModified": false,
+  "predecessorExternallyRegistered": false
+}
