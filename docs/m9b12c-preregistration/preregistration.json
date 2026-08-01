@@ -1,0 +1,850 @@
+{
+  "inheritedDecisions": [
+    "authority-lineage-review-pass-pricing-blocked",
+    "shadow-priced-campaign-go-for-offline-preregistration-preparation"
+  ],
+  "researchQuestion": "Does a TypeScript/JavaScript CodeMode harness that lets the model author and locally execute an evidence-adaptive retrieval program improve first-attempt grounded task success over a matched static one-shot retrieval harness operating on the same external corpus snapshot?",
+  "bindings": {
+    "preparation": {
+      "id": "lachesis-m9b3f-offline-prospective-study-preparation",
+      "version": "1.0.0",
+      "implementationSha256": "0ec98e0dd68bf194a94fcbe971241404b6202f44c29fdd319fad3d953a82e585",
+      "probeGate": "lachesis-m9b3f-probe-advancement-gate/1",
+      "schedule": "lachesis-m9b3f-paired-counterbalance-schedule/1",
+      "materializedSchedule": "lachesis-m9b3f-materialized-schedule/1"
+    },
+    "topology": {
+      "id": "lachesis-m9b10c-offline-selected-topology-integration",
+      "version": "1.1.0",
+      "implementationSha256": "f21ec84ed1163eb2ae9b78350eaf480704596dad9f2a764502a80f690a17640e"
+    },
+    "measurement": {
+      "id": "lachesis-m9b10c-selected-topology-measurement",
+      "version": "1.1.0",
+      "endpoint": "first-attempt-semantically-supported-end-to-end-success"
+    },
+    "analyzer": {
+      "id": "lachesis-m9b10c-exact-primary-mcnemar",
+      "version": "1.1.0",
+      "implementationSha256": "f21ec84ed1163eb2ae9b78350eaf480704596dad9f2a764502a80f690a17640e",
+      "entrypoint": "analyzeM9b10bPrimary",
+      "populationTokenFactory": "prepareM9b10cPrimaryPopulationAllocation",
+      "measurementSetFactory": "prepareM9b10cPrimaryMeasurementSet",
+      "opaqueCompletePrimaryTokenRequired": true,
+      "futureTokenPresent": false
+    },
+    "envelope": {
+      "protocol": "lachesis-m9b10c-authoritative-moderate-envelope/1",
+      "implementationSha256": "91eebc4578764917c24689a12565385f1cfac5855288bd533874b2ce18eed51a",
+      "classes": [
+        {
+          "protocol": "lachesis-m9b10c-authoritative-moderate-envelope/1",
+          "designId": "prospective-moderate-class-specific",
+          "requestClass": "root-program-authoring",
+          "maximumInputTokens": 65536,
+          "maximumOutputTokens": 40960,
+          "maximumReasoningTokens": 10099,
+          "maximumVisibleStructuredOutputTokens": 28813,
+          "inputBillingClass": "cache-write-highest-applicable-class",
+          "pricingState": "input-token-count-pricing-unresolved",
+          "envelopeDigest": "93aaaa720876732eba55e7dc9ec4307bf84953ab1db843e38aca564ca3c7ed22"
+        },
+        {
+          "protocol": "lachesis-m9b10c-authoritative-moderate-envelope/1",
+          "designId": "prospective-moderate-class-specific",
+          "requestClass": "static-one-shot-query-planning",
+          "maximumInputTokens": 65536,
+          "maximumOutputTokens": 4096,
+          "maximumReasoningTokens": 2048,
+          "maximumVisibleStructuredOutputTokens": 1036,
+          "inputBillingClass": "cache-write-highest-applicable-class",
+          "pricingState": "input-token-count-pricing-unresolved",
+          "envelopeDigest": "0aa9cac9db4a2128d7b7cd4ec4213406d5747c087c46c46fa71d66c925eab9dd"
+        },
+        {
+          "protocol": "lachesis-m9b10c-authoritative-moderate-envelope/1",
+          "designId": "prospective-moderate-class-specific",
+          "requestClass": "discovered-program-leaf-reasoning",
+          "maximumInputTokens": 32768,
+          "maximumOutputTokens": 16384,
+          "maximumReasoningTokens": 6144,
+          "maximumVisibleStructuredOutputTokens": 8192,
+          "inputBillingClass": "cache-write-highest-applicable-class",
+          "pricingState": "input-token-count-pricing-unresolved",
+          "envelopeDigest": "65ebba81a82fda44306bb32ac4c21bbcfd5d492421ecc6421a30e5186479a564"
+        },
+        {
+          "protocol": "lachesis-m9b10c-authoritative-moderate-envelope/1",
+          "designId": "prospective-moderate-class-specific",
+          "requestClass": "static-answer-generation",
+          "maximumInputTokens": 32768,
+          "maximumOutputTokens": 16384,
+          "maximumReasoningTokens": 6144,
+          "maximumVisibleStructuredOutputTokens": 8192,
+          "inputBillingClass": "cache-write-highest-applicable-class",
+          "pricingState": "input-token-count-pricing-unresolved",
+          "envelopeDigest": "e3417ed3a26d881fd406770caa8002afaee298061dcb4877a78aca312c427017"
+        }
+      ]
+    },
+    "pricing": {
+      "id": "lachesis-m9b11-offline-shadow-priced-campaign-freeze",
+      "version": "1.0.0",
+      "implementationSha256": "0640689784afea7a76ee6290972f1d373cfbadd43f3f040ef3740a83a6c6098c",
+      "reportDigest": "79e03015c7c1f6c4b2296e7b6e8ac5f37556dd90fd2bf96d4460c227dc4ed090",
+      "campaignIdentityDigest": "9d846ccda3cd17dbbd0287fdb411c1ae44dd7bd8437576af312592167de1080d",
+      "pricingIdentityDigest": "b011a5f394498918f3c50bd6ab8cb567f0504ddd859492ebb87132b802c86ee5",
+      "hardCapPolicyDigest": "e0db3ba6b488e7b08f902ba0037808192a788247fedc72950b1208fbd4202202"
+    }
+  },
+  "treatment": {
+    "arm": "discovered-program",
+    "authoring": "model-authors-closed-retrieval-ast",
+    "localExecution": "evidence-adaptive-bounded-closed-ast-over-frozen-corpus",
+    "intermediateAdaptation": "bounded-values-extracted-from-intermediate-evidence",
+    "retrievalProviderCalls": 0,
+    "groundedAnswer": "second-model-call-over-visible-retrieved-evidence",
+    "evaluation": "deterministic-local-arm-blind"
+  },
+  "control": {
+    "arm": "static-one-shot",
+    "authoring": "model-authors-one-static-query",
+    "localExecution": "one-shot-retrieval-over-same-frozen-corpus",
+    "retrievalProviderCalls": 0,
+    "groundedAnswer": "second-model-call-over-visible-retrieved-evidence",
+    "evaluation": "deterministic-local-arm-blind"
+  },
+  "matching": {
+    "inferenceCallsPerArm": 2,
+    "inferenceCallsPerPair": 4,
+    "countRequestsPerPair": 4,
+    "sameModel": true,
+    "sameReasoningEffort": true,
+    "sameRetriever": true,
+    "sameCorpusSnapshot": true,
+    "sameAggregateRetrievalLimits": true,
+    "sameAnswerSchema": true,
+    "sameEvaluator": true,
+    "independentSessions": true,
+    "randomizedArmOrder": true,
+    "retries": 0,
+    "maximumConcurrency": 1
+  },
+  "population": {
+    "families": [
+      "lookup",
+      "join",
+      "multi-hop",
+      "temporal-retraction",
+      "contradiction",
+      "aggregation",
+      "insufficient-evidence",
+      "prompt-injection"
+    ],
+    "scales": ["1x", "8x", "32x"],
+    "cells": 24,
+    "probePairsPerCell": 1,
+    "probePairs": 24,
+    "primaryPairsPerCell": 7,
+    "primaryPairs": 168,
+    "totalPairs": 192,
+    "countRequests": 768,
+    "inferenceCalls": 768,
+    "maximumProviderHttpRequests": 1536,
+    "completeInventoryRequired": true,
+    "materialized": false,
+    "probeInventoryIdentity": "absent-until-post-registration",
+    "primaryInventoryIdentity": "absent-until-post-registration",
+    "disjointnessDimensions": [
+      "development-fixtures",
+      "cases",
+      "documents",
+      "entities",
+      "answers",
+      "supporting-facts",
+      "templates",
+      "surface-forms",
+      "corpus-snapshots",
+      "construction-seeds",
+      "source-provenance"
+    ]
+  },
+  "primaryEndpoint": {
+    "id": "first-attempt-semantically-supported-end-to-end-success",
+    "kind": "paired-binary",
+    "requiredStages": [
+      "valid-first-authoring-response",
+      "valid-program-or-query",
+      "successful-bounded-retrieval",
+      "valid-first-grounded-answer-response",
+      "correct-typed-outcome",
+      "correct-answer-values",
+      "sufficient-visible-supporting-evidence",
+      "valid-supporting-fact-identities-and-citations",
+      "provenance-and-snapshot-consistency",
+      "trusted-local-evaluator-success",
+      "no-repair-retry-ambiguity-overage-authority-or-protocol-violation"
+    ],
+    "failuresRetained": true,
+    "abstentionsRetained": true,
+    "truncationsRetained": true,
+    "ambiguousEffectsRetained": true,
+    "haltedPairsRetained": true,
+    "repairReliabilityUsedForSuccess": false
+  },
+  "analysis": {
+    "paired": true,
+    "test": "exact-one-sided-conditional-mcnemar",
+    "direction": "discovered-program-favorable",
+    "alphaNumerator": 1,
+    "alphaDenominator": 20,
+    "exactIntegerRationalDecision": true,
+    "primaryPairsRequired": 168,
+    "subsetSelectionPermitted": false,
+    "missingPairDeletionPermitted": false,
+    "populationReplacementPermitted": false,
+    "weighting": "equal-family-by-scale-24-cells",
+    "descriptiveOnlyStrata": [
+      "family",
+      "scale",
+      "provider-usage",
+      "retrieval",
+      "latency",
+      "cost"
+    ],
+    "probeSeparateFromPrimary": true,
+    "primaryInaccessibleBeforeProbePass": true,
+    "executableVectors": [
+      {
+        "discoveredOnly": 5,
+        "staticOnly": 0,
+        "numerator": "1",
+        "denominator": "32",
+        "significant": true
+      },
+      {
+        "discoveredOnly": 4,
+        "staticOnly": 0,
+        "numerator": "1",
+        "denominator": "16",
+        "significant": false
+      },
+      {
+        "discoveredOnly": 0,
+        "staticOnly": 5,
+        "numerator": "32",
+        "denominator": "32",
+        "significant": false
+      }
+    ]
+  },
+  "probeAdvancement": {
+    "protocol": "lachesis-m9b3f-probe-advancement-gate/1",
+    "requiredPairs": 24,
+    "completeCoverageRequired": true,
+    "reliabilityGate": true,
+    "ambiguityGate": true,
+    "confidenceMethod": "bonferroni-two-one-sided-clopper-pearson-exact-tail-inversion",
+    "componentAlphaBasisPoints": 250,
+    "projectedPrimaryPairs": 168,
+    "primaryAlphaBasisPoints": 500,
+    "targetPowerBasisPoints": 8000,
+    "safetyAuthorizationAccountingPricingReplayGates": true,
+    "qualitativeOverridePermitted": false,
+    "relaxedThresholdPermitted": false,
+    "populationEnrichmentPermitted": false,
+    "postProviderChangePermitted": false,
+    "failurePermanentlyPreventsPrimary": true
+  },
+  "financial": {
+    "selectedEnvelope": "moderate",
+    "inferenceCeilingUsdMicros": 342097920,
+    "countShadowContingencyUsdMicros": 117964800,
+    "operationalCampaignCeilingUsdMicros": 460062720,
+    "prospectiveProviderHardCapUsdMicros": 500000000,
+    "headroomUsdMicros": 39937280,
+    "projectInitialSpendUsdMicros": 0,
+    "dedicatedProjectOnly": true,
+    "shadowRateUsdMicrosPerMillionTokens": 3125000,
+    "countContractuallyFreeClaimed": false,
+    "providerCapMayLag": true,
+    "ambiguityConsumesFullReservation": true,
+    "overageHalts": true,
+    "retryLimit": 0,
+    "maximumConcurrency": 1,
+    "budgetActivated": false
+  },
+  "operationalSequence": [
+    "external-preregistration",
+    "fresh-corpus-construction-and-isolated-materialization",
+    "independent-corpus-freshness-and-disclosure-review",
+    "runtime-and-environment-binding",
+    "provider-project-and-hard-cap-activation",
+    "credential-custody-activation",
+    "count-only-operational-probe",
+    "spend-and-count-pricing-reconciliation",
+    "separate-authorization-for-24-pair-protocol-probe",
+    "offline-reporting-and-frozen-probe-gate-decision",
+    "conditional-separate-authorization-for-168-pair-primary",
+    "final-analysis-replay-accounting-security-revocation-and-closure"
+  ],
+  "countPricingKillGates": [
+    "observed-count-charge-above-shadow-reservation",
+    "new-fixed-per-count-fee",
+    "authoritative-pricing-contradicts-frozen-rule",
+    "unexpected-cache-service-tier-regional-or-long-context-classification",
+    "provider-project-initial-spend-is-not-zero",
+    "provider-hard-cap-unavailable-or-changed",
+    "spend-reconciliation-missing-or-late",
+    "count-response-or-api-shape-drift",
+    "count-ambiguity",
+    "count-and-inference-identity-mismatch",
+    "automatic-retry",
+    "inference-during-count-only-probe"
+  ],
+  "operationalSecurity": {
+    "dedicatedProjectScopedCredential": true,
+    "narrowEndpointPermissionsWhereSupported": true,
+    "credentialInjection": "anonymous-file-descriptor",
+    "forbiddenCredentialLocations": [
+      "environment-variables",
+      "argv",
+      "files",
+      "logs",
+      "artifacts",
+      "role-environments",
+      "crash-reports"
+    ],
+    "exactPrivatePermissionsRequired": true,
+    "appendOnlyHashChainedAccounting": true,
+    "identityBoundReservationsAndEffects": true,
+    "atomicPersistence": true,
+    "campaignGlobalLock": true,
+    "zeroDispatchTerminalResume": true,
+    "promptAndArtifactRedactionReview": true,
+    "credentialRevocationAndAbsenceVerification": true,
+    "credentialExists": false,
+    "executionNamespaceExists": false
+  },
+  "disclosureAndRoles": {
+    "publicPreregistrationMayContain": [
+      "protocol-identities",
+      "aggregate-population-counts",
+      "construction-rules",
+      "analysis-and-gates",
+      "financial-and-security-controls"
+    ],
+    "publicPreregistrationMustNotContain": [
+      "future-case-identities",
+      "future-document-identities",
+      "future-construction-seeds",
+      "hidden-gold",
+      "expected-citations",
+      "credentials"
+    ],
+    "constructionAndEvaluationRolesSeparated": true,
+    "operatorCannotAccessGold": true,
+    "controllerCannotAccessGold": true,
+    "authorCannotAccessFutureInventory": true
+  },
+  "nonclaims": [
+    "no-count-endpoint-contractual-free-pricing-claim",
+    "no-model-quality-or-retrieval-superiority-result",
+    "no-rlm-or-rag-superiority-result",
+    "no-compositional-generalization-result",
+    "no-natural-or-held-out-corpus-result",
+    "no-production-readiness-claim",
+    "no-professional-security-audit-or-penetration-test-claim",
+    "no-compliance-claim"
+  ],
+  "audit": {
+    "inheritedIdentitiesReconciled": true,
+    "topologyExact": true,
+    "populationArithmeticExact": true,
+    "probePrimaryDisjointnessRequired": true,
+    "endpointComplete": true,
+    "analyzerMatchesPlan": true,
+    "budgetArithmeticExact": true,
+    "moderateEnvelopeAuthoritative": true,
+    "countShadowAccountingPreserved": true,
+    "allLiveCapabilitiesUnavailable": true,
+    "corpusPresent": false,
+    "hiddenGoldPresent": false,
+    "credentialPresent": false,
+    "executionNamespacePresent": false,
+    "providerRequestPossible": false,
+    "futureFixtureIdentityDisclosed": false,
+    "developmentFixtureAdmissionPermitted": false,
+    "providerEffects": 0,
+    "countEffects": 0,
+    "inferenceEffects": 0,
+    "networkEffects": 0
+  },
+  "authority": {
+    "packagePreparationComplete": true,
+    "externalRegistrationAuthorized": false,
+    "corpusMaterializationAuthorized": false,
+    "hiddenGoldCreationAuthorized": false,
+    "projectAccessAuthorized": false,
+    "credentialAccessAuthorized": false,
+    "providerAccessAuthorized": false,
+    "tokenCountAuthorized": false,
+    "inferenceAuthorized": false,
+    "probeAuthorized": false,
+    "primaryAuthorized": false,
+    "campaignActivationAuthorized": false,
+    "budgetActivationAuthorized": false,
+    "publicationAuthorized": false,
+    "releaseAuthorized": false,
+    "pushAuthorized": false
+  },
+  "protocol": "lachesis-m9b12c-offline-preregistration-package",
+  "version": "1.0.0",
+  "baselineCommit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+  "baselineTree": "8609e77370ceefaffbd06752f1fc343903839c23",
+  "status": "offline-immutable-superseding-draft-not-externally-registered",
+  "supersession": {
+    "protocol": "lachesis-m9b12c-linear-supersession/1",
+    "ordering": [
+      "lachesis-m9b12-offline-preregistration-package@1.0.0",
+      "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+      "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+      "lachesis-m9b12c-offline-preregistration-package@1.0.0"
+    ],
+    "predecessors": [
+      {
+        "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+        "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+        "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+        "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+        "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+        "independentReviewDecision": "independent-preregistration-review-pass-with-narrow-corrections",
+        "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+        "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+        "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+        "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+        "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+        "independentReviewDecision": "m9b12a-independent-review-no-go",
+        "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+        "commit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+        "tree": "8609e77370ceefaffbd06752f1fc343903839c23",
+        "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+        "checksumManifestDigest": "ed9d3a0fda5c0bb753f17dcc01370281406ec6bfd4cc157f8927c6d2d892face",
+        "independentReviewDecision": "m9b12b-independent-review-no-go",
+        "status": "superseded-unregistered-quarantine-history-not-durable"
+      }
+    ],
+    "predecessorBytesModified": false,
+    "predecessorExternallyRegistered": false,
+    "correctionScope": "durable-quarantine-history-atomic-revalidation-supersession-registration-and-tests-only"
+  },
+  "corpusConstruction": {
+    "protocol": "lachesis-m9b12-future-isolated-corpus-construction/1",
+    "onlyAfterExternalRegistration": true,
+    "freshExternalData": true,
+    "immutableContentAddressedSnapshots": true,
+    "hiddenGoldAnswersAndSupportingFacts": true,
+    "answerableAndTypedInsufficientEvidence": true,
+    "distributedMultiHopEvidence": true,
+    "intermediateEvidenceAdaptiveCases": true,
+    "staticRetrievalCredible": true,
+    "developmentCloneFormsProhibited": [
+      "copy",
+      "translation",
+      "rename",
+      "paraphrase",
+      "structural-clone"
+    ],
+    "independentCountsOnlyFreshnessAudit": true,
+    "independentLeakageAudit": true,
+    "roles": ["constructor", "materializer", "operator", "evaluator"],
+    "rolesIsolated": true,
+    "studyAuthorHiddenGoldAccess": false,
+    "controllerHiddenGoldAccess": false,
+    "promptInjectionAndHostileDocumentsRequired": true,
+    "exactSourceAndTemporalProvenance": true,
+    "typeGraphRequired": false,
+    "graphOnlyAdvantageAssumed": false,
+    "disclosureBehavior": "quarantine-case-and-derived-identities",
+    "contaminationBehavior": "reject-affected-inventory-before-any-provider-effect",
+    "retiredCorpusPolicy": "lachesis-m9b12c-retired-corpus-quarantine",
+    "retiredMaterialAccessProhibited": true,
+    "isolationBeforeRoleStartRequired": true,
+    "inRoleDenylistSufficient": false,
+    "retiredAccessBehavior": "deny-by-default-with-authoritative-durable-history-and-stale-authorization-revalidation"
+  },
+  "retiredCorpusPolicy": {
+    "protocol": "lachesis-m9b12c-retired-corpus-quarantine",
+    "version": "1.0.0",
+    "status": "prospective-durable-deny-by-default-policy-no-retired-material-accessed",
+    "decisionRule": "allow-only-when-current-proofs-are-complete-and-affirmative-and-authoritative-history-confirms-observer-clean-at-bound-head",
+    "roles": [
+      {
+        "role": "constructor",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "materializer",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "study-operator",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "author",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "evaluator",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "adjudicator",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "analyst",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "auditor",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "campaign-controller",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "runtime-controller",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "control-plane-bootstrap",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      },
+      {
+        "role": "credential-custodian",
+        "influenceBearing": true,
+        "retiredNamespaceAccessible": false,
+        "retiredPathsIdentitiesOrStructureDisclosed": false,
+        "excludedAfterRetiredExposure": true
+      }
+    ],
+    "observerExcludedFromLaterRoles": [
+      "constructor",
+      "materializer",
+      "study-operator",
+      "author",
+      "evaluator",
+      "adjudicator",
+      "analyst",
+      "auditor",
+      "campaign-controller",
+      "runtime-controller",
+      "control-plane-bootstrap",
+      "credential-custodian"
+    ],
+    "isolationChannels": [
+      "direct-mount",
+      "parent-filesystem",
+      "parent-workspace",
+      "worktree",
+      "repository-history",
+      "archive",
+      "backup-or-snapshot",
+      "cache",
+      "temporary-storage",
+      "log",
+      "shell-history",
+      "environment-variable",
+      "search-root",
+      "bootstrap-input",
+      "inherited-process-input",
+      "external-or-object-storage"
+    ],
+    "contaminationAncestorKinds": [
+      "corpus",
+      "case",
+      "seed",
+      "template",
+      "family",
+      "task",
+      "source",
+      "document",
+      "entity",
+      "answer",
+      "supporting-fact",
+      "constructor-output",
+      "schedule",
+      "randomization",
+      "packet",
+      "materialization",
+      "evaluator-input",
+      "analysis-input"
+    ],
+    "forbiddenAccessClasses": [
+      "mount",
+      "open",
+      "read",
+      "list",
+      "enumerate",
+      "search",
+      "hash",
+      "compare",
+      "copy",
+      "inspect-metadata",
+      "inspect-content",
+      "traverse-namespace",
+      "import",
+      "reconstruct",
+      "receive-identifier",
+      "receive-filename",
+      "receive-snippet",
+      "receive-ordering",
+      "receive-structural-mapping",
+      "derive-study-material"
+    ],
+    "allIsolationProofsRequiredBeforeRoleStart": true,
+    "everyAncestorRequiresAffirmativeCleanLineageProof": true,
+    "unknownOmittedOrUnsupportedInputQuarantines": true,
+    "anyContaminatedAncestorContaminatesEveryDescendant": true,
+    "transformationsCannotRemoveContamination": [
+      "rename",
+      "paraphrase",
+      "reorder",
+      "copy",
+      "rehash",
+      "serialization-change",
+      "reconstruct"
+    ],
+    "exactApprovedPublicCounts": {
+      "families": 8,
+      "scales": 3,
+      "cells": 24,
+      "probePairs": 24,
+      "primaryPairs": 168,
+      "totalPairs": 192
+    },
+    "countsMayRevealIdentityOrderContentOrMapping": false,
+    "liveAuthorityGranted": false,
+    "quarantineHistoryProtocol": "lachesis-m9b12c-append-only-quarantine-history/1",
+    "authoritativeHistoryRequired": true,
+    "callerSelectedHistoryForbidden": true,
+    "quarantinePermanentAndMonotonic": true,
+    "compareAndSwapAppendRequired": true,
+    "startupHeadRevalidationRequired": true
+  },
+  "quarantineHistory": {
+    "protocol": "lachesis-m9b12c-append-only-quarantine-history/1",
+    "format": {
+      "protocol": "lachesis-m9b12c-append-only-quarantine-history/1",
+      "status": "format-only-empty-authoritative-history",
+      "trustBoundary": "opaque-authority-owned-history-never-caller-supplied-to-assessment",
+      "appendSemantics": "monotonic-compare-and-swap-no-removal-override-expiration-replacement-rehabilitation-or-clean-reset",
+      "loadValidation": "validate-complete-chain-and-match-trusted-authoritative-revision-and-head",
+      "startupRevalidation": "exact-receipt-head-must-equal-current-authoritative-head-and-observer-must-remain-clean",
+      "recordFields": [
+        "protocol",
+        "sequence",
+        "predecessor-head-digest",
+        "observer-commitment",
+        "requested-role",
+        "affected-role-identities",
+        "affected-session-identities",
+        "affected-derived-inventory-identities",
+        "incident-receipt-digest",
+        "quarantine-reasons",
+        "terminal-decision",
+        "observer-reuse-forbidden",
+        "role-session-startup-permitted",
+        "provider-effects-permitted",
+        "derived-inventory-reuse-forbidden",
+        "record-digest"
+      ],
+      "initialRevision": 0,
+      "initialHeadDigest": null,
+      "liveHistoryPresent": false
+    },
+    "authoritativeRepositoryOpaque": true,
+    "assessmentQueriesRepositoryDirectly": true,
+    "callerMaySupplyHistory": false,
+    "completeChainValidatedOnLoadAndUse": true,
+    "trustedRevisionAndHeadMatchRequiredOnReload": true,
+    "appendBeforeTerminalQuarantineReceipt": true,
+    "cleanReceiptBindsExactHead": true,
+    "compareAndSwapRequired": true,
+    "staleAuthorizationFailsClosed": true,
+    "removalOverrideExpirationReplacementRehabilitationOrCleanReset": false,
+    "liveHistoryPresent": false
+  },
+  "futureAuthorizations": {
+    "issued": false,
+    "texts": [
+      {
+        "kind": "external-preregistration",
+        "text": "Authorize submission of the exact checksum-bound M9b.12c preregistration package to the named external registry and no other action.",
+        "prerequisites": "Independent review accepts the M9b.12c digest, complete linear supersession, durable quarantine history, atomic stale-decision protection, one canonical registration contract, and exact checksum manifest.",
+        "grantsOnly": "One append-only external registration submission; no corpus, project, credential, count, inference, or campaign action."
+      },
+      {
+        "kind": "corpus-materialization",
+        "text": "Authorize isolated construction and materialization under the registered corpus and M9b.12c durable retired-material protocols only.",
+        "prerequisites": "External registration is independently verified and every required role, history, isolation, ancestry, and noninterference proof is complete and affirmative.",
+        "grantsOnly": "Fresh corpus, gold, and split-audit production; no provider, credential, count, inference, probe, or primary execution."
+      },
+      {
+        "kind": "provider-cap-and-credential-activation",
+        "text": "Authorize activation of one fresh zero-spend dedicated project, verified 500 USD cap, and project-scoped credential custody.",
+        "prerequisites": "Corpus, durable retired-material history, evaluator, schedule, environment, security, and disclosure reviews pass with immutable identities.",
+        "grantsOnly": "Cap and credential activation plus preflight; no count or inference dispatch."
+      },
+      {
+        "kind": "count-only-pricing-probe",
+        "text": "Authorize the frozen four-request maximum count-only operational pricing probe.",
+        "prerequisites": "Cap, credential, zero-spend, accounting, persistence, durable deny-by-default retired-material, and response-shape preflights pass.",
+        "grantsOnly": "At most one count request per frozen class, zero inference, zero retries, concurrency one."
+      },
+      {
+        "kind": "twenty-four-pair-protocol-probe",
+        "text": "Authorize execution of the exact frozen 24-pair protocol-probe inventory and schedule.",
+        "prerequisites": "Count-only reconciliation and durable retired-material noninterference pass every frozen gate and a separate review accepts the bound probe inventory.",
+        "grantsOnly": "The complete 24-pair probe; no primary execution or population change."
+      },
+      {
+        "kind": "conditional-168-pair-primary-execution",
+        "text": "Authorize the exact frozen 168-pair primary inventory and schedule only if the registered probe gate passed.",
+        "prerequisites": "Verified complete probe measurements pass and all safety, durable retired-material, accounting, pricing, replay, authorization, and capacity gates remain satisfied.",
+        "grantsOnly": "The complete immutable 168-pair primary study; no subset, replacement, retry, or protocol amendment."
+      },
+      {
+        "kind": "final-closure-and-credential-revocation",
+        "text": "Authorize final replay, analysis, accounting and security closure, credential revocation, and independent absence verification.",
+        "prerequisites": "All authorized study effects and durable retired-material incidents are terminally accounted and no further provider dispatch is permitted.",
+        "grantsOnly": "Closure and revocation actions; no new count, inference, corpus, analysis-population, publication, or quarantine-override authority."
+      }
+    ]
+  },
+  "externalRegistrationFormat": {
+    "protocol": "lachesis-m9b12c-append-only-external-registration/1",
+    "status": "format-only-no-record-present",
+    "requiredFields": [
+      "registration-service",
+      "registration-record-id",
+      "server-registered-at",
+      "corrected-preregistration-digest",
+      "superseded-m9b12b-preregistration-digest",
+      "superseded-m9b12a-preregistration-digest",
+      "superseded-m9b12-preregistration-digest",
+      "source-commit",
+      "source-tree",
+      "checksum-manifest-digest",
+      "submitted-attachment-inventory-and-sha256",
+      "registrant-attestation"
+    ],
+    "supersessionLineage": [
+      {
+        "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+        "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+        "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+        "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+        "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+        "independentReviewDecision": "independent-preregistration-review-pass-with-narrow-corrections",
+        "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+        "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+        "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+        "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+        "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+        "independentReviewDecision": "m9b12a-independent-review-no-go",
+        "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+        "commit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+        "tree": "8609e77370ceefaffbd06752f1fc343903839c23",
+        "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+        "checksumManifestDigest": "ed9d3a0fda5c0bb753f17dcc01370281406ec6bfd4cc157f8927c6d2d892face",
+        "independentReviewDecision": "m9b12b-independent-review-no-go",
+        "status": "superseded-unregistered-quarantine-history-not-durable"
+      }
+    ],
+    "sourceBinding": {
+      "baselineCommit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+      "baselineTree": "8609e77370ceefaffbd06752f1fc343903839c23",
+      "sourceCommit": null,
+      "sourceTree": null,
+      "procedure": "external-record-binds-reviewed-source-commit-and-tree-after-independent-review"
+    },
+    "correctedPreregistrationDigestRule": "registration-value-must-equal-canonical-submitted-m9b12c-preregistration-digest",
+    "checksumManifestDigestRule": "registration-value-must-equal-sha256-of-submitted-checksum-manifest",
+    "attachmentInventoryRule": "registration-value-must-list-every-submitted-relative-path-and-sha256-in-manifest-order",
+    "amendmentRule": "append-only-new-identity-no-reinterpretation-of-any-lineage-artifact",
+    "registrationRecord": null,
+    "submissionAuthorized": false
+  },
+  "correctionAudit": {
+    "reviewDecisionAddressed": "m9b12b-independent-review-no-go",
+    "durableAuthoritativeHistoryImplemented": true,
+    "callerSelectedHistoryImpossible": true,
+    "priorQuarantineRejectsCleanRetry": true,
+    "crossRoleSessionAndInventoryRetryRejects": true,
+    "serializedReloadValidatedAgainstTrustedHead": true,
+    "tamperTruncationReorderDuplicateAndForkReject": true,
+    "compareAndSwapAppendImplemented": true,
+    "staleCleanReceiptRevalidationFailsClosed": true,
+    "fullPerRoleTerminalAssertionsRequired": true,
+    "m9b12BytesModified": false,
+    "m9b12aBytesModified": false,
+    "m9b12bBytesModified": false,
+    "scientificProtocolUnchanged": true,
+    "financialProtocolUnchanged": true,
+    "retiredMaterialAccessed": false,
+    "providerEffects": 0,
+    "credentialEffects": 0,
+    "networkEffects": 0
+  },
+  "decision": "m9b12c-corrected-package-ready-for-independent-review",
+  "preregistrationDigest": "62cff37dae7332855b8f7a8f9583f5b5f0917adde2d9b2c019603fb101392fc3"
+}

@@ -1,0 +1,29 @@
+{
+  "protocol": "lachesis-m9b12c-append-only-quarantine-history/1",
+  "status": "format-only-empty-authoritative-history",
+  "trustBoundary": "opaque-authority-owned-history-never-caller-supplied-to-assessment",
+  "appendSemantics": "monotonic-compare-and-swap-no-removal-override-expiration-replacement-rehabilitation-or-clean-reset",
+  "loadValidation": "validate-complete-chain-and-match-trusted-authoritative-revision-and-head",
+  "startupRevalidation": "exact-receipt-head-must-equal-current-authoritative-head-and-observer-must-remain-clean",
+  "recordFields": [
+    "protocol",
+    "sequence",
+    "predecessor-head-digest",
+    "observer-commitment",
+    "requested-role",
+    "affected-role-identities",
+    "affected-session-identities",
+    "affected-derived-inventory-identities",
+    "incident-receipt-digest",
+    "quarantine-reasons",
+    "terminal-decision",
+    "observer-reuse-forbidden",
+    "role-session-startup-permitted",
+    "provider-effects-permitted",
+    "derived-inventory-reuse-forbidden",
+    "record-digest"
+  ],
+  "initialRevision": 0,
+  "initialHeadDigest": null,
+  "liveHistoryPresent": false
+}
