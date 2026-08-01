@@ -1,0 +1,37 @@
+{
+  "protocol": "lachesis-m9b12b-independent-review@1.0.0",
+  "reviewedCommit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+  "reviewedTree": "8609e77370ceefaffbd06752f1fc343903839c23",
+  "reviewedPackage": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+  "reviewedPreregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+  "reviewedChecksumManifestDigest": "ed9d3a0fda5c0bb753f17dcc01370281406ec6bfd4cc157f8927c6d2d892face",
+  "decision": "m9b12b-independent-review-no-go",
+  "disposition": "superseded-unregistered-quarantine-history-not-durable",
+  "findings": [
+    {
+      "id": "observer-quarantine-not-durable-across-assessments",
+      "severity": "p1",
+      "correction": "bind every assessment and startup revalidation to trusted append-only observer quarantine history"
+    },
+    {
+      "id": "per-role-tests-do-not-assert-complete-terminal-outcome",
+      "severity": "p2",
+      "correction": "assert the exact terminal decision, reason, exclusions, prohibitions, and history-head binding for every role"
+    }
+  ],
+  "preservation": {
+    "m9b12BytesModified": false,
+    "m9b12aBytesModified": false,
+    "m9b12bBytesModified": false,
+    "scientificProtocolAccepted": true,
+    "financialProtocolAccepted": true
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "providerCalls": 0,
+    "credentialAccesses": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  }
+}
