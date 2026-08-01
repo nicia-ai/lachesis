@@ -1,0 +1,60 @@
+{
+  "protocol": "lachesis-m9b12b-binding-inventory/1",
+  "packageProtocol": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+  "quarantineProtocol": "lachesis-m9b12b-retired-corpus-quarantine@1.0.0",
+  "externalRegistrationProtocol": "lachesis-m9b12b-append-only-external-registration/1",
+  "baselineCommit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+  "baselineTree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+  "implementationCommit": "493bb8528df4986878050f19878e9e4d8a628b1b",
+  "implementationTree": "0e2833e5b271dbb65dc6af66baf19e03c16b5656",
+  "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+  "implementation": {
+    "source": "packages/generator-ai-sdk/internal/m9b12b-preregistration.ts",
+    "sourceSha256": "ac6396de06362e62768f3c157d9cc90973af4bbc6e4fbc7a951d5c059a37475f",
+    "test": "packages/generator-ai-sdk/tests/m9b12b-preregistration.test.ts",
+    "testSha256": "88b521ac3d12d63fadced21b683301c39d18efb8aac1798b735a8783f62525eb"
+  },
+  "linearSupersession": [
+    {
+      "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+      "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+      "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+      "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+      "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+      "independentReviewDecision": "independent-preregistration-review-pass-with-narrow-corrections",
+      "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+      "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+      "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+      "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+      "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+      "independentReviewDecision": "m9b12a-independent-review-no-go",
+      "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+    }
+  ],
+  "sourceCommitBinding": {
+    "sourceCommit": null,
+    "sourceTree": null,
+    "procedure": "external-record-binds-reviewed-source-commit-and-tree-after-independent-review"
+  },
+  "canonicalModel": {
+    "influenceBearingRoles": 12,
+    "isolationChannels": 16,
+    "contaminationAncestorKinds": 18,
+    "forbiddenAccessClasses": 20,
+    "oneRegistrationConstructor": true,
+    "denyByDefault": true
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "scheduleInstances": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  },
+  "liveAuthorityAvailable": false
+}

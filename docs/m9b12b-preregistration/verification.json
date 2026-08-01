@@ -1,0 +1,89 @@
+{
+  "protocol": "lachesis-m9b12b-offline-verification/1",
+  "node": "24.18.1",
+  "decision": "m9b12b-corrected-package-ready-for-independent-review",
+  "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+  "implementationCommit": "493bb8528df4986878050f19878e9e4d8a628b1b",
+  "implementationTree": "0e2833e5b271dbb65dc6af66baf19e03c16b5656",
+  "results": {
+    "m9b12Preservation": {
+      "gitDiff": "empty",
+      "checksumManifest": "passed",
+      "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5"
+    },
+    "m9b12aPreservation": {
+      "gitDiff": "empty",
+      "checksumManifest": "passed",
+      "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831"
+    },
+    "canonicalDigestIndependentReproduction": "exact",
+    "nestedStandaloneRegistrationCanonicalEquality": "exact",
+    "canonicalModel": {
+      "roles": 12,
+      "excludedRoles": 12,
+      "isolationChannels": 16,
+      "contaminationAncestorKinds": 18,
+      "forbiddenAccessClasses": 20,
+      "machineProseAgreement": "exact"
+    },
+    "focusedM9b12b": {
+      "files": 1,
+      "passed": 95,
+      "failed": 0
+    },
+    "focusedM9": {
+      "files": 18,
+      "passed": 422,
+      "failed": 0
+    },
+    "repositoryTestsSerialized": {
+      "files": 50,
+      "passed": 865,
+      "failed": 0,
+      "groups": [
+        "benchmark: 4 files, 73 tests",
+        "cli-examples-studies: 13 files, 144 tests",
+        "evidence-runtime: 10 files, 92 tests",
+        "generator: 23 files, 556 tests"
+      ]
+    },
+    "coverage": {
+      "files": 50,
+      "passed": 865,
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    },
+    "formatting": {
+      "m9b12bPackage": "passed",
+      "wholeWorkspaceObservation": "pre-existing protected untracked paper/README.md is not formatted"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "nodeWorkersSmoke": "passed",
+    "examples": "7/7 passed",
+    "loadSmoke": "passed at 128 records; descriptive only",
+    "cliM8b0": "6/6 passed",
+    "sourceSafety": "passed",
+    "publicApi": "passed; generator facade remains 317 exports",
+    "releaseChecksums": "passed",
+    "m8bHistory": "passed",
+    "scientificValueInvariance": "exact",
+    "financialArithmetic": "342.097920 + 117.964800 = 460.062720; hard cap 500.000000; headroom 39.937280",
+    "disclosureScan": "passed; no private path, personal identifier, credential, secret, retired locator, hidden material, construction seed, or future packet identity",
+    "diffCheck": "passed"
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "goldMaterializations": 0,
+    "scheduleInstances": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "networkCalls": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  }
+}
