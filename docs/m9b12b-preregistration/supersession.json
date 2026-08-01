@@ -1,0 +1,31 @@
+{
+  "protocol": "lachesis-m9b12b-linear-supersession/1",
+  "ordering": [
+    "lachesis-m9b12-offline-preregistration-package@1.0.0",
+    "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+    "lachesis-m9b12b-offline-preregistration-package@1.0.0"
+  ],
+  "predecessors": [
+    {
+      "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+      "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+      "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+      "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+      "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+      "independentReviewDecision": "independent-preregistration-review-pass-with-narrow-corrections",
+      "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+      "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+      "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+      "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+      "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+      "independentReviewDecision": "m9b12a-independent-review-no-go",
+      "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+    }
+  ],
+  "predecessorBytesModified": false,
+  "predecessorExternallyRegistered": false,
+  "correctionScope": "retired-corpus-enforcement-roles-isolation-ancestry-supersession-registration-and-tests-only"
+}
