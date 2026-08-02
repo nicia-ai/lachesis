@@ -1,0 +1,220 @@
+{
+  "protocol": "lachesis-m9b12f-append-only-external-registration/1",
+  "registration": {
+    "service": "OSF Registries",
+    "id": "63sh5",
+    "url": "https://osf.io/63sh5/",
+    "apiIdentity": "https://api.osf.io/v2/registrations/63sh5/",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "title": "Lachesis M9 Preregistration: Evidence-Adaptive CodeMode Retrieval versus Static One-Shot Retrieval",
+    "descriptionSha256": "8ac89db8d1173157129ce42dcde01238da36564a7646147e3b44edbdee1c8f28",
+    "license": "CC0 1.0 Universal",
+    "status": {
+      "embargoed": true,
+      "revisionState": "approved",
+      "pendingEmbargoApproval": false,
+      "public": false,
+      "embargoEnd": "2030-08-01T00:00:00Z"
+    },
+    "viewOnlyLinkCount": 0,
+    "sourceProjectRegistrationCount": 1,
+    "sourceProjectRegistrationIds": ["63sh5"],
+    "registrantAttestation": "I independently verified the uploaded attachment bytes before submission, reproduced all 26 attachment SHA-256 values, reproduced the checksum-manifest digest, and reproduced the canonical preregistration digest."
+  },
+  "package": {
+    "identity": "lachesis-m9b12f-offline-preregistration-package@1.0.0",
+    "reviewedSourceCommit": "821a0f64c145de46ff77ebb734421fa2c7ab33f4",
+    "reviewedSourceTree": "998c03b0d1082a7a20ba3558ffb8e8da79b69454",
+    "preregistrationSha256": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "checksumManifestSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189"
+  },
+  "archive": {
+    "fileCount": 27,
+    "immutable": true,
+    "allVersionOne": true,
+    "files": [
+      {
+        "name": "atomic-admission.md",
+        "version": 1,
+        "sha256": "e95fcfc223e9fae03f703b182f7b5750c17b89d267f856b3c7dbcf867c066f91"
+      },
+      {
+        "name": "authenticated-identity.md",
+        "version": 1,
+        "sha256": "9dc1cecc4f00e407bbe6f0e45c7a4f55f02a0aff1588fd932f24312bd1d689db"
+      },
+      {
+        "name": "authorization-texts.md",
+        "version": 1,
+        "sha256": "de337f4a2cbc0c8ad885ac027185b369bdbcc42d026a2ec70e6e93b833b1dc22"
+      },
+      {
+        "name": "bindings.json",
+        "version": 1,
+        "sha256": "663332ce84575eebe83ef5d9ce5cea3ec7b98552f21539710fbccfa648e2e487"
+      },
+      {
+        "name": "changed-artifacts.md",
+        "version": 1,
+        "sha256": "26684e9ae089cd9ebd37ec6415fcc63ef9be4911d68dca124d23f21ce92615f6"
+      },
+      {
+        "name": "CHECKSUMS.sha256",
+        "version": 1,
+        "sha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189"
+      },
+      {
+        "name": "durable-authority.md",
+        "version": 1,
+        "sha256": "4a6be406289b6c52835667478fc8536594728c5da5fc3c38b9eb10897a5e851f"
+      },
+      {
+        "name": "external-registration-format.json",
+        "version": 1,
+        "sha256": "0f0bfbf46b6fd3b7c26f439f1823ce92be3d8f410d122d594569145d743791e5"
+      },
+      {
+        "name": "independent-review-finding.md",
+        "version": 1,
+        "sha256": "2b042fb82bba752d1eca1ecfb40e059422f4bdfeb5dfe14b029efd9f608e4e93"
+      },
+      {
+        "name": "m9b12f-cross-process.test.ts",
+        "version": 1,
+        "sha256": "b6c9b4d753acb2961146250626bf1c44efcb6dbec918d60182048cdcca0023fc"
+      },
+      {
+        "name": "m9b12f-durable-authority-node.ts",
+        "version": 1,
+        "sha256": "2e453563c09b5c3f8912d7abcc7e5f1b731fb7cb7270c2fc7690c564ab8b9409"
+      },
+      {
+        "name": "m9b12f-durable-authority.test.ts",
+        "version": 1,
+        "sha256": "e3722f6836368573a5f5d164cdd8183bba1304286e45a3d9551ed6fed34ee596"
+      },
+      {
+        "name": "m9b12f-preregistration.test.ts",
+        "version": 1,
+        "sha256": "8efbf82f18286538ecfd41efdf85a77a9eecde923e9fd718605312d9874182f4"
+      },
+      {
+        "name": "m9b12f-preregistration.ts",
+        "version": 1,
+        "sha256": "4eada425c2d4f7e1e15326e1c26ca3256b4dced204c864a235379e1976775eee"
+      },
+      {
+        "name": "m9b12f-process-worker.test.ts",
+        "version": 1,
+        "sha256": "f4df4145e8018ca3c150052ec58bfb72e8af27ce30674d95b63bc8dbf243ad46"
+      },
+      {
+        "name": "m9b12f-sqlite-sidecar-worker.test.ts",
+        "version": 1,
+        "sha256": "23c9ac7c5f9aa9ddbf1cb0ad3a421f12d66db7fe8a69e8ca69b30e358a581b1b"
+      },
+      {
+        "name": "nonclaims.md",
+        "version": 1,
+        "sha256": "1c57bff9b561d91fde964a822f24659bae348167d529c4e5276f2823b1deb327"
+      },
+      {
+        "name": "operational-sequence.md",
+        "version": 1,
+        "sha256": "79cc89b227f0eea3607a501d8aeb47c71b471984bad945e8e53f8b371f084066"
+      },
+      {
+        "name": "preregistration.json",
+        "version": 1,
+        "sha256": "3178b3059cce25bc1b66a9bc88c9a2eb5a35810a442f904d3d06349f1a187f8b"
+      },
+      {
+        "name": "preregistration.md",
+        "version": 1,
+        "sha256": "baebe0053c65ef27623f1243e58f459106f1ca301ccaba1417f64bb3e15462c5"
+      },
+      {
+        "name": "scientific-financial-invariance.md",
+        "version": 1,
+        "sha256": "cdcce3e22a3e5104fccd79efb27fbf6a6a8f4fe2d168953dabe0cce94d947250"
+      },
+      {
+        "name": "sidecar-policy.md",
+        "version": 1,
+        "sha256": "fa6fc4927434e088c8862533c3c8a801ec7d375b3d3cb6b4e62a462d21757b34"
+      },
+      {
+        "name": "supersession.json",
+        "version": 1,
+        "sha256": "1221f2826247a74d1d9f28d61f7bbf63e15c173840f2f132af25b39f4c8f74f7"
+      },
+      {
+        "name": "supersession.md",
+        "version": 1,
+        "sha256": "80838547f496c9f7e96cfc885aab321ca13c2006a71e68e59793e354d0cde493"
+      },
+      {
+        "name": "threat-model.md",
+        "version": 1,
+        "sha256": "eb726e135e7ce2654bb5fc4342ab7f9c8d5f862f28e8e34677b62c5e41de75ae"
+      },
+      {
+        "name": "verification.json",
+        "version": 1,
+        "sha256": "db94ddbd4aecffab91ff7be9390016e9d543aeabb42e7e16ff54df78881e0b2c"
+      },
+      {
+        "name": "verification.md",
+        "version": 1,
+        "sha256": "ca69fa930630c21bd96daf59adfcd15f80bd769e50e7478cd7a6fae033122599"
+      }
+    ],
+    "postApprovalVerification": {
+      "verifiedAt": "2026-08-02T21:44:27Z",
+      "method": "Authenticated OSF re-download followed by local SHA-256 and byte-count verification",
+      "downloadedFileCount": 27,
+      "allSizesMatch": true,
+      "allHashesMatch": true
+    }
+  },
+  "verification": {
+    "trackedWorktreeCleanBeforeReceipt": true,
+    "predecessorManifestsVerified": [
+      "M9b.12",
+      "M9b.12a",
+      "M9b.12b",
+      "M9b.12c",
+      "M9b.12d",
+      "M9b.12e",
+      "M9b.12f"
+    ],
+    "preregistrationDigestReproduced": true,
+    "checksumManifestDigestReproduced": true,
+    "osfIdentityAndStateReconciled": true,
+    "noPublicOrViewOnlyLink": true,
+    "singleProjectRegistrationVerified": true
+  },
+  "receipt": {
+    "createdAt": "2026-08-02T21:44:27Z",
+    "createdBy": "OpenAI Codex acting under Paul Dlug's explicit authorization",
+    "canonicalDigestAlgorithm": "SHA-256",
+    "canonicalization": "RFC 8785 JSON Canonicalization Scheme",
+    "canonicalDigestProjection": "The complete REGISTRATION.json object with receipt.canonicalDigest omitted",
+    "canonicalDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+  },
+  "authorization": {
+    "authorizedAction": "Create and commit one offline append-only receipt for the already approved OSF registration",
+    "nonauthorizations": [
+      "No modification of any M9b.12 through M9b.12f preregistration artifact",
+      "No OSF registration update, resubmission, replacement, publication, withdrawal, or new view-only link",
+      "No second registration",
+      "No Git push",
+      "No corpus construction or inspection and no gold-label creation",
+      "No provider credential or provider-setting access",
+      "No count or inference endpoint call",
+      "No study-role launch, materialization, probe, primary execution, or analysis",
+      "No M10 work"
+    ]
+  }
+}

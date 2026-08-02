@@ -1,0 +1,32 @@
+{
+  "protocol": "lachesis-m9b12f-osf-metadata-projection/1",
+  "service": "OSF Registries",
+  "registration": {
+    "id": "63sh5",
+    "url": "https://osf.io/63sh5/",
+    "apiIdentity": "https://api.osf.io/v2/registrations/63sh5/",
+    "sourceProjectId": "ade7h",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "title": "Lachesis M9 Preregistration: Evidence-Adaptive CodeMode Retrieval versus Static One-Shot Retrieval",
+    "descriptionSha256": "8ac89db8d1173157129ce42dcde01238da36564a7646147e3b44edbdee1c8f28",
+    "license": "CC0 1.0 Universal",
+    "status": {
+      "embargoed": true,
+      "revisionState": "approved",
+      "pendingEmbargoApproval": false,
+      "public": false,
+      "embargoEnd": "2030-08-01T00:00:00Z"
+    },
+    "archive": {
+      "fileCount": 27,
+      "allVersionOne": true,
+      "immutable": true
+    },
+    "viewOnlyLinkCount": 0,
+    "sourceProjectRegistrationCount": 1,
+    "sourceProjectRegistrationIds": ["63sh5"],
+    "registrantAttestation": "I independently verified the uploaded attachment bytes before submission, reproduced all 26 attachment SHA-256 values, reproduced the checksum-manifest digest, and reproduced the canonical preregistration digest."
+  },
+  "projectionPolicy": "Only stable registration identity, approval state, scientific bindings, and absence/uniqueness claims are retained; volatile API presentation fields are excluded."
+}
