@@ -1,0 +1,78 @@
+{
+  "protocol": "lachesis-m9b12f-append-only-external-registration/1",
+  "status": "format-only-no-record-present",
+  "registrablePackage": "lachesis-m9b12f-offline-preregistration-package@1.0.0",
+  "supersessionLineage": [
+    {
+      "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+      "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+      "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+      "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+      "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+      "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+      "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+      "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+      "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+      "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+      "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+      "commit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+      "tree": "8609e77370ceefaffbd06752f1fc343903839c23",
+      "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+      "checksumManifestDigest": "ed9d3a0fda5c0bb753f17dcc01370281406ec6bfd4cc157f8927c6d2d892face",
+      "status": "superseded-unregistered-quarantine-history-not-durable"
+    },
+    {
+      "protocol": "lachesis-m9b12c-offline-preregistration-package@1.0.0",
+      "commit": "c9e50ff3db56f898184dc9b7be934b1f1c0560df",
+      "tree": "ef9f3847a6f0eb7d1a5a519c4acc90cd6a2354fd",
+      "preregistrationDigest": "62cff37dae7332855b8f7a8f9583f5b5f0917adde2d9b2c019603fb101392fc3",
+      "checksumManifestDigest": "65cca06be59f863b7d5256bdac7fc57d4653d2404ce9d8047bb863d0dc5dbc46",
+      "status": "superseded-unregistered-process-durability-identity-admission-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12d-offline-preregistration-package@1.0.0",
+      "commit": "5dff4a5f74933135c4c686f1c94df04cc320f53b",
+      "tree": "a021670c01fc020afe3e682f847d40e2084a1545",
+      "preregistrationDigest": "ed991e11ccc6c9129bdb6509dd011b28006b4420d59bf4290d2dac11765ccef0",
+      "checksumManifestDigest": "8524883df08e628dfbd07eff16aa057110e28fe7746ac11beb24b525871b510e",
+      "independentReviewDecision": "m9b12d-independent-review-no-go",
+      "status": "superseded-unregistered-durability-claim-and-presenter-identity-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12e-offline-preregistration-package@1.0.0",
+      "commit": "b1a830f871fa8ab78cbce7ef6c8836fe4464b5c1",
+      "tree": "e6dedd253cca8dda11894b4f84d4d5d1ffc59e6a",
+      "preregistrationDigest": "d973ce34b715cd5d9bcc4c33d42184980a97be9b4cae1aaea2825e5b99520f5c",
+      "checksumManifestDigest": "310a0565be242e068a7b6a1889b43f72a3dacb0dfeaa3f6e2fa24a2d46da9f3e",
+      "independentReviewDecision": "m9b12e-independent-review-no-go",
+      "status": "superseded-unregistered-sidecar-and-transactional-proof-enforcement-incomplete"
+    }
+  ],
+  "requiredFields": [
+    "registration-service",
+    "registration-record-id",
+    "server-registered-at",
+    "m9b12f-preregistration-digest",
+    "source-commit",
+    "source-tree",
+    "checksum-manifest-digest",
+    "submitted-attachment-inventory-and-sha256",
+    "registrant-attestation"
+  ],
+  "sourceBinding": {
+    "baselineCommit": "b1a830f871fa8ab78cbce7ef6c8836fe4464b5c1",
+    "baselineTree": "e6dedd253cca8dda11894b4f84d4d5d1ffc59e6a",
+    "sourceCommit": null,
+    "sourceTree": null,
+    "procedure": "external-record-binds-reviewed-source-commit-and-tree-after-independent-review"
+  },
+  "amendmentRule": "append-only-new-identity-no-reinterpretation-of-predecessor-bytes",
+  "registrationRecord": null,
+  "submissionAuthorized": false
+}

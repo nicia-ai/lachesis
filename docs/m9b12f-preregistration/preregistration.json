@@ -1,0 +1,339 @@
+{
+  "protocol": "lachesis-m9b12f-offline-preregistration-package",
+  "version": "1.0.0",
+  "baselineCommit": "b1a830f871fa8ab78cbce7ef6c8836fe4464b5c1",
+  "baselineTree": "e6dedd253cca8dda11894b4f84d4d5d1ffc59e6a",
+  "status": "offline-immutable-superseding-draft-not-externally-registered",
+  "supersession": {
+    "protocol": "lachesis-m9b12f-linear-supersession/1",
+    "ordering": [
+      "lachesis-m9b12-offline-preregistration-package@1.0.0",
+      "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+      "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+      "lachesis-m9b12c-offline-preregistration-package@1.0.0",
+      "lachesis-m9b12d-offline-preregistration-package@1.0.0",
+      "lachesis-m9b12e-offline-preregistration-package@1.0.0",
+      "lachesis-m9b12f-offline-preregistration-package@1.0.0"
+    ],
+    "predecessors": [
+      {
+        "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+        "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+        "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+        "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+        "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+        "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+        "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+        "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+        "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+        "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+        "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+        "commit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+        "tree": "8609e77370ceefaffbd06752f1fc343903839c23",
+        "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+        "checksumManifestDigest": "ed9d3a0fda5c0bb753f17dcc01370281406ec6bfd4cc157f8927c6d2d892face",
+        "status": "superseded-unregistered-quarantine-history-not-durable"
+      },
+      {
+        "protocol": "lachesis-m9b12c-offline-preregistration-package@1.0.0",
+        "commit": "c9e50ff3db56f898184dc9b7be934b1f1c0560df",
+        "tree": "ef9f3847a6f0eb7d1a5a519c4acc90cd6a2354fd",
+        "preregistrationDigest": "62cff37dae7332855b8f7a8f9583f5b5f0917adde2d9b2c019603fb101392fc3",
+        "checksumManifestDigest": "65cca06be59f863b7d5256bdac7fc57d4653d2404ce9d8047bb863d0dc5dbc46",
+        "status": "superseded-unregistered-process-durability-identity-admission-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12d-offline-preregistration-package@1.0.0",
+        "commit": "5dff4a5f74933135c4c686f1c94df04cc320f53b",
+        "tree": "a021670c01fc020afe3e682f847d40e2084a1545",
+        "preregistrationDigest": "ed991e11ccc6c9129bdb6509dd011b28006b4420d59bf4290d2dac11765ccef0",
+        "checksumManifestDigest": "8524883df08e628dfbd07eff16aa057110e28fe7746ac11beb24b525871b510e",
+        "independentReviewDecision": "m9b12d-independent-review-no-go",
+        "status": "superseded-unregistered-durability-claim-and-presenter-identity-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12e-offline-preregistration-package@1.0.0",
+        "commit": "b1a830f871fa8ab78cbce7ef6c8836fe4464b5c1",
+        "tree": "e6dedd253cca8dda11894b4f84d4d5d1ffc59e6a",
+        "preregistrationDigest": "d973ce34b715cd5d9bcc4c33d42184980a97be9b4cae1aaea2825e5b99520f5c",
+        "checksumManifestDigest": "310a0565be242e068a7b6a1889b43f72a3dacb0dfeaa3f6e2fa24a2d46da9f3e",
+        "independentReviewDecision": "m9b12e-independent-review-no-go",
+        "status": "superseded-unregistered-sidecar-and-transactional-proof-enforcement-incomplete"
+      }
+    ],
+    "predecessorBytesModified": false,
+    "predecessorExternallyRegistered": false
+  },
+  "preservedStudyFields": [
+    "researchQuestion",
+    "bindings",
+    "treatment",
+    "control",
+    "matching",
+    "population",
+    "primaryEndpoint",
+    "analysis",
+    "probeAdvancement",
+    "financial",
+    "operationalSequence",
+    "countPricingKillGates",
+    "operationalSecurity",
+    "disclosureAndRoles",
+    "nonclaims",
+    "audit",
+    "authority",
+    "inheritedDecisions"
+  ],
+  "scientificFinancialInvariance": {
+    "estimand": "evidence-adaptive-codemode-versus-matched-static-one-shot-first-attempt-grounded-success",
+    "probePairs": 24,
+    "primaryPairs": 168,
+    "balancedCells": 24,
+    "analysis": "exact-one-sided-conditional-mcnemar",
+    "zeroRetries": true,
+    "maximumConcurrency": 1,
+    "countRequests": 768,
+    "inferenceCalls": 768,
+    "maximumHttpRequests": 1536,
+    "inferenceCeilingUsdMicros": 342097920,
+    "countContingencyUsdMicros": 117964800,
+    "operationalCeilingUsdMicros": 460062720,
+    "providerCapUsdMicros": 500000000,
+    "headroomUsdMicros": 39937280,
+    "inheritedFieldsCanonicalDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+    "inheritedFieldsCanonicalEqualityRequired": true
+  },
+  "threatModel": {
+    "trustedComputingBase": [
+      "controller-implementation",
+      "controller-host-operating-system",
+      "controller-privileged-operator",
+      "private-authority-storage-domain",
+      "authenticated-principal-channel-adapter"
+    ],
+    "untrusted": [
+      "study-roles",
+      "model-outputs",
+      "corpus-content",
+      "ordinary-request-callers",
+      "role-containers"
+    ],
+    "protectedThreats": [
+      "process-crash-and-restart",
+      "interrupted-writes",
+      "concurrent-controllers",
+      "partial-database-or-anchor-replacement",
+      "malformed-truncated-forked-or-inconsistent-state",
+      "study-role-access",
+      "symlinks-and-permission-drift",
+      "stale-heads-and-admissions",
+      "accidental-unilateral-rollback"
+    ],
+    "excludedThreats": [
+      "malicious-or-compromised-privileged-host-or-operator",
+      "coordinated-complete-local-authority-domain-rollback",
+      "privileged-matching-sqlite-and-anchor-rollback",
+      "kernel-hypervisor-or-hardware-compromise"
+    ],
+    "completeLocalRollbackDetectionClaimed": false,
+    "independentMonotonicWitnessPresent": false,
+    "completeLocalRollbackResistanceRequiresIndependentWitness": true,
+    "detectedOrSuspectedOperatorRestoreDisposition": "halt-campaign-require-new-execution-identity-no-normal-resume"
+  },
+  "durableAuthority": {
+    "protocol": "lachesis-m9b12f-durable-quarantine-authority/1",
+    "adapter": "private-node-sqlite-plus-separate-trusted-anchor",
+    "createAndOpenOperationsDistinct": true,
+    "existingOpenMayCreateEmptyState": false,
+    "databaseTransaction": "sqlite-begin-immediate-revision-state-digest-cas",
+    "consistencyRecoveryAnchor": "separate-private-fsync-atomic-replace-revision-head-state-digest-binding",
+    "permissions": "parents-0700-files-0600-owner-regular-no-symlinks",
+    "accidentalUnilateralRollbackAndWrongAnchorFailClosed": true,
+    "coordinatedCompleteLocalRollbackDetected": false,
+    "completeChainValidationOnEveryUse": true,
+    "sidecarPolicyProtocol": "lachesis-m9b12f-private-sqlite-sidecar-policy/1",
+    "sidecarInventoryClosed": true,
+    "sidecarsOwnerRegularNonSymlink0600": true,
+    "cleanClosureRequiresSidecarsAbsent": true
+  },
+  "authenticatedObserverIdentity": {
+    "protocol": "lachesis-m9b12f-authenticated-observer-identity/1",
+    "domain": "controller-issued-opaque-study-principal-and-launch-allocation",
+    "canonicalEncoding": "lowercase-256-bit-hex",
+    "noncanonicalEncodingRejected": true,
+    "displayMetadataAuthoritative": false,
+    "observerKeyControllerDerived": true,
+    "assessmentCallerMaySupplyCommitmentAliasOrPrincipal": false,
+    "durablePrincipalToObserverMappingImmutable": true,
+    "launchHandleBindsRoleSessionAndAllocation": true,
+    "launchHandleAuthenticatesPresenter": false,
+    "authenticatedPresenterContextSeparateFromRequest": true,
+    "presenterPrincipalCheckedInsideAdmission": true
+  },
+  "atomicAdmission": {
+    "protocol": "lachesis-m9b12f-atomic-role-effect-admission/1",
+    "linearizationPoint": "durable-admission-effect-started-event-commit",
+    "assessmentCanonicalBytesCapturedOnce": true,
+    "assessmentBytesDigestBoundToEventAndReceipt": true,
+    "currentProofsAssessedInsideTransaction": true,
+    "authenticatedPresenterResolvedInsideAdmission": true,
+    "quarantineRecheckedInsideTransaction": true,
+    "oneTimeAdmissionAndLaunchConsumed": true,
+    "reusableBarePermissionExposed": false,
+    "crashAfterStartIsAmbiguousAndNeverReadmitted": true,
+    "providerEffectsPermitted": false,
+    "requiredProviderEffectLedgerProtocol": "lachesis-m9b4-offline-effect-ledger@1.2.0"
+  },
+  "futureAuthorizations": {
+    "issued": false,
+    "texts": [
+      {
+        "kind": "external-preregistration",
+        "text": "Authorize submission of the exact checksum-bound M9b.12f preregistration package to the named external registry and no other action.",
+        "prerequisites": "Independent review accepts the M9b.12f digest, complete linear supersession, honestly scoped local durable authority, authenticated opaque observer identity, and atomic admission, atomic stale-decision protection, one canonical registration contract, and exact checksum manifest.",
+        "grantsOnly": "One append-only external registration submission; no corpus, project, credential, count, inference, or campaign action."
+      },
+      {
+        "kind": "corpus-materialization",
+        "text": "Authorize isolated construction and materialization under the registered corpus and M9b.12f durable retired-material protocols only.",
+        "prerequisites": "External registration is independently verified and every required role, history, isolation, ancestry, and noninterference proof is complete and affirmative.",
+        "grantsOnly": "Fresh corpus, gold, and split-audit production; no provider, credential, count, inference, probe, or primary execution."
+      },
+      {
+        "kind": "provider-cap-and-credential-activation",
+        "text": "Authorize activation of one fresh zero-spend dedicated project, verified 500 USD cap, and project-scoped credential custody.",
+        "prerequisites": "Corpus, durable authority, trusted observer identity, and atomic admission history, evaluator, schedule, environment, security, and disclosure reviews pass with immutable identities.",
+        "grantsOnly": "Cap and credential activation plus preflight; no count or inference dispatch."
+      },
+      {
+        "kind": "count-only-pricing-probe",
+        "text": "Authorize the frozen four-request maximum count-only operational pricing probe.",
+        "prerequisites": "Cap, credential, zero-spend, accounting, persistence, durable deny-by-default retired-material, and response-shape preflights pass.",
+        "grantsOnly": "At most one count request per frozen class, zero inference, zero retries, concurrency one."
+      },
+      {
+        "kind": "twenty-four-pair-protocol-probe",
+        "text": "Authorize execution of the exact frozen 24-pair protocol-probe inventory and schedule.",
+        "prerequisites": "Count-only reconciliation and durable trusted-identity retired-material noninterference pass every frozen gate and a separate review accepts the bound probe inventory.",
+        "grantsOnly": "The complete 24-pair probe; no primary execution or population change."
+      },
+      {
+        "kind": "conditional-168-pair-primary-execution",
+        "text": "Authorize the exact frozen 168-pair primary inventory and schedule only if the registered probe gate passed.",
+        "prerequisites": "Verified complete probe measurements pass and all safety, durable trusted-identity retired-material, accounting, pricing, replay, authorization, and capacity gates remain satisfied.",
+        "grantsOnly": "The complete immutable 168-pair primary study; no subset, replacement, retry, or protocol amendment."
+      },
+      {
+        "kind": "final-closure-and-credential-revocation",
+        "text": "Authorize final replay, analysis, accounting and security closure, credential revocation, and independent absence verification.",
+        "prerequisites": "All authorized study effects and durable trusted-identity retired-material incidents are terminally accounted and no further provider dispatch is permitted.",
+        "grantsOnly": "Closure and revocation actions; no new count, inference, corpus, analysis-population, publication, or quarantine-override authority."
+      }
+    ]
+  },
+  "externalRegistrationFormat": {
+    "protocol": "lachesis-m9b12f-append-only-external-registration/1",
+    "status": "format-only-no-record-present",
+    "registrablePackage": "lachesis-m9b12f-offline-preregistration-package@1.0.0",
+    "supersessionLineage": [
+      {
+        "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+        "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+        "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+        "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+        "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+        "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+        "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+        "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+        "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+        "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+        "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+        "commit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+        "tree": "8609e77370ceefaffbd06752f1fc343903839c23",
+        "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+        "checksumManifestDigest": "ed9d3a0fda5c0bb753f17dcc01370281406ec6bfd4cc157f8927c6d2d892face",
+        "status": "superseded-unregistered-quarantine-history-not-durable"
+      },
+      {
+        "protocol": "lachesis-m9b12c-offline-preregistration-package@1.0.0",
+        "commit": "c9e50ff3db56f898184dc9b7be934b1f1c0560df",
+        "tree": "ef9f3847a6f0eb7d1a5a519c4acc90cd6a2354fd",
+        "preregistrationDigest": "62cff37dae7332855b8f7a8f9583f5b5f0917adde2d9b2c019603fb101392fc3",
+        "checksumManifestDigest": "65cca06be59f863b7d5256bdac7fc57d4653d2404ce9d8047bb863d0dc5dbc46",
+        "status": "superseded-unregistered-process-durability-identity-admission-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12d-offline-preregistration-package@1.0.0",
+        "commit": "5dff4a5f74933135c4c686f1c94df04cc320f53b",
+        "tree": "a021670c01fc020afe3e682f847d40e2084a1545",
+        "preregistrationDigest": "ed991e11ccc6c9129bdb6509dd011b28006b4420d59bf4290d2dac11765ccef0",
+        "checksumManifestDigest": "8524883df08e628dfbd07eff16aa057110e28fe7746ac11beb24b525871b510e",
+        "independentReviewDecision": "m9b12d-independent-review-no-go",
+        "status": "superseded-unregistered-durability-claim-and-presenter-identity-incomplete"
+      },
+      {
+        "protocol": "lachesis-m9b12e-offline-preregistration-package@1.0.0",
+        "commit": "b1a830f871fa8ab78cbce7ef6c8836fe4464b5c1",
+        "tree": "e6dedd253cca8dda11894b4f84d4d5d1ffc59e6a",
+        "preregistrationDigest": "d973ce34b715cd5d9bcc4c33d42184980a97be9b4cae1aaea2825e5b99520f5c",
+        "checksumManifestDigest": "310a0565be242e068a7b6a1889b43f72a3dacb0dfeaa3f6e2fa24a2d46da9f3e",
+        "independentReviewDecision": "m9b12e-independent-review-no-go",
+        "status": "superseded-unregistered-sidecar-and-transactional-proof-enforcement-incomplete"
+      }
+    ],
+    "requiredFields": [
+      "registration-service",
+      "registration-record-id",
+      "server-registered-at",
+      "m9b12f-preregistration-digest",
+      "source-commit",
+      "source-tree",
+      "checksum-manifest-digest",
+      "submitted-attachment-inventory-and-sha256",
+      "registrant-attestation"
+    ],
+    "sourceBinding": {
+      "baselineCommit": "b1a830f871fa8ab78cbce7ef6c8836fe4464b5c1",
+      "baselineTree": "e6dedd253cca8dda11894b4f84d4d5d1ffc59e6a",
+      "sourceCommit": null,
+      "sourceTree": null,
+      "procedure": "external-record-binds-reviewed-source-commit-and-tree-after-independent-review"
+    },
+    "amendmentRule": "append-only-new-identity-no-reinterpretation-of-predecessor-bytes",
+    "registrationRecord": null,
+    "submissionAuthorized": false
+  },
+  "correctionAudit": {
+    "reviewDecisionAddressed": "m9b12e-independent-review-no-go",
+    "honestDurabilityScopeImplemented": true,
+    "opaqueAuthenticatedObserverIdentityImplemented": true,
+    "atomicAdmissionImplemented": true,
+    "sqliteSidecarEnforcementImplemented": true,
+    "transactionalProofAssessmentImplemented": true,
+    "m9b12BytesModified": false,
+    "m9b12aBytesModified": false,
+    "m9b12bBytesModified": false,
+    "m9b12cBytesModified": false,
+    "m9b12dBytesModified": false,
+    "m9b12eBytesModified": false,
+    "scientificProtocolUnchanged": true,
+    "financialProtocolUnchanged": true,
+    "providerEffects": 0,
+    "networkEffects": 0,
+    "credentialEffects": 0
+  },
+  "decision": "m9b12f-corrected-package-ready-for-independent-review",
+  "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4"
+}
