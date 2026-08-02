@@ -1,0 +1,29 @@
+{
+  "protocol": "lachesis-m9b12e-independent-review-evidence/1",
+  "reviewedCommit": "940efbdb78ff185552b3f846d977eaf98436ba42",
+  "reviewedTree": "45ba2f5dd67cfd757be44b352654a09a0d593383",
+  "decision": "m9b12e-independent-review-no-go",
+  "blockingFindings": [
+    {
+      "id": "sqlite-sidecars-bypass-fail-closed-audit",
+      "priority": "P1",
+      "confidence": 10,
+      "disposition": "blocking"
+    },
+    {
+      "id": "proof-assessment-occurs-before-admission-transaction",
+      "priority": "P1",
+      "confidence": 10,
+      "disposition": "blocking"
+    }
+  ],
+  "predecessorDisposition": "superseded-unregistered-sidecar-and-transactional-proof-enforcement-incomplete",
+  "effects": {
+    "externalRegistrations": 0,
+    "corpusAccesses": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "networkCalls": 0,
+    "pushes": 0
+  }
+}
