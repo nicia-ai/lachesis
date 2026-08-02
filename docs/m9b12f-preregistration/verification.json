@@ -1,0 +1,117 @@
+{
+  "protocol": "lachesis-m9b12f-offline-verification/1",
+  "node": "24.18.1",
+  "decision": "m9b12f-corrected-package-ready-for-independent-review",
+  "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+  "reviewEvidenceCommit": "b5245111dc1aecad554c4102a7be0fe8e3c3e1bb",
+  "implementationCommit": "00c794929d1deba802ff2508f30ca943303283e7",
+  "implementationTree": "7133da5d5307d00b033454b5414fac963b481f40",
+  "results": {
+    "predecessorPreservation": {
+      "m9b12": "byte-identical; 18/18 checksum entries passed",
+      "m9b12a": "byte-identical; 22/22 checksum entries passed",
+      "m9b12b": "byte-identical; 22/22 checksum entries passed",
+      "m9b12c": "byte-identical; 24/24 checksum entries passed",
+      "m9b12d": "byte-identical; 24/24 checksum entries passed",
+      "m9b12e": "byte-identical; 24/24 checksum entries passed"
+    },
+    "canonicalDigestIndependentReproduction": "exact",
+    "nestedStandaloneRegistrationCanonicalEquality": "exact",
+    "scientificFinancialInheritanceCanonicalEquality": "exact",
+    "sqliteSidecars": {
+      "genuineRollbackJournalWalAndShm": "observed at 0600 during active SQLite use under shell umasks 0022, 0000, and 0077",
+      "cleanClosure": "all recognized sidecars absent",
+      "mode0644SymlinkDirectoryAndFifoForEachSuffix": "rejected",
+      "unknownDatabasePrefixedEntry": "rejected",
+      "normalizedParentAlias": "rejected",
+      "existingParentModeDrift": "rejected",
+      "controllerUmaskMutation": "none",
+      "postExposureRepair": "none"
+    },
+    "transactionalProofAssessment": {
+      "beginImmediateContentionProbe": "second connection observed busy while proof assessment hook was active",
+      "canonicalAssessmentBytesCapturedOnce": "passed",
+      "mutableSourceAfterCapture": "cannot alter authoritative assessment",
+      "mutationBeforeCapture": "becomes authoritative",
+      "hiddenAndNonJsonState": "rejected",
+      "parseAndCompleteM9b12bAssessmentInsideTransaction": "passed",
+      "eventAndReceiptAssessmentDigestBinding": "passed",
+      "transactionGeneratedProofReceiptAndDigestBinding": "passed",
+      "transactionFailure": "no receipt and no durable mutation",
+      "restartRederivation": "exact assessment digest and proof rederived",
+      "tampering": "assessment bytes, digest, proof receipt, and proof digest mismatches rejected",
+      "precomputedProofControlsAdmission": false
+    },
+    "durableAuthorityAndIdentityRegression": "all inherited M9b.12e acceptance and rejection paths passed",
+    "allRoleTerminalAssertions": "12/12 passed including materializer and study-operator",
+    "focusedM9b12f": {
+      "files": 5,
+      "passed": 63,
+      "failed": 0
+    },
+    "focusedM9": {
+      "files": 32,
+      "passed": 593,
+      "failed": 0
+    },
+    "repositorySuite": {
+      "mode": "maxWorkers=1",
+      "files": 64,
+      "passed": 1036,
+      "failed": 0
+    },
+    "repositoryCoverage": {
+      "files": 64,
+      "passed": 1036,
+      "failed": 0,
+      "statements": "12479/13863",
+      "statementsPercent": 90.01,
+      "branches": "8528/10529",
+      "branchesPercent": 80.99,
+      "functions": "2637/2706",
+      "functionsPercent": 97.45,
+      "lines": "11909/12709",
+      "linesPercent": 93.7
+    },
+    "formatting": {
+      "m9b12fPackageAndTrackedSources": "passed",
+      "wholeWorkspaceObservation": "protected untracked paper/README.md is not formatted"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "nodeWorkersSmoke": "passed",
+    "examples": "7/7 passed",
+    "loadSmoke": "passed at 128 records; descriptive only",
+    "cliM8b0": "6/6 passed",
+    "cliValidInvalidSmokes": "passed; valid exit 0, invalid exit 1",
+    "sourceSafety": "passed",
+    "secretScan": "passed",
+    "publicApi": "passed; generator facade remains 317 exports",
+    "releaseChecksums": "passed",
+    "m8bHistory": "passed",
+    "packedPublicPackages": {
+      "status": "pre-existing-baseline-failure",
+      "observation": "current generator package source set differs from the frozen alpha.5 tarball inventory; unrelated to M9b.12f"
+    },
+    "m7cPreregistrationAudit": {
+      "status": "pre-existing-baseline-failure",
+      "observation": "M7c public documentation binding differs; unrelated to M9b.12f"
+    },
+    "financialArithmetic": "342.097920 + 117.964800 = 460.062720; hard cap 500.000000; headroom 39.937280",
+    "diffCheck": "passed"
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "goldMaterializations": 0,
+    "scheduleInstances": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "networkCalls": 0,
+    "externalRegistrations": 0,
+    "publications": 0,
+    "pushes": 0
+  }
+}
