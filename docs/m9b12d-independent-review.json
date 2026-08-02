@@ -1,0 +1,35 @@
+{
+  "protocol": "lachesis-m9b12d-independent-review-evidence/1",
+  "reviewedCommit": "5dff4a5f74933135c4c686f1c94df04cc320f53b",
+  "reviewedTree": "a021670c01fc020afe3e682f847d40e2084a1545",
+  "decision": "m9b12d-independent-review-no-go",
+  "blockingFindings": [
+    {
+      "id": "complete-local-authority-rollback-not-detectable",
+      "priority": "P1",
+      "confidence": 10,
+      "disposition": "blocking"
+    },
+    {
+      "id": "copied-launch-handle-authenticates-no-presenter",
+      "priority": "P1",
+      "confidence": 10,
+      "disposition": "blocking"
+    },
+    {
+      "id": "text-normalization-can-merge-distinct-principals",
+      "priority": "P1",
+      "confidence": 9,
+      "disposition": "blocking"
+    }
+  ],
+  "predecessorDisposition": "superseded-unregistered-durability-claim-and-presenter-identity-incomplete",
+  "effects": {
+    "externalRegistrations": 0,
+    "corpusAccesses": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "networkCalls": 0,
+    "pushes": 0
+  }
+}
