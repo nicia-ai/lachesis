@@ -1,0 +1,131 @@
+{
+  "protocol": "lachesis-m9b12e-binding-inventory/1",
+  "packageProtocol": "lachesis-m9b12e-offline-preregistration-package@1.0.0",
+  "quarantineProtocol": "lachesis-m9b12e-retired-corpus-quarantine@1.0.0",
+  "durableAuthorityProtocol": "lachesis-m9b12e-durable-quarantine-authority/1",
+  "authenticatedObserverIdentityProtocol": "lachesis-m9b12e-authenticated-observer-identity/1",
+  "atomicAdmissionProtocol": "lachesis-m9b12e-atomic-role-effect-admission/1",
+  "externalRegistrationProtocol": "lachesis-m9b12e-append-only-external-registration/1",
+  "requiredProviderEffectLedgerProtocol": "lachesis-m9b4-offline-effect-ledger@1.2.0",
+  "baselineCommit": "5dff4a5f74933135c4c686f1c94df04cc320f53b",
+  "baselineTree": "a021670c01fc020afe3e682f847d40e2084a1545",
+  "reviewEvidenceCommit": "8f8b0754d1736efcf9e14ecd75bd01ddb639adc8",
+  "implementationCommit": "c2e5d7b14eac2a25d5436e6a369e6f63dd607b67",
+  "implementationTree": "948180b86f3b8dde32a6335c9269967f8efcdad6",
+  "preregistrationDigest": "d973ce34b715cd5d9bcc4c33d42184980a97be9b4cae1aaea2825e5b99520f5c",
+  "inheritedStudyFieldsDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "implementation": {
+    "preregistrationSource": {
+      "path": "packages/generator-ai-sdk/internal/m9b12e-preregistration.ts",
+      "sha256": "4d1d3ca91fbdf6fd67ffe86ea21741e950d6a2e383789c3f174cb9cca336a0b9"
+    },
+    "durableAuthoritySource": {
+      "path": "packages/generator-ai-sdk/internal/m9b12e-durable-authority-node.ts",
+      "sha256": "b11a313243e2530307073c7f4fc1e0523b6995be9b9e91371738a0a3dfa031f0"
+    },
+    "preregistrationTest": {
+      "path": "packages/generator-ai-sdk/tests/m9b12e-preregistration.test.ts",
+      "sha256": "828ef20c6c3cf3ed04b005fe4ef293fa95f122c05bffd193059edb5484b03122"
+    },
+    "durableAuthorityTest": {
+      "path": "packages/generator-ai-sdk/tests/m9b12e-durable-authority.test.ts",
+      "sha256": "a74853bc65a82dc120b66bdc884b87609966ee67967b076ddcadc03007635d9c"
+    },
+    "crossProcessTest": {
+      "path": "packages/generator-ai-sdk/tests/m9b12e-cross-process.test.ts",
+      "sha256": "024af8f56231299783a482aa97a1806613ac3d2ea3594969d3c553c080a3fe44"
+    },
+    "processWorkerTest": {
+      "path": "packages/generator-ai-sdk/tests/m9b12e-process-worker.test.ts",
+      "sha256": "a43ea4ef7a1575429ccfe1e88400a204eb6ef30789413520493e6f9a4240673e"
+    }
+  },
+  "linearSupersession": [
+    {
+      "protocol": "lachesis-m9b12-offline-preregistration-package@1.0.0",
+      "commit": "b9f13c7b215624eb651caf3b038b77976247c9a3",
+      "tree": "30144b30de282d63371f9afedeb7d5ac43cfa739",
+      "preregistrationDigest": "f12c1212c4fbaa57190059f4d29ef413d09f9d006489b7b95ae038e426a74ff5",
+      "checksumManifestDigest": "437c7b26238d1f758efcb4ed753662d6da197526b2f1a707b0f0961de5cbd83c",
+      "status": "superseded-unregistered-retired-corpus-policy-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12a-offline-preregistration-package@1.0.0",
+      "commit": "d8cadc384ec99df8c2c938c9dda2992be15f8272",
+      "tree": "8babde6e603705f2c672afc260157c6fdd02bc88",
+      "preregistrationDigest": "79db2718c94a938431544f8bc72f793c478ed85bff56a2071c3bd03d999c2831",
+      "checksumManifestDigest": "fb98320423322624a42eea328a71d90199b1208b5e5094a999876eca14775298",
+      "status": "superseded-unregistered-retired-corpus-enforcement-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12b-offline-preregistration-package@1.0.0",
+      "commit": "f1f4dae5b681e2237161be5da0d6e4781a15a538",
+      "tree": "8609e77370ceefaffbd06752f1fc343903839c23",
+      "preregistrationDigest": "52807c052f6e3fab79a943a4e2c6644296823f3b40f49e4452ad40a641a83bd2",
+      "checksumManifestDigest": "ed9d3a0fda5c0bb753f17dcc01370281406ec6bfd4cc157f8927c6d2d892face",
+      "status": "superseded-unregistered-quarantine-history-not-durable"
+    },
+    {
+      "protocol": "lachesis-m9b12c-offline-preregistration-package@1.0.0",
+      "commit": "c9e50ff3db56f898184dc9b7be934b1f1c0560df",
+      "tree": "ef9f3847a6f0eb7d1a5a519c4acc90cd6a2354fd",
+      "preregistrationDigest": "62cff37dae7332855b8f7a8f9583f5b5f0917adde2d9b2c019603fb101392fc3",
+      "checksumManifestDigest": "65cca06be59f863b7d5256bdac7fc57d4653d2404ce9d8047bb863d0dc5dbc46",
+      "status": "superseded-unregistered-process-durability-identity-admission-incomplete"
+    },
+    {
+      "protocol": "lachesis-m9b12d-offline-preregistration-package@1.0.0",
+      "commit": "5dff4a5f74933135c4c686f1c94df04cc320f53b",
+      "tree": "a021670c01fc020afe3e682f847d40e2084a1545",
+      "preregistrationDigest": "ed991e11ccc6c9129bdb6509dd011b28006b4420d59bf4290d2dac11765ccef0",
+      "checksumManifestDigest": "8524883df08e628dfbd07eff16aa057110e28fe7746ac11beb24b525871b510e",
+      "independentReviewDecision": "m9b12d-independent-review-no-go",
+      "status": "superseded-unregistered-durability-claim-and-presenter-identity-incomplete"
+    }
+  ],
+  "threatModel": {
+    "trustedComputingBase": "controller-host-privileged-operator-private-storage-and-authenticated-channel-adapter",
+    "protectedFailureDomain": "local-process-crash-concurrency-partial-replacement-and-accidental-unilateral-rollback",
+    "independentMonotonicWitnessPresent": false,
+    "coordinatedCompleteLocalRollbackDetected": false,
+    "detectedOrSuspectedOperatorRestoreDisposition": "halt-campaign-require-new-execution-identity-no-normal-resume"
+  },
+  "storageAuthority": {
+    "adapter": "private-node-sqlite-plus-separate-local-consistency-recovery-anchor",
+    "createAndOpenDistinct": true,
+    "openExistingMayInitialize": false,
+    "databaseTransaction": "begin-immediate-revision-state-digest-cas",
+    "databaseMode": "0600",
+    "anchorMode": "0600",
+    "parentMode": "0700",
+    "partialRollbackReplacementWrongAnchorAndSymlinksFailClosed": true,
+    "privilegedMatchingDatabaseAndAnchorRollbackDetected": false
+  },
+  "authenticatedIdentity": {
+    "principalAndAllocationIds": "opaque-256-bit-lowercase-hex",
+    "normalization": "none-noncanonical-encodings-rejected",
+    "displayLabelsAuthoritative": false,
+    "presenterAuthentication": "private-runtime-context-separate-from-request-json",
+    "launchHandleAuthenticatesPresenter": false,
+    "durablePrincipalMapping": true
+  },
+  "atomicAdmission": {
+    "linearizationPoint": "durable-admission-effect-started-event-commit",
+    "presenterRevalidatedInsideTransaction": true,
+    "oneTimeLaunchAndAdmission": true,
+    "reusablePermissionExposed": false,
+    "ambiguousStateReadmissionPermitted": false,
+    "providerEffectsPermitted": false
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "scheduleInstances": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "networkCalls": 0,
+    "externalRegistrations": 0,
+    "pushes": 0
+  },
+  "studyAuthorityStoreCreated": false
+}

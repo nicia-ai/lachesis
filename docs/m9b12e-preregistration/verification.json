@@ -1,0 +1,130 @@
+{
+  "protocol": "lachesis-m9b12e-offline-verification/1",
+  "node": "24.18.1",
+  "decision": "m9b12e-corrected-package-ready-for-independent-review",
+  "preregistrationDigest": "d973ce34b715cd5d9bcc4c33d42184980a97be9b4cae1aaea2825e5b99520f5c",
+  "reviewEvidenceCommit": "8f8b0754d1736efcf9e14ecd75bd01ddb639adc8",
+  "implementationCommit": "c2e5d7b14eac2a25d5436e6a369e6f63dd607b67",
+  "implementationTree": "948180b86f3b8dde32a6335c9269967f8efcdad6",
+  "results": {
+    "predecessorPreservation": {
+      "m9b12": "byte-identical; 18/18 checksum entries passed",
+      "m9b12a": "byte-identical; 22/22 checksum entries passed",
+      "m9b12b": "byte-identical; 22/22 checksum entries passed",
+      "m9b12c": "byte-identical; 24/24 checksum entries passed",
+      "m9b12d": "byte-identical; 24/24 checksum entries passed"
+    },
+    "canonicalDigestIndependentReproduction": "exact",
+    "nestedStandaloneRegistrationCanonicalEquality": "exact",
+    "scientificFinancialInheritanceCanonicalEquality": "exact",
+    "durableAuthority": {
+      "explicitCreateOpenAndNoSilentInitialization": "passed",
+      "processAExitProcessBReopen": "passed",
+      "databaseOnlyRollback": "rejected",
+      "anchorOnlyRollback": "rejected",
+      "coordinatedCompleteLocalRollback": "explicitly-out-of-scope-not-claimed-detected",
+      "consistencyRecoveryAnchor": "separate local artifact, not an independent monotonic witness",
+      "missingTruncatedMalformedAndUnexpectedSchema": "rejected",
+      "modesOwnershipTypeAndSymlinkPolicy": "passed",
+      "databaseModeViolation": "rejected",
+      "sqliteDeleteJournalPersistentSidecars": "absent",
+      "documentationThreatModelConformance": "passed",
+      "eventRemovalReorderDuplicateAlterationForkAndUnsupportedState": "rejected"
+    },
+    "authenticatedIdentity": {
+      "principalAndAllocationEncoding": "exactly 64 lowercase hexadecimal characters",
+      "uppercaseWhitespaceShortenedAndCompatibilityVariants": "rejected",
+      "normalization": "none",
+      "equalDisplayLabelsForDistinctPrincipals": "remain distinct",
+      "runtimePresenterContext": "separate from parsed request JSON",
+      "forgedMissingWrongStoreRevokedAndExpiredContexts": "rejected",
+      "launchHandleAuthenticatesPresenter": false,
+      "copiedCompleteRequestUnderWrongPrincipal": "presenting-principal-mismatch",
+      "presenterRevalidationInsideTransaction": "passed",
+      "principalMappingAcrossRoleSessionAllocationInventoryAndReopen": "stable"
+    },
+    "atomicAdmission": {
+      "positiveOneTimeAdmission": "passed; one durable start and one intercepted effect",
+      "duplicateConcurrentAdmission": "one winner",
+      "quarantineWins": "admission rejected before effect",
+      "admissionWins": "truthful durable chain order",
+      "failureBeforeCommit": "no admission consumed",
+      "databaseOnlyCommit": "authority failed closed",
+      "crashAfterStartBeforeEffect": "unresolved start audited ambiguous; no readmission",
+      "crashAfterEffectBeforeTerminal": "unresolved start audited ambiguous; no redispatch",
+      "caughtEffectFailure": "durable ambiguous terminal; no redispatch",
+      "providerEffectsPermitted": false,
+      "requiredProviderEffectLedgerProtocol": "lachesis-m9b4-offline-effect-ledger@1.2.0"
+    },
+    "allRoleTerminalAssertions": "12/12 passed including materializer and study-operator",
+    "focusedM9b12e": {
+      "files": 4,
+      "passed": 39,
+      "failed": 0
+    },
+    "focusedM9": {
+      "files": 27,
+      "passed": 530,
+      "failed": 0
+    },
+    "repositorySuite": {
+      "mode": "maxWorkers=1",
+      "files": 59,
+      "passed": 973,
+      "failed": 0
+    },
+    "repositoryCoverage": {
+      "files": 59,
+      "passed": 973,
+      "failed": 0,
+      "statements": "12479/13863",
+      "statementsPercent": 90.01,
+      "branches": "8528/10529",
+      "branchesPercent": 80.99,
+      "functions": "2637/2706",
+      "functionsPercent": 97.45,
+      "lines": "11909/12709",
+      "linesPercent": 93.7
+    },
+    "formatting": {
+      "m9b12ePackageAndTrackedSources": "passed",
+      "wholeWorkspaceObservation": "protected untracked paper/README.md is not formatted"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "nodeWorkersSmoke": "passed",
+    "examples": "7/7 passed",
+    "loadSmoke": "passed at 128 records; descriptive only",
+    "cliM8b0": "6/6 passed",
+    "cliValidInvalidSmokes": "passed",
+    "sourceSafety": "passed",
+    "secretScan": "passed",
+    "publicApi": "passed; generator facade remains 317 exports",
+    "releaseChecksums": "passed",
+    "m8bHistory": "passed",
+    "packedPublicPackages": {
+      "status": "pre-existing-baseline-failure",
+      "observation": "current generator package source set differs from the frozen alpha.5 tarball inventory; unrelated to M9b.12e"
+    },
+    "m7cPreregistrationAudit": {
+      "status": "pre-existing-baseline-failure",
+      "observation": "M7c public documentation binding differs; unrelated to M9b.12e"
+    },
+    "financialArithmetic": "342.097920 + 117.964800 = 460.062720; hard cap 500.000000; headroom 39.937280",
+    "diffCheck": "passed"
+  },
+  "effects": {
+    "corpusAccesses": 0,
+    "retiredMaterialAccesses": 0,
+    "goldMaterializations": 0,
+    "scheduleInstances": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "networkCalls": 0,
+    "externalRegistrations": 0,
+    "publications": 0,
+    "pushes": 0
+  }
+}
