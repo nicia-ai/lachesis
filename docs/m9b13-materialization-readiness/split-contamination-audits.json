@@ -1,0 +1,56 @@
+{
+  "protocol": "lachesis-m9b13-split-and-contamination-audit/1",
+  "status": "design-only-no-authoritative-inventory-present",
+  "inventorySource": "authoritative-materializer-output-only-never-caller-selected-case-list",
+  "populationPairs": [
+    "development-probe",
+    "development-primary",
+    "probe-primary"
+  ],
+  "exactOverlapDimensions": [
+    "family-lineage",
+    "task",
+    "source",
+    "document",
+    "entity",
+    "answer",
+    "fact",
+    "template",
+    "seed",
+    "schedule",
+    "packet",
+    "evaluator-input",
+    "analysis-input"
+  ],
+  "semanticAudits": [
+    "source-byte-duplicate",
+    "source-normalized-text-duplicate",
+    "source-near-duplicate-fingerprint-and-independent-review",
+    "cross-scale-semantic-problem-lineage",
+    "cross-arm-packet-output-and-cache-leakage",
+    "hidden-label-string-and-structure-disclosure",
+    "template-and-surface-form-clone",
+    "answer-and-fact-paraphrase-overlap"
+  ],
+  "environmentAudits": [
+    "retired-corpus-access-attempts",
+    "previous-contamination-ancestry",
+    "parent-public-worktree-and-repository-history-mounts",
+    "archive-backup-cache-temp-log-shell-history-environment-bootstrap-and-inherited-inputs",
+    "operator-principal-role-session-and-process-exposure-history"
+  ],
+  "lineageRule": "any-uncertain-or-contaminated-ancestor-contaminates-all-descendants-and-transformations-do-not-clean",
+  "requiredProofs": [
+    "authenticated-opaque-observer-identity",
+    "complete-authoritative-exposure-inventory",
+    "all-isolation-channels-affirmative",
+    "every-ancestor-clean-lineage",
+    "noninterference",
+    "complete-provenance",
+    "current-authority-head"
+  ],
+  "failureDisposition": "quarantine-principal-object-and-descendants-forbid-reuse-and-role-start",
+  "unknownDisposition": "same-as-failure",
+  "callerSelectionPermitted": false,
+  "auditInventoriesPresent": 0
+}

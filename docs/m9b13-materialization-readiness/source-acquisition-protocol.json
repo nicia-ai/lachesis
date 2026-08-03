@@ -1,0 +1,67 @@
+{
+  "protocol": "lachesis-m9b13-source-acquisition-protocol/1",
+  "status": "plan-only-zero-network-effects",
+  "futureRole": "source-acquirer",
+  "networkBoundary": "only-role-with-temporary-egress-only-after-separate-materialization-authorization",
+  "domainSelection": {
+    "exactDomainsPreregistered": false,
+    "procedure": [
+      "publish-prospective-source-class-and-domain-candidate-rules",
+      "exclude-all-outcome-answer-gold-schedule-and-retrieval-performance-information",
+      "independent-terms-license-and-robots-review",
+      "freeze-allowlist-and-digest-before-first-download",
+      "apply-deterministic-domain-and-url-order-and-bounded-quota",
+      "no-post-outcome-addition-or-substitution"
+    ]
+  },
+  "requestPolicy": {
+    "methods": ["GET"],
+    "maximumRedirects": 3,
+    "redirectsMustRemainAllowlisted": true,
+    "acceptedContentTypes": [
+      "text/plain",
+      "text/html",
+      "application/pdf",
+      "application/json"
+    ],
+    "activeContentAccepted": false,
+    "compressedArchiveAccepted": false,
+    "archiveMemberTraversalAccepted": false,
+    "perObjectByteLimit": 16777216,
+    "campaignByteLimit": 1073741824,
+    "requestCountLimit": 10000,
+    "timeoutsAndNoRetries": "one-bounded-attempt-per-frozen-url-zero-retries"
+  },
+  "review": [
+    "robots-directives-recorded-and-honored",
+    "license-and-usage-rights-recorded",
+    "terms-and-attribution-obligations-recorded",
+    "personal-sensitive-and-disallowed-content-rejected",
+    "temporal-cutoff-and-retrieval-time-recorded"
+  ],
+  "receiptFields": [
+    "protocol",
+    "frozen-allowlist-digest",
+    "requested-url",
+    "canonical-final-url",
+    "redirect-chain",
+    "retrieved-at-utc",
+    "status",
+    "server-date",
+    "etag",
+    "last-modified",
+    "content-type",
+    "content-length",
+    "content-encoding",
+    "tls-origin",
+    "robots-review-digest",
+    "terms-license-attribution-digest",
+    "raw-byte-count",
+    "raw-sha256",
+    "terminal-disposition"
+  ],
+  "canonicalRetention": "exact-decompressed-http-entity-body-plus-server-metadata-receipt",
+  "offlineReconstruction": "receipt-ordered-raw-bytes-through-frozen-normalizer-with-no-network-fallback",
+  "networkRemoval": "egress-role-destroyed-credentials-absent-and-snapshots-transferred-one-way-before-constructor-materializer-or-study-role-start",
+  "urlsFetched": 0
+}

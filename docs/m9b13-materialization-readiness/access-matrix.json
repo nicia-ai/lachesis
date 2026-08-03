@@ -1,0 +1,132 @@
+{
+  "protocol": "lachesis-m9b13-role-access-matrix/1",
+  "default": "deny",
+  "directoryMode": "0700",
+  "fileMode": "0600",
+  "networkDefault": "none",
+  "rows": [
+    {
+      "role": "protocol-controller",
+      "read": ["public-audit-records", "durable-authority-state"],
+      "write": ["durable-authority-state"],
+      "gold": "deny",
+      "crossPacket": "deny"
+    },
+    {
+      "role": "source-acquirer",
+      "read": [],
+      "write": ["raw-acquired-sources"],
+      "gold": "deny",
+      "crossPacket": "deny"
+    },
+    {
+      "role": "constructor",
+      "read": ["normalized-immutable-snapshots", "constructor-workspace"],
+      "write": ["materializer-input"],
+      "gold": "deny",
+      "crossPacket": "deny"
+    },
+    {
+      "role": "materializer",
+      "read": ["normalized-immutable-snapshots", "materializer-input"],
+      "write": ["author-packets"],
+      "gold": "opaque-identity-only",
+      "crossPacket": "authoritative-inventory-only"
+    },
+    {
+      "role": "hidden-gold-constructor",
+      "read": ["normalized-immutable-snapshots", "materializer-input"],
+      "write": ["hidden-gold-and-witnesses"],
+      "gold": "own-construction",
+      "crossPacket": "deny"
+    },
+    {
+      "role": "split-auditor",
+      "read": ["materializer-input", "hidden-gold-and-witnesses"],
+      "write": ["public-audit-records"],
+      "gold": "opaque-identities",
+      "crossPacket": "audit-only"
+    },
+    {
+      "role": "disclosure-auditor",
+      "read": [
+        "author-packets",
+        "answer-packets",
+        "evaluator-packets",
+        "hidden-gold-and-witnesses"
+      ],
+      "write": ["public-audit-records"],
+      "gold": "read",
+      "crossPacket": "leakage-audit-only"
+    },
+    {
+      "role": "environment-builder",
+      "read": ["public-audit-records"],
+      "write": ["replay-artifacts"],
+      "gold": "deny",
+      "crossPacket": "deny"
+    },
+    {
+      "role": "study-operator",
+      "read": ["author-packets", "answer-packets", "durable-authority-state"],
+      "write": ["effect-ledger"],
+      "gold": "deny",
+      "crossPacket": "next-allocation-only"
+    },
+    {
+      "role": "program-author",
+      "read": ["author-packets"],
+      "write": ["answer-packets"],
+      "gold": "deny",
+      "crossPacket": "deny"
+    },
+    {
+      "role": "answer-role",
+      "read": ["answer-packets"],
+      "write": ["answer-packets"],
+      "gold": "deny",
+      "crossPacket": "deny"
+    },
+    {
+      "role": "evaluator",
+      "read": ["evaluator-packets", "hidden-gold-and-witnesses"],
+      "write": ["evaluator-packets"],
+      "gold": "own-case-only",
+      "crossPacket": "deny"
+    },
+    {
+      "role": "analyst",
+      "read": ["analysis-inputs"],
+      "write": ["analysis-outputs"],
+      "gold": "deny",
+      "crossPacket": "sealed-complete-population-only"
+    },
+    {
+      "role": "receipt-recorder",
+      "read": ["raw-acquired-sources", "effect-ledger"],
+      "write": ["public-audit-records"],
+      "gold": "deny",
+      "crossPacket": "deny"
+    },
+    {
+      "role": "independent-verifier",
+      "read": [
+        "public-audit-records",
+        "replay-artifacts",
+        "hidden-gold-and-witnesses"
+      ],
+      "write": ["public-audit-records"],
+      "gold": "sealed-read-only",
+      "crossPacket": "after-seal-only"
+    }
+  ],
+  "forbiddenEverywhere": [
+    "credential-store",
+    "paper",
+    ".DS_Store",
+    "parent-worktree",
+    "repository-history",
+    "sealed-retired-namespaces",
+    "unrelated-private-artifacts"
+  ]
+}

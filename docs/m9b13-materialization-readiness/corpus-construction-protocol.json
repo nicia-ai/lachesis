@@ -1,0 +1,74 @@
+{
+  "protocol": "lachesis-m9b13-fresh-corpus-construction-protocol/1",
+  "status": "prospective-not-authorized-not-instantiated",
+  "sourceClasses": [
+    "lawful-static-public-natural-text",
+    "lawful-open-license-reference-or-documentation",
+    "lawful-public-record",
+    "lawful-permissioned-source-with-retained-usage-evidence"
+  ],
+  "eligibility": [
+    "domain-admitted-before-download-without-outcome-information",
+    "license-terms-robots-attribution-and-usage-evidence-retained",
+    "source-created-before-temporal-cutoff",
+    "content-is-natural-external-knowledge-not-generated-for-study",
+    "no-retired-or-ancestrally-contaminated-material",
+    "no-answer-key-or-predefined-operation-trajectory"
+  ],
+  "snapshot": {
+    "rawIdentity": "sha256-of-exact-response-body-bytes",
+    "record": [
+      "canonical-url",
+      "retrieval-timestamp-utc",
+      "temporal-cutoff",
+      "http-receipt",
+      "license-evidence",
+      "raw-sha256",
+      "byte-count"
+    ],
+    "immutability": "write-once-owner-only-regular-file",
+    "normalization": [
+      "decode-only-declared-accepted-charset",
+      "extract-visible-natural-text",
+      "unicode-nfc",
+      "canonical-line-endings",
+      "preserve-semantic-order-and-wording",
+      "remove-active-content-and-presentation-only-boilerplate-with-receipt"
+    ],
+    "semanticRewriting": false,
+    "normalizedIdentity": "sha256-of-canonical-normalized-utf8-bytes"
+  },
+  "identityFrames": {
+    "document": "protocol-source-receipt-raw-digest-normalized-digest",
+    "chunk": "protocol-snapshot-document-canonical-byte-range-chunk-bytes",
+    "span": "protocol-chunk-canonical-byte-start-end-span-bytes",
+    "supportingFact": "protocol-snapshot-chunk-span-and-proposition-contract",
+    "task": "protocol-family-scale-semantic-contract-and-snapshot-set",
+    "citationWitness": "protocol-task-supporting-fact-chunk-span-snapshot"
+  },
+  "taskConstruction": [
+    "derive-from-admitted-snapshots-without-encoding-retrieval-trajectory",
+    "require-genuine-adaptive-discovery-opportunity",
+    "retain-credible-static-one-shot-retrieval",
+    "prevent-source-answer-and-population-leakage-into-authoring-prompts",
+    "construct-answerable-and-typed-insufficient-evidence-cases",
+    "bind-citation-witnesses-to-visible-support"
+  ],
+  "hiddenGold": "separate-role-snapshot-bound-answer-or-abstention-contract-plus-supporting-fact-witnesses",
+  "armSnapshotEquality": "byte-identical-mounted-read-only-snapshot-set",
+  "validation": [
+    "canonical-digest-rederivation",
+    "schema-validation",
+    "scale-validation",
+    "identity-uniqueness",
+    "citation-span-byte-validation",
+    "answerability-or-insufficient-evidence-validation",
+    "retrieval-neutrality-review",
+    "complete-access-provenance",
+    "split-and-contamination-audit"
+  ],
+  "accessProvenance": "append-only-role-principal-object-purpose-time-input-output-digest-receipt",
+  "quarantine": "any-uncertain-eligibility-lineage-provenance-disclosure-or-validation-quarantines-object-and-all-descendants",
+  "restart": "new-clean-authority-approved-principal-and-new-object-lineage-only-no-rehabilitation",
+  "outputsPresent": false
+}

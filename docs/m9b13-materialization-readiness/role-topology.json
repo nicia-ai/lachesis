@@ -1,0 +1,217 @@
+{
+  "protocol": "lachesis-m9b13-role-isolation-protocol/1",
+  "status": "prospective-no-principals-issued-no-sessions-launched",
+  "principalDomain": "future-controller-issued-lowercase-256-bit-opaque-principal-plus-unique-launch-allocation",
+  "roles": [
+    {
+      "role": "protocol-controller",
+      "classification": "trusted",
+      "network": "none",
+      "sourceVisibility": "metadata-only",
+      "goldVisibility": "none",
+      "predecessorKnowledge": "registered-protocols-receipts-and-proof-digests",
+      "inputRoots": ["public-audit-records", "durable-authority-state"],
+      "outputRoot": "durable-authority-state",
+      "laterRoles": []
+    },
+    {
+      "role": "source-acquirer",
+      "classification": "untrusted-influence-bearing",
+      "network": "temporary-allowlisted-egress",
+      "sourceVisibility": "raw-sources",
+      "goldVisibility": "none",
+      "predecessorKnowledge": "frozen-allowlist-acquisition-policy-only",
+      "inputRoots": [],
+      "outputRoot": "raw-acquired-sources",
+      "laterRoles": ["receipt-recorder"]
+    },
+    {
+      "role": "constructor",
+      "classification": "untrusted-influence-bearing",
+      "network": "none",
+      "sourceVisibility": "normalized-snapshots",
+      "goldVisibility": "none",
+      "predecessorKnowledge": "construction-protocol-and-own-packet-only",
+      "inputRoots": ["normalized-immutable-snapshots", "constructor-workspace"],
+      "outputRoot": "materializer-input",
+      "laterRoles": []
+    },
+    {
+      "role": "materializer",
+      "classification": "trusted-influence-bearing",
+      "network": "none",
+      "sourceVisibility": "normalized-snapshots-and-constructor-output",
+      "goldVisibility": "opaque-bindings-only",
+      "predecessorKnowledge": "frozen-protocol-and-authoritative-constructor-inventory",
+      "inputRoots": ["normalized-immutable-snapshots", "materializer-input"],
+      "outputRoot": "author-packets",
+      "laterRoles": []
+    },
+    {
+      "role": "hidden-gold-constructor",
+      "classification": "trusted-secret-bearing",
+      "network": "none",
+      "sourceVisibility": "normalized-snapshots",
+      "goldVisibility": "full-own-construction",
+      "predecessorKnowledge": "task-contracts-without-arm-output",
+      "inputRoots": ["normalized-immutable-snapshots", "materializer-input"],
+      "outputRoot": "hidden-gold-and-witnesses",
+      "laterRoles": []
+    },
+    {
+      "role": "split-auditor",
+      "classification": "trusted-secret-bearing",
+      "network": "none",
+      "sourceVisibility": "cross-population-identities-and-near-duplicate-features",
+      "goldVisibility": "opaque-answer-fact-identity-only",
+      "predecessorKnowledge": "authoritative-materialization-inventories",
+      "inputRoots": ["materializer-input", "hidden-gold-and-witnesses"],
+      "outputRoot": "public-audit-records",
+      "laterRoles": []
+    },
+    {
+      "role": "disclosure-auditor",
+      "classification": "trusted-secret-bearing",
+      "network": "none",
+      "sourceVisibility": "all-packet-schemas-and-redacted-content",
+      "goldVisibility": "full-for-leakage-comparison",
+      "predecessorKnowledge": "authoritative-packets-and-gold",
+      "inputRoots": [
+        "author-packets",
+        "answer-packets",
+        "evaluator-packets",
+        "hidden-gold-and-witnesses"
+      ],
+      "outputRoot": "public-audit-records",
+      "laterRoles": []
+    },
+    {
+      "role": "environment-builder",
+      "classification": "trusted",
+      "network": "none",
+      "sourceVisibility": "none",
+      "goldVisibility": "none",
+      "predecessorKnowledge": "runtime-locks-image-and-mount-contracts",
+      "inputRoots": ["public-audit-records"],
+      "outputRoot": "replay-artifacts",
+      "laterRoles": []
+    },
+    {
+      "role": "study-operator",
+      "classification": "untrusted-influence-bearing",
+      "network": "none-until-separate-provider-authorization",
+      "sourceVisibility": "opaque-packet-identities",
+      "goldVisibility": "none",
+      "predecessorKnowledge": "single-next-launch-allocation-only",
+      "inputRoots": [
+        "author-packets",
+        "answer-packets",
+        "durable-authority-state"
+      ],
+      "outputRoot": "effect-ledger",
+      "laterRoles": []
+    },
+    {
+      "role": "program-author",
+      "classification": "untrusted-model-role",
+      "network": "none",
+      "sourceVisibility": "task-and-retrieval-interface-only",
+      "goldVisibility": "none",
+      "predecessorKnowledge": "own-task-packet-only",
+      "inputRoots": ["author-packets"],
+      "outputRoot": "answer-packets",
+      "laterRoles": []
+    },
+    {
+      "role": "answer-role",
+      "classification": "untrusted-model-role",
+      "network": "none",
+      "sourceVisibility": "own-visible-retrieved-evidence-only",
+      "goldVisibility": "none",
+      "predecessorKnowledge": "own-task-and-own-arm-evidence-only",
+      "inputRoots": ["answer-packets"],
+      "outputRoot": "answer-packets",
+      "laterRoles": []
+    },
+    {
+      "role": "evaluator",
+      "classification": "trusted-secret-bearing",
+      "network": "none",
+      "sourceVisibility": "answer-visible-evidence-and-snapshot-witnesses",
+      "goldVisibility": "own-case-only",
+      "predecessorKnowledge": "arm-blinded-evaluator-input-only",
+      "inputRoots": ["evaluator-packets", "hidden-gold-and-witnesses"],
+      "outputRoot": "evaluator-packets",
+      "laterRoles": []
+    },
+    {
+      "role": "analyst",
+      "classification": "trusted-influence-bearing",
+      "network": "none",
+      "sourceVisibility": "none",
+      "goldVisibility": "none",
+      "predecessorKnowledge": "sealed-complete-arm-blinded-measurement-input",
+      "inputRoots": ["analysis-inputs"],
+      "outputRoot": "analysis-outputs",
+      "laterRoles": []
+    },
+    {
+      "role": "receipt-recorder",
+      "classification": "trusted",
+      "network": "none",
+      "sourceVisibility": "digests-and-terminal-metadata-only",
+      "goldVisibility": "none",
+      "predecessorKnowledge": "effect-or-acquisition-receipt-input-only",
+      "inputRoots": ["raw-acquired-sources", "effect-ledger"],
+      "outputRoot": "public-audit-records",
+      "laterRoles": []
+    },
+    {
+      "role": "independent-verifier",
+      "classification": "trusted-secret-bearing",
+      "network": "none",
+      "sourceVisibility": "sealed-complete-artifacts-read-only",
+      "goldVisibility": "sealed-read-only",
+      "predecessorKnowledge": "all-proof-inputs-after-seal",
+      "inputRoots": [
+        "public-audit-records",
+        "replay-artifacts",
+        "hidden-gold-and-witnesses"
+      ],
+      "outputRoot": "public-audit-records",
+      "laterRoles": []
+    }
+  ],
+  "universalIsolation": [
+    "role-specific-read-only-input-mounts",
+    "single-role-write-root",
+    "no-parent-workspace-or-repository-history",
+    "no-cache-temp-log-shell-history-bootstrap-or-environment-leakage",
+    "complete-controller-owned-exposure-history-before-start",
+    "one-time-current-head-admission"
+  ],
+  "irreversibleExclusions": {
+    "hiddenGoldObserver": [
+      "source-acquirer",
+      "constructor",
+      "materializer",
+      "study-operator",
+      "program-author",
+      "answer-role",
+      "analyst"
+    ],
+    "crossPacketStructureObserver": [
+      "program-author",
+      "answer-role",
+      "study-operator",
+      "analyst"
+    ],
+    "retiredOrDisallowedTopologyObserver": "all-influence-bearing-roles",
+    "incompleteExposureOrLineage": "all-role-start-and-object-reuse"
+  },
+  "quarantine": "permanent-across-role-session-process-controller-and-inventory-no-reset-or-rehabilitation",
+  "issuance": "future-controller-authenticates-presenter-creates-opaque-principal-binds-one-role-session-allocation-and-persists-before-one-time-admission",
+  "syntheticIdentityDomain": "synthetic-test-only",
+  "operationalPrincipalCount": 0,
+  "launchSessionCount": 0
+}

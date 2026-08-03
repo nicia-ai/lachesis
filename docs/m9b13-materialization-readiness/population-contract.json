@@ -1,0 +1,110 @@
+{
+  "protocol": "lachesis-m9b13-population-materialization-protocol/1",
+  "estimand": "evidence-adaptive-codemode-versus-matched-static-one-shot-first-attempt-grounded-success",
+  "roles": {
+    "development": "historical-development-only-ineligible-for-probe-or-primary",
+    "protocolProbe": "complete-24-pair-gate-population-excluded-from-primary",
+    "primary": "complete-168-pair-estimand-population"
+  },
+  "families": [
+    "lookup",
+    "join",
+    "multi-hop",
+    "temporal-retraction",
+    "contradiction",
+    "aggregation",
+    "insufficient-evidence",
+    "prompt-injection"
+  ],
+  "scales": [
+    {
+      "id": "1x",
+      "targetCorpusBytes": 4096,
+      "inclusiveMinimum": 3072,
+      "inclusiveMaximum": 5120
+    },
+    {
+      "id": "8x",
+      "targetCorpusBytes": 32768,
+      "inclusiveMinimum": 24576,
+      "inclusiveMaximum": 40960
+    },
+    {
+      "id": "32x",
+      "targetCorpusBytes": 131072,
+      "inclusiveMinimum": 98304,
+      "inclusiveMaximum": 163840
+    }
+  ],
+  "scaleMeasure": "sum-of-canonical-nfc-document-text-utf8-bytes",
+  "scalePolicy": "strata-not-same-problem-copies",
+  "cells": 24,
+  "allocation": {
+    "probePairsPerCell": 1,
+    "probePairs": 24,
+    "primaryPairsPerCell": 7,
+    "primaryPairs": 168,
+    "totalPairs": 192,
+    "equalCellWeight": true
+  },
+  "pairing": {
+    "treatment": "discovered-program-evidence-adaptive-closed-retrieval-ast",
+    "control": "static-one-shot-query",
+    "sameTask": true,
+    "sameModelBoundary": true,
+    "sameRetriever": true,
+    "sameCorpusSnapshot": true,
+    "sameAggregateRetrievalLimits": true,
+    "sameAnswerEnvelope": true,
+    "sameArmBlindEvaluator": true,
+    "independentSessions": true,
+    "retries": 0,
+    "replacements": 0,
+    "maximumConcurrency": 1
+  },
+  "caseRequirements": [
+    "semantically-independent-problem",
+    "natural-external-knowledge",
+    "answerable-or-typed-insufficient-evidence",
+    "distributed-multi-hop-where-family-requires",
+    "prompt-injection-and-hostile-documents-in-required-family",
+    "credible-static-retrieval",
+    "genuine-adaptive-retrieval-opportunity",
+    "no-encoded-optimal-operation-trajectory"
+  ],
+  "disjointness": [
+    "fixture",
+    "case",
+    "family-lineage",
+    "source",
+    "document",
+    "entity",
+    "answer",
+    "supporting-fact",
+    "task",
+    "template",
+    "surface-form",
+    "snapshot",
+    "construction-seed",
+    "source-provenance",
+    "semantic-contract"
+  ],
+  "schedule": {
+    "protocol": "lachesis-m9b3f-paired-counterbalance-schedule/1",
+    "materializationTiming": "after-corpus-and-gold-freeze-before-provider-effects",
+    "seed": "future-256-bit-reveal-opening-frozen-commitment",
+    "ordering": "domain-separated-content-addressed-hashes-with-code-unit-tie-break",
+    "cellLeaders": "alternating-across-hash-sorted-cells",
+    "primaryWithinCell": "alternating-from-cell-leader",
+    "balance": "12-cells-and-84-primary-first-executions-per-arm",
+    "probeBeforePrimary": true,
+    "primaryRequiresFrozen-probe-gate-pass": true
+  },
+  "analysis": "exact-one-sided-conditional-mcnemar",
+  "postOutcomeSubsetSelection": false,
+  "populationInventoryPresent": false,
+  "caseIdentityPresent": false,
+  "familyIdentityPresent": false,
+  "seedPresent": false,
+  "scheduleInstancePresent": false
+}

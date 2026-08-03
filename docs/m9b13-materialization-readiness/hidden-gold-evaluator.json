@@ -1,0 +1,53 @@
+{
+  "protocol": "lachesis-m9b13-hidden-gold-protocol/1",
+  "status": "specification-only-no-gold-no-evaluator-artifact",
+  "goldIdentity": "opaque-domain-separated-digest-of-protocol-task-snapshot-answer-contract-fact-and-witness-identities",
+  "goldContents": [
+    "typed-answer-or-insufficient-evidence-contract",
+    "answer-value-contract",
+    "supporting-fact-identities",
+    "snapshot-bound-chunk-and-span-witnesses",
+    "citation-contract",
+    "abstention-contract"
+  ],
+  "outputSchema": {
+    "protocol": "frozen-evaluator-output-schema-identity-required",
+    "fields": [
+      "case-opaque-identity",
+      "arm-blind-answer-receipt-digest",
+      "typed-outcome-valid",
+      "answer-values-correct",
+      "abstention-correct",
+      "visible-support-sufficient",
+      "citation-identities-valid",
+      "snapshot-provenance-consistent",
+      "first-attempt-grounded-success",
+      "deterministic-reason-codes",
+      "evaluator-artifact-digest",
+      "evaluator-input-digest",
+      "receipt-digest"
+    ]
+  },
+  "evaluation": {
+    "armBlind": true,
+    "deterministicLocal": true,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "artifactIdentityFrozenBeforeEffects": true,
+    "completeEvaluatorInputIncludedBeforeDispatch": true,
+    "postHocArtifactAttribution": false,
+    "constructorReferenceIsTruth": false,
+    "constructorReferenceRequiresIndependentFrozenValidation": true,
+    "receiptsComplete": true
+  },
+  "authorExclusions": [
+    "hidden-gold",
+    "expected-citations",
+    "evaluator-labels",
+    "opposite-arm-output",
+    "population-wide-structure",
+    "cross-packet-ordering",
+    "future-case-identities"
+  ],
+  "artifactsPresent": 0
+}

@@ -1,0 +1,39 @@
+{
+  "protocol": "lachesis-m9b13-durable-authority-integration/1",
+  "status": "prospective-synthetic-intercepted-tests-only",
+  "bindings": {
+    "quarantineAuthority": "lachesis-m9b12f-durable-quarantine-authority/1",
+    "observerIdentity": "lachesis-m9b12f-authenticated-observer-identity/1",
+    "atomicAdmission": "lachesis-m9b12f-atomic-role-effect-admission/1",
+    "sqliteSidecarPolicy": "lachesis-m9b12f-private-sqlite-sidecar-policy/1",
+    "effectLedger": "lachesis-m9b4-offline-effect-ledger@1.2.0"
+  },
+  "futureFlow": [
+    "controller-authenticates-presenter-outside-request-payload",
+    "controller-issues-opaque-principal-and-unique-role-session-allocation",
+    "capture-canonical-request-and-assessment-bytes-once",
+    "begin-immediate-reload-state-and-validate-complete-chain-sidecars-and-anchor",
+    "resolve-presenter-and-principal-inside-transaction",
+    "assess-current-isolation-lineage-exposure-and-noninterference-proofs",
+    "append-quarantine-or-one-time-effect-started-admission-atomically",
+    "commit-persist-anchor-require-clean-sidecar-closure",
+    "expose-only-durable-receipt-or-intercepted-startup"
+  ],
+  "invariants": [
+    "no-role-start-without-all-affirmative-current-proofs",
+    "quarantine-is-permanent-and-monotonic",
+    "caller-cannot-select-observer-or-history",
+    "launch-handle-is-one-time-and-not-presenter-authentication",
+    "copied-unknown-and-consumed-handles-fail",
+    "stale-head-or-admission-fails",
+    "sidecar-drift-fails",
+    "provider-capable-path-absent",
+    "materialization-and-execution-authorizations-are-distinct",
+    "ambiguous-start-is-never-readmitted"
+  ],
+  "materializationAuthorizationDomain": "fresh-source-corpus-gold-packet-and-audit-production-only",
+  "executionAuthorizationDomain": "count-inference-probe-primary-and-analysis-excluded",
+  "actualAuthorityStoreCreated": false,
+  "actualPrincipalIssued": false,
+  "providerCapablePathPresent": false
+}

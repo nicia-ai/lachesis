@@ -1,0 +1,38 @@
+{
+  "protocol": "lachesis-m9b13-materialization-binding/1",
+  "readinessProtocol": "lachesis-m9b13-offline-corpus-materialization-readiness@1.0.0",
+  "receiptSource": {
+    "commit": "02d77486455aa9b581fe9a8c747f525f075f1f72",
+    "tree": "c20f0ae2bf9fc6538a756a46bf22b62b4179e22f"
+  },
+  "reviewedSource": {
+    "commit": "821a0f64c145de46ff77ebb734421fa2c7ab33f4",
+    "tree": "998c03b0d1082a7a20ba3558ffb8e8da79b69454"
+  },
+  "preregistration": {
+    "package": "lachesis-m9b12f-offline-preregistration-package@1.0.0",
+    "digest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "externalRegistrationProtocol": "lachesis-m9b12f-append-only-external-registration/1"
+  },
+  "registrationReceipt": {
+    "service": "OSF Registries",
+    "id": "63sh5",
+    "submission": "2026-08-02T19:19:33.924946Z",
+    "approval": "2026-08-02T20:03:47.850242Z",
+    "revisionState": "approved",
+    "embargoed": true,
+    "public": false,
+    "embargoEnd": "2030-08-01T00:00:00Z",
+    "digest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+    "manifestDigest": "0a8447b88d7cc41db67dd863a5269bad6b95bed2cf568d85fd562b96253faae1"
+  },
+  "inheritedPrivateProtocols": [
+    "lachesis-m9b12f-durable-quarantine-authority/1",
+    "lachesis-m9b12f-authenticated-observer-identity/1",
+    "lachesis-m9b12f-atomic-role-effect-admission/1",
+    "lachesis-m9b12f-private-sqlite-sidecar-policy/1",
+    "lachesis-m9b4-offline-effect-ledger@1.2.0"
+  ],
+  "effectAuthorization": "none"
+}

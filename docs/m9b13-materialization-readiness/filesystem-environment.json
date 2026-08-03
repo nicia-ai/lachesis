@@ -1,0 +1,67 @@
+{
+  "protocol": "lachesis-m9b13-filesystem-environment/1",
+  "status": "design-only-final-roots-absent",
+  "futureRoots": [
+    "raw-acquired-sources",
+    "normalized-immutable-snapshots",
+    "constructor-workspace",
+    "materializer-input",
+    "author-packets",
+    "answer-packets",
+    "evaluator-packets",
+    "hidden-gold-and-witnesses",
+    "split-randomization-secrets",
+    "durable-authority-state",
+    "effect-ledger",
+    "replay-artifacts",
+    "analysis-inputs",
+    "analysis-outputs",
+    "quarantine",
+    "public-audit-records"
+  ],
+  "filesystem": {
+    "directoryMode": "0700",
+    "fileMode": "0600",
+    "owner": "single-dedicated-role-principal-or-controller-as-specified",
+    "symlinks": false,
+    "regularFilesOnly": true,
+    "hardlinkAliases": false,
+    "mountCrossing": false,
+    "atomicWrites": "same-filesystem-temp-0600-fsync-rename-parent-fsync",
+    "sqliteSidecars": "closed-m9b12f-inventory-owner-regular-nonsymlink-0600-clean-closure-absent"
+  },
+  "container": {
+    "rootFilesystem": "read-only",
+    "inputMounts": "read-only-nosuid-nodev-noexec-where-compatible",
+    "outputMount": "single-role-specific-writable-root",
+    "network": "none-except-temporary-source-acquirer",
+    "capabilities": "all-dropped",
+    "noNewPrivileges": true,
+    "seccomp": "deny-mount-ptrace-keyctl-bpf-and-unneeded-syscalls",
+    "uid": "dedicated-nonroot-no-shared-uid-across-incompatible-roles",
+    "credentialMounts": false
+  },
+  "excluded": [
+    "parent-filesystem",
+    "parent-workspace",
+    "worktree",
+    "repository-history",
+    "retired-and-sealed-material",
+    "unrelated-private-artifacts",
+    "credential-stores",
+    "osf-browser-or-session-state",
+    "paper",
+    ".DS_Store"
+  ],
+  "isolation": {
+    "cache": "empty-private-tmpfs-destroyed-at-exit",
+    "temporaryStorage": "empty-private-tmpfs-destroyed-at-exit",
+    "logs": "structured-redacted-role-output-only",
+    "shellHistory": "disabled-and-unmounted",
+    "environment": "fixed-allowlist-no-inherited-secrets",
+    "bootstrapInput": "digest-bound-minimum-role-manifest-only",
+    "crashReports": "disabled",
+    "home": "empty-private-read-only-or-tmpfs"
+  },
+  "finalNamespacesCreated": 0
+}
