@@ -1,0 +1,98 @@
+{
+  "protocol": "lachesis-m9b13b-cryptographically-complete-acquisition-review@1.0.0",
+  "startingState": {
+    "commit": "113c3f526e67eceea3d06874c393ddd5240865e9",
+    "tree": "873eff5ef34989903ea206dfd90a5f03dfe089a7",
+    "trackedWorktree": "clean",
+    "protectedUntrackedPaths": [".DS_Store", "paper/"],
+    "protectedPathsOpenedHashedOrModified": false
+  },
+  "priorIntegrity": {
+    "m9b12ThroughM9b12fChecksums": "passed",
+    "m9b12aThroughM9b12eIndependentReviewChecksums": "passed",
+    "m9b12fPreregistrationManifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "m9b12fReceiptChecksums": "passed",
+    "m9b12fReceiptManifestDigest": "0a8447b88d7cc41db67dd863a5269bad6b95bed2cf568d85fd562b96253faae1",
+    "m9b13Checksums": "passed",
+    "m9b13ManifestDigest": "fae20d627200e276d6211bb275614c88d8afa810dcba6fa75e23f931b701307d",
+    "m9b13aChecksums": "passed",
+    "m9b13aManifestDigest": "7395d002c9d7bfb44a23aeefeead0ee4428faece1672b0d5b18fed8d2200eb6b",
+    "preregistrationAndReceiptCanonicalDigests": "passed-by-focused-frozen-tests",
+    "priorArtifactMutations": 0
+  },
+  "metadataReview": {
+    "mode": "read-only-public-primary-source-metadata-only",
+    "publicMetadataReviewOperations": "nonzero-authorized-not-study-data",
+    "officialImagesCommit": "baca6de4f5be548b9b818fa2ca5a1d1d9e66f309",
+    "officialImagesTree": "70e929dfc2bf8a29b1a6a11099948496d21ff237",
+    "officialImagesLibraryBlob": "611d1d2858eff2204e357de60a188b88ef1cd1c7",
+    "officialImagesLibraryFileSha256": "4e06e614086ad016d795d1005e821c595cf4e7c8e18bf03aecacc74191dd5e68",
+    "officialImagesMapping": "exact-tag-arm64v8-docker-node-commit-and-directory-passed",
+    "forbiddenPayloadDownloads": 0,
+    "imageOrAttestationStateCreated": 0,
+    "prospectiveOutputRootExists": false
+  },
+  "focusedGates": {
+    "m9b13bTests": "22-passed-1-file",
+    "hostileCases": "19-passed-with-exact-reasons-and-zero-effects",
+    "m9FocusedTests": "49-passed-3-files",
+    "deterministicReportReproduction": "passed",
+    "protocolAndInactiveAuthorizationDigestRederivation": "passed",
+    "privatePackageTypecheck": "passed",
+    "changedScopeLint": "passed",
+    "changedFileFormatting": "passed"
+  },
+  "repositoryGates": {
+    "strictTypeScript": "passed-16-of-17-workspace-projects-with-scripts",
+    "trackedSourceLint": "passed-with-protected-untracked-paper-and-ds-store-excluded",
+    "buildAndDeclarations": "passed-16-of-17-workspace-projects-with-scripts",
+    "fullCoverage": {
+      "testFiles": 66,
+      "tests": 1078,
+      "failed": 0,
+      "statements": "90.01-percent-12479-of-13863",
+      "branches": "80.99-percent-8528-of-10529",
+      "functions": "97.45-percent-2637-of-2706",
+      "lines": "93.70-percent-11909-of-12709"
+    },
+    "nodeAndWorkersSmokes": "passed",
+    "offlineExamples": "7-of-7-passed",
+    "descriptiveLoad": "128-records-passed",
+    "cliContract": "6-of-6-passed",
+    "sourceSafetyAndUnsafeEscapeAudit": "passed",
+    "publicApiAudit": "passed-no-m9b13b-export",
+    "changedScopeSecretScan": "passed",
+    "releaseChecksums": "passed",
+    "m7cPreregistrationAudit": "passed"
+  },
+  "historicalFrozenArtifactBoundary": {
+    "status": "known-preexisting-mismatch-recorded-separately",
+    "finding": "The current @nicia-ai/lachesis-generator package differs from the frozen alpha.5 tarball digest.",
+    "action": "No historical evidence or current source was rewritten; this is not an M9b.13b regression."
+  },
+  "effects": {
+    "imageManifestDownloads": 0,
+    "imageConfigDownloads": 0,
+    "imageLayerDownloads": 0,
+    "attestationBodyDownloads": 0,
+    "nodeBinaryDownloads": 0,
+    "keyMaterialDownloads": 0,
+    "ociArchiveDownloads": 0,
+    "imagePulls": 0,
+    "imageBuilds": 0,
+    "imageImports": 0,
+    "imageRuns": 0,
+    "corpusArtifacts": 0,
+    "goldArtifacts": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "scheduleInstances": 0,
+    "operationalIdentities": 0,
+    "authorityStores": 0,
+    "analysisRuns": 0,
+    "osfMutations": 0,
+    "gitPushes": 0
+  },
+  "decision": "m9b13b-corrected-acquisition-authorization-ready-for-independent-review"
+}

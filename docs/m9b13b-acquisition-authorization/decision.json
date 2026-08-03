@@ -1,0 +1,12 @@
+{
+  "protocol": "lachesis-m9b13b-cryptographically-complete-acquisition-review@1.0.0",
+  "decision": "m9b13b-corrected-acquisition-authorization-ready-for-independent-review",
+  "protocolDigest": "fe32f88fed4577b37d545552b5219b1ef3e362b0dd3b8aff3fce2d45d18a2d0f",
+  "inactiveAuthorizationDigest": "f89ace450dba19c174b00340ff8cbe90c6cb014e76f25740f80735a1ca781f64",
+  "activation": false,
+  "acquisitionPermittedNow": false,
+  "imageExecutionPermitted": false,
+  "materializationPermitted": false,
+  "m9b13DecisionAfterThisReview": "m9b13-materialization-readiness-no-go",
+  "requiredNextAction": "independent-review-of-the-committed-protocol-and-inactive-authorization"
+}

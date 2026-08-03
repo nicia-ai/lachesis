@@ -1,0 +1,26 @@
+{
+  "protocol": "lachesis-m9b13b-image-quarantine-decision/1",
+  "candidate": "docker.io/library/node@sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7",
+  "currentState": "not-acquired-no-image-state-created",
+  "futureFailureState": "quarantined-supply-chain-evidence-insufficient",
+  "quarantineTriggers": [
+    "missing-altered-or-unverifiable-node-keyring-or-signed-manifest",
+    "wrong-node-signer-or-artifact-hash",
+    "unverifiable-or-overstated-github-web-flow-signature",
+    "docker-node-or-official-images-source-mapping-mismatch",
+    "root-or-derived-descriptor-graph-mismatch",
+    "attestation-statement-subject-schema-or-predicate-mismatch",
+    "provenance-builder-source-invocation-platform-material-node-timestamp-or-reproducibility-inconsistency",
+    "attached-or-independent-sbom-inconsistency",
+    "claimed-signature-or-transparency-evidence-absent-malformed-or-unverifiable",
+    "unexpected-network-host-redirect-partial-response-retry-or-substitution"
+  ],
+  "effectsOfQuarantine": [
+    "seal-entire-acquisition-root",
+    "consume-the-single-attempt",
+    "forbid-image-import-create-or-run",
+    "forbid-root-or-partial-byte-reuse",
+    "require-new-independent-review-and-new-explicit-user-authorization-for-any-new-attempt"
+  ],
+  "acceptanceNonclaim": "A future acquisition acceptance would not change m9b13-materialization-readiness-no-go and would authorize no compatibility execution or corpus materialization."
+}

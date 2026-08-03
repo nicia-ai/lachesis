@@ -1,0 +1,324 @@
+{
+  "protocol": "lachesis-m9b13b-cryptographically-complete-acquisition-review@1.0.0",
+  "status": "private-inactive-prospective-review-artifact",
+  "purpose": "Correct the M9b.13a inactive OCI acquisition authorization without acquiring or executing any image content.",
+  "startingState": {
+    "commit": "113c3f526e67eceea3d06874c393ddd5240865e9",
+    "tree": "873eff5ef34989903ea206dfd90a5f03dfe089a7",
+    "independentDecision": "m9b13a-existing-image-acquisition-review-no-go",
+    "m9b13aDisposition": "reviewed-but-not-activatable-because-cryptographic-verification-inputs-and-exact-attestation-gates-were-incomplete",
+    "m9b13Decision": "m9b13-materialization-readiness-no-go"
+  },
+  "inheritedBindings": {
+    "osfRegistration": "63sh5",
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "preregistrationManifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "receiptDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+    "receiptManifestDigest": "0a8447b88d7cc41db67dd863a5269bad6b95bed2cf568d85fd562b96253faae1",
+    "m9b13ManifestDigest": "fae20d627200e276d6211bb275614c88d8afa810dcba6fa75e23f931b701307d",
+    "m9b13aProtocolDigest": "671ab4a064be4db18a869cf7dfaa514b3f6b316c198c29ff9e80a53a0ce01135",
+    "m9b13aManifestDigest": "7395d002c9d7bfb44a23aeefeead0ee4428faece1672b0d5b18fed8d2200eb6b"
+  },
+  "componentProtocols": [
+    "lachesis-m9b13b-content-addressed-download-closure/1",
+    "lachesis-m9b13b-node-release-verification/1",
+    "lachesis-m9b13b-oci-attestation-verification/1",
+    "lachesis-m9b13b-image-quarantine-decision/1"
+  ],
+  "frozenCandidate": {
+    "tag": "docker.io/library/node:24.18.1-bookworm-slim",
+    "immutableReference": "docker.io/library/node@sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7",
+    "indexDigest": "sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7",
+    "platform": "linux/arm64/v8",
+    "platformManifestDigest": "sha256:c39335f45d6d5b2a5be95b0f1a63e57cca4e9e36cc69b313c1ad5472b13a1e3",
+    "attestationManifestDigest": "sha256:f3c062ad822adadf8f41d1bfaa2a25cce3fd81800fc2a2cf2264307b8c77ae23",
+    "dockerNodeCommit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+    "dockerfileSha256": "bd6bb06de21f22916d8e582ccd43722889f8788a5699f2a099296707c2c57e52",
+    "substitutionPermitted": false
+  },
+  "nodeReleaseVerification": {
+    "protocol": "lachesis-m9b13b-node-release-verification/1",
+    "release": "v24.18.1",
+    "signedManifest": {
+      "allowedUrl": "https://nodejs.org/dist/v24.18.1/SHASUMS256.txt.asc",
+      "sha256": "b04865cae6bfd78008eea4ef9e715889ae3b81a869fea61fd1790be78b91a743",
+      "maximumBytes": 100000
+    },
+    "keyring": {
+      "repositoryCommit": "b28073028e6d6855cfb53bf7fa0137599c01f967",
+      "path": "gpg-only-active-keys/pubring.kbx",
+      "allowedUrl": "https://raw.githubusercontent.com/nodejs/release-keys/b28073028e6d6855cfb53bf7fa0137599c01f967/gpg-only-active-keys/pubring.kbx",
+      "gitBlobSha1": "37817a8b3ee4ae2175fd41e3c484604b688b114a",
+      "sha256": "8e6f89521a0694e445f42decd022f48369c634f1b5bcb5975135b69c88629ae8",
+      "bytes": 24268
+    },
+    "expectedSignerFingerprint": "DD792F5973C6DE52C432CBDAC77ABFA00DDBF2B7",
+    "artifacts": [
+      {
+        "name": "node-v24.18.1-linux-arm64.tar.xz",
+        "sha256": "7201e3a09dc825bac57867c81913e2b8f0ef87d04cb9082af4cda82f6ff3d88c",
+        "role": "linux-arm64-runtime"
+      },
+      {
+        "name": "node-v24.18.1.tar.xz",
+        "sha256": "86d40d594bbdfcf69009a62fdf43cb19ae72b6cb5822d2bdd8349c5a1b2fa628",
+        "role": "source-xz"
+      }
+    ],
+    "verificationOrder": [
+      "hash-signed-manifest-bytes",
+      "hash-pinned-keyring-bytes",
+      "verify-detached-cleartext-signature-with-gpgv-and-only-the-pinned-keyring",
+      "require-the-exact-signer-fingerprint",
+      "parse-only-the-successfully-verified-manifest",
+      "require-exactly-the-bound-arm64-and-source-xz-hashes"
+    ],
+    "forbidden": [
+      "live-keyserver-lookup",
+      "network-fetched-additional-keys",
+      "system-or-user-default-trust-roots",
+      "alternate-artifact-or-release-fallback"
+    ]
+  },
+  "githubWebFlowVerification": {
+    "retained": true,
+    "allowedPublicKeyUrl": "https://github.com/web-flow.gpg",
+    "publicKeySha256": "6e8af687f60cf3f403151c8fb1b26e95e6f9e424ca60cc8f3787bd4466a3ef84",
+    "maximumBytes": 100000,
+    "expectedSignerKeyId": "B5690EEEBB952194",
+    "commit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+    "allowedCommitObjectSource": "https://api.github.com/repos/nodejs/docker-node/git/commits/53252eea9caacaa50bdf58f4d34f0bff8d259999",
+    "localVerification": "verify-the-exact-git-commit-signature-payload-locally-against-only-the-hash-verified-web-flow-key",
+    "meaning": "A valid result establishes a GitHub web-flow signature on the immutable git commit; it is not a direct Node-maintainer signature."
+  },
+  "dockerNodeSource": {
+    "commit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+    "dockerfilePath": "24/bookworm-slim/Dockerfile",
+    "allowedDockerfileUrl": "https://raw.githubusercontent.com/nodejs/docker-node/53252eea9caacaa50bdf58f4d34f0bff8d259999/24/bookworm-slim/Dockerfile",
+    "dockerfileGitBlobSha1": "afcf773d35c32bb03a527e89813deb7f1af6f8d3",
+    "dockerfileSha256": "bd6bb06de21f22916d8e582ccd43722889f8788a5699f2a099296707c2c57e52",
+    "dockerfileBytes": 5200
+  },
+  "officialImagesMapping": {
+    "repository": "docker-library/official-images",
+    "commit": "baca6de4f5be548b9b818fa2ca5a1d1d9e66f309",
+    "tree": "70e929dfc2bf8a29b1a6a11099948496d21ff237",
+    "commitTimestamp": "2026-07-30T18:52:53Z",
+    "commitSubject": "Node: feat: Node.js 24.18.1 (#21951)",
+    "path": "library/node",
+    "libraryFileBlobSha1": "611d1d2858eff2204e357de60a188b88ef1cd1c7",
+    "libraryFileSha256": "4e06e614086ad016d795d1005e821c595cf4e7c8e18bf03aecacc74191dd5e68",
+    "libraryFileBytes": 5614,
+    "allowedUrl": "https://raw.githubusercontent.com/docker-library/official-images/baca6de4f5be548b9b818fa2ca5a1d1d9e66f309/library/node",
+    "requiredStanza": {
+      "tag": "24.18.1-bookworm-slim",
+      "architecture": "arm64v8",
+      "gitCommit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+      "directory": "24/bookworm-slim"
+    },
+    "localVerification": "verify-both-git-blob-sha1-and-file-sha256-then-parse-the-exact-stanza-with-no-caller-selected-subset"
+  },
+  "downloadClosure": {
+    "protocol": "lachesis-m9b13b-content-addressed-download-closure/1",
+    "attemptCeiling": 1,
+    "credentialPolicy": "ephemeral-anonymous-docker-registry-bearer-token-in-memory-only-no-account-or-private-credentials",
+    "stageA": {
+      "rule": "Only the listed roots and source-verification evidence may be requested; every response is hashed before parsing or use.",
+      "ociRoots": [
+        {
+          "role": "index",
+          "digest": "sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7",
+          "bytes": 3929
+        },
+        {
+          "role": "platform-manifest",
+          "digest": "sha256:c39335f45d6d5b2a5be95b0f1a63e57cca4e9e36cc69b313c1ad5472b13a1e3",
+          "bytes": 1931
+        },
+        {
+          "role": "attestation-manifest",
+          "digest": "sha256:f3c062ad822adadf8f41d1bfaa2a25cce3fd81800fc2a2cf2264307b8c77ae23",
+          "bytes": 841
+        }
+      ],
+      "sourceEvidence": [
+        "exact-node-signed-manifest",
+        "exact-node-active-keyring",
+        "exact-github-web-flow-public-key",
+        "exact-docker-node-commit-and-dockerfile",
+        "exact-official-images-library-file"
+      ]
+    },
+    "stageB": {
+      "precondition": "All Stage A bytes and mappings verify and the complete recursive descriptor inventory has been sealed before the first child request.",
+      "knownDirectChildren": [
+        {
+          "role": "image-config",
+          "digest": "sha256:1c261b8cd71d78fcdc0507b08bc7156a29785b92f0d3496861455a598bcc042d",
+          "bytes": 6885
+        },
+        {
+          "role": "image-layer-1",
+          "digest": "sha256:53bb9e501f1803aca595be8d902a62cea6bf4d996ce6f7dfe16c1c97be343e6c",
+          "bytes": 28117255
+        },
+        {
+          "role": "image-layer-2",
+          "digest": "sha256:ab40f635d656bc78edba5f9d146f84446f9726581f8b6d0107bb4829aaa20f4a",
+          "bytes": 3314
+        },
+        {
+          "role": "image-layer-3",
+          "digest": "sha256:78c0f71ad86cbdcf4792fbde7c7ad8ed4ec0d0928e23304150f912fc28e8f7a3",
+          "bytes": 50336963
+        },
+        {
+          "role": "image-layer-4",
+          "digest": "sha256:8055ce4d148bba236fda7c9bcd5eee50b7f1459ee71e6dadcd6c4583373b3618",
+          "bytes": 1712537
+        },
+        {
+          "role": "image-layer-5",
+          "digest": "sha256:1930f839b9269e060fc3b6e12831c0cf685409855d3b2c80accf5bfa561da2c1",
+          "bytes": 449
+        },
+        {
+          "role": "attestation-config",
+          "digest": "sha256:eaa2172dacb9b1759f08a5c09e17877017373536a23f5a0ca1abeb68b8355d50",
+          "bytes": 241
+        },
+        {
+          "role": "spdx-statement",
+          "digest": "sha256:582f962d2a1af162c7927de3b356d08961575a2b32aee3b39ea733f5b5ce919c",
+          "bytes": 2573854
+        },
+        {
+          "role": "slsa-provenance-statement",
+          "digest": "sha256:792f6e366cff5fff17d77e82eb8b3e52e37b7f83ee3f80cf0036ff439baa9b15",
+          "bytes": 27753
+        }
+      ],
+      "recursionRule": "Only a content-addressed descriptor reached from a verified Stage A OCI manifest or a previously verified child descriptor may enter the sealed inventory.",
+      "reject": [
+        "unknown-descriptor",
+        "foreign-layer",
+        "nondigest-url",
+        "mutable-tag-fallback",
+        "schema-or-media-type-change",
+        "unexpected-redirect-host",
+        "digest-cycle",
+        "duplicate-digest-with-conflicting-size-or-media-type",
+        "child-outside-verified-graph"
+      ]
+    },
+    "allowedHosts": {
+      "authentication": ["auth.docker.io"],
+      "registry": ["registry-1.docker.io"],
+      "registryBlobRedirect": ["production.cloudflare.docker.com"],
+      "sourceEvidence": [
+        "api.github.com",
+        "github.com",
+        "nodejs.org",
+        "raw.githubusercontent.com"
+      ]
+    },
+    "redirectRule": "No cross-host redirect is accepted except a registry blob response from registry-1.docker.io to production.cloudflare.docker.com; source-evidence redirects are forbidden.",
+    "failureRule": "Any failure seals the root as quarantined, consumes the single attempt, and forbids retry, substitution, mutable fallback, or use of partial bytes."
+  },
+  "attestationAcceptance": {
+    "protocol": "lachesis-m9b13b-oci-attestation-verification/1",
+    "statement": {
+      "supportedVersions": [
+        "https://in-toto.io/Statement/v0.1",
+        "https://in-toto.io/Statement/v1"
+      ],
+      "subjectCount": 1,
+      "expectedSubjectName": "_",
+      "expectedSubjectDigest": "sha256:c39335f45d6d5b2a5be95b0f1a63e57cca4e9e36cc69b313c1ad5472b13a1e3",
+      "subjectRule": "Both statements must contain exactly the same single exact name and digest; alternate, missing, ambiguous, or conflicting subjects reject.",
+      "validJsonAndSchemaRequired": true,
+      "unknownTopLevelStatementVersionsRejected": true
+    },
+    "provenance": {
+      "predicateType": "https://slsa.dev/provenance/v0.2",
+      "expectedBuilder": "https://github.com/docker-library/official-images",
+      "expectedBuildType": "https://mobyproject.org/buildkit@v1",
+      "expectedSourceRepository": "https://github.com/nodejs/docker-node",
+      "expectedSourceCommit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+      "expectedDockerfile": "24/bookworm-slim/Dockerfile",
+      "expectedBuildContext": "24/bookworm-slim",
+      "buildInvocationRequired": true,
+      "targetPlatform": "linux/arm64/v8",
+      "nodeVersion": "24.18.1",
+      "baseImageMaterialRequired": true,
+      "completeMaterialsRequired": true,
+      "nonconflictingTimestampsRequired": true,
+      "reproducibilityMetadataMustBePresentOrExplicitlyRecordedAbsent": true
+    },
+    "sbom": {
+      "predicateType": "https://spdx.dev/Document",
+      "boundPlatformImageRequired": true,
+      "nodeVersion": "24.18.1",
+      "baseFamily": "Debian Bookworm slim",
+      "packageIdentifiersAndRelationshipsRequired": true,
+      "contradictoryNodePlatformOrBaseIdentityRejected": true,
+      "independentLocalSbomRequired": true,
+      "comparisonProtocolMustBeFrozenBeforeImageImport": true,
+      "comparisonMustResolveEveryPackageAndRelationshipDifference": true
+    },
+    "signatureAndTransparency": {
+      "attestationSignatureRequiredByThisAuthorization": false,
+      "transparencyEvidenceRequiredByThisAuthorization": false,
+      "unsignedStatus": "must-be-recorded-as-unsigned-buildkit-in-toto-content-addressed-metadata-not-cryptographically-authenticated",
+      "claimRule": "If any signature or transparency property is claimed, its exact trust root, identity, signature bytes, log identity, inclusion proof, checkpoint, and offline verification must all pass; otherwise quarantine."
+    },
+    "quarantineDecision": "quarantined-supply-chain-evidence-insufficient"
+  },
+  "futureOutputNamespace": {
+    "root": "/Users/paul/orgs/nicia/lachesis-private/m9b13b-oci-acquisition/v1/docker.io/library/node/24.18.1-bookworm-slim/linux-arm64-v8",
+    "required": [
+      "raw-registry-metadata",
+      "complete-descriptor-graph",
+      "downloaded-oci-layout-and-archive",
+      "archive-sha256",
+      "index-manifest-config-and-layer-hashes",
+      "node-signed-manifest-bytes",
+      "pinned-verification-key-bytes",
+      "local-signature-verification-transcript",
+      "official-images-mapping-evidence",
+      "docker-node-source-evidence",
+      "raw-attestation-bodies",
+      "normalized-provenance-report",
+      "attached-sbom",
+      "independently-generated-sbom",
+      "sbom-comparison-report",
+      "acquisition-access-provenance",
+      "quarantine-or-acceptance-decision",
+      "independent-checksum-manifest"
+    ],
+    "permissions": { "directory": "0700", "file": "0600" },
+    "constraints": [
+      "new-empty-root",
+      "same-owner",
+      "regular-files-only",
+      "no-symlinks",
+      "temporary-files-hash-verified-before-atomic-rename",
+      "no-partial-root-reuse"
+    ]
+  },
+  "stopConditions": [
+    "tag-movement",
+    "root-digest-mismatch",
+    "node-signature-failure",
+    "wrong-node-signer",
+    "source-or-official-images-mapping-mismatch",
+    "descriptor-graph-mismatch",
+    "attestation-subject-mismatch",
+    "provenance-inconsistency",
+    "sbom-inconsistency",
+    "unexpected-network-host-or-redirect",
+    "incomplete-or-ambiguous-registry-response"
+  ],
+  "postAcquisitionBoundary": "Seal all acquisition outputs and stop for independent review. Acquisition acceptance does not change M9b.13 readiness, authorize image execution, or begin the frozen compatibility matrix.",
+  "currentEffectAuthorization": "none"
+}

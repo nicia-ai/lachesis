@@ -1,0 +1,69 @@
+{
+  "protocol": "lachesis-m9b13b-cryptographically-complete-acquisition-review@1.0.0",
+  "fixtureDomain": "synthetic-test-only-no-study-or-image-identity",
+  "testFile": "packages/generator-ai-sdk/tests/m9b13b-acquisition-authorization.test.ts",
+  "cases": [
+    { "case": "missing-keyring", "reason": "m9b13b:missing-node-keyring" },
+    { "case": "altered-keyring", "reason": "m9b13b:altered-node-keyring" },
+    { "case": "wrong-node-signer", "reason": "m9b13b:wrong-node-signer" },
+    {
+      "case": "changed-signed-manifest-hash",
+      "reason": "m9b13b:changed-node-signed-manifest-hash"
+    },
+    {
+      "case": "missing-github-verification-key",
+      "reason": "m9b13b:missing-github-web-flow-key"
+    },
+    {
+      "case": "wrong-web-flow-key-id",
+      "reason": "m9b13b:wrong-github-web-flow-key-id"
+    },
+    {
+      "case": "altered-official-images-mapping",
+      "reason": "m9b13b:altered-official-images-mapping"
+    },
+    {
+      "case": "unexpected-child-descriptor",
+      "reason": "m9b13b:unexpected-child-descriptor"
+    },
+    {
+      "case": "wrong-attestation-subject",
+      "reason": "m9b13b:wrong-attestation-subject"
+    },
+    {
+      "case": "wrong-source-commit",
+      "reason": "m9b13b:wrong-provenance-source-commit"
+    },
+    {
+      "case": "missing-build-invocation",
+      "reason": "m9b13b:missing-build-invocation"
+    },
+    { "case": "wrong-platform", "reason": "m9b13b:wrong-provenance-platform" },
+    {
+      "case": "wrong-node-version",
+      "reason": "m9b13b:wrong-provenance-node-version"
+    },
+    {
+      "case": "inconsistent-sbom-package-inventory",
+      "reason": "m9b13b:inconsistent-sbom-package-inventory"
+    },
+    {
+      "case": "absent-claimed-signature",
+      "reason": "m9b13b:absent-claimed-attestation-signature"
+    },
+    {
+      "case": "malformed-transparency-evidence",
+      "reason": "m9b13b:malformed-transparency-evidence"
+    },
+    {
+      "case": "unexpected-redirect-host",
+      "reason": "m9b13b:unexpected-redirect-host"
+    },
+    { "case": "incomplete-download", "reason": "m9b13b:incomplete-download" },
+    {
+      "case": "retry-or-substitution",
+      "reason": "m9b13b:retry-or-candidate-substitution"
+    }
+  ],
+  "requiredEffectAssertion": "all-prohibited-effect-counts-remain-zero-for-every-case"
+}

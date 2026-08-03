@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "value": {
+    "protocol": "lachesis-m9b13b-cryptographically-complete-acquisition-review@1.0.0",
+    "status": "completed-offline-synthetic-zero-effect",
+    "decision": "m9b13b-corrected-acquisition-authorization-ready-for-independent-review",
+    "checks": {
+      "nodeReleaseVerification": "passed",
+      "githubWebFlowVerification": "passed-limited-meaning",
+      "officialImagesMapping": "passed",
+      "contentAddressedClosure": "passed",
+      "attestationGates": "passed-synthetic-only",
+      "noAcquisition": "passed",
+      "noImageState": "passed",
+      "noStudyEffects": "passed"
+    },
+    "effects": {
+      "imageManifestDownloads": 0,
+      "imageConfigDownloads": 0,
+      "imageLayerDownloads": 0,
+      "attestationBodyDownloads": 0,
+      "nodeBinaryDownloads": 0,
+      "keyMaterialDownloads": 0,
+      "ociArchiveDownloads": 0,
+      "imagePulls": 0,
+      "imageBuilds": 0,
+      "imageImports": 0,
+      "imageRuns": 0,
+      "corpusArtifacts": 0,
+      "goldArtifacts": 0,
+      "credentialAccesses": 0,
+      "providerCalls": 0,
+      "modelCalls": 0,
+      "scheduleInstances": 0,
+      "operationalIdentities": 0,
+      "authorityStores": 0,
+      "analysisRuns": 0,
+      "osfMutations": 0,
+      "gitPushes": 0
+    }
+  }
+}

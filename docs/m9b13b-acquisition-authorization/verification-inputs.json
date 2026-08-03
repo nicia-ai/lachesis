@@ -1,0 +1,51 @@
+{
+  "protocol": "lachesis-m9b13b-node-release-verification/1",
+  "candidate": {
+    "tag": "docker.io/library/node:24.18.1-bookworm-slim",
+    "index": "sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7",
+    "platform": "linux/arm64/v8",
+    "platformManifest": "sha256:c39335f45d6d5b2a5be95b0f1a63e57cca4e9e36cc69b313c1ad5472b13a1e3",
+    "attestationManifest": "sha256:f3c062ad822adadf8f41d1bfaa2a25cce3fd81800fc2a2cf2264307b8c77ae23"
+  },
+  "node": {
+    "release": "v24.18.1",
+    "arm64Artifact": "node-v24.18.1-linux-arm64.tar.xz",
+    "arm64Sha256": "7201e3a09dc825bac57867c81913e2b8f0ef87d04cb9082af4cda82f6ff3d88c",
+    "sourceArtifact": "node-v24.18.1.tar.xz",
+    "sourceXzSha256": "86d40d594bbdfcf69009a62fdf43cb19ae72b6cb5822d2bdd8349c5a1b2fa628",
+    "signedManifestUrl": "https://nodejs.org/dist/v24.18.1/SHASUMS256.txt.asc",
+    "signedManifestSha256": "b04865cae6bfd78008eea4ef9e715889ae3b81a869fea61fd1790be78b91a743",
+    "releaseKeysCommit": "b28073028e6d6855cfb53bf7fa0137599c01f967",
+    "keyringUrl": "https://raw.githubusercontent.com/nodejs/release-keys/b28073028e6d6855cfb53bf7fa0137599c01f967/gpg-only-active-keys/pubring.kbx",
+    "keyringGitBlobSha1": "37817a8b3ee4ae2175fd41e3c484604b688b114a",
+    "keyringSha256": "8e6f89521a0694e445f42decd022f48369c634f1b5bcb5975135b69c88629ae8",
+    "signerFingerprint": "DD792F5973C6DE52C432CBDAC77ABFA00DDBF2B7"
+  },
+  "githubWebFlow": {
+    "keyUrl": "https://github.com/web-flow.gpg",
+    "keySha256": "6e8af687f60cf3f403151c8fb1b26e95e6f9e424ca60cc8f3787bd4466a3ef84",
+    "signerKeyId": "B5690EEEBB952194",
+    "dockerNodeCommit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+    "meaning": "github-web-flow-signature-not-direct-node-maintainer-signature"
+  },
+  "dockerNode": {
+    "commit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+    "dockerfileUrl": "https://raw.githubusercontent.com/nodejs/docker-node/53252eea9caacaa50bdf58f4d34f0bff8d259999/24/bookworm-slim/Dockerfile",
+    "dockerfileGitBlobSha1": "afcf773d35c32bb03a527e89813deb7f1af6f8d3",
+    "dockerfileSha256": "bd6bb06de21f22916d8e582ccd43722889f8788a5699f2a099296707c2c57e52"
+  },
+  "officialImages": {
+    "commit": "baca6de4f5be548b9b818fa2ca5a1d1d9e66f309",
+    "tree": "70e929dfc2bf8a29b1a6a11099948496d21ff237",
+    "libraryFileBlobSha1": "611d1d2858eff2204e357de60a188b88ef1cd1c7",
+    "libraryFileSha256": "4e06e614086ad016d795d1005e821c595cf4e7c8e18bf03aecacc74191dd5e68",
+    "libraryFileBytes": 5614,
+    "libraryFileUrl": "https://raw.githubusercontent.com/docker-library/official-images/baca6de4f5be548b9b818fa2ca5a1d1d9e66f309/library/node",
+    "requiredMapping": {
+      "tag": "24.18.1-bookworm-slim",
+      "architecture": "arm64v8",
+      "gitCommit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+      "directory": "24/bookworm-slim"
+    }
+  }
+}
