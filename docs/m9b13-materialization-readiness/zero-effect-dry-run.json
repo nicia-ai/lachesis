@@ -1,0 +1,50 @@
+{
+  "protocol": "lachesis-m9b13-zero-effect-dry-run/1",
+  "status": "completed-offline-zero-effect",
+  "decision": "m9b13-materialization-readiness-no-go",
+  "findings": [
+    {
+      "code": "m9b13:clean-node24-container-base-unavailable",
+      "detail": "No clean study-eligible Node 24 container base is locally available; network acquisition and reuse of unrelated historical images are forbidden."
+    }
+  ],
+  "checks": {
+    "bindings": "passed",
+    "roleTopology": "passed",
+    "namespaceIsolation": "passed",
+    "accessProvenance": "passed",
+    "populationArithmetic": "passed",
+    "splitAuditCompleteness": "passed",
+    "dependencyClosure": "failed",
+    "noNetwork": "passed",
+    "noCredentials": "passed",
+    "noCorpus": "passed",
+    "noGold": "passed",
+    "noProviderCalls": "passed",
+    "noSchedule": "passed",
+    "noAuthorityActivation": "passed",
+    "noAnalysis": "passed"
+  },
+  "effects": {
+    "retiredMaterialAccesses": 0,
+    "networkRequests": 0,
+    "sourceDownloads": 0,
+    "corpusArtifacts": 0,
+    "goldArtifacts": 0,
+    "caseIdentities": 0,
+    "sourceIdentities": 0,
+    "packetIdentities": 0,
+    "scheduleInstances": 0,
+    "randomSeeds": 0,
+    "operationalPrincipals": 0,
+    "authorityStores": 0,
+    "credentialAccesses": 0,
+    "countCalls": 0,
+    "inferenceCalls": 0,
+    "providerCalls": 0,
+    "analysisRuns": 0,
+    "osfMutations": 0,
+    "gitPushes": 0
+  },
+  "reportDigest": "4473bd53ecf7d503ee3e9453367107d463b1d72772cf5c4b036040ac62b49c61"
+}

@@ -1,3 +1,7 @@
+import { lstat, readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { isAbsolute, relative, resolve } from "node:path";
+
 import { digestValue, type Result } from "@nicia-ai/lachesis";
 import { z } from "zod";
 
@@ -268,6 +272,11 @@ const dryRunInputSchema = z
     executionAuthorizationPresent: z.boolean(),
     materializationAuthorizationPresent: z.boolean(),
     analysisRequested: z.boolean(),
+    prohibitedAttempts: z.strictObject({
+      scheduleOrRandomization: z.boolean(),
+      corpusArtifact: z.boolean(),
+      goldArtifact: z.boolean(),
+    }),
     effects: effectSchema,
   })
   .readonly();
@@ -431,6 +440,11 @@ export function createM9b13SyntheticDryRunInput(): M9b13DryRunInput {
     executionAuthorizationPresent: false,
     materializationAuthorizationPresent: false,
     analysisRequested: false,
+    prohibitedAttempts: {
+      scheduleOrRandomization: false,
+      corpusArtifact: false,
+      goldArtifact: false,
+    },
     effects: M9B13_ZERO_EFFECTS,
   });
 }
@@ -534,14 +548,11 @@ export async function runM9b13ZeroEffectDryRun(
     return reject("m9b13:materialization-authorization-during-readiness");
   if (fixture.analysisRequested)
     return reject("m9b13:analysis-during-readiness");
-  if (
-    fixture.effects.scheduleInstances !== 0 ||
-    fixture.effects.randomSeeds !== 0
-  )
+  if (fixture.prohibitedAttempts.scheduleOrRandomization)
     return reject("m9b13:schedule-or-randomization-instantiated");
-  if (fixture.effects.corpusArtifacts !== 0)
+  if (fixture.prohibitedAttempts.corpusArtifact)
     return reject("m9b13:corpus-artifact-emitted");
-  if (fixture.effects.goldArtifacts !== 0)
+  if (fixture.prohibitedAttempts.goldArtifact)
     return reject("m9b13:gold-artifact-emitted");
   if (!effectsAreZero(fixture.effects))
     return reject("m9b13:prohibited-effect-nonzero");
@@ -625,7 +636,7 @@ export type M9b13SyntheticAuthority = Readonly<{
     authorization: "materialization" | "execution",
   ) => Result<SyntheticLaunchHandle, M9b13ReadinessFailure>;
   admit: (
-    handle: SyntheticLaunchHandle,
+    handle: unknown,
     requiredAuthorization: "materialization" | "execution",
   ) => Result<"admitted", M9b13ReadinessFailure>;
   quarantine: (
@@ -634,6 +645,34 @@ export type M9b13SyntheticAuthority = Readonly<{
   advanceRevision: () => void;
 }>;
 
+export async function validateM9b13SyntheticFilesystem(
+  root: string,
+): Promise<Result<true, M9b13ReadinessFailure>> {
+  const resolvedRoot = resolve(root);
+  const relativeToTemporary = relative(resolve(tmpdir()), resolvedRoot);
+  if (
+    relativeToTemporary === "" ||
+    relativeToTemporary.startsWith("..") ||
+    isAbsolute(relativeToTemporary)
+  )
+    return reject("m9b13:synthetic-fixture-outside-temporary-root");
+  const rootStat = await lstat(resolvedRoot);
+  if (!rootStat.isDirectory() || (rootStat.mode & 0o777) !== 0o700)
+    return reject("m9b13:filesystem-symlink-permission-or-ownership-drift");
+  const entries = await readdir(resolvedRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    const entryPath = resolve(resolvedRoot, entry.name);
+    const entryStat = await lstat(entryPath);
+    if (
+      entry.isSymbolicLink() ||
+      (!entry.isDirectory() && !entry.isFile()) ||
+      (entryStat.mode & 0o777) !== (entry.isDirectory() ? 0o700 : 0o600)
+    )
+      return reject("m9b13:filesystem-symlink-permission-or-ownership-drift");
+  }
+  return { ok: true, value: true };
+}
+
 export function createM9b13SyntheticAuthority(): M9b13SyntheticAuthority {
   let revision = 0;
   const principals = new WeakMap<
@@ -641,7 +680,7 @@ export function createM9b13SyntheticAuthority(): M9b13SyntheticAuthority {
     { quarantined: boolean }
   >();
   const launches = new WeakMap<
-    SyntheticLaunchHandle,
+    object,
     Readonly<{
       principal: SyntheticPrincipal;
       authorization: "materialization" | "execution";
@@ -675,6 +714,8 @@ export function createM9b13SyntheticAuthority(): M9b13SyntheticAuthority {
       return { ok: true, value: handle };
     },
     admit(handle, requiredAuthorization) {
+      if (typeof handle !== "object" || handle === null)
+        return reject("m9b13:copied-launch-handle");
       const launch = launches.get(handle);
       if (launch === undefined) return reject("m9b13:copied-launch-handle");
       if (launch.consumed) return reject("m9b13:launch-handle-consumed");
