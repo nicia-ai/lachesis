@@ -1,0 +1,31 @@
+{
+  "protocol": "lachesis-m9b13-future-authorization-texts/1",
+  "currentReadinessProtocolDigest": "6ee91f4734bb38fd91a2d10b7c303d12e1c6d193056ab83852b6f4c55724b0b1",
+  "readinessDecision": "m9b13-materialization-readiness-no-go",
+  "authorizationIssued": false,
+  "materializationAuthorizationIssuable": false,
+  "reason": "clean-study-eligible-node-24.18.1-container-base-and-immutable-oci-identity-missing",
+  "withheldAuthorizationBoundary": {
+    "mustBind": [
+      "OSF-registration-63sh5",
+      "preregistration-digest-097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+      "receipt-digest-ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+      "new-go-readiness-protocol-and-digest",
+      "exact-constructor-and-materializer-mechanism",
+      "future-role-topology-and-opaque-principal-domain",
+      "frozen-source-allowlist-and-acquisition-limits",
+      "exact-output-roots",
+      "24-probe-and-168-primary-pair-ceilings",
+      "zero-provider-and-model-calls",
+      "all-stop-and-quarantine-conditions",
+      "stop-after-sealed-materialization-and-independent-review"
+    ],
+    "mustGrantOnly": "fresh-source-acquisition-corpus-hidden-gold-packets-and-audits-within-frozen-ceilings",
+    "mustExclude": "credentials-count-inference-provider-probe-primary-analysis-publication-osf-mutation-and-git-push"
+  },
+  "activeCredentialAuthorization": null,
+  "activeProbeAuthorization": null,
+  "activePrimaryAuthorization": null,
+  "activeAnalysisAuthorization": null,
+  "exactMaterializationAuthorizationText": null
+}

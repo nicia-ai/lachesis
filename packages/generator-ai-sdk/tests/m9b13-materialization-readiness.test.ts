@@ -18,9 +18,9 @@ import {
   M9B13_FROZEN_BINDINGS,
   M9B13_PROTOCOLS,
   M9B13_ZERO_EFFECTS,
+  type M9b13DryRunInput,
   runM9b13ZeroEffectDryRun,
   validateM9b13SyntheticFilesystem,
-  type M9b13DryRunInput,
 } from "../internal/m9b13-materialization-readiness.js";
 
 async function expectRejected(
@@ -100,6 +100,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   });
 
   it("rejects attempted retired-corpus path access", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       { ...base, attemptedPaths: ["sealed/retired-corpus-canary"] },
@@ -108,6 +109,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   });
 
   it("rejects a repository-wide search root", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       { ...base, searchRoots: ["."] },
@@ -116,6 +118,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   });
 
   it("rejects caller-selected case inventories and observer identities", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       { ...base, inventoryAuthority: "caller-selected" },
@@ -128,6 +131,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   });
 
   it("rejects a principal combining constructor and evaluator access", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       {
@@ -144,6 +148,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   });
 
   it("rejects hidden gold and cross-packet order in author packets", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       { ...base, authorPacketFields: ["task", "hidden-gold"] },
@@ -158,6 +163,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   it.each(["case", "source", "fact", "opaque-principal"] as const)(
     "rejects duplicate %s identities",
     async (kind) => {
+      expect.hasAssertions();
       await expectRejected(
         duplicateIdentityInput(kind),
         `m9b13:duplicate-${kind}-identity`,
@@ -166,6 +172,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   );
 
   it("rejects development, probe, or primary overlap and source near-duplicates", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       { ...base, splitOverlaps: ["development-probe/task"] },
@@ -178,6 +185,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   });
 
   it("rejects missing provenance and incomplete exposure history", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       { ...base, provenanceComplete: false },
@@ -217,6 +225,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   });
 
   it("rejects network-enabled roles and credential/environment leakage", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       { ...base, networkEnabledRoles: ["constructor"] },
@@ -229,6 +238,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   });
 
   it("rejects dependency fallback to workspace or private packages", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       {
@@ -243,6 +253,7 @@ describe("M9b.13 offline corpus-materialization readiness", () => {
   });
 
   it("rejects schedules, randomization, corpus, or gold emitted during readiness", async () => {
+    expect.hasAssertions();
     const base = createM9b13SyntheticDryRunInput();
     await expectRejected(
       {

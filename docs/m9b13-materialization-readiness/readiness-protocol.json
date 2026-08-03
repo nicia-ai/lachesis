@@ -1,0 +1,79 @@
+{
+  "protocol": "lachesis-m9b13-offline-corpus-materialization-readiness@1.0.0",
+  "status": "sealed-private-readiness-no-go",
+  "canonicalization": "RFC-8785-JSON-canonicalization",
+  "decision": "m9b13-materialization-readiness-no-go",
+  "bindings": {
+    "osfRegistration": "63sh5",
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "receiptDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+    "receiptCommit": "02d77486455aa9b581fe9a8c747f525f075f1f72",
+    "receiptTree": "c20f0ae2bf9fc6538a756a46bf22b62b4179e22f"
+  },
+  "components": [
+    {
+      "path": "docs/m9b13-materialization-readiness/access-matrix.json",
+      "sha256": "91cc0ea5a652bdaf542ad259ee4d3c59b44d573e8143ee3a8cb29cf2c47c919c"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/bindings.json",
+      "sha256": "163bea307b69409b19ff9c8bf0742b02684fa56cd66b81c4ff693a7d9978f8ea"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/corpus-construction-protocol.json",
+      "sha256": "65be1cc438285313781fd3fbe84b27c17ebe70d547af1187e122d698a804ef50"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/dependency-closure.json",
+      "sha256": "f87bccf452583d4cd65f2ea26f7f924a6149bae7b2d613f36ed2cdd3f26e9cd6"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/durable-authority-integration.json",
+      "sha256": "d331c85e62df8cc199194ff82dcab197bb0883ec9a8bb92ce5fee56a8e546e89"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/filesystem-environment.json",
+      "sha256": "051f3e601800b19685306296bbc3cd41783a6460eeb7e791ec4e3c296ad3380e"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/hidden-gold-evaluator.json",
+      "sha256": "0003b312332a5ba7af6525ff5e19380f8040f3099cc29428d365a33127949452"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/hostile-tests.json",
+      "sha256": "ad2ce03c2e5b45087b0258e457d7096c1e2eb8277a076cdc2b21933f4acdc5d4"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/population-contract.json",
+      "sha256": "1738966d29c6a4d25abc6390078f3d53bf03237b52bb0813a8be5db862709687"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/role-topology.json",
+      "sha256": "b68ff30d38e7116b2ed7687ce032687518ccddd770c3975a754c90e44a89640d"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/source-acquisition-protocol.json",
+      "sha256": "e5c897bcdae30a44715b06082cf65050559f2403874b8b4bdbc1c19cc0de6862"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/split-contamination-audits.json",
+      "sha256": "f7fd1eeafdaf3a8cb5f0025f70da2b6dea8dc6ca7759446af05229805a582590"
+    },
+    {
+      "path": "docs/m9b13-materialization-readiness/zero-effect-dry-run.json",
+      "sha256": "50f71572b59a36262e7b121f1fea0f26d653fad54883b0ecf7d2037a37607664"
+    },
+    {
+      "path": "packages/generator-ai-sdk/internal/m9b13-materialization-readiness.ts",
+      "sha256": "fe55dfc3d10fa11df31e97022a6be799105ef65e506bd33b63374ee2d0ddf97b"
+    },
+    {
+      "path": "packages/generator-ai-sdk/tests/m9b13-materialization-readiness.test.ts",
+      "sha256": "9f5fa2a4922cb3aafd7662c813ff42a8009ff69b7474d9f3824c8c890166e9f1"
+    }
+  ],
+  "dryRunReportDigest": "4473bd53ecf7d503ee3e9453367107d463b1d72772cf5c4b036040ac62b49c61",
+  "blockingFinding": "m9b13:clean-node24-container-base-unavailable",
+  "authorizationIssued": false,
+  "materializationPermitted": false
+}

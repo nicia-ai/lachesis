@@ -1,0 +1,77 @@
+{
+  "protocol": "lachesis-m9b13-offline-corpus-materialization-readiness@1.0.0",
+  "readinessProtocolDigest": "6ee91f4734bb38fd91a2d10b7c303d12e1c6d193056ab83852b6f4c55724b0b1",
+  "decision": "m9b13-materialization-readiness-no-go",
+  "decisionScope": "readiness-only-no-materialization-authority",
+  "blockingFindings": [
+    {
+      "code": "m9b13:clean-node24-container-base-unavailable",
+      "disposition": "do-not-fetch-do-not-reuse-historical-images-require-new-offline-readiness-review"
+    }
+  ],
+  "verification": {
+    "focusedM9b13": { "files": 1, "passed": 20, "failed": 0 },
+    "focusedM9": { "files": 33, "passed": 613, "failed": 0 },
+    "repositoryCoverage": {
+      "files": 65,
+      "passed": 1056,
+      "failed": 0,
+      "statements": "12479/13863",
+      "statementsPercent": 90.01,
+      "branches": "8528/10529",
+      "branchesPercent": 80.99,
+      "functions": "2637/2706",
+      "functionsPercent": 97.45,
+      "lines": "11909/12709",
+      "linesPercent": 93.7
+    },
+    "formatting": "passed-changed-files",
+    "strictTypecheck": "passed",
+    "lint": "passed",
+    "buildAndDeclarations": "passed",
+    "nodeWorkersSmoke": "passed",
+    "examples": "7/7-passed",
+    "descriptiveLoadSmoke": "128-records-passed",
+    "m8b0Cli": "6/6-passed",
+    "cliValidInvalid": "passed-exit-0-and-1",
+    "sourceSafety": "passed",
+    "secretScan": "passed-m9b13-changed-scope",
+    "publicApi": "passed-generator-317-exports-no-m9b13-export",
+    "releaseChecksums": "passed",
+    "m8bHistory": "passed",
+    "m9b12ThroughM9b12fChecksums": "passed",
+    "receiptChecksums": "passed",
+    "preregistrationDigest": "reproduced-by-frozen-preparation-test",
+    "receiptDigest": "reproduced-rfc8785",
+    "dryRunReportDigest": "reproduced-4473bd53ecf7d503ee3e9453367107d463b1d72772cf5c4b036040ac62b49c61",
+    "populationAndFinancialArithmetic": "reproduced-24-168-768-768-1536-342097920-117964800-460062720-500000000-39937280",
+    "diffCheck": "passed-before-and-after-final-manifest"
+  },
+  "knownHistoricalBaselines": [
+    "m7c-public-documentation-binding-differs",
+    "generator-current-source-inventory-differs-from-frozen-alpha5-tarball"
+  ],
+  "effects": {
+    "retiredMaterialAccesses": 0,
+    "networkRequests": 0,
+    "sourceDownloads": 0,
+    "corpusArtifacts": 0,
+    "goldArtifacts": 0,
+    "caseIdentities": 0,
+    "sourceIdentities": 0,
+    "packetIdentities": 0,
+    "scheduleInstances": 0,
+    "randomSeeds": 0,
+    "operationalPrincipals": 0,
+    "authorityStores": 0,
+    "credentialAccesses": 0,
+    "countCalls": 0,
+    "inferenceCalls": 0,
+    "providerCalls": 0,
+    "analysisRuns": 0,
+    "osfMutations": 0,
+    "gitPushes": 0
+  },
+  "authorizationIssued": false,
+  "exactMaterializationAuthorizationText": null
+}
