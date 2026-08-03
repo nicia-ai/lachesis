@@ -1,0 +1,68 @@
+{
+  "protocol": "lachesis-m9b13a-oci-acquisition-protocol/1",
+  "resolutionOrder": [
+    "existing-official-image",
+    "reproducible-project-build",
+    "no-go"
+  ],
+  "candidates": [
+    {
+      "id": "official-node-24.18.1-bookworm-slim-arm64",
+      "class": "existing-official-image",
+      "status": "selected-prospectively-not-acquired",
+      "tag": "docker.io/library/node:24.18.1-bookworm-slim",
+      "indexDigest": "sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7",
+      "platform": "linux/arm64/v8",
+      "architecture": "arm64",
+      "platformManifestDigest": "sha256:c39335f45d6d5b2a5be95b0f1a63e57cca4e9e36cc69b313c1ad5472b13a1e3",
+      "imageConfig": {
+        "digest": "sha256:1c261b8cd71d78fcdc0507b08bc7156a29785b92f0d3496861455a598bcc042d",
+        "bytes": 6885
+      },
+      "node": "24.18.1",
+      "distribution": "Debian GNU/Linux 12 (bookworm), slim variant",
+      "distributionPointRelease": "not-asserted-by-registry-metadata",
+      "baseManifestDigest": "sha256:9b67294679b30e5d6ab257b40594feeb4a4b81f7fcf4131f4decf0d6a212a9b0",
+      "created": "2026-07-30T19:04:18Z",
+      "tagPublished": "2026-07-30T20:40:41.339895Z",
+      "sourceCommit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+      "sourceDockerfileGitBlob": "afcf773d35c32bb03a527e89813deb7f1af6f8d3",
+      "sourceDockerfileSha256": "bd6bb06de21f22916d8e582ccd43722889f8788a5699f2a099296707c2c57e52",
+      "attestationManifestDigest": "sha256:f3c062ad822adadf8f41d1bfaa2a25cce3fd81800fc2a2cf2264307b8c77ae23",
+      "sbom": {
+        "format": "SPDX-in-toto-predicate",
+        "digest": "sha256:582f962d2a1af162c7927de3b356d08961575a2b32aee3b39ea733f5b5ce919c",
+        "bytes": 2573854,
+        "bodyValidated": false
+      },
+      "provenance": {
+        "format": "SLSA-v0.2-in-toto-predicate",
+        "digest": "sha256:792f6e366cff5fff17d77e82eb8b3e52e37b7f83ee3f80cf0036ff439baa9b15",
+        "bytes": 27753,
+        "bodyValidated": false
+      },
+      "standaloneOciSignature": "not-established-by-this-review",
+      "compressedRegistryPayloadBytes": 82779251,
+      "nativeModuleCompatibility": "plausible-not-yet-proven-requires-campaign"
+    },
+    {
+      "id": "official-node-24.18.1-bookworm-slim-amd64",
+      "class": "existing-official-image",
+      "status": "viable-metadata-not-selected",
+      "tag": "docker.io/library/node:24.18.1-bookworm-slim",
+      "indexDigest": "sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7",
+      "platform": "linux/amd64",
+      "platformManifestDigest": "sha256:a09aabc645e86e81e23dab78e0c0f2eaa233cab4277c7188232181a1a8bd5d39",
+      "attestationManifestDigest": "sha256:801e3b84dbcfbd7f07019f474025323468ec7d88910c4f7eac76e72c7280c50d",
+      "reasonNotSelected": "would-introduce-cpu-emulation-on-the-bound-local-linux-container-host-and-needs-a-new-platform-review"
+    },
+    {
+      "id": "project-built-node-24",
+      "class": "reproducible-project-build",
+      "status": "not-selected",
+      "reason": "existing-official-candidate-has-immutable-source-base-and-attestation-descriptors-subject-to-later-body-validation"
+    }
+  ],
+  "mutableTagUse": "resolution-only-never-execution-or-import",
+  "fallback": "any-digest-platform-tag-or-build-input-change-requires-new-review"
+}

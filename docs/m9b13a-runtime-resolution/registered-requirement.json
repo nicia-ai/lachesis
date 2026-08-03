@@ -1,0 +1,62 @@
+{
+  "protocol": "lachesis-m9b13a-runtime-requirement-review@1.0.0",
+  "answers": {
+    "registeredProtocolRequiresExactlyNode24181": false,
+    "node24181IsOfficialRelease": true,
+    "officialOciImagePublished": true,
+    "anotherNode24PatchChangesFrozenScienceByItself": false,
+    "anotherPatchRequiresCompatibilityCampaign": true
+  },
+  "derivation": [
+    {
+      "class": "verification-environment-metadata",
+      "path": "docs/m9b12f-preregistration/verification.json",
+      "value": "24.18.1",
+      "effect": "records-the-runtime-that-verified-m9b12f-only"
+    },
+    {
+      "class": "package-engine-compatibility",
+      "paths": [
+        "package.json",
+        "packages/kernel/package.json",
+        "packages/generator/package.json",
+        "packages/generator-ai-sdk/package.json",
+        "packages/runtime/package.json"
+      ],
+      "value": ">=24 <25",
+      "effect": "binds-supported-node-major-not-a-patch"
+    },
+    {
+      "class": "operational-materialization-requirement",
+      "paths": [
+        "docs/m9b12f-preregistration/preregistration.json",
+        "docs/m9b12c-preregistration/preregistration.json"
+      ],
+      "value": "future-runtime-and-environment-binding-required",
+      "exactPatch": null
+    },
+    {
+      "class": "m9b13-readiness-derived-requirement",
+      "path": "docs/m9b13-materialization-readiness/dependency-closure.json",
+      "value": "clean-study-eligible-linux-node-24.18.1-base",
+      "effect": "prospective-m9b13-interpretation-not-a-registered-scientific-field"
+    }
+  ],
+  "identityClasses": {
+    "scientificIdentity": "unchanged-by-node-24-patch-selection-if-compatibility-proven",
+    "replayIdentity": "must-bind-exact-oci-index-platform-manifest-config-layers-and-archive",
+    "securitySensitiveRuntimeIdentity": "must-bind-node-patch-distro-platform-native-addons-sbom-provenance-and-scans"
+  },
+  "runtimeVariationRequiringTests": [
+    "node-sqlite-transaction-locking-wal-shm-and-child-process-reopen",
+    "better-sqlite3-native-abi-install-load-and-persistence",
+    "v8-serialization-and-closed-ast-execution",
+    "openssl-and-webcrypto-digest-bytes",
+    "canonical-json-and-text-encoding",
+    "tokenizer-fixture-bytes",
+    "timers-child-process-and-deterministic-scheduling",
+    "evaluator-and-zero-effect-replay-bytes",
+    "workers-bundle-and-node-smoke-behavior"
+  ],
+  "conclusion": "24.18.1-was-promoted-from-verification-metadata-but-remains-a-valid-prospective-security-and-replay-pin"
+}

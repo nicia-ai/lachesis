@@ -1,0 +1,95 @@
+{
+  "protocol": "lachesis-m9b13a-oci-acquisition-protocol/1",
+  "status": "prospective-not-authorized",
+  "mechanism": "registry-v2-content-addressed-oci-layout-capture",
+  "approvedExistingToolClasses": [
+    "tls-http-client-with-redirect-host-enforcement",
+    "json-parser",
+    "sha256-implementation",
+    "openpgp-verifier",
+    "tar-archiver",
+    "docker-engine-import-and-inspection-client"
+  ],
+  "reviewHostObservedTools": {
+    "curl": "8.7.1",
+    "jq": "1.8.2",
+    "gpg": "2.5.21",
+    "shasum": "6.02",
+    "dockerClient": "29.4.0",
+    "dockerBuildx": "0.35.0-desktop.2-b554ce1decd8b509893b1e7c6227eabfb923d094"
+  },
+  "steps": [
+    {
+      "ordinal": 1,
+      "action": "admit-exact-authorization",
+      "requirements": "verify-byte-identical-authorization-text-review-protocol-digest-and-committed-checksum-manifest"
+    },
+    {
+      "ordinal": 2,
+      "action": "create-isolated-roots",
+      "requirements": "output-root-and-empty-cli-config-new-0700-same-owner-no-symlink-no-preexisting-image-bytes"
+    },
+    {
+      "ordinal": 3,
+      "action": "fix-environment",
+      "requirements": "empty-environment-allowlist-umask-0077-no-proxy-no-account-credentials-no-shell-history-network-host-filter-active"
+    },
+    {
+      "ordinal": 4,
+      "action": "resolve-tag-read-only",
+      "requirements": "registry-v2-accept-oci-index-verify-response-bytes-equal-index-sha256-235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7-before-any-blob"
+    },
+    {
+      "ordinal": 5,
+      "action": "select-explicit-platform",
+      "requirements": "index-descriptor-for-linux-arm64-v8-must-equal-platform-manifest-sha256-c39335f45d6d5b2a5be95b0f1a63e57cca4e9e36cc69b313c1ad5472b13a1e3-and-paired-attestation-sha256-f3c062ad822adadf8f41d1bfaa2a25cce3fd81800fc2a2cf2264307b8c77ae23"
+    },
+    {
+      "ordinal": 6,
+      "action": "capture-and-validate-manifest-metadata",
+      "requirements": "fetch-only-by-digest-verify-every-descriptor-digest-size-media-type-source-base-platform-and-attestation-predicate-type"
+    },
+    {
+      "ordinal": 7,
+      "action": "capture-source-evidence",
+      "requirements": "github-commit-json-immutable-dockerfile-and-node-signed-shasums-only-no-node-binary"
+    },
+    {
+      "ordinal": 8,
+      "action": "download-selected-content",
+      "requirements": "registry-v2-by-listed-digest-into-new-temporary-0600-regular-files-verify-before-atomic-rename-total-registry-payload-at-most-100000000-bytes"
+    },
+    {
+      "ordinal": 9,
+      "action": "validate-provenance-sbom-and-signatures",
+      "requirements": "validate-in-toto-subjects-slsa-materials-builder-source-base-spdx-coverage-github-signature-dockerfile-identities-and-node-openpgp-signed-shasums"
+    },
+    {
+      "ordinal": 10,
+      "action": "assemble-oci-layout-and-evidence-bundle",
+      "requirements": "single-selected-platform-no-other-layer-all-content-addressed-blobs-complete-original-index-and-attestations-kept-as-evidence"
+    },
+    {
+      "ordinal": 11,
+      "action": "export-and-hash-archive",
+      "requirements": "one-regular-file-archive-at-most-512000000-bytes-sha256-byte-size-and-complete-inventory-recorded"
+    },
+    {
+      "ordinal": 12,
+      "action": "scan-if-approved-tool-already-available",
+      "requirements": "no-tool-install-or-network-fallback-record-tool-digest-policy-results-or-record-not-available"
+    },
+    {
+      "ordinal": 13,
+      "action": "remove-network-and-import-by-digest",
+      "requirements": "offline-import-exact-archive-with-linux-arm64-v8-explicit-verify-manifest-config-layers-node-version-and-bookworm-with-inspection-only-no-container-create-or-run"
+    },
+    {
+      "ordinal": 14,
+      "action": "seal-receipts-and-stop",
+      "requirements": "atomic-receipts-independent-review-required-no-compatibility-or-materialization-continuation"
+    }
+  ],
+  "restartPolicy": "any-failure-quarantines-entire-root-new-empty-root-and-new-explicit-authorization-required",
+  "toolFallbackPolicy": "no-download-no-install-no-workspace-private-package-or-unapproved-tool-fallback"
+}

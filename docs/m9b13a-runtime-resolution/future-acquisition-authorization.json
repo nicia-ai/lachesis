@@ -1,0 +1,52 @@
+{
+  "protocol": "lachesis-m9b13a-oci-acquisition-protocol/1",
+  "reviewProtocol": "lachesis-m9b13a-runtime-requirement-review@1.0.0",
+  "reviewProtocolDigest": "671ab4a064be4db18a869cf7dfaa514b3f6b316c198c29ff9e80a53a0ce01135",
+  "status": "inactive-prospective-text-only",
+  "activationRule": "must-be-reproduced-byte-for-byte-in-a-later-explicit-user-authorization",
+  "candidate": {
+    "source": "Docker Official Image docker.io/library/node",
+    "tag": "24.18.1-bookworm-slim",
+    "indexDigest": "sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7",
+    "platform": "linux/arm64/v8",
+    "platformManifestDigest": "sha256:c39335f45d6d5b2a5be95b0f1a63e57cca4e9e36cc69b313c1ad5472b13a1e3",
+    "attestationManifestDigest": "sha256:f3c062ad822adadf8f41d1bfaa2a25cce3fd81800fc2a2cf2264307b8c77ae23"
+  },
+  "allowedNetworkHosts": [
+    "auth.docker.io",
+    "registry-1.docker.io",
+    "production.cloudflare.docker.com",
+    "api.github.com",
+    "raw.githubusercontent.com",
+    "nodejs.org"
+  ],
+  "credentials": "only-ephemeral-anonymous-docker-registry-challenge-token-in-memory-no-account-credentials",
+  "registryPayloadCeilingBytes": 100000000,
+  "exportArchiveCeilingBytes": 512000000,
+  "outputRoot": "/Users/paul/orgs/nicia/lachesis-private/m9b13a-runtime-acquisition/v1/docker.io/library/node/24.18.1-bookworm-slim/linux-arm64-v8",
+  "requiredOutputs": [
+    "resolution/index.json",
+    "resolution/platform-manifest.json",
+    "resolution/attestation-manifest.json",
+    "evidence/docker-node-commit.json",
+    "evidence/Dockerfile",
+    "evidence/SHASUMS256.txt.asc",
+    "attestations/spdx.in-toto.json",
+    "attestations/slsa-provenance.in-toto.json",
+    "archive/node-24.18.1-bookworm-slim-linux-arm64-v8.tar",
+    "receipts/artifact-inventory.json",
+    "receipts/archive-sha256.txt",
+    "receipts/acquisition-receipt.json",
+    "receipts/verification-report.json"
+  ],
+  "prohibited": [
+    "mutable-tag-execution",
+    "any-other-platform-manifest",
+    "unrelated-image-or-layer-reuse",
+    "unlisted-host-or-redirect",
+    "account-credential-access",
+    "new-host-tool-installation",
+    "corpus-source-gold-schedule-authority-study-role-provider-model-analysis-or-osf-access",
+    "image-run-or-compatibility-campaign-under-this-authorization"
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "protocol": "lachesis-m9b13a-oci-acquisition-protocol/1",
+  "candidate": "docker.io/library/node:24.18.1-bookworm-slim",
+  "immutableReference": "docker.io/library/node@sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7",
+  "selectedPlatform": "linux/arm64/v8",
+  "selectedPlatformManifest": "sha256:c39335f45d6d5b2a5be95b0f1a63e57cca4e9e36cc69b313c1ad5472b13a1e3",
+  "imageGraph": {
+    "config": {
+      "digest": "sha256:1c261b8cd71d78fcdc0507b08bc7156a29785b92f0d3496861455a598bcc042d",
+      "bytes": 6885
+    },
+    "layers": [
+      {
+        "digest": "sha256:53bb9e501f1803aca595be8d902a62cea6bf4d996ce6f7dfe16c1c97be343e6c",
+        "bytes": 28117255
+      },
+      {
+        "digest": "sha256:ab40f635d656bc78edba5f9d146f84446f9726581f8b6d0107bb4829aaa20f4a",
+        "bytes": 3314
+      },
+      {
+        "digest": "sha256:78c0f71ad86cbdcf4792fbde7c7ad8ed4ec0d0928e23304150f912fc28e8f7a3",
+        "bytes": 50336963
+      },
+      {
+        "digest": "sha256:8055ce4d148bba236fda7c9bcd5eee50b7f1459ee71e6dadcd6c4583373b3618",
+        "bytes": 1712537
+      },
+      {
+        "digest": "sha256:1930f839b9269e060fc3b6e12831c0cf685409855d3b2c80accf5bfa561da2c1",
+        "bytes": 449
+      }
+    ]
+  },
+  "attestationGraph": {
+    "manifest": "sha256:f3c062ad822adadf8f41d1bfaa2a25cce3fd81800fc2a2cf2264307b8c77ae23",
+    "config": {
+      "digest": "sha256:eaa2172dacb9b1759f08a5c09e17877017373536a23f5a0ca1abeb68b8355d50",
+      "bytes": 241
+    },
+    "spdx": {
+      "digest": "sha256:582f962d2a1af162c7927de3b356d08961575a2b32aee3b39ea733f5b5ce919c",
+      "bytes": 2573854,
+      "mediaType": "application/vnd.in-toto+json",
+      "predicateType": "https://spdx.dev/Document"
+    },
+    "provenance": {
+      "digest": "sha256:792f6e366cff5fff17d77e82eb8b3e52e37b7f83ee3f80cf0036ff439baa9b15",
+      "bytes": 27753,
+      "mediaType": "application/vnd.in-toto+json",
+      "predicateType": "https://slsa.dev/provenance/v0.2"
+    }
+  },
+  "trustChain": [
+    "docker-official-images-reviewed-publication-process",
+    "tls-registry-resolution-with-exact-sha256-content-identities",
+    "oci-source-annotation-to-signed-github-commit",
+    "immutable-dockerfile-git-blob-and-sha256",
+    "dockerfile-verifies-node-openpgp-signed-sha256-manifest",
+    "attached-content-addressed-spdx-and-slsa-predicates"
+  ],
+  "signatureAssessment": {
+    "dockerNodeSourceCommit": "github-verified-valid-pgp-signature",
+    "nodeDistribution": "openpgp-signed-shasums-used-by-dockerfile",
+    "ociImageStandaloneSignature": "not-established",
+    "dockerContentTrust": "not-relied-upon-retirement-announced",
+    "attestations": "content-addressed-but-bodies-and-subjects-not-yet-validated"
+  },
+  "laterAcceptanceChecks": [
+    "all-downloaded-byte-streams-match-listed-sha256-and-size",
+    "index-selects-exactly-the-listed-platform-and-attestation-manifests",
+    "slsa-statement-subject-binds-selected-platform-manifest",
+    "slsa-builder-build-type-materials-source-commit-and-base-match-reviewed-policy",
+    "spdx-statement-subject-binds-selected-platform-manifest",
+    "spdx-is-well-formed-and-covers-the-image-filesystem-and-packages",
+    "source-dockerfile-sha256-and-git-blob-match",
+    "github-commit-signature-remains-valid",
+    "node-shasums-openpgp-signature-verifies-under-frozen-node-release-key-policy",
+    "malware-and-secret-scans-complete-with-no-unresolved-high-severity-finding",
+    "archive-sha256-and-complete-file-inventory-recorded"
+  ],
+  "knownAbsences": [
+    "no-standalone-cosign-or-notation-image-signature-established",
+    "attestation-bodies-not-fetched-or-verified-in-this-review",
+    "debian-point-release-not-asserted-from-metadata-only-inspection",
+    "native-module-compatibility-not-yet-run"
+  ],
+  "disposition": "eligible-for-one-separately-authorized-acquisition-only-subject-to-fail-closed-acceptance-checks"
+}

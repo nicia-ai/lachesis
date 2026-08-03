@@ -1,0 +1,17 @@
+{
+  "protocol": "lachesis-m9b13a-oci-acquisition-protocol/1",
+  "selected": "linux/arm64/v8",
+  "selectionBasis": [
+    "explicit-platform-binding-rather-than-client-default",
+    "native-execution-on-the-reviewed-docker-host-reported-as-linux-aarch64",
+    "avoid-amd64-emulation-as-an-unreviewed-runtime-layer",
+    "official-image-platform-manifest-and-attestations-present",
+    "node-24.18.1-official-linux-arm64-artifact-has-a-signed-checksum-entry"
+  ],
+  "workstationInheritance": false,
+  "hostObservationUsedAsEvidence": "docker-engine-reported-linux-aarch64",
+  "hostObservationIsNotReplayIdentity": true,
+  "requiredExecutionConstraint": "native-linux-arm64-v8-only-no-qemu-rosetta-or-transparent-cross-architecture-emulation",
+  "independentVerifierConstraint": "must-use-native-linux-arm64-v8-or-report-no-go",
+  "platformChangeRule": "new-review-new-digests-new-attestations-and-full-compatibility-campaign"
+}

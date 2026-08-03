@@ -1,0 +1,19 @@
+{
+  "protocol": "lachesis-m9b13a-runtime-requirement-review@1.0.0",
+  "acquisitionProtocol": "lachesis-m9b13a-oci-acquisition-protocol/1",
+  "compatibilityProtocol": "lachesis-m9b13a-runtime-compatibility-protocol/1",
+  "scope": "read-only-runtime-requirement-and-oci-metadata-review",
+  "reviewedAt": "2026-08-03T04:35:42Z",
+  "startingCommit": "fc6acb2b839e4c6f208d5985d8ba419e197cebe5",
+  "startingTree": "5c1f4b3650db80258abffb2d313749a3dc1eb95b",
+  "preservedBindings": {
+    "osfRegistration": "63sh5",
+    "preregistrationPackage": "lachesis-m9b12f-offline-preregistration-package@1.0.0",
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "receiptDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+    "m9b13ProtocolDigest": "6ee91f4734bb38fd91a2d10b7c303d12e1c6d193056ab83852b6f4c55724b0b1",
+    "m9b13Decision": "m9b13-materialization-readiness-no-go"
+  },
+  "authority": "none-review-only",
+  "immutability": "append-only-no-historical-artifact-rewrite"
+}

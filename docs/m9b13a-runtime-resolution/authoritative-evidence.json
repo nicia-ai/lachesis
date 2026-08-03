@@ -1,0 +1,92 @@
+{
+  "protocol": "lachesis-m9b13a-runtime-requirement-review@1.0.0",
+  "retrievalMode": "public-primary-source-metadata-only-no-image-or-attestation-blobs",
+  "retrievedAt": "2026-08-03T04:35:42Z",
+  "registryMetadataReproducedWithEmptyDockerConfig": true,
+  "registryMetadataRequiredAccountCredentials": false,
+  "sources": [
+    {
+      "authority": "Node.js",
+      "url": "https://nodejs.org/en/blog/release/v24.18.1",
+      "finding": "official-LTS-Krypton-security-release",
+      "releaseDate": "2026-07-29",
+      "components": {
+        "node": "24.18.1",
+        "npm": "11.16.0",
+        "v8": "13.6.233.17",
+        "libuv": "1.52.1",
+        "zlib": "1.3.1",
+        "openssl": "3.5.7",
+        "nodeModulesAbi": 137
+      }
+    },
+    {
+      "authority": "Node.js",
+      "url": "https://nodejs.org/dist/v24.18.1/SHASUMS256.txt.asc",
+      "finding": "openpgp-signed-checksum-manifest-published",
+      "selectedLinuxArm64TarXzSha256": "7201e3a09dc825bac57867c81913e2b8f0ef87d04cb9082af4cda82f6ff3d88c",
+      "linuxX64TarXzSha256": "d6c664df3f3f61458e8c277585571328522d705166723a7c7823a9253a4d15a0",
+      "sourceTarXzSha256": "86d40d594bbdfcf69009a62fdf43cb19ae72b6cb5822d2bdd8349c5a1b2fa628"
+    },
+    {
+      "authority": "nodejs/docker-node",
+      "url": "https://github.com/nodejs/docker-node/commit/53252eea9caacaa50bdf58f4d34f0bff8d259999",
+      "finding": "source-commit-for-node-24.18.1",
+      "commit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+      "commitTimestamp": "2026-07-30T11:58:30Z",
+      "githubVerification": "verified-valid-pgp-signature"
+    },
+    {
+      "authority": "nodejs/docker-node",
+      "url": "https://raw.githubusercontent.com/nodejs/docker-node/53252eea9caacaa50bdf58f4d34f0bff8d259999/24/bookworm-slim/Dockerfile",
+      "finding": "immutable-source-dockerfile",
+      "gitBlobSha1": "afcf773d35c32bb03a527e89813deb7f1af6f8d3",
+      "sha256": "bd6bb06de21f22916d8e582ccd43722889f8788a5699f2a099296707c2c57e52",
+      "bytes": 5200,
+      "base": "debian:bookworm-slim",
+      "nodeVersion": "24.18.1",
+      "sourceVerification": "downloads-signed-SHASUMS256-and-verifies-selected-tarball"
+    },
+    {
+      "authority": "Docker Hub Official Images registry",
+      "url": "https://hub.docker.com/v2/repositories/library/node/tags/24.18.1-bookworm-slim",
+      "finding": "active-official-image-tag-and-platform-descriptors",
+      "tagUpdated": "2026-07-30T20:40:41.339895Z",
+      "indexDigest": "sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7"
+    },
+    {
+      "authority": "Debian",
+      "url": "https://www.debian.org/releases/bookworm/",
+      "finding": "bookworm-is-debian-12",
+      "pointRelease": "not-attributed-to-the-image-without-layer-inspection"
+    },
+    {
+      "authority": "Docker",
+      "url": "https://docs.docker.com/build/metadata/attestations/",
+      "finding": "buildkit-attestation-format-and-default-provenance-documentation"
+    },
+    {
+      "authority": "Docker",
+      "url": "https://docs.docker.com/build/metadata/attestations/sbom/",
+      "finding": "spdx-sbom-attestation-documentation"
+    },
+    {
+      "authority": "Docker",
+      "url": "https://docs.docker.com/docker-hub/repos/manage/trusted-content/official-images/",
+      "finding": "official-images-review-and-publication-model-and-dct-retirement-notice"
+    },
+    {
+      "authority": "docker-library/official-images",
+      "url": "https://github.com/docker-library/official-images",
+      "finding": "official-image-repeatability-and-source-verification-policy"
+    }
+  ],
+  "notFetched": [
+    "node-release-binaries",
+    "oci-image-config-blob",
+    "oci-layer-blobs",
+    "spdx-attestation-body",
+    "slsa-attestation-body",
+    "any-container-image-archive"
+  ]
+}

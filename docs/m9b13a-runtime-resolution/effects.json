@@ -1,0 +1,30 @@
+{
+  "protocol": "lachesis-m9b13a-runtime-requirement-review@1.0.0",
+  "reviewEffects": {
+    "publicDocumentationMetadataRequests": "nonzero-authorized-not-used-for-study-data",
+    "registryManifestMetadataRequests": "nonzero-authorized",
+    "imageLayerDownloads": 0,
+    "imageConfigBlobDownloads": 0,
+    "attestationBodyDownloads": 0,
+    "binaryDownloads": 0,
+    "imagePulls": 0,
+    "imageBuilds": 0,
+    "imageImports": 0,
+    "imageRuns": 0,
+    "credentialsAccessed": 0,
+    "corpusArtifacts": 0,
+    "goldArtifacts": 0,
+    "sourceDocumentsAcquired": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "scheduleInstances": 0,
+    "operationalIdentities": 0,
+    "authorityStores": 0,
+    "analysisRuns": 0,
+    "osfMutations": 0,
+    "gitPushes": 0
+  },
+  "temporaryCredentialFreeRegistryConfigRootsRemaining": 0,
+  "protectedUntrackedPathsTouched": 0,
+  "m9b13DecisionMutations": 0
+}

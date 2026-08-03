@@ -1,0 +1,66 @@
+{
+  "protocol": "lachesis-m9b13a-runtime-compatibility-protocol/1",
+  "status": "defined-not-run",
+  "appliesTo": [
+    "the-selected-linux-arm64-node-24.18.1-image-before-runtime-closure-acceptance",
+    "any-proposed-node-24-patch-other-than-24.18.1-with-a-new-review"
+  ],
+  "preconditions": [
+    "accepted-acquisition-receipt",
+    "network-disabled-runtime",
+    "no-credentials",
+    "no-corpus-gold-schedule-authority-provider-or-analysis-mounts",
+    "packed-dependencies-provided-read-only-by-digest",
+    "native-linux-arm64-v8-without-emulation"
+  ],
+  "requiredMatrix": [
+    "complete-focused-m9-tests",
+    "complete-repository-tests-and-coverage-at-or-above-frozen-gates",
+    "prettier-check",
+    "strict-typescript",
+    "type-aware-eslint",
+    "build-and-declaration-generation",
+    "better-sqlite3-native-install-load-open-write-read-close-reopen",
+    "sqlite-rollback-journal-wal-and-shm-modes",
+    "sqlite-child-process-reopen-and-lock-contention",
+    "node-sqlite-durable-authority-hostile-and-crash-boundary-tests",
+    "canonical-json-byte-vectors",
+    "sha256-and-required-cryptographic-digest-vectors",
+    "tokenizer-fixtures",
+    "closed-ast-execution-vectors",
+    "evaluator-reproduction",
+    "deterministic-scheduling-vectors",
+    "zero-effect-replay",
+    "packed-dependency-closure-with-network-fallback-denied",
+    "node-smoke",
+    "workers-smoke",
+    "cli-valid-and-invalid-smokes",
+    "source-safety-secret-and-public-api-audits",
+    "git-diff-check"
+  ],
+  "requiredByteIdenticalScientificArtifacts": [
+    "m9b12f-preregistration-package",
+    "m9b12f-osf-receipt",
+    "m9b13-readiness-package",
+    "population-and-financial-contracts",
+    "canonical-json-vectors",
+    "tokenizer-fixtures",
+    "closed-ast-vectors",
+    "evaluator-fixtures",
+    "deterministic-schedule-fixtures",
+    "zero-effect-replay-fixtures"
+  ],
+  "runtimeArtifactsExpectedToReceiveNewIdentities": [
+    "oci-index-and-platform-manifest-binding",
+    "image-config-and-layer-inventory",
+    "provenance-and-sbom-captures",
+    "image-archive-sha256",
+    "malware-and-secret-scan-reports",
+    "native-better-sqlite3-binary-or-build-receipt",
+    "packed-offline-dependency-closure-receipt",
+    "compatibility-run-environment-and-result-receipts",
+    "prospective-runtime-replay-binding"
+  ],
+  "failureRule": "any-failure-byte-difference-unexplained-warning-network-attempt-or-incomplete-receipt-is-no-go-and-quarantine",
+  "successMeaning": "runtime-closure-may-be-reviewed-it-does-not-authorize-materialization"
+}

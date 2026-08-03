@@ -1,0 +1,53 @@
+{
+  "protocol": "lachesis-m9b13a-runtime-requirement-review@1.0.0",
+  "startingCommit": "fc6acb2b839e4c6f208d5985d8ba419e197cebe5",
+  "startingTree": "5c1f4b3650db80258abffb2d313749a3dc1eb95b",
+  "startingTrackedWorktree": "clean",
+  "registeredBindings": {
+    "m9b12ThroughM9b12fManifests": "passed",
+    "m9b12fManifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "receiptManifest": "passed",
+    "receiptManifestDigest": "0a8447b88d7cc41db67dd863a5269bad6b95bed2cf568d85fd562b96253faae1",
+    "m9b13Manifest": "passed",
+    "m9b13ManifestDigest": "fae20d627200e276d6211bb275614c88d8afa810dcba6fa75e23f931b701307d",
+    "preregistrationAndReceiptDigestReproduction": "passed-by-focused-frozen-tests"
+  },
+  "metadataReview": {
+    "primarySourcesOnly": true,
+    "credentialFreeRegistryReproduction": "passed-empty-docker-config",
+    "manifestAndAttestationDescriptorConsistency": "passed",
+    "imageOrAttestationBlobsFetched": 0
+  },
+  "repositoryGates": {
+    "changedFileFormatting": "passed",
+    "globalFormatting": "preexisting-protected-untracked-paper-readme-mismatch-not-modified",
+    "strictTypeScript": "passed",
+    "lint": "passed",
+    "buildAndDeclarations": "passed",
+    "focusedFrozenTests": "27-passed-2-files",
+    "fullCoverage": {
+      "files": 65,
+      "tests": 1056,
+      "failed": 0,
+      "statements": "90.01-percent-12479-of-13863",
+      "branches": "80.99-percent-8528-of-10529",
+      "functions": "97.45-percent-2637-of-2706",
+      "lines": "93.70-percent-11909-of-12709"
+    },
+    "nodeAndWorkersSmokes": "passed",
+    "offlineExamples": "7-of-7-passed",
+    "descriptiveLoad": "128-records-passed",
+    "cliContract": "6-of-6-passed",
+    "unsafeEscapeAndSourceSafety": "passed",
+    "publicApiAudit": "passed-no-m9b13a-export",
+    "releaseChecksums": "passed",
+    "m8HistoricalChecksums": "passed",
+    "changedScopeSecretScan": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "knownHistoricalBaselinesNotModified": [
+    "m7c-public-documentation-binding-differs",
+    "generator-current-source-inventory-differs-from-frozen-alpha5-tarball"
+  ],
+  "decision": "m9b13a-existing-image-acquisition-ready-for-review"
+}
