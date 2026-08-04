@@ -1,0 +1,25 @@
+{
+  "protocol": "lachesis-m9b13d1-darwin-descriptor-execution-probe/1",
+  "scope": "private-offline-helper-launch-feasibility",
+  "frozenHost": {
+    "product": "macOS 26.5.2",
+    "build": "25F84",
+    "darwin": "25.5.0",
+    "architecture": "arm64"
+  },
+  "candidateMechanisms": [
+    "inherited O_RDONLY|O_NOFOLLOW descriptor executed as /dev/fd/3",
+    "inherited O_EXEC|O_NOFOLLOW descriptor executed as /dev/fd/3"
+  ],
+  "requiredSuccessProperty": "the retained verified descriptor is the only executable object and no original-path fallback exists",
+  "observedResult": {
+    "readOnlyDescriptor": "EACCES",
+    "executeOnlyDescriptor": "EACCES",
+    "fexecveAvailableInPinnedSdk": false,
+    "execveatAvailableInPinnedSdk": false,
+    "descriptorExecutionSupported": false
+  },
+  "sameUidHostileRepetitions": 32,
+  "fallbackPolicy": "forbidden",
+  "disposition": "m9b13d1-dependency-closure-no-go"
+}
