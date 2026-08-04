@@ -1,0 +1,40 @@
+{
+  "protocol": "lachesis-m9b13c-offline-acquisition-boundary@1.0.0",
+  "decision": "acquisition-boundary-no-go",
+  "readyForIndependentReview": false,
+  "supersession": {
+    "predecessor": "lachesis-m9b13b-cryptographically-complete-oci-acquisition-authorization@1.0.0",
+    "predecessorCommit": "c47752135d37e17831194ee8ba96641b4b149e8a",
+    "predecessorTree": "35c107a146751339270432d4b8be621b8842b63a",
+    "effect": "M9b.13c prospectively supersedes the M9b.13b authorization candidate; it does not reinterpret, amend, activate, or invalidate the preserved M9b.13b record or its independent NO-GO review.",
+    "preservedIndependentReviewDecision": "m9b13b-acquisition-authorization-review-no-go"
+  },
+  "appendOnlyReviewEvidence": {
+    "commit": "4e835b543c0bfa6e7971a76bfb53c24f7329fb6c",
+    "tree": "8451a92aa3373a7567ba1042563aca3d5242fe69",
+    "path": "docs/m9b13b-independent-review.md",
+    "sha256": "4d3863dba7080d5b0fbd255eb6c3dc075519822063ee52979694e10437281425"
+  },
+  "implementationSeal": {
+    "commit": "1a1266e56453e2f5ba98e2d5c6e2b0be3b23ef65",
+    "tree": "e3e7d5029965a2bf30cd1d85d56afd964f6be17d",
+    "protocolSha256": "c6b2b3f3fa90be88128fc86895dc5bf70d33d937cf471df24a3f2ad504a4e6b5",
+    "inactiveAuthorizationSha256": "c0d37b6125659ada7b8c0c920e0a583546831e547d30461d2585ab59b3116510"
+  },
+  "blockers": [
+    "m9b13c:offline-independent-sbom-scanner-unavailable",
+    "m9b13c:directory-relative-race-resistant-filesystem-primitive-unavailable"
+  ],
+  "selectedScanner": null,
+  "selectedFilesystemHelper": null,
+  "futureAuthorizationText": null,
+  "authority": {
+    "acquisition": false,
+    "outputRootCreation": false,
+    "imagePullImportBuildOrRun": false,
+    "corpusOrMaterialization": false,
+    "credentialProviderModelOrStudy": false,
+    "osfPublicationOrGitRemote": false
+  },
+  "requiredNextStep": "A later append-only correction must freeze complete offline scanner and race-resistant filesystem-helper dependency closures, pass hostile tests, and receive independent review before any acquisition authorization can exist."
+}

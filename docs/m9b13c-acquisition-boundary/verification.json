@@ -1,0 +1,113 @@
+{
+  "protocol": "lachesis-m9b13c-offline-acquisition-boundary@1.0.0",
+  "decision": "acquisition-boundary-no-go",
+  "environment": {
+    "node": "v24.18.1",
+    "pnpm": "10.33.0",
+    "typescript": "6.0.3",
+    "platform": "darwin-arm64",
+    "networkUsed": false,
+    "dependenciesInstalledOrDownloaded": false
+  },
+  "focusedVerification": {
+    "m9b13cHostileTests": {
+      "files": 1,
+      "tests": 62,
+      "status": "pass"
+    },
+    "m9Tests": {
+      "files": 28,
+      "tests": 543,
+      "status": "pass"
+    },
+    "generatorAiSdkStrictTypecheck": "pass",
+    "changedScopeLint": "pass",
+    "changedScopeFormatting": "pass"
+  },
+  "repositoryVerification": {
+    "strictTypecheck": "pass",
+    "lintExcludingProtectedPaperAndDsStore": "pass",
+    "buildAndDeclarations": "pass",
+    "coverage": {
+      "files": 67,
+      "tests": 1140,
+      "status": "pass",
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    },
+    "nodeSmoke": "pass",
+    "workersDryRunSmoke": "pass",
+    "offlineExamples": "pass-7",
+    "loadBaseline": "pass",
+    "cliContract": "pass-6-tests",
+    "sourceSafety": "pass",
+    "publicApiAudit": "pass-no-new-export",
+    "releaseChecksums": "pass",
+    "m8HistoricalChecksums": "pass",
+    "changedScopeSecretScan": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "historicalFrozenArtifactFindings": [
+    {
+      "command": "pnpm audit:m7c-preregistration",
+      "status": "known-historical-mismatch-not-rewritten",
+      "detail": "The frozen M7c binding for docs/public-alpha.md differs from current development bytes. Its Git blob is c619678bdba7f08623a82cdf2e03704e4514d7aa in both the accepted M9b.13b baseline and the M9b.13c implementation commit."
+    },
+    {
+      "command": "pnpm audit:packages",
+      "status": "known-historical-mismatch-not-rewritten",
+      "detail": "The current @nicia-ai/lachesis-generator tarball differs from the frozen alpha.5 digest; M9b.13c changes no package/generator source, package version, or public package surface."
+    }
+  ],
+  "predecessorIntegrity": {
+    "m9b12ThroughM9b12fManifests": "pass",
+    "m9b12fPreregistrationManifestSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "m9b12fReceiptManifestSha256": "0a8447b88d7cc41db67dd863a5269bad6b95bed2cf568d85fd562b96253faae1",
+    "m9b13ManifestSha256": "fae20d627200e276d6211bb275614c88d8afa810dcba6fa75e23f931b701307d",
+    "m9b13aManifestSha256": "7395d002c9d7bfb44a23aeefeead0ee4428faece1672b0d5b18fed8d2200eb6b",
+    "m9b13bManifestSha256": "8b5b4baad331e56b73b1f47db0c1f5e7bf09cb32d2f65fedab9a7e373c9f02b6",
+    "m9b13bIndependentReviewManifestSha256": "d7bbfd200ec229e596809c15fefe4232d597558576340384a88830c1bb5f7b8a",
+    "predecessorNamespacesModified": false
+  },
+  "offlineDependencyClosure": {
+    "scannerInventory": [
+      "syft",
+      "trivy",
+      "grype",
+      "tern",
+      "cdxgen",
+      "oscap",
+      "bom",
+      "osv-scanner",
+      "docker-scout"
+    ],
+    "availableScanners": [],
+    "workspaceScannerDependencies": [],
+    "selectedScanner": null,
+    "selectedFilesystemHelper": null,
+    "nodeMissingPrimitives": [
+      "public-directory-fd-relative-openat-api",
+      "renameat2-RENAME_NOREPLACE-api",
+      "bind-mount-identity-proof-api"
+    ]
+  },
+  "prohibitedEffects": {
+    "networkRequests": 0,
+    "downloads": 0,
+    "imagePulls": 0,
+    "imageImports": 0,
+    "imageBuilds": 0,
+    "imageRuns": 0,
+    "corpusAccesses": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "osfMutations": 0,
+    "gitRemoteEffects": 0,
+    "outputRootsCreated": 0,
+    "authoritiesActivated": 0,
+    "pushes": 0
+  }
+}
