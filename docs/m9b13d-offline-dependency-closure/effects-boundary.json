@@ -1,0 +1,29 @@
+{
+  "protocol": "lachesis-m9b13d-zero-effect-boundary/1",
+  "effects": {
+    "networkRequests": 0,
+    "downloads": 0,
+    "packageInstalls": 0,
+    "dockerOrOciPulls": 0,
+    "imageImports": 0,
+    "imageBuilds": 0,
+    "imageExecutions": 0,
+    "realAcquisitionRootCreations": 0,
+    "corpusAccesses": 0,
+    "goldAccesses": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "osfMutations": 0,
+    "publications": 0,
+    "pushes": 0,
+    "m10Effects": 0,
+    "liveStudyEffects": 0
+  },
+  "allowed": [
+    "read-only local executable, package-store, compiler, SDK, and filesystem capability inventory",
+    "synthetic temporary OCI fixtures",
+    "synthetic disposable filesystem roots",
+    "offline compilation of the private helper"
+  ]
+}

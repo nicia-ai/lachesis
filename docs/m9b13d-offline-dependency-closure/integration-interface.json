@@ -1,0 +1,19 @@
+{
+  "protocol": "lachesis-m9b13d-synthetic-oci-integration/1",
+  "currentMode": "synthetic-only",
+  "sequence": [
+    "receive bytes only from an already-authorized future M9b.13e transport",
+    "increment M9b.13c streaming counters before forwarding any chunk",
+    "forward expected path, exact length, expected SHA-256, and bytes to the descriptor-owning helper",
+    "retain a file only after exact streamed length and digest validation plus no-clobber rename",
+    "seal the complete OCI layout and close the helper transaction",
+    "open the sealed layout read-only with the M9b.13d scanner",
+    "derive Debian and Node inventory without import, mount, or execution",
+    "strictly compare the derived inventory with the attached SPDX statement using the frozen comparison protocol",
+    "emit accepted synthetic evidence or exactly quarantined-supply-chain-evidence-insufficient"
+  ],
+  "testInputs": "synthetic OCI fixtures only",
+  "failure": "quarantined-supply-chain-evidence-insufficient",
+  "m9b13cAuthorizationActivated": false,
+  "realAcquisitionAuthorized": false
+}

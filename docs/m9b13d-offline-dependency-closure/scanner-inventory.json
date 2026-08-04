@@ -1,0 +1,155 @@
+{
+  "protocol": "lachesis-m9b13d-oci-inventory-scanner/1",
+  "inventoryBoundary": {
+    "network": false,
+    "installOrDownload": false,
+    "path": "local command resolution",
+    "workspace": [
+      "package.json",
+      "pnpm-lock.yaml",
+      "packages/generator-ai-sdk/package.json"
+    ],
+    "packageStore": "/Users/paul/Library/pnpm/store/v10"
+  },
+  "candidates": [
+    "syft",
+    "trivy",
+    "grype",
+    "tern",
+    "cdxgen",
+    "oscap",
+    "bom",
+    "osv-scanner",
+    "docker-scout",
+    "oras"
+  ],
+  "candidateRecords": [
+    {
+      "name": "syft",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    },
+    {
+      "name": "trivy",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    },
+    {
+      "name": "grype",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    },
+    {
+      "name": "tern",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    },
+    {
+      "name": "cdxgen",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    },
+    {
+      "name": "oscap",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    },
+    {
+      "name": "bom",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    },
+    {
+      "name": "osv-scanner",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    },
+    {
+      "name": "docker-scout",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    },
+    {
+      "name": "oras",
+      "executablePath": null,
+      "version": null,
+      "executableSha256": null,
+      "sourceOrPackageIdentity": null,
+      "dynamicLibraryAndRuntimeClosure": null,
+      "sealedOciLayoutWithoutDocker": null,
+      "deterministicMachineReadableOutput": null,
+      "offlineDependenciesComplete": false,
+      "disposition": "unavailable"
+    }
+  ],
+  "workspaceMatches": [],
+  "packageStoreMatches": [],
+  "selection": {
+    "class": "repository-local-purpose-built-deterministic-oci-inventory-scanner",
+    "thirdPartyCandidate": null,
+    "reason": "No independently maintained candidate with a freezeable executable and dependency identity is present offline."
+  }
+}

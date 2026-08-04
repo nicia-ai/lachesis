@@ -1,0 +1,44 @@
+{
+  "protocol": "lachesis-m9b13d-race-resistant-filesystem-helper/1",
+  "sourcePath": "packages/generator-ai-sdk/internal/native/m9b13d-filesystem-helper.c",
+  "visibility": "private-no-public-export",
+  "supportedPlatform": "arm64-apple-darwin25.5.0 with APFS and macOS SDK 26.5",
+  "buildProtocol": "lachesis-m9b13d-native-reproducible-build/1",
+  "transaction": "One helper process owns parent, ancestor, root, and working directory descriptors from exclusive root creation through seal or fail-closed exit.",
+  "ancestorPolicy": [
+    "input-must-already-be-canonical-absolute-path",
+    "lstat-every-existing-component",
+    "regular-directory-only-without-symlinks",
+    "root-or-effective-user-owner-only",
+    "reject-group-or-other-writable-components",
+    "single-device-mount-policy",
+    "capture-and-recheck-device-and-inode"
+  ],
+  "forbiddenRoots": [
+    "/Users/paul/orgs/nicia/lachesis",
+    "/Users/paul/orgs/nicia/lachesis/sealed",
+    "/Users/paul/orgs/nicia/lachesis/paper"
+  ],
+  "mutation": [
+    "mkdirat-exclusive-0700-root",
+    "openat-and-mkdirat-relative-only",
+    "O_NOFOLLOW-O_CREAT-O_EXCL-0600-temporary-files",
+    "regular-file-owner-device-inode-and-link-count-checks",
+    "streamed-SHA256-and-exact-byte-count",
+    "fsync-file-before-rename",
+    "renameatx_np-RENAME_EXCL",
+    "fsync-directory-after-rename",
+    "root-and-parent-path-identity-before-and-after-every-mutation",
+    "exclusive-fsynced-seal-marker-and-final-root-fsync"
+  ],
+  "limits": {
+    "files": 1024,
+    "bytes": 512000000,
+    "pathBytes": 4096,
+    "nesting": 128
+  },
+  "inputProtocol": "ASCII command headers: FILE <lowercase-hex-path> <decimal-size> <lowercase-sha256>, followed by exactly size raw bytes and one newline; final SEAL newline.",
+  "outputProtocol": "One strict JSON success receipt on stdout; one stable M9B13D_ERROR code on stderr and nonzero exit on failure.",
+  "failurePolicy": "Partial, foreign, ambiguous, collided, or interrupted state is retained for inspection and never automatically deleted or reused.",
+  "syntheticFaults": "Explicit fault injection is accepted only in synthetic mode and is rejected in prospective mode."
+}

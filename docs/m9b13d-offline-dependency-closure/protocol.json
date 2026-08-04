@@ -1,0 +1,37 @@
+{
+  "protocol": "lachesis-m9b13d-offline-dependency-closure@1.0.0",
+  "status": "private-offline-design-implementation-and-final-review-required",
+  "baseline": {
+    "commit": "d6ee1c71a10ceae9e3c30fda7e67f03e71092a48",
+    "tree": "fb96e26dfca48fe6816625db0efc75704d1222ee",
+    "decision": "acquisition-boundary-no-go",
+    "protocolSha256": "c6b2b3f3fa90be88128fc86895dc5bf70d33d937cf471df24a3f2ad504a4e6b5",
+    "withheldAuthorizationSha256": "c0d37b6125659ada7b8c0c920e0a583546831e547d30461d2585ab59b3116510",
+    "manifestSha256": "56b03bdf3355dacaf45262c6fe66f4ceec0a1efb73344b79afe3edc0a01f5d3d"
+  },
+  "acceptedBlockers": [
+    "m9b13c:offline-independent-sbom-scanner-unavailable",
+    "m9b13c:directory-relative-race-resistant-filesystem-primitive-unavailable"
+  ],
+  "componentProtocols": [
+    "lachesis-m9b13d-oci-inventory-scanner/1",
+    "lachesis-m9b13d-spdx-inventory-comparison/1",
+    "lachesis-m9b13d-race-resistant-filesystem-helper/1",
+    "lachesis-m9b13d-native-reproducible-build/1",
+    "lachesis-m9b13d-synthetic-oci-integration/1",
+    "lachesis-m9b13d-zero-effect-boundary/1"
+  ],
+  "scope": {
+    "scanner": "sealed synthetic OCI layouts only during M9b.13d",
+    "filesystem": "disposable synthetic roots only during M9b.13d",
+    "realNodeImage": false,
+    "realAcquisitionRoot": false,
+    "authorizationActivation": false
+  },
+  "preservation": {
+    "m9b13ThroughM9b13cByteIdentical": true,
+    "publicExports": 0,
+    "dependencyAdditions": 0,
+    "packageVersionChanges": 0
+  }
+}

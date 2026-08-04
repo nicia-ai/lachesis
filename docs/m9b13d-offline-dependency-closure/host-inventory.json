@@ -1,0 +1,53 @@
+{
+  "protocol": "lachesis-m9b13d-native-reproducible-build/1",
+  "host": {
+    "operatingSystem": "macOS 26.5.2 build 25F84",
+    "kernel": "Darwin 25.5.0",
+    "architecture": "arm64",
+    "filesystem": "APFS on device 16777235 for the nearest existing prospective-parent ancestor",
+    "prospectiveParent": "/Users/paul/orgs/nicia/lachesis-private",
+    "prospectiveParentState": "absent-not-created",
+    "nearestExistingAncestor": "/Users/paul/orgs/nicia",
+    "nearestExistingAncestorDevice": 16777235
+  },
+  "node": {
+    "version": "24.18.1",
+    "sufficientDirectPathSafety": false,
+    "missing": [
+      "public-directory-fd-relative-openat-api",
+      "renameatx_np-RENAME_EXCL-api",
+      "complete-ancestor-descriptor-ownership"
+    ]
+  },
+  "compiler": {
+    "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+    "version": "Apple clang 21.0.0 (clang-2100.1.1.101)",
+    "target": "arm64-apple-darwin25.5.0",
+    "sha256": "7def90dd8829726686213a747fc5bff1583df933dae5edc55d755479e0bfe00a",
+    "xcode": "26.6 build 17F113"
+  },
+  "sdk": {
+    "path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+    "version": "26.5",
+    "buildVersion": "25F70",
+    "sdkSettingsSha256": "f8d005f09381389167f9e0aeaa169bc9e7dff162ef22ca2fd8e98df7ff1acafe"
+  },
+  "compilerDynamicLibraries": [
+    "/usr/lib/libresolv.9.dylib",
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libz.1.dylib",
+    "/usr/lib/libc++.1.dylib"
+  ],
+  "nativePrimitives": [
+    "openat",
+    "mkdirat",
+    "fstatat",
+    "unlinkat",
+    "O_NOFOLLOW",
+    "O_CREAT",
+    "O_EXCL",
+    "renameatx_np(RENAME_EXCL)",
+    "fsync",
+    "fstat"
+  ]
+}

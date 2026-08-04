@@ -1,0 +1,65 @@
+{
+  "protocol": "lachesis-m9b13d-spdx-inventory-comparison/1",
+  "frozenBeforeImageAcquisition": true,
+  "input": {
+    "derived": "lachesis-m9b13d-oci-package-inventory/1",
+    "attached": "strict SPDX-2.3 JSON package inventory"
+  },
+  "requiredDocumentFields": [
+    "spdxVersion=SPDX-2.3",
+    "dataLicense=CC0-1.0",
+    "SPDXID=SPDXRef-DOCUMENT",
+    "name",
+    "documentNamespace",
+    "creationInfo.created",
+    "creationInfo.creators",
+    "packages",
+    "relationships"
+  ],
+  "requiredPackageFields": [
+    "SPDXID",
+    "name",
+    "versionInfo",
+    "downloadLocation",
+    "filesAnalyzed=false",
+    "licenseConcluded",
+    "licenseDeclared",
+    "copyrightText",
+    "externalRefs"
+  ],
+  "identityTuple": [
+    "kind",
+    "binary-package-name",
+    "Debian-epoch-upstream-revision-or-Node-semver",
+    "normalized-architecture"
+  ],
+  "debianVersion": {
+    "epoch": "decimal prefix before colon, default 0",
+    "upstream": "nonempty portion after epoch and before final Debian revision separator",
+    "revision": "portion after final hyphen, default empty",
+    "equality": "exact normalized tuple; no semantic ordering or coercion"
+  },
+  "architecture": {
+    "accepted": ["amd64", "arm64", "all"],
+    "normalization": "lowercase exact allowlist; no aliases"
+  },
+  "sourcePackages": "Source metadata is retained on a Debian binary package when present. Standalone source-package SPDX entries are unsupported and quarantine.",
+  "node": "One pkg:generic/node purl must exactly match the independently derived Node semver and OCI config architecture.",
+  "duplicates": "Duplicate identity or SPDXID always quarantines, including byte-identical duplicates.",
+  "relationships": "Exactly one SPDXRef-DOCUMENT DESCRIBES relationship per admitted package and no other relationship is accepted.",
+  "ignoredPresentationOnlyFields": [
+    "document-name",
+    "document-namespace",
+    "creation timestamp",
+    "creator strings",
+    "package SPDXID spelling",
+    "license and copyright placeholder text"
+  ],
+  "permittedRepresentationalDifferences": [
+    "percent-encoding in purl name and version components",
+    "query-parameter ordering in a purl"
+  ],
+  "equality": "Exact set equality after strict parsing and frozen normalization; every derived entry and every attached entry must map one-to-one.",
+  "failure": "quarantined-supply-chain-evidence-insufficient",
+  "policyOverride": "No caller-selected comparison policy, ignored field, identity list, or relaxation is accepted."
+}

@@ -1,0 +1,35 @@
+{
+  "protocol": "lachesis-m9b13d-oci-inventory-scanner/1",
+  "implementationPath": "packages/generator-ai-sdk/internal/m9b13d-oci-inventory-scanner.ts",
+  "visibility": "private-no-public-export",
+  "dependencies": ["Node.js 24 built-ins", "workspace Zod 4.4.3"],
+  "input": "read-only sealed OCI image-layout directory",
+  "outputSchema": "lachesis-m9b13d-oci-package-inventory/1",
+  "validation": [
+    "regular-no-symlink-oci-layout-index-and-referenced-blobs",
+    "strict-oci-layout-index-manifest-config-and-descriptor-json",
+    "sha256-and-declared-size-before-semantic-acceptance",
+    "exactly-one-selected-image-manifest",
+    "no-duplicate-descriptor-identity-or-cycle",
+    "supported-OCI-media-types-only",
+    "gzip-or-uncompressed-tar-layers-only",
+    "bounded-streaming-tar-parser-without-host-extraction",
+    "absolute-dotdot-device-socket-unsafe-link-and-conflicting-duplicate-rejection",
+    "deterministic-layer-order-and-OCI-whiteout-semantics"
+  ],
+  "derivedEvidence": {
+    "debian": "installed binary packages from /var/lib/dpkg/status and status.d records in the final virtual filesystem",
+    "node": "regular /usr/local/bin/node plus NODE_MAJOR_VERSION, NODE_MINOR_VERSION, and NODE_PATCH_VERSION macros from /usr/local/include/node/node_version.h; binary is never executed"
+  },
+  "limits": {
+    "descriptors": 128,
+    "layers": 64,
+    "uncompressedLayerBytes": 1073741824,
+    "virtualEntries": 1000000,
+    "pathBytes": 4096,
+    "nesting": 128,
+    "authoritativeFileBytes": 16777216
+  },
+  "serialization": "strict canonical JSON with lexicographically sorted object keys and package arrays",
+  "limitations": "Independent package-inventory derivation only. It is not a vulnerability scanner, does not execute or mount the image, and does not establish that the image is safe. Unsupported formats fail closed."
+}
