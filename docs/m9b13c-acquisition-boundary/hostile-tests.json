@@ -1,0 +1,21 @@
+{
+  "protocol": "lachesis-m9b13c-offline-acquisition-boundary@1.0.0",
+  "testFile": "packages/generator-ai-sdk/tests/m9b13c-acquisition-boundary.test.ts",
+  "fixtureDomain": "synthetic-test-only-no-network-image-or-study-identity",
+  "classes": [
+    "proxy-environment-and-system-configuration",
+    "host-scheme-path-dns-peer-sni-certificate-and-redirect",
+    "token-service-scope-action-lifetime-schema-and-retention",
+    "ambient-docker-and-credential-helper-discovery",
+    "retry-and-request-count",
+    "git-repository-commit-tree-path-blob-and-mode-substitution",
+    "gpg-fatal-malformed-conflicting-and-fingerprint-status",
+    "header-body-stage-a-registry-descriptor-and-archive-overflow",
+    "unexpected-signature-transparency-and-unrecognized-evidence",
+    "provenance-descriptor-and-sbom-semantic-mismatch",
+    "destination-symlink-mount-alias-ancestor-inode-device-concurrency-crash-and-partial-state",
+    "exact-quarantine-disposition",
+    "fully-intercepted-zero-real-network",
+    "zero-image-corpus-credential-provider-model-osf-and-git-remote-effects"
+  ]
+}

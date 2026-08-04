@@ -1,0 +1,24 @@
+{
+  "protocol": "lachesis-m9b13c-quarantine-decision/1",
+  "exactDisposition": "quarantined-supply-chain-evidence-insufficient",
+  "triggers": [
+    "any-byte-counter-overflow-or-size-mismatch",
+    "unexpected-signature-transparency-trust-root-certificate-or-envelope",
+    "unverifiable-authentication",
+    "missing-provenance-or-sbom",
+    "wrong-attestation-subject",
+    "inconsistent-source-builder-build-type-invocation-platform-node-version-or-base-materials",
+    "inconsistent-package-inventory",
+    "inconsistent-descriptor-graph",
+    "malformed-ambiguous-or-unrecognized-evidence",
+    "network-git-openpgp-or-destination-boundary-failure"
+  ],
+  "unsignedAttestations": "May be evaluated only as unauthenticated-but-content-addressed metadata and never described as cryptographically signed.",
+  "dynamicTrustExpansion": false,
+  "postQuarantine": [
+    "no-image-pull-import-load-build-create-or-run",
+    "no-construction-corpus-materialization-or-reuse",
+    "no-partial-root-reuse",
+    "new-independent-review-and-explicit-authorization-required-for-any-new-attempt"
+  ]
+}

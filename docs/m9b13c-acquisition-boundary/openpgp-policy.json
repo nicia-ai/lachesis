@@ -1,0 +1,30 @@
+{
+  "protocol": "lachesis-m9b13c-openpgp-status-policy/1",
+  "tool": "gpgv",
+  "networkKeyserver": false,
+  "keyringSha256": "8e6f89521a0694e445f42decd022f48369c634f1b5bcb5975135b69c88629ae8",
+  "signedObjectSha256": "b04865cae6bfd78008eea4ef9e715889ae3b81a869fea61fd1790be78b91a743",
+  "expectedSigningFingerprint": "DD792F5973C6DE52C432CBDAC77ABFA00DDBF2B7",
+  "expectedPrimaryFingerprint": "DD792F5973C6DE52C432CBDAC77ABFA00DDBF2B7",
+  "statusFd": "machine-readable-required",
+  "required": [
+    "exactly-one-VALIDSIG",
+    "exact-signing-and-primary-fingerprint-binding",
+    "exact-signed-object",
+    "no-conflicting-signer"
+  ],
+  "fatalStatuses": [
+    "BADSIG",
+    "ERRSIG",
+    "NO_PUBKEY",
+    "EXPKEYSIG",
+    "EXPSIG",
+    "REVKEYSIG",
+    "KEYREVOKED"
+  ],
+  "validitySemantics": {
+    "signatureCreation": "The signing key must be valid and unrevoked at the signature creation time encoded by the verified status stream.",
+    "reviewAndAcquisition": "Expired, revoked, or otherwise non-valid status at M9b.13c review or the later acquisition is fatal even if the signature predates expiry.",
+    "unrecognizedAuthorityOrMalformedStatus": "fatal"
+  }
+}

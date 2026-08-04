@@ -1,0 +1,19 @@
+{
+  "protocol": "lachesis-m9b13c-offline-acquisition-boundary@1.0.0",
+  "effects": {
+    "networkRequests": 0,
+    "downloads": 0,
+    "imagePulls": 0,
+    "imageImports": 0,
+    "imageBuilds": 0,
+    "imageRuns": 0,
+    "corpusAccesses": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "osfMutations": 0,
+    "gitRemoteEffects": 0
+  },
+  "prospectiveOutputRootCreated": false,
+  "authorityActivated": false
+}

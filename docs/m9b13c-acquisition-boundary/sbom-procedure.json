@@ -1,0 +1,35 @@
+{
+  "protocol": "lachesis-m9b13c-independent-sbom-comparison/1",
+  "inventoryMethod": "Local command-path inventory plus workspace lockfile inspection; no tool execution requiring network and no download.",
+  "reviewedScannerNames": [
+    "syft",
+    "trivy",
+    "grype",
+    "tern",
+    "cdxgen",
+    "oscap",
+    "bom",
+    "osv-scanner",
+    "docker-scout"
+  ],
+  "available": [],
+  "workspaceScannerDependencies": [],
+  "selectedScanner": null,
+  "selectedScannerVersion": null,
+  "selectedScannerSha256": null,
+  "dependencyClosureComplete": false,
+  "decision": "acquisition-boundary-no-go",
+  "blocker": "m9b13c:offline-independent-sbom-scanner-unavailable",
+  "comparisonSemanticsImplementedButNotIndependentEvidence": {
+    "packageIdentity": "packageId",
+    "version": "exact-string-after-schema-validation",
+    "architecture": "exact-string",
+    "filesAndRelationships": "deduplicated-and-lexicographically-sorted",
+    "packages": "sorted-by-packageId",
+    "duplicatePackages": "semantic-mismatch-unless-identical-after-normalization",
+    "presentationOnlyFields": "none-admitted-by-strict-schema",
+    "serialization": "deterministic-JSON-over-normalized-schema",
+    "mismatch": "quarantined-supply-chain-evidence-insufficient"
+  },
+  "limitation": "The repository-local comparator compares two supplied inventories and does not independently derive packages from OCI filesystem layers. It cannot substitute for the missing scanner."
+}

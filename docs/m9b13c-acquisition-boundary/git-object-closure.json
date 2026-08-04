@@ -1,0 +1,56 @@
+{
+  "protocol": "lachesis-m9b13c-git-object-closure/1",
+  "objectDigest": "SHA-1 over type-space-decimal-byte-length-NUL-object-bytes",
+  "endpointTemplates": {
+    "commit": "https://api.github.com/repos/{owner}/{repository}/git/commits/{40-lowercase-hex-object-id}",
+    "tree": "https://api.github.com/repos/{owner}/{repository}/git/trees/{40-lowercase-hex-object-id}",
+    "blob": "https://api.github.com/repos/{owner}/{repository}/git/blobs/{40-lowercase-hex-object-id}"
+  },
+  "roots": [
+    {
+      "repository": "nodejs/docker-node",
+      "commit": "53252eea9caacaa50bdf58f4d34f0bff8d259999",
+      "path": "24/bookworm-slim/Dockerfile",
+      "mode": "100644",
+      "blob": "afcf773d35c32bb03a527e89813deb7f1af6f8d3",
+      "sha256": "bd6bb06de21f22916d8e582ccd43722889f8788a5699f2a099296707c2c57e52"
+    },
+    {
+      "repository": "docker-library/official-images",
+      "commit": "baca6de4f5be548b9b818fa2ca5a1d1d9e66f309",
+      "expectedRootTree": "70e929dfc2bf8a29b1a6a11099948496d21ff237",
+      "path": "library/node",
+      "mode": "100644",
+      "blob": "611d1d2858eff2204e357de60a188b88ef1cd1c7",
+      "sha256": "4e06e614086ad016d795d1005e821c595cf4e7c8e18bf03aecacc74191dd5e68"
+    },
+    {
+      "repository": "nodejs/release-keys",
+      "commit": "b28073028e6d6855cfb53bf7fa0137599c01f967",
+      "path": "gpg-only-active-keys/pubring.kbx",
+      "mode": "100644",
+      "blob": "37817a8b3ee4ae2175fd41e3c484604b688b114a",
+      "sha256": "8e6f89521a0694e445f42decd022f48369c634f1b5bcb5975135b69c88629ae8"
+    }
+  ],
+  "algorithm": [
+    "request-only-the-bound-commit-object",
+    "reconstruct-and-hash-the-commit-object",
+    "extract-the-root-tree-id-from-the-verified-commit",
+    "request-only-the-next-tree-object-discovered-from-the-verified-parent",
+    "reconstruct-and-hash-every-tree",
+    "traverse-only-the-bound-unambiguous-path",
+    "require-tree-mode-40000-for-intermediate-components",
+    "require-regular-blob-mode-100644-for-the-final-component",
+    "reconstruct-and-hash-the-final-blob",
+    "require-both-git-blob-id-and-sha256"
+  ],
+  "reject": [
+    "repository-commit-tree-path-blob-or-mode-substitution",
+    "symlink",
+    "submodule",
+    "duplicate-or-ambiguous-entry",
+    "malformed-or-alternate-encoding",
+    "unrequested-traversal"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "protocol": "lachesis-m9b13c-destination-admission/1",
+  "root": "/Users/paul/orgs/nicia/lachesis-private/m9b13c-oci-acquisition/v1/docker.io/library/node/24.18.1-bookworm-slim/linux-arm64-v8",
+  "currentState": "absent-not-created",
+  "syntheticChecksImplemented": [
+    "canonical-outside-repository-and-protected-namespace",
+    "ancestor-kind-owner-private-mode-device-inode-mount-alias-and-replacement",
+    "preexisting-or-concurrent-root",
+    "exclusive-0700-create",
+    "root-device-and-inode-stability",
+    "crash-interruption-partial-cleanup-and-sealing-failure"
+  ],
+  "requiredNativePrimitives": [
+    "directory-descriptor-relative-openat-with-O_NOFOLLOW",
+    "descriptor-relative-mkdir-and-rename-no-clobber",
+    "repeated-fstat-and-mount-identity-verification",
+    "atomic-exclusive-root-and-file-creation"
+  ],
+  "nodeRuntimeObservation": {
+    "version": "24.18.1",
+    "available": [
+      "lstat",
+      "realpath",
+      "fstat",
+      "statfs",
+      "O_NOFOLLOW",
+      "O_DIRECTORY",
+      "O_EXCL"
+    ],
+    "missing": [
+      "public-directory-fd-relative-openat-api",
+      "renameat2-RENAME_NOREPLACE-api",
+      "bind-mount-identity-proof-api"
+    ]
+  },
+  "selectedHelper": null,
+  "helperSourceSha256": null,
+  "helperBinarySha256": null,
+  "dependencyClosureComplete": false,
+  "decision": "acquisition-boundary-no-go",
+  "blocker": "m9b13c:directory-relative-race-resistant-filesystem-primitive-unavailable",
+  "nonclaim": "Path-based synthetic validation is not represented as race-resistant admission and cannot authorize root creation."
+}

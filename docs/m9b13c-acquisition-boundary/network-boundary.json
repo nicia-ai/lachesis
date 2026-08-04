@@ -1,0 +1,71 @@
+{
+  "protocol": "lachesis-m9b13c-intercepted-network-boundary/1",
+  "implementation": "packages/generator-ai-sdk/internal/m9b13c-acquisition-boundary.ts",
+  "currentTransport": "fully-intercepted-only-no-real-network-constructor",
+  "httpsOnly": true,
+  "allowedHosts": [
+    "api.github.com",
+    "auth.docker.io",
+    "github.com",
+    "nodejs.org",
+    "production.cloudflare.docker.com",
+    "raw.githubusercontent.com",
+    "registry-1.docker.io"
+  ],
+  "requestValidation": [
+    "exact-host-and-path-template-before-request",
+    "port-443-or-implicit-only",
+    "no-url-userinfo",
+    "sni-equals-validated-host",
+    "normal-certificate-chain-and-hostname-validation",
+    "record-all-dns-answers",
+    "reject-nonpublic-addresses",
+    "connected-peer-must-belong-to-recorded-resolution-set"
+  ],
+  "prohibitedEnvironment": [
+    "ALL_PROXY",
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "NO_PROXY",
+    "all_proxy",
+    "http_proxy",
+    "https_proxy",
+    "no_proxy",
+    "npm_config_proxy",
+    "npm_config_https_proxy",
+    "SSL_CERT_DIR",
+    "SSL_CERT_FILE",
+    "NODE_EXTRA_CA_CERTS",
+    "DOCKER_CONFIG",
+    "DOCKER_CONTEXT",
+    "DOCKER_HOST",
+    "DOCKER_TLS_VERIFY",
+    "REGISTRY_AUTH_FILE"
+  ],
+  "ambientState": {
+    "systemProxy": "reject",
+    "dockerDaemonOrCli": "forbidden",
+    "dockerContextsCredentialHelpersRegistriesConfAndMirrors": "reject-if-discovered",
+    "alternateRegistryOrMutableFallback": "forbidden"
+  },
+  "redirect": {
+    "automaticOrGeneric": false,
+    "maximumCount": 8,
+    "onlyRule": "registry-1.docker.io to production.cloudflare.docker.com for a preauthorized frozen descriptor digest",
+    "revalidateUrlHostPathSniCertificateDnsAndPeer": true
+  },
+  "retry": { "automatic": 0, "manual": 0, "attempts": 1 },
+  "anonymousBearer": {
+    "serviceHost": "auth.docker.io",
+    "path": "/token",
+    "service": "registry.docker.io",
+    "scope": "repository:library/node:pull",
+    "actions": ["pull"],
+    "maximumResponseBytes": 65536,
+    "maximumLifetimeSeconds": 300,
+    "schema": "strict-token-expires_in-issued_at-service-scope-single-pull-action-and-memory-lifecycle",
+    "refreshToken": "reject",
+    "broaderScope": "reject",
+    "storage": "memory-only-zero-logging-zero-persistence-discard-after-use"
+  }
+}

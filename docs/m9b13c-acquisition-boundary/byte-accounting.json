@@ -1,0 +1,30 @@
+{
+  "protocol": "lachesis-m9b13c-byte-accounting/1",
+  "semantics": "Every response-body chunk enters applicable counters before any write, hash acceptance, rename, or seal. Headers are counted as decoded HTTP header octets. Body counters include payload octets only and exclude headers. Redirect bodies count as responses. Any overflow immediately quarantines the attempt.",
+  "ceilings": {
+    "perResponseHeaderBytes": 32768,
+    "aggregateStageABodyBytes": 32000000,
+    "aggregateOciRegistryBodyBytes": 100000000,
+    "aggregateSealedArchiveBytes": 512000000,
+    "maximumRequests": 64,
+    "maximumRedirects": 8,
+    "perResponseBodyBytes": {
+      "auth-token": 65536,
+      "git-commit": 1048576,
+      "git-tree": 4194304,
+      "git-blob": 8388608,
+      "node-signed-manifest": 1048576,
+      "verification-key": 1048576,
+      "registry-manifest": 4194304,
+      "registry-config": 4194304,
+      "registry-layer": 64000000,
+      "attestation-body": 8388608
+    }
+  },
+  "registryAggregateIncludes": "All response-body octets from registry-1.docker.io and production.cloudflare.docker.com, including index, platform and attestation manifests, configs, layers, attestation bodies, and redirect response bodies.",
+  "stageAAggregateIncludes": "All Stage A response-body octets across registry roots, Git object evidence, Node signed manifest, and pinned verification keys; token responses are separately bounded and also count when obtained during Stage A.",
+  "declaredSizeRule": "Each OCI object must remain under its class ceiling and streamed body bytes must equal the descriptor size exactly.",
+  "archiveRule": "Archive chunks are counted before write and the total must remain at or below 512000000 before hash acceptance or sealing.",
+  "knownRegistryRecursiveTotalBytes": 82785952,
+  "registryHeadroomBytes": 17214048
+}
