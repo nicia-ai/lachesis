@@ -1,0 +1,69 @@
+{
+  "protocol": "lachesis-m9b13d-independent-review-evidence/1",
+  "reviewedCommit": "ad60ce42813c265316859e118efd23f5eb8d5a01",
+  "reviewedTree": "3dc116c6746fb419bf52cd8d6e3e69206eacb72a",
+  "reviewedManifestSha256": "9ff0b8cfb95cb69b8f9a2b01dff21bffa69904964758a6e0b4c85b5e98eb4fda",
+  "submittedDecision": "m9b13d-offline-dependency-closure-ready-for-independent-review",
+  "decision": "m9b13d-offline-dependency-closure-review-no-go",
+  "disposition": "superseded-unexecuted-descriptor-and-consumption-bindings-incomplete",
+  "attackerModel": "same-effective-uid-process",
+  "blockingFindings": [
+    {
+      "id": "verified-temporary-entry-swappable-before-publication",
+      "priority": "P0",
+      "source": "packages/generator-ai-sdk/internal/native/m9b13d-filesystem-helper.c:585"
+    },
+    {
+      "id": "verified-oci-blobs-reopened-by-pathname",
+      "priority": "P0",
+      "source": "packages/generator-ai-sdk/internal/m9b13d-oci-inventory-scanner.ts:196"
+    },
+    {
+      "id": "exact-platform-and-frozen-manifest-not-enforced",
+      "priority": "P1",
+      "source": "packages/generator-ai-sdk/internal/m9b13d-oci-inventory-scanner.ts:57"
+    },
+    {
+      "id": "arbitrary-text-impersonates-node-executable",
+      "priority": "P0",
+      "source": "packages/generator-ai-sdk/internal/m9b13d-oci-inventory-scanner.ts:673"
+    },
+    {
+      "id": "trailing-and-concatenated-tar-content-accepted",
+      "priority": "P1",
+      "source": "packages/generator-ai-sdk/internal/m9b13d-oci-inventory-scanner.ts:383"
+    },
+    {
+      "id": "helper-and-acquired-evidence-identities-substitutable",
+      "priority": "P0",
+      "source": "packages/generator-ai-sdk/internal/m9b13d-synthetic-integration.ts:136"
+    },
+    {
+      "id": "seal-precedes-terminal-framing-validation",
+      "priority": "P0",
+      "source": "packages/generator-ai-sdk/internal/native/m9b13d-filesystem-helper.c:652"
+    }
+  ],
+  "reproducedExploit": {
+    "attackerUid": "same-as-helper",
+    "verifiedBytes": "GOOD",
+    "publishedBytes": "BAD",
+    "helperExit": 0,
+    "acceptedSealCreated": true
+  },
+  "effects": {
+    "networkCalls": 0,
+    "downloads": 0,
+    "packageInstallations": 0,
+    "ociEffects": 0,
+    "realAcquisitionRootsCreated": 0,
+    "corpusOrGoldAccesses": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "osfMutations": 0,
+    "publications": 0,
+    "pushes": 0,
+    "m9bExecutions": 0,
+    "m10Work": 0
+  }
+}
