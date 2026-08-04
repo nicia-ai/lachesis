@@ -1,0 +1,90 @@
+{
+  "protocol": "lachesis-m9b13d-offline-dependency-closure@1.0.0",
+  "method": "Direct offline rederivation from the accepted M9b.13c artifacts, local executable and package-store inventory, implementation source, isolated builds, and synthetic test outputs.",
+  "baseline": {
+    "commit": "d6ee1c71a10ceae9e3c30fda7e67f03e71092a48",
+    "tree": "fb96e26dfca48fe6816625db0efc75704d1222ee",
+    "protocolSha256": "c6b2b3f3fa90be88128fc86895dc5bf70d33d937cf471df24a3f2ad504a4e6b5",
+    "withheldAuthorizationSha256": "c0d37b6125659ada7b8c0c920e0a583546831e547d30461d2585ab59b3116510",
+    "manifestSha256": "56b03bdf3355dacaf45262c6fe66f4ceec0a1efb73344b79afe3edc0a01f5d3d"
+  },
+  "protocols": [
+    {
+      "identity": "lachesis-m9b13d-offline-dependency-closure@1.0.0",
+      "artifact": "docs/m9b13d-offline-dependency-closure/protocol.json",
+      "sha256": "ae6c40a40964e9f2274f7c3a9ee0ea6f5384a81f39f587e7ea969d840ad098e7"
+    },
+    {
+      "identity": "lachesis-m9b13d-oci-inventory-scanner/1",
+      "artifact": "docs/m9b13d-offline-dependency-closure/scanner-protocol.json",
+      "sha256": "d9e18c2712d9cc4d4f8bed4e9b9ebff1d36960ca5e8e241d5661dc0fcda2ad11"
+    },
+    {
+      "identity": "lachesis-m9b13d-spdx-inventory-comparison/1",
+      "artifact": "docs/m9b13d-offline-dependency-closure/spdx-comparison-protocol.json",
+      "sha256": "0e0f6ff10c20ebd9da508a5b1da99eeecd0608479f0b14402abf0f9bae1863e6"
+    },
+    {
+      "identity": "lachesis-m9b13d-race-resistant-filesystem-helper/1",
+      "artifact": "docs/m9b13d-offline-dependency-closure/filesystem-helper-protocol.json",
+      "sha256": "c6ce88ce5b5d6b1beb1a383a459603c25664632b66b89fe71a36a935e873e3b2"
+    },
+    {
+      "identity": "lachesis-m9b13d-native-reproducible-build/1",
+      "artifact": "docs/m9b13d-offline-dependency-closure/host-inventory.json",
+      "sha256": "0d5473b9d19dc8e9d9ae6ad4cf633428f8773d8373180391d671a255a8b0b5d5"
+    },
+    {
+      "identity": "lachesis-m9b13d-synthetic-oci-integration/1",
+      "artifact": "docs/m9b13d-offline-dependency-closure/integration-interface.json",
+      "sha256": "0c59fcba864466ad53000975d8f28133d4535ea5187870034838250c7ece1b35"
+    },
+    {
+      "identity": "lachesis-m9b13d-zero-effect-boundary/1",
+      "artifact": "docs/m9b13d-offline-dependency-closure/effects-boundary.json",
+      "sha256": "620b665fa5eb7807acf75a0e471497858d2c7b242592b0efa1f0960de37e19cf"
+    }
+  ],
+  "scanner": {
+    "selection": "lachesis-m9b13d-purpose-built-oci-inventory-scanner@1.0.0",
+    "reason": "No independently maintained OCI scanner with a complete freezeable offline identity was locally available.",
+    "sourceSha256": "13b2171a4a06b571ad57581dcecd46119f7a80b418486caf17995e361834dfbd",
+    "javascriptBuildSha256": "23ad2f945927cd1762a61d20f49b9ac7e0401a58a7fea05ae72847110d5caea0",
+    "nodeExecutableSha256": "f480e325ee0ca9cb9eef00b5ca6057a2a104807a1b073f1bc373a55c67facff5",
+    "typescriptImplementationSha256": "569177652966bd528c319171c7dd22860dbf72bde116cbc4f644f1d02bb12e39",
+    "inventorySchema": "lachesis-m9b13d-oci-package-inventory/1",
+    "inventorySchemaSha256": "2ea82e7ceed6a4cb9d1bdad3caedd7a48e300f22084ad93182b4a6f23bff4402",
+    "buildRuns": 2,
+    "byteIdentical": true,
+    "limitation": "Independent Debian and Node package-inventory derivation only; not vulnerability scanning and not general image safety assurance."
+  },
+  "filesystemHelper": {
+    "selection": "lachesis-m9b13d-darwin-arm64-filesystem-helper@1.0.0",
+    "sourceSha256": "2ebe1311b7adec35198a8d3b48ead0b7c7573e6ec6609756ec83faaf819113e7",
+    "executableSha256": "60a81ccf7658b1a7a91d9dbee7d1ca63840a4751597319139d65f0a0a1536fd7",
+    "compilerSha256": "7def90dd8829726686213a747fc5bff1583df933dae5edc55d755479e0bfe00a",
+    "sdkSettingsSha256": "f8d005f09381389167f9e0aeaa169bc9e7dff162ef22ca2fd8e98df7ff1acafe",
+    "buildRuns": 2,
+    "byteIdentical": true,
+    "linkedLibraries": [
+      "/usr/lib/libSystem.B.dylib compatibility 1.0.0 current 1356.0.0"
+    ],
+    "syscalls": [
+      "realpath",
+      "fstat",
+      "fstatat(AT_SYMLINK_NOFOLLOW)",
+      "openat(O_NOFOLLOW)",
+      "mkdirat",
+      "renameatx_np(RENAME_EXCL)",
+      "fsync"
+    ],
+    "supportedPlatform": "macOS 26.5.2 build 25F84, Darwin 25.5.0, arm64, APFS single-device path"
+  },
+  "dependencyClosure": {
+    "newPackagesInstalled": 0,
+    "newDependenciesAdded": 0,
+    "downloads": 0,
+    "offlineReproductionFromAvailableDependencies": true
+  },
+  "conclusion": "Both accepted M9b.13c dependency blockers are closed for independent review without weakening or activating M9b.13c."
+}

@@ -1,6 +1,6 @@
 {
   "protocol": "lachesis-m9b13d-offline-dependency-closure@1.0.0",
-  "status": "private-offline-design-implementation-and-final-review-required",
+  "status": "ready-for-independent-review-no-acquisition-authority",
   "baseline": {
     "commit": "d6ee1c71a10ceae9e3c30fda7e67f03e71092a48",
     "tree": "fb96e26dfca48fe6816625db0efc75704d1222ee",

@@ -18,7 +18,7 @@
   "filesystemClasses": [
     "preexisting-destination-and-symlinked-destination-or-ancestor",
     "permission-drift",
-    "ancestor-and-destination-replacement",
+    "ancestor-destination-and-nested-file-parent-replacement",
     "separate-process-concurrent-creators",
     "hard-link-file-directory-and-no-follow-alias",
     "partial-write-crash-and-restart-ambiguity",

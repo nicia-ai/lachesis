@@ -1,0 +1,36 @@
+{
+  "protocol": "lachesis-m9b13d-offline-dependency-closure@1.0.0",
+  "decision": "m9b13d-offline-dependency-closure-ready-for-independent-review",
+  "protocolSha256": "ae6c40a40964e9f2274f7c3a9ee0ea6f5384a81f39f587e7ea969d840ad098e7",
+  "baseline": {
+    "commit": "d6ee1c71a10ceae9e3c30fda7e67f03e71092a48",
+    "tree": "fb96e26dfca48fe6816625db0efc75704d1222ee",
+    "decision": "acquisition-boundary-no-go"
+  },
+  "implementation": {
+    "designCommit": "d9814d876f2ec636690541a020430e7d1ef975a8",
+    "designTree": "8677677a9154bfe4d51cfc6beada5bfe4bface20",
+    "implementationCommit": "eb37e46d29c43b6270605e93087b5174ee056dc3",
+    "implementationTree": "2b981aac5a16ef4e1d34ff65d58c5947c2c4f2b0"
+  },
+  "blockers": [
+    {
+      "id": "m9b13c:offline-independent-sbom-scanner-unavailable",
+      "disposition": "closed-offline-by-frozen-purpose-built-inventory-scanner"
+    },
+    {
+      "id": "m9b13c:directory-relative-race-resistant-filesystem-primitive-unavailable",
+      "disposition": "closed-offline-by-pinned-native-helper-on-supported-host"
+    }
+  ],
+  "authority": {
+    "acquisition": false,
+    "withheldM9b13cAuthorizationActivated": false,
+    "imageImportBuildOrExecution": false,
+    "corpusOrGold": false,
+    "credentialProviderModelOrStudy": false,
+    "osfPublicationPushOrM10": false
+  },
+  "nextScope": "Independent read-only review of M9b.13d; only after a pass, separately prepare M9b.13e integration authorization.",
+  "nonAuthorization": "This readiness decision is not an acquisition authorization and cannot be used as one."
+}

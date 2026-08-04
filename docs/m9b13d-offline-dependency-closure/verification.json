@@ -1,0 +1,108 @@
+{
+  "protocol": "lachesis-m9b13d-offline-dependency-closure@1.0.0",
+  "result": "pass-with-two-unrelated-frozen-historical-mismatches-recorded",
+  "focused": {
+    "m9b13d": {
+      "files": 3,
+      "tests": 50,
+      "passed": 50,
+      "scannerTests": 28,
+      "filesystemHelperTests": 16,
+      "syntheticIntegrationTests": 6
+    },
+    "m9": {
+      "files": 31,
+      "tests": 593,
+      "passed": 593
+    },
+    "cli": {
+      "files": 2,
+      "tests": 54,
+      "passed": 54
+    },
+    "separateProcessCreatorRace": {
+      "processes": 6,
+      "exclusiveSuccesses": 1,
+      "collisionRejections": 5
+    }
+  },
+  "completeSerializedCoverage": {
+    "runs": 2,
+    "byteStableMetrics": true,
+    "files": 70,
+    "tests": 1190,
+    "passed": 1190,
+    "statementsPercent": 90.01,
+    "branchesPercent": 80.99,
+    "functionsPercent": 97.45,
+    "linesPercent": 93.7
+  },
+  "gates": {
+    "changedFileFormatting": "pass",
+    "strictTypeScript": "pass",
+    "lint": "pass",
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersDryRunSmoke": "pass",
+    "offlineExamples": "7-pass",
+    "loadSmoke": "pass",
+    "sourceSafety": "pass",
+    "secretScanOfM9b13dFiles": "pass",
+    "networkCapabilityScanOfM9b13dImplementation": "pass",
+    "publicApiAudit": "pass-no-new-export",
+    "releaseChecksumAudit": "pass",
+    "m8HistoricalAudits": "pass",
+    "m9b12ThroughM9b13cChecksums": "pass",
+    "receiptChecksumFromReceiptDirectory": "pass",
+    "predecessorBytePreservation": "pass",
+    "packageAndLockfilePreservation": "pass",
+    "nativeBuildReproducibility": "pass-two-byte-identical-builds",
+    "gitDiffCheck": "pass"
+  },
+  "predecessorManifestDigests": {
+    "m9b12fReceipt": "0a8447b88d7cc41db67dd863a5269bad6b95bed2cf568d85fd562b96253faae1",
+    "m9b13": "fae20d627200e276d6211bb275614c88d8afa810dcba6fa75e23f931b701307d",
+    "m9b13a": "7395d002c9d7bfb44a23aeefeead0ee4428faece1672b0d5b18fed8d2200eb6b",
+    "m9b13b": "8b5b4baad331e56b73b1f47db0c1f5e7bf09cb32d2f65fedab9a7e373c9f02b6",
+    "m9b13c": "56b03bdf3355dacaf45262c6fe66f4ceec0a1efb73344b79afe3edc0a01f5d3d"
+  },
+  "formattingBoundary": {
+    "changedFiles": "pass",
+    "repositoryWideCommand": "known-nonblocking-historical-mismatch",
+    "unchangedTrackedFile": "docs/m9b13b-independent-review.md",
+    "protectedUntrackedFile": "paper/README.md",
+    "action": "neither file modified"
+  },
+  "knownHistoricalFailures": [
+    {
+      "command": "pnpm audit:m7c-preregistration",
+      "reason": "M7c public documentation binding differs.",
+      "action": "recorded-without-rewriting-historical-evidence"
+    },
+    {
+      "command": "pnpm audit:packages",
+      "reason": "@nicia-ai/lachesis-generator differs from its frozen alpha.5 tarball digest.",
+      "action": "recorded-without-rewriting-historical-evidence"
+    }
+  ],
+  "effects": {
+    "networkRequests": 0,
+    "downloads": 0,
+    "packageInstalls": 0,
+    "dockerOrOciPulls": 0,
+    "imageImports": 0,
+    "imageBuilds": 0,
+    "imageExecutions": 0,
+    "realAcquisitionRootCreations": 0,
+    "corpusAccesses": 0,
+    "goldAccesses": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "osfMutations": 0,
+    "publications": 0,
+    "pushes": 0,
+    "m10Effects": 0,
+    "liveStudyEffects": 0
+  }
+}

@@ -11,12 +11,19 @@ scanner and does not establish that an image is safe.
 
 The acquisition host has a local Apple Clang toolchain and Darwin descriptor-
 relative filesystem primitives. The selected helper design is a small pinned C
-program using `openat`, `mkdirat`, `fstatat`, `unlinkat`, `O_NOFOLLOW`,
-`O_CREAT`, `O_EXCL`, and `renameatx_np(RENAME_EXCL)`. It owns the destination
-descriptor for the complete mutation transaction.
+program using `openat`, `mkdirat`, `fstatat`, `O_NOFOLLOW`, `O_CREAT`, `O_EXCL`,
+and `renameatx_np(RENAME_EXCL)`. It owns the destination descriptor for the
+complete mutation transaction.
 
 This namespace does not authorize acquisition or activate the withheld M9b.13c
 authorization. Only synthetic OCI layouts and disposable synthetic filesystem
 roots may be used. A final readiness decision requires executable hostile tests,
 separate-process races, reproducible native builds, and an append-only checksum
 seal.
+
+The sealed M9b.13d decision is
+`m9b13d-offline-dependency-closure-ready-for-independent-review`. This means
+only that the two dependency implementations are ready for independent review.
+It does not authorize image acquisition or activate any earlier withheld
+authorization. The next scope is an independent M9b.13d review, followed only
+after a pass by a separately prepared M9b.13e integration authorization.
