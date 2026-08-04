@@ -1,0 +1,57 @@
+{
+  "protocol": "lachesis-m9b13d1-corrected-dependency-closure@1.0.0",
+  "decision": "m9b13d1-dependency-closure-no-go",
+  "disposition": "descriptor-bound-helper-execution-unavailable-on-pinned-darwin-host",
+  "mandatoryRule": "If descriptor-bound scanning or descriptor-bound helper execution cannot be proven on the pinned macOS host, seal a NO-GO.",
+  "blockingBoundary": {
+    "finding": 6,
+    "object": "verified native filesystem helper executable",
+    "requiredMechanism": "execute only a retained inherited descriptor without pathname fallback",
+    "readOnlyDescriptorResult": "EACCES",
+    "executeOnlyDescriptorResult": "EACCES",
+    "fexecveAvailableInPinnedSdk": false,
+    "execveatAvailableInPinnedSdk": false,
+    "pathnameFallbackPermitted": false
+  },
+  "reviewFindingDisposition": [
+    {
+      "finding": 1,
+      "status": "blocking-unmodified",
+      "reason": "correction stopped at mandatory descriptor-execution NO-GO boundary"
+    },
+    {
+      "finding": 2,
+      "status": "blocking-unmodified",
+      "reason": "correction stopped at mandatory descriptor-execution NO-GO boundary"
+    },
+    {
+      "finding": 3,
+      "status": "blocking-unmodified",
+      "reason": "correction stopped at mandatory descriptor-execution NO-GO boundary"
+    },
+    {
+      "finding": 4,
+      "status": "blocking-unmodified",
+      "reason": "correction stopped at mandatory descriptor-execution NO-GO boundary"
+    },
+    {
+      "finding": 5,
+      "status": "blocking-unmodified",
+      "reason": "correction stopped at mandatory descriptor-execution NO-GO boundary"
+    },
+    {
+      "finding": 6,
+      "status": "blocking-no-go-reproduced",
+      "reason": "both permitted inherited-descriptor launch modes fail with EACCES and no SDK descriptor-exec primitive exists"
+    },
+    {
+      "finding": 7,
+      "status": "blocking-unmodified",
+      "reason": "correction stopped at mandatory descriptor-execution NO-GO boundary"
+    }
+  ],
+  "m9bDisposition": "m9b13-materialization-readiness-no-go",
+  "independentReviewReady": false,
+  "acquisitionAuthorizationIssued": false,
+  "acquisitionAuthorizationExecuted": false
+}

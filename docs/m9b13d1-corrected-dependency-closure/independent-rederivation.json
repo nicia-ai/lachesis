@@ -1,0 +1,44 @@
+{
+  "protocol": "lachesis-m9b13d1-independent-rederivation/1",
+  "host": {
+    "productName": "macOS",
+    "productVersion": "26.5.2",
+    "buildVersion": "25F84",
+    "darwinRelease": "25.5.0",
+    "architecture": "arm64"
+  },
+  "verifiedPredecessorHelper": {
+    "sourceSha256": "2ebe1311b7adec35198a8d3b48ead0b7c7573e6ec6609756ec83faaf819113e7",
+    "executableSha256": "60a81ccf7658b1a7a91d9dbee7d1ca63840a4751597319139d65f0a0a1536fd7",
+    "independentBuilds": 2,
+    "byteIdentical": true
+  },
+  "sdkSurface": {
+    "oExecAvailable": true,
+    "posixSpawnInheritAvailable": true,
+    "fexecveAvailable": false,
+    "execveatAvailable": false
+  },
+  "descriptorAttempts": [
+    {
+      "openFlags": "O_RDONLY|O_NOFOLLOW",
+      "inheritedChildDescriptor": 3,
+      "executionPath": "/dev/fd/3",
+      "result": "EACCES"
+    },
+    {
+      "openFlags": "O_EXEC|O_NOFOLLOW",
+      "inheritedChildDescriptor": 3,
+      "executionPath": "/dev/fd/3",
+      "result": "EACCES"
+    }
+  ],
+  "sameUidPathReplacement": {
+    "repetitions": 32,
+    "retainedReadDescriptorResult": "EACCES",
+    "retainedExecuteDescriptorResult": "EACCES",
+    "unauthorizedPathFallbackExitCode": 23,
+    "fallbackUsedByProbe": false
+  },
+  "rederivedDecision": "m9b13d1-dependency-closure-no-go"
+}

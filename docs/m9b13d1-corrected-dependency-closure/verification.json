@@ -1,0 +1,75 @@
+{
+  "protocol": "lachesis-m9b13d1-verification/1",
+  "result": "no-go-boundary-reproduced-with-preservation-gates-pass",
+  "focused": {
+    "descriptorExecution": {
+      "files": 1,
+      "tests": 2,
+      "passed": 2,
+      "sameUidPathReplacementRepetitions": 32,
+      "readDescriptorEacces": 32,
+      "executeDescriptorEacces": 32,
+      "forbiddenFallbackPayloadExecutions": 32
+    },
+    "m9": {
+      "files": 32,
+      "tests": 595,
+      "passed": 595
+    },
+    "cli": {
+      "files": 2,
+      "tests": 15,
+      "passed": 15
+    }
+  },
+  "completeSerializedCoverage": {
+    "files": 71,
+    "tests": 1192,
+    "passed": 1192,
+    "statementsPercent": 90.01,
+    "branchesPercent": 80.99,
+    "functionsPercent": 97.45,
+    "linesPercent": 93.7
+  },
+  "gates": {
+    "changedFileFormatting": "pass",
+    "strictTypeScript": "pass",
+    "lint": "pass",
+    "build": "pass",
+    "nodeSmoke": "pass",
+    "workersDryRunSmoke": "pass",
+    "offlineExamples": "7-pass",
+    "loadSmoke": "pass",
+    "sourceSafety": "pass",
+    "secretScanOfM9b13d1Files": "pass",
+    "networkCapabilityScanOfM9b13d1Implementation": "pass",
+    "publicApiAudit": "pass-no-new-export",
+    "releaseChecksumAudit": "pass",
+    "m8HistoricalAudits": "pass",
+    "m9b12fThroughM9b13dChecksums": "pass",
+    "predecessorBytePreservation": "pass",
+    "packageAndLockfilePreservation": "pass",
+    "nativeBuildReproducibility": "pass-two-byte-identical-builds",
+    "gitDiffCheck": "pass"
+  },
+  "predecessorManifestDigests": {
+    "m9b12fReceipt": "0a8447b88d7cc41db67dd863a5269bad6b95bed2cf568d85fd562b96253faae1",
+    "m9b13a": "7395d002c9d7bfb44a23aeefeead0ee4428faece1672b0d5b18fed8d2200eb6b",
+    "m9b13b": "8b5b4baad331e56b73b1f47db0c1f5e7bf09cb32d2f65fedab9a7e373c9f02b6",
+    "m9b13c": "56b03bdf3355dacaf45262c6fe66f4ceec0a1efb73344b79afe3edc0a01f5d3d",
+    "m9b13d": "9ff0b8cfb95cb69b8f9a2b01dff21bffa69904964758a6e0b4c85b5e98eb4fda"
+  },
+  "knownUnrelatedHistoricalFailures": [
+    {
+      "command": "pnpm audit:m7c-preregistration",
+      "reason": "M7c public documentation binding differs.",
+      "action": "recorded without rewriting historical evidence"
+    },
+    {
+      "command": "pnpm audit:packages",
+      "reason": "@nicia-ai/lachesis-generator differs from its frozen alpha.5 tarball digest.",
+      "action": "recorded without rewriting historical evidence"
+    }
+  ],
+  "decision": "m9b13d1-dependency-closure-no-go"
+}

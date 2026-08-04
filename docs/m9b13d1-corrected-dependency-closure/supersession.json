@@ -1,0 +1,11 @@
+{
+  "protocol": "lachesis-m9b13d1-supersession/1",
+  "supersededDecision": "m9b13d-offline-dependency-closure-ready-for-independent-review",
+  "supersededCommit": "ad60ce42813c265316859e118efd23f5eb8d5a01",
+  "supersededDisposition": "failed-independent-review-preserved-as-immutable-evidence",
+  "independentReviewDecision": "m9b13d-offline-dependency-closure-review-no-go",
+  "correctionDecision": "m9b13d1-dependency-closure-no-go",
+  "reinterpretationPermitted": false,
+  "oldArtifactAcceptancePermitted": false,
+  "m9b13dBytesModified": false
+}

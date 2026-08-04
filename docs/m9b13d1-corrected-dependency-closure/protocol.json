@@ -1,0 +1,24 @@
+{
+  "protocol": "lachesis-m9b13d1-corrected-dependency-closure@1.0.0",
+  "scope": "append-only-correction-attempt-for-failed-m9b13d-review",
+  "predecessor": {
+    "commit": "ad60ce42813c265316859e118efd23f5eb8d5a01",
+    "tree": "3dc116c6746fb419bf52cd8d6e3e69206eacb72a",
+    "manifestSha256": "9ff0b8cfb95cb69b8f9a2b01dff21bffa69904964758a6e0b4c85b5e98eb4fda",
+    "independentReviewDecision": "m9b13d-offline-dependency-closure-review-no-go"
+  },
+  "privateProtocols": ["lachesis-m9b13d1-darwin-descriptor-execution-probe/1"],
+  "correctedIdentities": {
+    "scanner": "not-issued",
+    "helper": "not-issued",
+    "build": "not-issued",
+    "integration": "not-issued",
+    "receipt": "not-issued",
+    "schema": "not-issued"
+  },
+  "reasonCorrectedIdentitiesNotIssued": "mandatory descriptor-bound helper execution could not be proven on the pinned host",
+  "publicExportsAdded": 0,
+  "packageVersionsChanged": 0,
+  "acquisitionAuthorizationPrepared": false,
+  "acquisitionAuthorizationExecuted": false
+}

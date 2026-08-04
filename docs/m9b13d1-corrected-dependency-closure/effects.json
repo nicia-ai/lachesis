@@ -1,0 +1,21 @@
+{
+  "protocol": "lachesis-m9b13d1-zero-effect-boundary/1",
+  "networkRequests": 0,
+  "downloads": 0,
+  "packageInstallations": 0,
+  "ociPulls": 0,
+  "imageImports": 0,
+  "imageBuilds": 0,
+  "imageExecutions": 0,
+  "realAcquisitionRootsCreated": 0,
+  "corpusAccesses": 0,
+  "goldAccesses": 0,
+  "credentialAccesses": 0,
+  "providerCalls": 0,
+  "modelCalls": 0,
+  "osfMutations": 0,
+  "publications": 0,
+  "pushes": 0,
+  "m9bExecutions": 0,
+  "m10Work": 0
+}
