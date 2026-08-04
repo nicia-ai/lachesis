@@ -1,0 +1,92 @@
+{
+  "$id": "lachesis-m9b13d-oci-package-inventory/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "scanner",
+    "imageManifestDigest",
+    "architecture",
+    "debianPackages",
+    "node"
+  ],
+  "properties": {
+    "schema": {
+      "const": "lachesis-m9b13d-oci-package-inventory/1"
+    },
+    "scanner": {
+      "const": "lachesis-m9b13d-oci-inventory-scanner/1"
+    },
+    "imageManifestDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "architecture": {
+      "enum": ["amd64", "arm64"]
+    },
+    "debianPackages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "name", "version", "architecture"],
+        "properties": {
+          "kind": {
+            "const": "debian-binary"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["raw", "epoch", "upstream", "revision"],
+            "properties": {
+              "raw": {
+                "type": "string"
+              },
+              "epoch": {
+                "type": "string"
+              },
+              "upstream": {
+                "type": "string"
+              },
+              "revision": {
+                "type": "string"
+              }
+            }
+          },
+          "architecture": {
+            "enum": ["amd64", "arm64", "all"]
+          },
+          "sourceName": {
+            "type": "string"
+          },
+          "sourceVersion": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name", "version", "architecture"],
+      "properties": {
+        "kind": {
+          "const": "node-runtime"
+        },
+        "name": {
+          "const": "node"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "architecture": {
+          "enum": ["amd64", "arm64"]
+        }
+      }
+    }
+  }
+}

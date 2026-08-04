@@ -1,0 +1,58 @@
+{
+  "protocol": "lachesis-m9b13d-race-resistant-filesystem-helper/1",
+  "identity": "lachesis-m9b13d-darwin-arm64-filesystem-helper@1.0.0",
+  "source": {
+    "path": "packages/generator-ai-sdk/internal/native/m9b13d-filesystem-helper.c",
+    "sha256": "2ebe1311b7adec35198a8d3b48ead0b7c7573e6ec6609756ec83faaf819113e7"
+  },
+  "compiler": {
+    "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+    "version": "Apple clang 21.0.0 (clang-2100.1.1.101)",
+    "sha256": "7def90dd8829726686213a747fc5bff1583df933dae5edc55d755479e0bfe00a"
+  },
+  "sdk": {
+    "path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+    "version": "26.5",
+    "buildVersion": "25F70",
+    "sdkSettingsSha256": "f8d005f09381389167f9e0aeaa169bc9e7dff162ef22ca2fd8e98df7ff1acafe"
+  },
+  "flags": [
+    "-std=c17",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-Wno-deprecated-declarations",
+    "-fno-common",
+    "-fstack-protector-strong",
+    "-D_FORTIFY_SOURCE=2",
+    "-mmacosx-version-min=26.0",
+    "-isysroot",
+    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
+  ],
+  "outputBasename": "m9b13d-filesystem-helper",
+  "reproducibleRuns": 2,
+  "byteIdentical": true,
+  "executableSha256": "60a81ccf7658b1a7a91d9dbee7d1ca63840a4751597319139d65f0a0a1536fd7",
+  "linkedLibraries": [
+    "/usr/lib/libSystem.B.dylib compatibility 1.0.0 current 1356.0.0"
+  ],
+  "commandProtocol": "FILE hex-path decimal-size lowercase-sha256 plus raw frame; terminal SEAL",
+  "successExitCode": 0,
+  "failureExitCodes": {
+    "64": "invalid command, argument, path, mode, or unsupported request",
+    "65": "security, identity, digest, boundary, or mutation invariant failure",
+    "66": "exclusive creation, temporary file, rename, or seal collision",
+    "67": "I/O, fsync, partial input, close, or seal failure"
+  },
+  "syscalls": [
+    "realpath",
+    "fstat",
+    "fstatat(AT_SYMLINK_NOFOLLOW)",
+    "openat(O_NOFOLLOW)",
+    "mkdirat",
+    "renameatx_np(RENAME_EXCL)",
+    "fsync"
+  ],
+  "supportedPlatform": "macOS 26.5.2 build 25F84, Darwin 25.5.0, arm64, APFS single-device path"
+}

@@ -1,0 +1,53 @@
+{
+  "protocol": "lachesis-m9b13d-oci-inventory-scanner/1",
+  "identity": "lachesis-m9b13d-purpose-built-oci-inventory-scanner@1.0.0",
+  "source": {
+    "path": "packages/generator-ai-sdk/internal/m9b13d-oci-inventory-scanner.ts",
+    "sha256": "13b2171a4a06b571ad57581dcecd46119f7a80b418486caf17995e361834dfbd"
+  },
+  "build": {
+    "typescript": "6.0.3",
+    "typescriptImplementationSha256": "569177652966bd528c319171c7dd22860dbf72bde116cbc4f644f1d02bb12e39",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strictFlags": [
+      "strict",
+      "isolatedModules",
+      "verbatimModuleSyntax",
+      "noUncheckedIndexedAccess",
+      "exactOptionalPropertyTypes",
+      "useUnknownInCatchVariables",
+      "noImplicitOverride",
+      "noPropertyAccessFromIndexSignature",
+      "noFallthroughCasesInSwitch",
+      "noImplicitReturns",
+      "noUnusedLocals",
+      "noUnusedParameters",
+      "noUncheckedSideEffectImports",
+      "erasableSyntaxOnly",
+      "skipLibCheck=false",
+      "noEmitOnError"
+    ],
+    "reproducibleRuns": 2,
+    "byteIdentical": true,
+    "javascriptSha256": "23ad2f945927cd1762a61d20f49b9ac7e0401a58a7fea05ae72847110d5caea0"
+  },
+  "runtime": {
+    "node": "24.18.1",
+    "nodePath": "/Users/paul/.local/share/mise/installs/node/24.18.1/bin/node",
+    "nodeSha256": "f480e325ee0ca9cb9eef00b5ca6057a2a104807a1b073f1bc373a55c67facff5",
+    "zod": "4.4.3",
+    "workspaceLockSha256": "295cd4ced51818d4fea824f38caabe3cafde3d46865c2808f4b8f55f5b1485ef",
+    "dynamicLibraries": [
+      "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+      "/System/Library/Frameworks/Security.framework/Versions/A/Security",
+      "/usr/lib/libc++.1.dylib",
+      "/usr/lib/libSystem.B.dylib"
+    ]
+  },
+  "invocation": "scanM9b13dOciLayout(canonicalSealedLayoutRoot)",
+  "configuration": "Compile-time constants only; no environment, database, Docker, network, plugin, policy, or caller relaxation input.",
+  "schema": "lachesis-m9b13d-oci-package-inventory/1",
+  "limitation": "Independent deterministic Debian and Node package inventory only; not vulnerability scanning or general image safety assurance."
+}

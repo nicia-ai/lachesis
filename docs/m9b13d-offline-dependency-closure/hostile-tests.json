@@ -1,0 +1,37 @@
+{
+  "protocol": "lachesis-m9b13d-offline-dependency-closure@1.0.0",
+  "testFiles": [
+    "packages/generator-ai-sdk/tests/m9b13d-oci-inventory-scanner.test.ts",
+    "packages/generator-ai-sdk/tests/m9b13d-filesystem-helper.test.ts",
+    "packages/generator-ai-sdk/tests/m9b13d-synthetic-integration.test.ts"
+  ],
+  "scannerClasses": [
+    "seal-layout-index-manifest-config-descriptor-size-digest-diff-id-and-extra-blob",
+    "duplicate-or-cyclic-descriptor",
+    "unsupported-compression",
+    "absolute-dotdot-device-socket-unsafe-link-duplicate-and-malformed-tar",
+    "whiteout-layer-order",
+    "Debian-epoch-revision-source-and-architecture",
+    "Node-file-and-header-identity-without-execution",
+    "SPDX-missing-duplicate-field-purl-relationship-semantic-and-policy-override"
+  ],
+  "filesystemClasses": [
+    "preexisting-destination-and-symlinked-destination-or-ancestor",
+    "permission-drift",
+    "ancestor-and-destination-replacement",
+    "separate-process-concurrent-creators",
+    "hard-link-file-directory-and-no-follow-alias",
+    "partial-write-crash-and-restart-ambiguity",
+    "fsync-and-seal-fault",
+    "post-seal-mutation"
+  ],
+  "mountBoundary": "The helper enforces a single-device chain. A real mount-boundary injection is not available to an unprivileged synthetic test on this host and is not fabricated.",
+  "integrationClasses": [
+    "pre-persistence-byte-and-digest-accounting",
+    "helper-executable-identity",
+    "descriptor-relative-persistence-and-seal",
+    "read-only-scan-and-frozen-SPDX-comparison",
+    "exact-quarantine",
+    "synthetic-mode-real-root-rejection"
+  ]
+}
