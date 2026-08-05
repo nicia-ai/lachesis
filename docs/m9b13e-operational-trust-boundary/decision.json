@@ -1,0 +1,45 @@
+{
+  "protocol": "lachesis-m9b13e-operational-trust-boundary-review/1",
+  "decision": "m9b13e-trusted-host-amendment-ready-for-independent-review",
+  "recommendedTopology": "trusted-controlled-host",
+  "classification": "prospective-operational-amendment",
+  "scientificProtocolAmendment": false,
+  "compatibleWithRegistration63sh5": true,
+  "basis": [
+    "approved-preregistration-explicitly-trusts-controller-host-os-and-privileged-operator",
+    "approved-preregistration-does-not-require-hostile-same-uid-resistance",
+    "hostile-same-uid-requirement-entered-later-local-readiness-review",
+    "same-uid-resistance-is-not-needed-for-any-registered-scientific-validity-claim",
+    "trusted-controlled-host-is-narrower-than-new-principal-or-linux-runner-supply-chain-expansion"
+  ],
+  "amendedAssumption": "Acquisition runs on a trusted controlled host with no malicious or unrelated concurrent process under the operational UID. All external bytes remain hostile.",
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, kernel, administrator, or hypervisor.",
+  "retainedMandatoryControls": [
+    "exact-platform-and-manifest-binding",
+    "descriptor-reuse-for-hash-and-parse-within-one-trusted-process",
+    "elf-aarch64-and-signed-node-distribution-comparison",
+    "trailing-and-concatenated-tar-rejection",
+    "terminal-framing-before-seal",
+    "exact-provenance-spdx-and-descriptor-graph-binding",
+    "digest-verification-before-every-consequential-use",
+    "freshness-arm-blindness-hidden-gold-quarantine-accounting-and-replay-controls"
+  ],
+  "preservedPredecessor": {
+    "commit": "f03c9fce9d9ce035eeb9af49ed0f2e060aa505e3",
+    "tree": "ce6d8ecd6059e8f3dfad15619c6663e7f2db91f2",
+    "decision": "m9b13d1-dependency-closure-no-go",
+    "reinterpreted": false
+  },
+  "externalSupplementRequiredBeforeCorpusConstruction": true,
+  "independentReviewRequiredBeforeActivation": true,
+  "authority": {
+    "materialization": false,
+    "acquisition": false,
+    "registrationOrSupplementSubmission": false,
+    "credentialOrProvider": false,
+    "executionOrAnalysis": false,
+    "osfMutationOrPublication": false,
+    "push": false
+  },
+  "nextStep": "independent read-only review of the exact checksum-bound M9b.13e package"
+}

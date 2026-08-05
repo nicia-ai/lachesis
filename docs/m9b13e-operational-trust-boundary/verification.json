@@ -1,0 +1,70 @@
+{
+  "protocol": "lachesis-m9b13e-verification/1",
+  "result": "pass-ready-for-independent-review-no-authority",
+  "baseline": {
+    "commit": "f03c9fce9d9ce035eeb9af49ed0f2e060aa505e3",
+    "tree": "ce6d8ecd6059e8f3dfad15619c6663e7f2db91f2",
+    "decision": "m9b13d1-dependency-closure-no-go"
+  },
+  "analysisCommit": {
+    "commit": "7e975353eb6f41faa61a4ded3b03ec878b674c02",
+    "tree": "14b9a605b225ef54d4098058b79ba3f71070921c"
+  },
+  "predecessors": {
+    "packageManifestsReproduced": 13,
+    "independentReviewManifestsReproduced": 7,
+    "registrationReceiptManifestsReproduced": 1,
+    "historicalDecisionFieldsReproduced": 7,
+    "m9b12ThroughM9b13d1BytePreservation": "pass"
+  },
+  "registration": {
+    "identityAndTimestamps": "pass",
+    "immutableFiles": "27-pass",
+    "preregistrationDigest": "pass",
+    "manifestDigest": "pass",
+    "receiptDigest": "pass",
+    "scientificFinancialProjectionDigest": "pass",
+    "changedScientificFields": 0
+  },
+  "focusedTests": {
+    "files": 1,
+    "tests": 7,
+    "passed": 7
+  },
+  "gates": {
+    "jsonFiles": "9-valid",
+    "markdownFiles": "10-formatted",
+    "documentLinks": "pass-no-links",
+    "checksumManifest": "pass",
+    "changedFileFormatting": "pass",
+    "secretScan": "pass",
+    "strictTypeScript": "pass",
+    "lint": "pass",
+    "sourceSafety": "pass",
+    "publicExportsAdded": 0,
+    "packageVersionsChanged": 0,
+    "gitDiffCheck": "pass",
+    "gitObjectIntegrity": "pass",
+    "trackedPredecessorPreservation": "pass"
+  },
+  "effects": {
+    "networkRequests": 0,
+    "downloads": 0,
+    "packageInstallations": 0,
+    "accountsCreated": 0,
+    "sudoOrAdminChanges": 0,
+    "vmOrContainersCreated": 0,
+    "imageAcquisitionsImportsBuildsOrRuns": 0,
+    "corpusAccesses": 0,
+    "goldAccesses": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "osfMutations": 0,
+    "publications": 0,
+    "pushes": 0,
+    "liveExecutions": 0,
+    "m10Work": 0
+  },
+  "decision": "m9b13e-trusted-host-amendment-ready-for-independent-review"
+}

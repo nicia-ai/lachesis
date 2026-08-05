@@ -1,0 +1,45 @@
+{
+  "protocol": "lachesis-m9b13e-independent-rederivation/1",
+  "sources": "local-immutable-receipts-and-git-objects-only",
+  "registration": {
+    "id": "63sh5",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "immutableFileCount": 27,
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "receiptDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+    "allReceiptChecksumsReproduced": true
+  },
+  "registeredThreatBoundary": {
+    "controllerHostOperatingSystemTrusted": true,
+    "controllerPrivilegedOperatorTrusted": true,
+    "maliciousPrivilegedHostOrOperatorExcluded": true,
+    "kernelHypervisorOrHardwareCompromiseExcluded": true,
+    "hostileSameUidResistanceRequired": false
+  },
+  "localLineage": {
+    "directoryRelativeRaceResistanceIntroducedBy": "M9b.13c post-registration local readiness review",
+    "sameUidAttackerMadeExplicitBy": "M9b.13d independent review",
+    "m9b13d1Decision": "m9b13d1-dependency-closure-no-go",
+    "m9b13d1Reinterpreted": false
+  },
+  "scientificFinancialProjection": {
+    "digest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+    "preservedFields": 18,
+    "changedFields": 0,
+    "probePairs": 24,
+    "primaryPairs": 168,
+    "countRequests": 768,
+    "inferenceCalls": 768,
+    "maximumHttpRequests": 1536,
+    "operationalCeilingUsdMicros": 460062720,
+    "providerCapUsdMicros": 500000000
+  },
+  "topologyAssessment": {
+    "trustedControlledHost": "proportionate-and-compatible-recommend",
+    "dedicatedLocalPrincipal": "optional-defense-in-depth-not-required",
+    "isolatedLinuxRunner": "disproportionate-recursive-supply-chain-not-required"
+  },
+  "rederivedDecision": "m9b13e-trusted-host-amendment-ready-for-independent-review"
+}
