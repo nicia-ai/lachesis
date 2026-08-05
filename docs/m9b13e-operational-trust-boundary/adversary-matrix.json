@@ -1,0 +1,67 @@
+{
+  "protocol": "lachesis-m9b13e-adversary-matrix/1",
+  "recommendedBoundary": "trusted-controlled-host",
+  "adversaries": [
+    {
+      "adversary": "malicious-or-malformed-registry-and-network-responses",
+      "inScope": true,
+      "scientificallyRelevant": true,
+      "controls": "signed-source verification, exact digests, bounds, parsing rejection, quarantine"
+    },
+    {
+      "adversary": "compromised-mutable-tags-or-descriptor-substitution",
+      "inScope": true,
+      "scientificallyRelevant": true,
+      "controls": "frozen index/platform/manifest identities and descriptor-graph verification"
+    },
+    {
+      "adversary": "hostile-oci-tar-spdx-or-provenance-bytes",
+      "inScope": true,
+      "scientificallyRelevant": true,
+      "controls": "strict bounded parsers, exact statement binding, trailing-data rejection, quarantine"
+    },
+    {
+      "adversary": "accidental-operator-error",
+      "inScope": true,
+      "scientificallyRelevant": true,
+      "controls": "fail-closed startup, immutable manifests, zero retries, append-only receipts, independent verification"
+    },
+    {
+      "adversary": "stale-or-contaminated-corpus-material",
+      "inScope": true,
+      "scientificallyRelevant": true,
+      "controls": "fresh private root, ancestry and exposure-history checks, durable quarantine, no rehabilitation"
+    },
+    {
+      "adversary": "model-generated-hostile-content",
+      "inScope": true,
+      "scientificallyRelevant": true,
+      "controls": "model output remains untrusted data, never executable authority, strict schema and role isolation"
+    },
+    {
+      "adversary": "unrelated-ordinary-host-processes",
+      "inScope": true,
+      "scientificallyRelevant": false,
+      "controls": "clean session, process census, private root, no unrelated process under operational UID"
+    },
+    {
+      "adversary": "malicious-process-already-running-as-acquisition-uid",
+      "inScope": false,
+      "scientificallyRelevant": false,
+      "separateStudy": "local-account-compromise-and-host-security"
+    },
+    {
+      "adversary": "malicious-administrator-root-kernel-or-hypervisor",
+      "inScope": false,
+      "scientificallyRelevant": false,
+      "separateStudy": "privileged-host-and-platform-security"
+    },
+    {
+      "adversary": "physical-compromise",
+      "inScope": false,
+      "scientificallyRelevant": false,
+      "separateStudy": "physical-and-device-security"
+    }
+  ],
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, kernel, administrator, or hypervisor."
+}

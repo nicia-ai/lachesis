@@ -1,0 +1,41 @@
+{
+  "protocol": "lachesis-m9b13e-scientific-impact-assessment/1",
+  "registeredProjectionDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "changedScientificFields": 0,
+  "invariants": {
+    "estimand": "evidence-adaptive-codemode-versus-matched-static-one-shot-first-attempt-grounded-success",
+    "probePairs": 24,
+    "primaryPairs": 168,
+    "balancedCells": 24,
+    "analysis": "exact-one-sided-conditional-mcnemar",
+    "zeroRetries": true,
+    "maximumConcurrency": 1,
+    "countRequests": 768,
+    "inferenceCalls": 768,
+    "maximumHttpRequests": 1536,
+    "inferenceCeilingUsdMicros": 342097920,
+    "countContingencyUsdMicros": 117964800,
+    "operationalCeilingUsdMicros": 460062720,
+    "providerCapUsdMicros": 500000000,
+    "headroomUsdMicros": 39937280
+  },
+  "sameUidResistanceRequiredFor": {
+    "primaryEndpoint": false,
+    "corpusFreshness": false,
+    "armBlindness": false,
+    "hiddenGoldIsolation": false,
+    "pairedComparison": false,
+    "providerAccounting": false,
+    "deterministicReplay": false,
+    "contaminationPrevention": false
+  },
+  "requiredOperationalProtectionsRemain": [
+    "hostile-external-byte-validation",
+    "fresh-private-root-and-ancestry",
+    "role-and-hidden-gold-isolation",
+    "durable-quarantine",
+    "effect-accounting",
+    "immutable-replay-inputs"
+  ],
+  "assessment": "prospective-operational-amendment-no-scientific-protocol-change"
+}

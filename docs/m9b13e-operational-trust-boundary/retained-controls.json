@@ -1,0 +1,64 @@
+{
+  "protocol": "lachesis-m9b13e-retained-controls/1",
+  "topology": "trusted-controlled-host",
+  "compensatingControls": [
+    "clean-controlled-acquisition-session",
+    "dedicated-private-root",
+    "no-unrelated-process-under-operational-uid",
+    "code-and-tool-digests-verified-before-startup",
+    "exact-descriptor-graph-and-signed-source-verification",
+    "no-credentials",
+    "frozen-network-allowlist",
+    "zero-retries",
+    "bounded-downloads",
+    "quarantine-on-ambiguity",
+    "rehash-immediately-before-scan-export-import-and-later-use",
+    "append-only-receipts",
+    "no-image-execution-during-acquisition",
+    "independent-post-acquisition-verification",
+    "destruction-or-quarantine-of-partial-state",
+    "complete-process-and-effect-accounting"
+  ],
+  "findingClassifications": [
+    {
+      "m9b13dFinding": 1,
+      "classification": "defense-in-depth",
+      "retained": "temporary-entry-and-final-entry identity checks, retained descriptor, digest and metadata rechecks",
+      "reason": "same-uid swap resistance is out of scope, but publication correctness and ordinary-race detection remain useful"
+    },
+    {
+      "m9b13dFinding": 2,
+      "classification": "still-mandatory",
+      "retained": "hash and parse each OCI object through the same opened descriptor within one trusted process"
+    },
+    {
+      "m9b13dFinding": 3,
+      "classification": "still-mandatory",
+      "retained": "exact index, linux/arm64/v8 platform, selected manifest, config, and ordered-layer binding"
+    },
+    {
+      "m9b13dFinding": 4,
+      "classification": "still-mandatory",
+      "retained": "ELF64 little-endian AArch64 validation and byte equality with signed Node release evidence"
+    },
+    {
+      "m9b13dFinding": 5,
+      "classification": "still-mandatory",
+      "retained": "EOF after frozen zero padding and rejection of trailing, partial, or concatenated tar content"
+    },
+    {
+      "m9b13dFinding": 6,
+      "classification": "split",
+      "stillMandatory": "exact provenance, SPDX, manifest, descriptor-map, scanner, inventory, and comparison identities",
+      "noLongerRequired": "descriptor-bound Darwin helper execution against a malicious same-uid pathname swap",
+      "replacementBoundary": "trusted code/tool path and digest verification before clean-session startup"
+    },
+    {
+      "m9b13dFinding": 7,
+      "classification": "still-mandatory",
+      "retained": "complete terminal framing and EOF validation before the final authoritative seal"
+    }
+  ],
+  "pathnameHashingClaim": "not-protection-against-malicious-same-uid-process",
+  "outsideBoundary": "malicious-process-already-running-as-operational-uid"
+}

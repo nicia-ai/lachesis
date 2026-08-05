@@ -1,0 +1,126 @@
+{
+  "protocol": "lachesis-m9b13e-threat-model-lineage/1",
+  "registration": {
+    "service": "OSF Registries",
+    "id": "63sh5",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "reviewedSourceCommit": "821a0f64c145de46ff77ebb734421fa2c7ab33f4",
+    "reviewedSourceTree": "998c03b0d1082a7a20ba3558ffb8e8da79b69454",
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "immutableFiles": 27,
+    "registeredThreatModel": {
+      "trusted": [
+        "controller-implementation",
+        "controller-host-operating-system",
+        "controller-privileged-operator",
+        "private-authority-storage-domain",
+        "authenticated-principal-channel-adapter"
+      ],
+      "untrusted": [
+        "study-roles",
+        "model-outputs",
+        "corpus-content",
+        "ordinary-request-callers",
+        "role-containers"
+      ],
+      "excluded": [
+        "malicious-or-compromised-privileged-host-or-operator",
+        "coordinated-complete-local-authority-domain-rollback",
+        "privileged-matching-sqlite-and-anchor-rollback",
+        "kernel-hypervisor-or-hardware-compromise"
+      ],
+      "hostileSameUidResistanceExpresslyRequired": false
+    }
+  },
+  "lineage": [
+    {
+      "stage": "M9b.12f approved preregistration",
+      "classification": "immutable-registered-requirement",
+      "finding": "trusted-host computing base is explicit; malicious privileged host/operator and kernel/hypervisor compromise are excluded",
+      "sameUidRequirement": "absent"
+    },
+    {
+      "stage": "M9b.13 offline materialization readiness",
+      "commits": [
+        "e060dd4e0e8047e286ecb9dbdd5f7e0c8dcc26ca",
+        "15f1fc986366263ec86f1ecaaa6eb36fe6a9a662",
+        "fc6acb2b839e4c6f208d5985d8ba419e197cebe5"
+      ],
+      "classification": "post-registration-local-readiness-review",
+      "finding": "private roots, dedicated role principals, no shared incompatible-role UID, and filesystem drift rejection were added as operational controls",
+      "sameUidRequirement": "not-explicit"
+    },
+    {
+      "stage": "M9b.13c acquisition boundary",
+      "commits": [
+        "1a1266e56453e2f5ba98e2d5c6e2b0be3b23ef65",
+        "d6ee1c71a10ceae9e3c30fda7e67f03e71092a48"
+      ],
+      "classification": "post-registration-local-readiness-review",
+      "finding": "directory-descriptor-relative race-resistant destination admission became a blocking local requirement",
+      "sameUidRequirement": "implicit-in-race-resistant-admission"
+    },
+    {
+      "stage": "M9b.13d dependency closure",
+      "commits": [
+        "d9814d876f2ec636690541a020430e7d1ef975a8",
+        "eb37e46d29c43b6270605e93087b5174ee056dc3",
+        "ad60ce42813c265316859e118efd23f5eb8d5a01"
+      ],
+      "classification": "post-registration-local-defense-in-depth-implementation",
+      "finding": "native helper and scanner attempted to close race-resistant filesystem and hostile-byte boundaries",
+      "sameUidRequirement": "submitted-threat-model"
+    },
+    {
+      "stage": "M9b.13d independent review",
+      "commit": "18d9fd3452728e0784ebf0961fe10285ff536d7f",
+      "classification": "append-only-local-independent-review",
+      "finding": "same-effective-UID swap exploit was reproduced and declared within the submitted M9b.13d threat model",
+      "sameUidRequirement": "explicit"
+    },
+    {
+      "stage": "M9b.13d.1 correction",
+      "commit": "f03c9fce9d9ce035eeb9af49ed0f2e060aa505e3",
+      "tree": "ce6d8ecd6059e8f3dfad15619c6663e7f2db91f2",
+      "classification": "append-only-local-correction-no-go",
+      "finding": "Darwin descriptor-bound helper execution could not be proven; pathname fallback remained vulnerable to a hostile same-UID process",
+      "sameUidRequirement": "preserved-local-blocker"
+    }
+  ],
+  "classification": {
+    "scientificValidityRequirements": [
+      "freshness-and-contamination-controls",
+      "arm-blindness-and-hidden-gold-isolation",
+      "paired-allocation-and-analysis-invariants",
+      "provider-effect-accounting",
+      "deterministic-replay"
+    ],
+    "registeredOperationalRequirements": [
+      "trusted-host-tcb",
+      "untrusted-model-corpus-role-and-request-inputs",
+      "crash-concurrency-durability-and-quarantine-protection"
+    ],
+    "laterDefenseInDepthRequirements": [
+      "malicious-same-uid-path-and-inode-race-resistance",
+      "descriptor-bound-helper-execution-on-Darwin"
+    ],
+    "prospectivelyAmendableBeforeCorpusConstruction": [
+      "local-operational-adversary-boundary",
+      "host-session-and-process-census-controls",
+      "explicit-local-host-compromise-nonclaim"
+    ],
+    "requiresExternalScientificSupplementToChange": [
+      "estimand",
+      "population",
+      "allocation",
+      "model-settings",
+      "budget",
+      "corpus-isolation",
+      "quarantine",
+      "analysis"
+    ]
+  },
+  "conclusion": "hostile same-UID resistance was a later local readiness requirement, not an immutable OSF preregistration requirement"
+}

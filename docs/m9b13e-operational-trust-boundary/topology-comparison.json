@@ -1,0 +1,67 @@
+{
+  "protocol": "lachesis-m9b13e-topology-comparison/1",
+  "recommended": "trusted-controlled-host",
+  "topologies": [
+    {
+      "id": "trusted-controlled-host",
+      "decision": "recommend",
+      "assumptions": [
+        "trusted-kernel-controller-installed-runtime-and-operator",
+        "no-malicious-concurrent-process-under-acquisition-uid",
+        "all-external-bytes-hostile"
+      ],
+      "requiredControls": [
+        "digest-reverification-immediately-before-every-consequential-use",
+        "quarantine-on-incomplete-changed-or-ambiguous-artifacts",
+        "clean-controlled-session-and-complete-process-accounting",
+        "independent-post-acquisition-verification"
+      ],
+      "scientificTopologyChange": false,
+      "newSupplyChainDependencies": "none-beyond-already-required-frozen-controller-runtime-and-source-evidence",
+      "residualNonclaim": "no-security-claim-against-local-account-or-host-compromise"
+    },
+    {
+      "id": "dedicated-local-principal",
+      "decision": "not-required",
+      "assumptions": [
+        "fresh-non-login-account",
+        "no-unrelated-process-under-that-uid",
+        "trusted-root-or-custodian"
+      ],
+      "additionalControls": [
+        "custodian-owned-read-only-controller-and-helper",
+        "private-output-root",
+        "process-census-and-fail-closed-startup",
+        "writer-scanner-role-separation-where-feasible",
+        "no-ambient-docker-configuration-or-credentials"
+      ],
+      "scientificTopologyChange": false,
+      "cost": "account-lifecycle-custody-permission-and-role-separation-complexity",
+      "limitation": "does-not-protect-against-root-kernel-or-custodian-compromise"
+    },
+    {
+      "id": "isolated-linux-acquisition-runner",
+      "decision": "not-required",
+      "assumptions": [
+        "linux-arm64",
+        "openat2-and-fexecve-or-execveat",
+        "isolated-pid-user-mount-and-network-namespaces",
+        "no-other-same-uid-process"
+      ],
+      "additionalDependencies": [
+        "boot-image-identity-and-reproducible-build",
+        "runner-image-identity-and-reproducible-build",
+        "kernel-and-userspace-provenance",
+        "boot-and-runner-sboms",
+        "namespace-and-sandbox-policy-verification",
+        "digest-only-artifact-export-protocol",
+        "artifact-transfer-integrity-and-custody",
+        "linux-arm64-runner-availability-and-recovery"
+      ],
+      "scientificTopologyChange": false,
+      "cost": "new-recursive-supply-chain-and-availability-closure",
+      "limitation": "still-trusts-boot-chain-kernel-runner-builder-and-transfer-custodian"
+    }
+  ],
+  "proportionality": "same-uid-host-compromise-resistance-is-not-required-for-the-registered-retrieval-quality-claim"
+}

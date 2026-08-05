@@ -1,0 +1,38 @@
+{
+  "protocol": "lachesis-m9b13e-prospective-operational-amendment/1",
+  "classification": "prospective-operational-amendment",
+  "compatibleWithApprovedRegistration": true,
+  "scientificProtocolAmendment": false,
+  "originalRegistration": {
+    "id": "63sh5",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "immutableFiles": 27,
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "modificationPermitted": false,
+    "embargoChangePermitted": false
+  },
+  "amendedAssumption": "the acquisition runs on a trusted controlled host with no malicious or unrelated concurrent process under the operational UID; all external bytes remain hostile",
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, kernel, administrator, or hypervisor.",
+  "externalSupplementProcedure": [
+    "prepare-a-separate-append-only-immutable-supplement-with-a-new-external-identity",
+    "bind-registration-63sh5-and-its-original-submission-and-approval-timestamps",
+    "bind-all-27-original-file-identities-preregistration-digest-and-manifest-digest",
+    "reproduce-the-registered-scientific-and-financial-projection-digest",
+    "state-the-amended-operational-assumption-and-nonclaim-verbatim",
+    "attest-that-supplement-approval-precedes-corpus-construction-credential-or-provider-effects",
+    "obtain-independent-review-of-the-exact-checksum-bound-supplement",
+    "submit-only-under-a-later-explicit-authorization",
+    "append-an-approved-external-receipt-without-altering-registration-63sh5",
+    "require-another-local-readiness-review-before-any-materialization-authority"
+  ],
+  "currentMilestoneEffects": {
+    "supplementSubmitted": false,
+    "osfMutated": false,
+    "corpusConstructed": false,
+    "credentialAccessed": false,
+    "providerEffect": false,
+    "activationAuthorityIssued": false
+  }
+}
