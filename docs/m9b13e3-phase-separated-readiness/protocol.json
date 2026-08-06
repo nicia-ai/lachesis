@@ -1,0 +1,23 @@
+{
+  "protocol": "lachesis-m9b13e3-temporal-chronology-external-review-correction/1",
+  "classification": "append-only-prospective-operational-amendment-correction",
+  "preEffectAdmissionProtocol": "lachesis-m9b13e3-pre-effect-trusted-session-admission/1",
+  "monitoringProtocol": "lachesis-m9b13e3-continuing-session-monitoring/1",
+  "terminalReceiptProtocol": "lachesis-m9b13e3-terminal-trusted-session-receipt/1",
+  "eventStreamProtocol": "lachesis-m9b13e3-canonical-session-event-stream/1",
+  "ledgerProtocol": "lachesis-m9b13e3-phase-separated-synthetic-anti-replay-ledger/1",
+  "supplementBodyProtocol": "lachesis-m9b13e3-operational-supplement-body/1",
+  "supplementReviewProtocol": "lachesis-m9b13e3-independent-supplement-review/1",
+  "supplementSubmissionProtocol": "lachesis-m9b13e3-authority-bound-supplement-submission/1",
+  "syntheticAuthorityProtocol": "lachesis-m9b13e3-synthetic-phase-authority-never-live/1",
+  "predecessor": {
+    "commit": "12e3c8089b4664ef622655585c200e48fed41468",
+    "tree": "825d522cfb6dba8f96f2cc7b25e0e545a4e73acf",
+    "manifestSha256": "aacde1ccc4ea037c9265bb31ebf03f9752b0f3894a3f3edbcccaab539bb84b0e",
+    "reviewDecision": "m9b13e2-authority-lineage-replay-review-no-go",
+    "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e3"
+  },
+  "livePositiveReadinessAuthority": null,
+  "liveSupplementSubmissionAuthority": null,
+  "acquisitionReady": false
+}

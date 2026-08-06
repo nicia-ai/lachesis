@@ -1,0 +1,49 @@
+{
+  "preEffectAdmission": {
+    "protocol": "lachesis-m9b13e3-pre-effect-trusted-session-admission/1",
+    "decision": "trusted-session-admitted",
+    "exactTransitionPath": [
+      "uninitialized->preflight",
+      "preflight->admitted-clean"
+    ],
+    "requiredCensuses": ["initial", "pre-admission"],
+    "independentReadinessVerification": "pass",
+    "ledgerStatuses": ["session-reserved", "pre-effect-admitted"],
+    "zeroPreAdmissionEffects": true,
+    "futureOrTerminalEvidenceAllowed": false
+  },
+  "monitoring": {
+    "protocol": "lachesis-m9b13e3-continuing-session-monitoring/1",
+    "decision": "monitoring-lineage-only",
+    "startsAfter": "pre-effect-admitted-ledger-commit",
+    "firstTransition": "admitted-clean->acquisition-active",
+    "boundaryGroup": [
+      "boundary-reservation",
+      "before-consequential-boundary-census",
+      "boundary-dispatch-effect",
+      "completion",
+      "after-completion-census"
+    ],
+    "endsWith": ["acquisition-active->verification-active", "pre-seal-census"],
+    "grantsAdmissionAuthority": false,
+    "grantsEffectAuthority": false
+  },
+  "terminal": {
+    "protocol": "lachesis-m9b13e3-terminal-trusted-session-receipt/1",
+    "decisions": [
+      "trusted-session-completed",
+      "trusted-session-stopped",
+      "trusted-session-quarantined"
+    ],
+    "successfulEvents": [
+      "verification-active->sealed",
+      "sealed->closed",
+      "terminal-census",
+      "terminal-completed-ledger-commit"
+    ],
+    "failureTerminalRoute": "invariant-loss->stop->quarantined->closed",
+    "bindsAdmissionAndMonitoringDigests": true,
+    "acceptedAsInitialAuthority": false,
+    "returnsTrustedSessionAdmitted": false
+  }
+}

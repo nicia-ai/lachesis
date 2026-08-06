@@ -1,0 +1,18 @@
+{
+  "protocol": "lachesis-m9b13e3-phase-separated-synthetic-anti-replay-ledger/1",
+  "implementation": "in-memory-synthetic-only",
+  "liveNamespaceOrRoot": null,
+  "cas": ["expected-revision", "expected-root"],
+  "hashChain": "canonical-event-digest-and-resulting-root",
+  "phaseOrder": [
+    "session-reserved",
+    "pre-effect-admitted",
+    "active-monitoring",
+    "terminal-completed-or-stopped-or-quarantined"
+  ],
+  "duplicateAdmissionRejected": true,
+  "staleRootRejected": true,
+  "terminalReopeningRejected": true,
+  "ambiguousAfterWriteRetried": false,
+  "terminalRecordAcceptedAsAdmission": false
+}

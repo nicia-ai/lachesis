@@ -1,0 +1,47 @@
+{
+  "protocol": "lachesis-m9b13e3-canonical-session-event-stream/1",
+  "eventFields": [
+    "sessionCommitment",
+    "eventId",
+    "kind",
+    "sequence",
+    "monotonicTimestampNanos",
+    "wallTimestamp",
+    "priorEventDigest",
+    "currentEventDigest",
+    "ledgerRevision",
+    "priorLedgerRoot",
+    "resultingLedgerRoot"
+  ],
+  "eventKinds": [
+    "transition",
+    "census",
+    "boundary-reservation",
+    "boundary-dispatch-effect",
+    "completion",
+    "readiness-verification",
+    "invariant-loss",
+    "stop",
+    "seal",
+    "terminal-close",
+    "phase-commit"
+  ],
+  "ordering": {
+    "initialSequence": 0,
+    "sequenceIncrement": 1,
+    "monotonicTimestamp": "strictly-increasing",
+    "eventDigestChain": "contiguous",
+    "ledgerRevisionIncrement": 1,
+    "ledgerRootChain": "contiguous",
+    "futureReferences": "rejected"
+  },
+  "censusChronology": {
+    "initial": "immediately-after-uninitialized-to-preflight-and-before-readiness-verification",
+    "preAdmission": "after-readiness-verification-and-immediately-before-preflight-to-admitted-clean",
+    "beforeConsequentialBoundary": "after-matching-reservation-and-immediately-before-matching-dispatch",
+    "afterCompletion": "immediately-after-matching-completion",
+    "preSeal": "after-all-completions-and-immediately-before-seal",
+    "terminal": "after-sealed-or-quarantined-close-and-never-pre-effect"
+  },
+  "callerSelectedIntervalsDefineMeaning": false
+}

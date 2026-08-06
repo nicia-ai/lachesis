@@ -1,0 +1,41 @@
+{
+  "body": {
+    "protocol": "lachesis-m9b13e3-operational-supplement-body/1",
+    "canonicalDigestProjection": "complete-body-with-bodyCanonicalDigest-omitted",
+    "containsReview": false,
+    "containsSubmissionAuthority": false,
+    "exactAmendedAssumptionRequired": true,
+    "exactNonclaimAndRetainedScopeRequired": true,
+    "registrationAndScientificInvarianceRequired": true
+  },
+  "review": {
+    "protocol": "lachesis-m9b13e3-independent-supplement-review/1",
+    "separateObject": true,
+    "binds": [
+      "body-protocol-and-recomputed-digest",
+      "body-commit-and-tree",
+      "body-checksum-manifest",
+      "reviewer-commitment",
+      "review-evidence",
+      "literal-pass",
+      "body-freeze-and-review-time",
+      "prospective-embargo-scientific-and-assumption-checks"
+    ]
+  },
+  "submission": {
+    "protocol": "lachesis-m9b13e3-authority-bound-supplement-submission/1",
+    "trustedContextOutsideSubmittedJson": true,
+    "bindsFrozenBodyAndReviewDigests": true,
+    "bindsReviewedCommitAndTree": true,
+    "bindsAuthorizationRegistryAndEmbargoIdentities": true,
+    "liveAuthority": null
+  },
+  "noncircularIdentityOrder": [
+    "supplement-body-digest",
+    "supplement-body-manifest-digest",
+    "separate-review-package-digest-binding-body",
+    "submission-authority-binding-body-and-review",
+    "future-separate-upload-inventory-digest"
+  ],
+  "realObjectsPrepared": false
+}
