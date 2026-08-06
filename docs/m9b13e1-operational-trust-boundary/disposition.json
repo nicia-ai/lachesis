@@ -1,0 +1,27 @@
+{
+  "protocol": "lachesis-m9b13e1-disposition/1",
+  "m9b13e": {
+    "decision": "m9b13e-operational-amendment-review-no-go",
+    "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e1",
+    "bytesModified": false,
+    "reinterpretedAsSuccessful": false
+  },
+  "m9b13e1": {
+    "classification": "append-only-prospective-operational-amendment-correction",
+    "fiveFindingsCorrected": true,
+    "scientificProtocolChanged": false,
+    "scientificFinancialFieldsChanged": 0,
+    "acquisitionReady": false,
+    "authorityIssued": false,
+    "nextStep": "independent-read-only-review-of-exact-checksum-bound-m9b13e1-package"
+  },
+  "historicalNoGosPreserved": [
+    "M9b.13",
+    "M9b.13a",
+    "M9b.13b",
+    "M9b.13c",
+    "M9b.13d",
+    "M9b.13d.1",
+    "M9b.13e-and-independent-review"
+  ]
+}

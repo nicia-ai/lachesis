@@ -1,0 +1,79 @@
+{
+  "protocol": "lachesis-m9b13e1-independent-rederivation/1",
+  "sources": "local-immutable-git-objects-receipts-and-registered-bytes-only",
+  "commits": {
+    "m9b13eBaseline": {
+      "commit": "ca0a3050e950b661c23346d31c8c2f087bf474fe",
+      "tree": "1f206793e0ff97b1e8a487d4df9c94e59a47600a"
+    },
+    "preservedReviewEvidence": {
+      "commit": "ad6efa0b0f8ffa7b2c883aa816c316a0bd8792c0",
+      "tree": "0ba350208524e198755baf0ac0b8b4aa6815f222"
+    },
+    "correctedContractsAndValidator": {
+      "commit": "49d9e7f7b919fb5a22f89fd87d48630dd3baf97b",
+      "tree": "ac505ad37a3f049f8c61b767d56fd2e2c23a5a0f"
+    }
+  },
+  "registration": {
+    "id": "63sh5",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "embargoEnd": "2030-08-01T00:00:00Z",
+    "immutableFileCount": 27,
+    "allFileSizesAndSha256Reproduced": true,
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "canonicalReceiptDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+  },
+  "scientificFinancialProjection": {
+    "fieldNames": [
+      "researchQuestion",
+      "bindings",
+      "treatment",
+      "control",
+      "matching",
+      "population",
+      "primaryEndpoint",
+      "analysis",
+      "probeAdvancement",
+      "financial",
+      "operationalSequence",
+      "countPricingKillGates",
+      "operationalSecurity",
+      "disclosureAndRoles",
+      "nonclaims",
+      "audit",
+      "authority",
+      "inheritedDecisions"
+    ],
+    "fieldCount": 18,
+    "changedFields": 0,
+    "canonicalDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+    "probePairs": 24,
+    "primaryPairs": 168,
+    "countRequests": 768,
+    "inferenceCalls": 768,
+    "maximumHttpRequests": 1536,
+    "operationalCeilingUsdMicros": 460062720,
+    "providerCapUsdMicros": 500000000
+  },
+  "fiveCorrections": {
+    "trustedSessionOperationallyTestable": true,
+    "publicationIdentityControlsMandatory": true,
+    "helperSourceBuildIdentityMandatory": true,
+    "expandedNonclaimExact": true,
+    "supplementContractProspectiveHistoricalAndEmbargoCompatible": true
+  },
+  "privateValidator": {
+    "sourceSha256": "fde7924b25b17e090edf630010534c5131b786bd7ad3949d6361c6adcafafa59",
+    "testSha256": "210c5f2a4b793ead0316dfa1e20d826e3dc38e1637d3cb8fa9b5ba2ae4ebc303",
+    "operationalCollector": false,
+    "networkAdapter": false,
+    "acquisitionRunner": false,
+    "futureCensusTruthClaimed": false
+  },
+  "predecessorBytesModified": false,
+  "m9b13eDisposition": "reviewed-no-go-superseded-prospectively-by-m9b13e1",
+  "rederivedDecision": "m9b13e1-corrected-operational-amendment-ready-for-independent-review"
+}

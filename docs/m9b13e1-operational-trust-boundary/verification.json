@@ -1,0 +1,71 @@
+{
+  "protocol": "lachesis-m9b13e1-verification/1",
+  "result": "pass-ready-for-independent-review-no-authority",
+  "predecessors": {
+    "packageManifestsPassed": 14,
+    "independentReviewManifestsPassed": 8,
+    "registrationReceiptManifestPassed": true,
+    "m9b12ThroughM9b13eBytePreservation": "pass"
+  },
+  "registration": {
+    "archiveFilesSizeAndSha256Passed": "27-of-27",
+    "preregistrationDigest": "pass",
+    "manifestDigest": "pass",
+    "canonicalReceiptDigest": "pass",
+    "scientificFinancialProjectionDigest": "pass",
+    "changedScientificFinancialFields": 0
+  },
+  "tests": {
+    "m9b13e1FocusedFiles": 1,
+    "m9b13e1FocusedTests": 18,
+    "m9b13e1FocusedPassed": 18,
+    "relevantSerializedFiles": 5,
+    "relevantSerializedTests": 71,
+    "relevantSerializedPassed": 71,
+    "completeSerializedFiles": 72,
+    "completeSerializedTests": 1210,
+    "completeSerializedPassed": 1210,
+    "coverageSerializedTestsPassed": 1210,
+    "coverage": {
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    },
+    "historicalDarwinTestObservation": "default-five-second-timeout-was-insufficient-in-mixed-run; explicit-serialized-fifteen-second-timeout-passed-without-source-change"
+  },
+  "gates": {
+    "jsonStrictParsingAndCanonicalization": "pass",
+    "changedFileFormatting": "pass",
+    "localLinks": "pass",
+    "secretScan": "pass",
+    "strictTypeScript": "pass",
+    "lint": "pass",
+    "build": "pass",
+    "sourceSafety": "pass",
+    "gitDiffCheck": "pass",
+    "gitObjectIntegrity": "pass",
+    "publicExportsAdded": 0,
+    "packageVersionsChanged": 0
+  },
+  "effects": {
+    "networkRequests": 0,
+    "downloads": 0,
+    "packageInstallations": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsPreparedSubmittedOrApproved": 0,
+    "accountsCreated": 0,
+    "processesTerminated": 0,
+    "runtimeInstallations": 0,
+    "acquisitionsOrImageOperations": 0,
+    "realReadinessSessions": 0,
+    "corpusOrGoldEffects": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publications": 0,
+    "pushes": 0,
+    "m10Work": 0
+  }
+}
