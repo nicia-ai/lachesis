@@ -1,0 +1,64 @@
+{
+  "protocol": "lachesis-m9b13e1-append-only-embargo-compatible-operational-supplement/1",
+  "currentMilestonePreparesOrSubmitsSupplement": false,
+  "externalRegistrySelectedOrAccessed": false,
+  "prospectiveApprovalMustPrecede": [
+    "corpus-construction",
+    "hidden-gold-construction",
+    "schedule-materialization",
+    "credential-access",
+    "network-acquisition",
+    "provider-or-model-effects",
+    "study-execution"
+  ],
+  "originalRegistration": {
+    "id": "63sh5",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "immutableFileCount": 27,
+    "immutableFileIdentities": "exact-equality-to-docs/m9b12f-registration-receipt/ARCHIVE-FILES.json-and-validator-frozen-inventory",
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "scientificFinancialProjectionDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282"
+  },
+  "historicalNoGoEvidence": [
+    "M9b.13",
+    "M9b.13a",
+    "M9b.13b",
+    "M9b.13c",
+    "M9b.13d",
+    "M9b.13d.1",
+    "M9b.13e-and-its-failed-independent-review"
+  ],
+  "historicalDisposition": "not-erased-not-corrected-in-place-not-successful",
+  "externalIdentity": "new-and-immutable-not-registration-63sh5",
+  "embargo": {
+    "minimumRestriction": "at-least-as-restrictive-as-registration-63sh5",
+    "protectedThrough": "2030-08-01T00:00:00Z",
+    "publicViewOnlyLinkCount": 0,
+    "publicMetadataMayRevealProtectedContext": false
+  },
+  "prohibited": [
+    "publication",
+    "withdrawal",
+    "replacement",
+    "clone-presented-as-original",
+    "modification-of-registration-63sh5",
+    "premature-embargo-termination",
+    "public-metadata-revealing-protected-preregistration-context"
+  ],
+  "requiredReceiptEvidence": [
+    "exact-attachment-inventory-and-sha256-values",
+    "server-submission-timestamp",
+    "approval-timestamp-where-applicable",
+    "independent-post-upload-byte-verification",
+    "append-only-local-receipt"
+  ],
+  "authorizations": {
+    "separateSubmissionAuthorizationRequired": true,
+    "separateApprovalAuthorizationRequired": true,
+    "approvalGrantsCorpusOrAcquisitionAuthority": false
+  },
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, controller, kernel, administrator, hypervisor, or pre-start local code, tool, and runtime installation.",
+  "retainedScope": "Ordinary operator error, accidental controller or helper races, malformed or adversarial external bytes, artifact substitution, partial persistence, retired-corpus exposure, contamination, and failure to establish or retain the trusted-session readiness invariant remain in scope and fail closed."
+}

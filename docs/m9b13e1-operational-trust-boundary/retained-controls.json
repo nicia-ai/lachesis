@@ -1,0 +1,57 @@
+{
+  "protocol": "lachesis-m9b13e1-corrected-retained-controls/1",
+  "finding1": {
+    "outOfScope": "deliberate-post-verification-helper-or-path-replacement-by-a-malicious-process-already-running-under-the-trusted-operational-uid",
+    "stillMandatory": [
+      "retain-temporary-file-descriptor",
+      "fstat-and-entry-identity-comparison-before-publication",
+      "retain-descriptor-through-rename",
+      "final-entry-identity-comparison",
+      "writable-descriptor-closure-before-sealing",
+      "file-and-directory-durability-ordering",
+      "pre-and-post-publication-identity-checks",
+      "atomic-no-clobber-publication",
+      "reject-ordinary-controller-or-helper-races",
+      "reject-accidental-or-controller-created-replacement",
+      "no-accepted-seal-after-framing-or-publication-failure"
+    ],
+    "classification": "mandatory-except-deliberate-malicious-same-uid-post-verification-replacement"
+  },
+  "m9b13dFindings": [
+    {
+      "finding": 2,
+      "classification": "unresolved-still-mandatory",
+      "requirement": "descriptor-bound-hash-and-parse-within-the-trusted-controller"
+    },
+    {
+      "finding": 3,
+      "classification": "unresolved-still-mandatory",
+      "requirement": "exact-linux-arm64-v8-platform-and-frozen-manifest-enforcement"
+    },
+    {
+      "finding": 4,
+      "classification": "unresolved-still-mandatory",
+      "requirement": "strong-elf-aarch64-and-signed-node-distribution-binding"
+    },
+    {
+      "finding": 5,
+      "classification": "unresolved-still-mandatory",
+      "requirement": "trailing-partial-and-concatenated-tar-rejection"
+    },
+    {
+      "finding": 6,
+      "classification": "split-exact-identity-mandatory-malicious-same-uid-path-replacement-out-of-scope",
+      "requirement": "exact-helper-source-build-platform-and-acquired-evidence-receipt-binding"
+    },
+    {
+      "finding": 7,
+      "classification": "unresolved-still-mandatory",
+      "requirement": "complete-terminal-framing-before-sealing"
+    }
+  ],
+  "digestBeforeEveryConsequentialUse": true,
+  "freshnessBlindnessHiddenGoldQuarantineAccountingReplay": "unchanged-and-mandatory",
+  "acquisitionReady": false,
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, controller, kernel, administrator, hypervisor, or pre-start local code, tool, and runtime installation.",
+  "retainedScope": "Ordinary operator error, accidental controller or helper races, malformed or adversarial external bytes, artifact substitution, partial persistence, retired-corpus exposure, contamination, and failure to establish or retain the trusted-session readiness invariant remain in scope and fail closed."
+}

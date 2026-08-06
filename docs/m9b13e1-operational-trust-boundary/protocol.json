@@ -1,0 +1,45 @@
+{
+  "protocol": "lachesis-m9b13e1-corrected-operational-amendment/1",
+  "classification": "append-only-prospective-operational-amendment-correction",
+  "predecessor": {
+    "commit": "ca0a3050e950b661c23346d31c8c2f087bf474fe",
+    "tree": "1f206793e0ff97b1e8a487d4df9c94e59a47600a",
+    "decision": "m9b13e-trusted-host-amendment-ready-for-independent-review",
+    "checksumManifestSha256": "38c6056789f4c6f3c63fad7b082aa1e54dca1c7dd111fe3daaee3114044c87fe",
+    "independentReviewDecision": "m9b13e-operational-amendment-review-no-go",
+    "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e1",
+    "bytesModified": false,
+    "reinterpreted": false
+  },
+  "corrections": [
+    "bind-operationally-testable-trusted-session-readiness-and-no-effect-stop-gate",
+    "restore-mandatory-publication-identity-and-ordinary-race-rejection",
+    "freeze-exact-helper-source-build-and-platform-identity",
+    "expand-nonclaim-and-retain-ordinary-error-and-contamination-scope",
+    "complete-append-only-embargo-compatible-supplement-contract"
+  ],
+  "trustedSessionReadinessProtocol": "lachesis-m9b13e1-trusted-controlled-host-session-readiness/1",
+  "externalSupplementProtocol": "lachesis-m9b13e1-append-only-embargo-compatible-operational-supplement/1",
+  "validator": {
+    "kind": "private-pure-offline-contract-validator",
+    "path": "packages/generator-ai-sdk/internal/m9b13e1-trusted-session-readiness.ts",
+    "operationalCollector": false,
+    "networkAdapter": false,
+    "acquisitionRunner": false,
+    "provesFutureCensusTruth": false
+  },
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, controller, kernel, administrator, hypervisor, or pre-start local code, tool, and runtime installation.",
+  "retainedScope": "Ordinary operator error, accidental controller or helper races, malformed or adversarial external bytes, artifact substitution, partial persistence, retired-corpus exposure, contamination, and failure to establish or retain the trusted-session readiness invariant remain in scope and fail closed.",
+  "authority": {
+    "externalRegistryAccessOrMutation": false,
+    "supplementPreparationSubmissionOrApproval": false,
+    "accountOrHostChange": false,
+    "processTermination": false,
+    "runtimeInstallation": false,
+    "acquisitionDownloadOrImageOperation": false,
+    "realReadinessSession": false,
+    "corpusGoldCredentialProviderOrModel": false,
+    "executionAnalysisPublicationOrPush": false,
+    "m10Work": false
+  }
+}

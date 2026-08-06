@@ -1,0 +1,36 @@
+{
+  "protocol": "lachesis-m9b13e1-future-helper-identity-requirements/1",
+  "futureImplementationPackageMustFreeze": [
+    "helper-protocol-identity",
+    "complete-helper-source-digest",
+    "compiler-executable-identity-and-version",
+    "compiler-executable-digest",
+    "sdk-and-sysroot-identity",
+    "exact-compiler-and-linker-flags",
+    "build-environment-normalization-digest",
+    "complete-linked-library-identity-and-digest-inventory",
+    "reproducible-build-receipt",
+    "final-executable-digest",
+    "supported-os-kernel-architecture-and-filesystem",
+    "invocation-contract",
+    "exit-code-contract"
+  ],
+  "comparison": "exact-equality-against-independently-reviewed-future-package-before-any-effect",
+  "excludedThreat": "deliberate-malicious-same-uid-pathname-replacement-after-successful-verification",
+  "mandatoryFailures": [
+    "accidental-replacement",
+    "stale-binary",
+    "wrong-source",
+    "wrong-compiler-or-sdk",
+    "wrong-flags",
+    "nonreproducible-build",
+    "controller-selected-alternate-helper",
+    "self-consistently-resigned-helper-substitution",
+    "unexpected-linked-library",
+    "host-or-platform-drift"
+  ],
+  "currentM9b13dHelperAccepted": false,
+  "futureReviewedIdentityRequired": true,
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, controller, kernel, administrator, hypervisor, or pre-start local code, tool, and runtime installation.",
+  "retainedScope": "Ordinary operator error, accidental controller or helper races, malformed or adversarial external bytes, artifact substitution, partial persistence, retired-corpus exposure, contamination, and failure to establish or retain the trusted-session readiness invariant remain in scope and fail closed."
+}

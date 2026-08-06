@@ -1,0 +1,172 @@
+{
+  "protocol": "lachesis-m9b13e1-trusted-controlled-host-session-readiness/1",
+  "receiptSchema": "strict-closed-zod-derived-contract-hostile-extra-keys-rejected",
+  "canonicalization": "lachesis-strict-hostile-key-safe-canonical-json-plus-sha256",
+  "privacy": {
+    "requiredOpaqueCommitments": [
+      "host-identity",
+      "boot-session-identity",
+      "principal-identity",
+      "account-session-identity",
+      "filesystem-roots",
+      "filesystem-devices"
+    ],
+    "forbiddenExternalFields": [
+      "hardware-serial-number",
+      "personal-username",
+      "home-directory-path",
+      "unnecessary-private-identifier"
+    ]
+  },
+  "hostBinding": [
+    "opaque-host-identity-commitment",
+    "hardware-architecture",
+    "operating-system-name-and-version",
+    "kernel-version-and-build",
+    "boot-session-identity-commitment",
+    "filesystem-type-and-device-identity-for-every-operational-root",
+    "clock-source-and-wall-and-monotonic-timestamps",
+    "trusted-host-policy-digest",
+    "exact-readiness-implementation-source-build-and-executable-identity"
+  ],
+  "operationalIdentity": {
+    "bindings": [
+      "numeric-uid",
+      "opaque-principal-commitment",
+      "equal-real-effective-and-saved-uids",
+      "group-inventory-digest",
+      "unprivileged-no-sudo-no-root-elevation",
+      "opaque-account-session-commitment"
+    ],
+    "supplementaryGroupPolicy": "exact-digest-no-drift",
+    "identityChangePolicy": "reject-during-session"
+  },
+  "permittedProcessTopology": {
+    "controllerRoots": 1,
+    "roles": ["controller", "helper", "scanner", "verifier"],
+    "bindPerProcess": [
+      "exact-parent-child-relation",
+      "protocol-source-build-and-executable-digests",
+      "argument-schema-digest",
+      "environment-schema-digest",
+      "descriptor-inheritance-digest",
+      "maximum-instance-count",
+      "start-order",
+      "terminal-exit-requirement"
+    ],
+    "maximumConcurrency": 1,
+    "backgroundProcessPolicy": "reject-pre-existing-process-not-in-exact-allowlist",
+    "vagueClassifiersForbidden": ["normal", "safe", "unrelated", "nonmalicious"]
+  },
+  "census": {
+    "frozenMethods": [
+      "data-source",
+      "uid-scoped-process-enumeration",
+      "descriptor-metadata-and-executable-digest",
+      "pid-ppid-start-time-parent-child-reconstruction",
+      "short-lived-process-coverage-method",
+      "evidence-schema-and-canonical-digest"
+    ],
+    "checkpoints": [
+      "before-session-admission",
+      "before-every-consequential-boundary",
+      "after-every-helper-or-scanner-completion",
+      "before-sealing-and-final-acceptance",
+      "terminal"
+    ],
+    "freshness": "snapshot-age-must-not-exceed-frozen-maximum",
+    "continuousObservation": "if-required-and-not-proven-return-trusted-session-no-effect-stop",
+    "darwinNonclaim": "snapshot-validation-does-not-invent-continuous-observation-coverage"
+  },
+  "sessionStateMachine": {
+    "states": [
+      "uninitialized",
+      "preflight",
+      "admitted-clean",
+      "acquisition-active",
+      "verification-active",
+      "sealed",
+      "quarantined",
+      "closed"
+    ],
+    "legalTransitions": [
+      "uninitialized->preflight",
+      "preflight->admitted-clean",
+      "preflight->quarantined",
+      "admitted-clean->acquisition-active",
+      "admitted-clean->quarantined",
+      "acquisition-active->verification-active",
+      "acquisition-active->quarantined",
+      "verification-active->sealed",
+      "verification-active->quarantined",
+      "sealed->closed",
+      "quarantined->closed"
+    ],
+    "transitionEvidence": "wall-and-monotonic-time-event-and-canonical-evidence-digest",
+    "failureEvents": [
+      "interruption",
+      "crash",
+      "timeout",
+      "census-failure-or-staleness",
+      "unexpected-process",
+      "identity-drift",
+      "missing-evidence"
+    ],
+    "failureDisposition": "quarantine-close-no-restart-no-reuse-fresh-separate-admission-required"
+  },
+  "trustedRootsAndRuntimes": [
+    "controller-source-build-and-executable",
+    "node-runtime-executable-and-version",
+    "native-helper-source-build-and-executable",
+    "compiler-sdk-flags-linked-libraries-and-reproducible-build",
+    "scanner-source-build-and-executable",
+    "protocol-and-schema-inventory",
+    "trusted-keyring",
+    "acquisition-configuration",
+    "private-filesystem-root-inventory",
+    "every-invoked-executable",
+    "complete-environment-variable-allowlist"
+  ],
+  "mandatoryRejections": [
+    "missing-identity",
+    "unexpected-executable-or-process",
+    "ambient-path-resolution",
+    "mutable-tool-substitution",
+    "alternate-runtime",
+    "compiler-sdk-or-flag-drift",
+    "controller-created-self-consistent-replacement",
+    "illegal-transition",
+    "missing-or-stale-census",
+    "incomplete-evidence"
+  ],
+  "stopGate": {
+    "preEffectDecision": "trusted-session-admitted",
+    "everyOtherPreEffectDecision": "trusted-session-no-effect-stop",
+    "evaluatedBefore": ["network-effect", "durable-acquisition-effect"],
+    "invariantLossAfterAdmission": [
+      "cancel-in-flight-work-where-possible",
+      "permit-no-new-request",
+      "write-no-accepted-seal",
+      "quarantine-all-partial-state",
+      "perform-no-retry",
+      "retain-ambiguity-and-effect-accounting",
+      "require-fresh-separately-admitted-session"
+    ],
+    "mandatoryPredecessorToAcquisition": true
+  },
+  "evidence": [
+    "all-input-bindings",
+    "all-census-snapshots",
+    "permitted-and-unexpected-process-inventories",
+    "trusted-root-inventory",
+    "session-state-transitions",
+    "wall-and-monotonic-timestamps",
+    "failure-or-stop-reason",
+    "effect-counters",
+    "canonical-receipt-digest",
+    "independent-verification-result"
+  ],
+  "validatorScope": "receipt-contract-only-not-truthfulness-of-future-census",
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, controller, kernel, administrator, hypervisor, or pre-start local code, tool, and runtime installation.",
+  "retainedScope": "Ordinary operator error, accidental controller or helper races, malformed or adversarial external bytes, artifact substitution, partial persistence, retired-corpus exposure, contamination, and failure to establish or retain the trusted-session readiness invariant remain in scope and fail closed."
+}
