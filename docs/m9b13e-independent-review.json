@@ -1,0 +1,44 @@
+{
+  "protocol": "lachesis-m9b13e-independent-operational-amendment-review/1",
+  "reviewed": {
+    "analysisCommit": "7e975353eb6f41faa61a4ded3b03ec878b674c02",
+    "analysisTree": "14b9a605b225ef54d4098058b79ba3f71070921c",
+    "finalCommit": "ca0a3050e950b661c23346d31c8c2f087bf474fe",
+    "finalTree": "1f206793e0ff97b1e8a487d4df9c94e59a47600a",
+    "checksumManifestSha256": "38c6056789f4c6f3c63fad7b082aa1e54dca1c7dd111fe3daaee3114044c87fe",
+    "submittedDecision": "m9b13e-trusted-host-amendment-ready-for-independent-review"
+  },
+  "decision": "m9b13e-operational-amendment-review-no-go",
+  "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e1",
+  "acceptedConclusions": {
+    "registeredHostOsAndPrivilegedOperatorTrusted": true,
+    "hostileSameUidResistancePreregistered": false,
+    "trustedControlledHostScientificallyCompatible": true,
+    "registeredScientificFinancialFieldsChanged": 0,
+    "classification": "prospective-operational-not-scientific"
+  },
+  "blockingFindings": [
+    "trusted-session-assumption-not-operationally-testable",
+    "publication-identity-checks-weakened-too-far",
+    "exact-helper-source-build-identity-not-retained",
+    "nonclaim-omits-controller-and-pre-start-tool-runtime-compromise",
+    "external-supplement-contract-incomplete-and-not-embargo-compatible"
+  ],
+  "scientificFinancialProjectionDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "changedScientificFinancialFields": 0,
+  "unresolvedMandatoryM9b13dFindings": [2, 3, 4, 5, 7],
+  "effects": {
+    "networkRequests": 0,
+    "downloadsOrPackageInstallations": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsPreparedSubmittedOrApproved": 0,
+    "accountsOrHostChanges": 0,
+    "acquisitionImageCorpusOrGoldEffects": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "m10Work": 0
+  }
+}
