@@ -1,0 +1,45 @@
+{
+  "protocol": "lachesis-m9b13e1-independent-operational-amendment-review/1",
+  "reviewed": {
+    "evidenceCommit": "ad6efa0b0f8ffa7b2c883aa816c316a0bd8792c0",
+    "evidenceTree": "0ba350208524e198755baf0ac0b8b4aa6815f222",
+    "correctionCommit": "49d9e7f7b919fb5a22f89fd87d48630dd3baf97b",
+    "correctionTree": "ac505ad37a3f049f8c61b767d56fd2e2c23a5a0f",
+    "finalCommit": "d60c757d8cf022263b0109716c81d9a88f843a84",
+    "finalTree": "20bcd6bfa55d11da232f9b10c531e73cec6cd7a6",
+    "checksumManifestSha256": "f525376c6666d6eb12e3b66b356a9bc2c8efa2464c1b90bdc3f00bbfa3379b34",
+    "submittedDecision": "m9b13e1-corrected-operational-amendment-ready-for-independent-review"
+  },
+  "decision": "m9b13e1-operational-amendment-review-no-go",
+  "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e2",
+  "blockingFindings": [
+    "caller-provided-expectations-can-self-authorize",
+    "admission-permits-failed-or-unperformed-independent-verification",
+    "session-state-census-evidence-not-chained-or-replay-resistant",
+    "supplement-omits-exact-amended-assumption-and-independent-pre-submission-review"
+  ],
+  "acceptedConclusions": {
+    "finding1SplitCorrect": true,
+    "helperIdentityRequirementsCompleteButNotAuthorityBound": true,
+    "nonclaimAndRetainedScopeExact": true,
+    "scientificFinancialFieldsChanged": 0,
+    "authorityBoundaryPreserved": true
+  },
+  "scientificFinancialProjectionDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "unresolvedMandatoryM9b13dFindings": [2, 3, 4, 5, 7],
+  "effects": {
+    "networkRequests": 0,
+    "downloadsOrPackageInstallations": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsPreparedSubmittedOrApproved": 0,
+    "accountsOrHostChanges": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionImageCorpusGoldOrScheduleEffects": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "m10Work": 0
+  }
+}
