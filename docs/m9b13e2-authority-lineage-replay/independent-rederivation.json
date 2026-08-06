@@ -1,0 +1,70 @@
+{
+  "protocol": "lachesis-m9b13e2-independent-rederivation/1",
+  "sources": "local-immutable-git-objects-receipts-and-registered-bytes-only",
+  "commits": {
+    "m9b13e1Baseline": {
+      "commit": "d60c757d8cf022263b0109716c81d9a88f843a84",
+      "tree": "20bcd6bfa55d11da232f9b10c531e73cec6cd7a6"
+    },
+    "preservedReviewEvidence": {
+      "commit": "84145be494c914bf420fd61382a213049b516a6f",
+      "tree": "a558b3fe93dc0b8ad938a052f42449caabc5ffdf"
+    },
+    "authorityLineageReplayCorrection": {
+      "commit": "97511903deac369e969754e45494439136a0c282",
+      "tree": "61551fb3dd799d98fe0d63830fe95ce43fb8a3e4"
+    }
+  },
+  "registration": {
+    "id": "63sh5",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "embargoEnd": "2030-08-01T00:00:00Z",
+    "immutableFileCount": 27,
+    "allFileSizesAndSha256Reproduced": true,
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "canonicalReceiptDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+  },
+  "scientificFinancialProjection": {
+    "fieldNames": [
+      "researchQuestion",
+      "bindings",
+      "treatment",
+      "control",
+      "matching",
+      "population",
+      "primaryEndpoint",
+      "analysis",
+      "probeAdvancement",
+      "financial",
+      "operationalSequence",
+      "countPricingKillGates",
+      "operationalSecurity",
+      "disclosureAndRoles",
+      "nonclaims",
+      "audit",
+      "authority",
+      "inheritedDecisions"
+    ],
+    "fieldCount": 18,
+    "changedFields": 0,
+    "canonicalDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282"
+  },
+  "fourCorrections": {
+    "callerSelectedExpectationsRemovedFromLiveAuthority": true,
+    "passingIndependentVerificationRequiredForAdmission": true,
+    "sessionStateCensusAndLedgerLineageChained": true,
+    "supplementAssumptionAndPreSubmissionReviewRequired": true
+  },
+  "implementation": {
+    "sourceSha256": "04560cf679fee8e9a3442bfb83f6448ac235a1ffc44169a2e081cda77f8826e6",
+    "testSha256": "a4ea4aee783f29877a84ee064aa57f195e7ee4bfdc247a27116e87360e5b0dcf",
+    "livePositiveAuthority": null,
+    "liveDecision": "trusted-session-no-effect-stop",
+    "syntheticPositiveAuthorityIsCampaignReadiness": false
+  },
+  "predecessorBytesModified": false,
+  "m9b13e1Disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e2",
+  "rederivedDecision": "m9b13e2-authority-bound-operational-amendment-ready-for-independent-review"
+}

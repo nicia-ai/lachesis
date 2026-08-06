@@ -1,0 +1,29 @@
+{
+  "protocol": "lachesis-m9b13e2-authority-bound-operational-amendment-review/1",
+  "decision": "m9b13e2-authority-bound-operational-amendment-ready-for-independent-review",
+  "classification": "append-only-prospective-operational-amendment-correction",
+  "fourIndependentReviewFindingsCorrected": true,
+  "structuralValidationProtocol": "lachesis-m9b13e2-structural-readiness-receipt-validation/1",
+  "authorityAdmissionProtocol": "lachesis-m9b13e2-authority-bound-session-admission/1",
+  "expectationPackageProtocol": "lachesis-m9b13e2-reviewed-readiness-expectation-package/1",
+  "antiReplayLedgerProtocol": "lachesis-m9b13e2-provider-neutral-anti-replay-ledger/1",
+  "supplementProtocol": "lachesis-m9b13e2-append-only-embargo-compatible-operational-supplement/1",
+  "livePositiveAuthority": null,
+  "liveDecision": "trusted-session-no-effect-stop",
+  "liveReason": "positive-readiness-authority-unavailable",
+  "scientificFinancialProjectionDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "changedScientificFinancialFields": 0,
+  "m9b13e1Disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e2",
+  "acquisitionReady": false,
+  "authority": {
+    "supplementPreparationSubmissionOrApproval": false,
+    "externalRegistryOrOsf": false,
+    "realExpectationCollectorVerifierOrLedger": false,
+    "accountHostProcessOrRuntimeChange": false,
+    "trustedSessionActivation": false,
+    "acquisitionDownloadImageOrMaterialization": false,
+    "corpusGoldScheduleCredentialProviderOrModel": false,
+    "executionAnalysisPublicationPushOrM10": false
+  },
+  "nextStep": "independent read-only review of the exact checksum-bound M9b.13e.2 package"
+}

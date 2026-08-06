@@ -1,0 +1,19 @@
+{
+  "protocol": "lachesis-m9b13e2-predecessor-disposition/1",
+  "m9b13e1": {
+    "finalCommit": "d60c757d8cf022263b0109716c81d9a88f843a84",
+    "finalTree": "20bcd6bfa55d11da232f9b10c531e73cec6cd7a6",
+    "submittedDecision": "m9b13e1-corrected-operational-amendment-ready-for-independent-review",
+    "independentReviewDecision": "m9b13e1-operational-amendment-review-no-go",
+    "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e2",
+    "bytesModified": false,
+    "reviewReinterpreted": false
+  },
+  "m9b13e2": {
+    "classification": "append-only-prospective-operational-amendment-correction",
+    "correctsOnlyM9b13e1ReviewFindings": true,
+    "preparesOrSubmitsSupplement": false,
+    "createsLivePositiveAuthority": false,
+    "implementsOrActivatesAcquisition": false
+  }
+}

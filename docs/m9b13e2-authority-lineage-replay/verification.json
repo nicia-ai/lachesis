@@ -1,0 +1,73 @@
+{
+  "protocol": "lachesis-m9b13e2-verification/1",
+  "result": "pass-ready-for-independent-review-no-authority",
+  "predecessors": {
+    "packageManifestsPassed": 15,
+    "independentReviewManifestsPassed": 9,
+    "registrationReceiptManifestPassed": true,
+    "m9b12ThroughM9b13e1BytePreservation": "pass"
+  },
+  "registration": {
+    "archiveFilesSizeAndSha256Passed": "27-of-27",
+    "preregistrationDigest": "pass",
+    "manifestDigest": "pass",
+    "canonicalReceiptDigest": "pass",
+    "scientificFinancialProjectionDigest": "pass",
+    "changedScientificFinancialFields": 0
+  },
+  "tests": {
+    "m9b13e2FocusedFiles": 1,
+    "m9b13e2FocusedTests": 38,
+    "m9b13e2FocusedPassed": 38,
+    "relevantSerializedFiles": 26,
+    "relevantSerializedTests": 502,
+    "relevantSerializedPassed": 502,
+    "completeSerializedFiles": 73,
+    "completeSerializedTests": 1248,
+    "completeSerializedPassed": 1248,
+    "coverageSerializedTestsPassed": 1248,
+    "coverage": {
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    }
+  },
+  "gates": {
+    "jsonStrictParsingAndCanonicalization": "pass",
+    "changedFileFormatting": "pass",
+    "rootFormatting": "pre-existing-docs/m9b13b-independent-review.md-and-untracked-paper/README.md-mismatch-preserved",
+    "localLinks": "pass",
+    "secretScan": "pass",
+    "strictTypeScript": "pass",
+    "lint": "pass",
+    "networkDeniedBuild": "pass",
+    "networkDeniedNodeWorkersSmokes": "pass",
+    "sourceSafety": "pass",
+    "gitDiffCheck": "pass",
+    "gitObjectIntegrity": "pass",
+    "publicExportsAdded": 0,
+    "packageVersionsChanged": 0
+  },
+  "effects": {
+    "networkRequests": 0,
+    "downloads": 0,
+    "packageInstallations": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsPreparedSubmittedOrApproved": 0,
+    "realExpectationPackagesPreparedOrReviewed": 0,
+    "realCollectorsOrVerifiersActivated": 0,
+    "realLedgerNamespacesOrRootsCreated": 0,
+    "accountsOrHostChanges": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionsOrImageOperations": 0,
+    "corpusGoldOrScheduleEffects": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publications": 0,
+    "pushes": 0,
+    "m10Work": 0
+  }
+}
