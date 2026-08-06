@@ -1,0 +1,49 @@
+{
+  "protocol": "lachesis-m9b13e3-independent-phase-separated-amendment-review/1",
+  "reviewed": {
+    "preservedReviewEvidenceCommit": "62497b322ce6126918f67b9120ad836b4140c6e7",
+    "preservedReviewEvidenceTree": "acb41379bbe60bad6de3f43d8f572e1d53af52a0",
+    "implementationCommit": "35e999bb5f8095d3408d5c41fc83403dd4c85724",
+    "implementationTree": "445460b3afe03eaeb9f9f894f97b26579d12eae9",
+    "finalCommit": "f9c84bd76e88419f8875963d0c61a45d174dd6c3",
+    "finalTree": "985c0370daf1e2b4751ee2ab39f36d680fccc728",
+    "checksumManifestSha256": "fd7db0d26158777f75995779774b8e4a197803c2aff924961208af3748e0feaf",
+    "submittedDecision": "m9b13e3-phase-separated-operational-amendment-ready-for-independent-review"
+  },
+  "decision": "m9b13e3-phase-separated-amendment-review-no-go",
+  "disposition": "reviewed-no-go-not-live-eligible-superseded-only-as-operational-amendment-text-by-m9b13f",
+  "blockingFindings": [
+    "caller-selected-boundary-authority",
+    "ledger-events-admitted-before-phase-eligibility",
+    "ambiguous-completion-could-seal",
+    "submission-authority-only-a-typescript-type",
+    "terminal-census-after-closure",
+    "historical-no-go-inventory-allowed-additions",
+    "event-identities-only-phase-local"
+  ],
+  "runtimeDisposition": {
+    "codeCorrected": false,
+    "liveUseEligible": false,
+    "evidenceOfReadiness": false,
+    "configurationOnlyActivationPermitted": false,
+    "validatorsProhibited": true,
+    "syntheticLedgerProhibited": true,
+    "admissionMonitoringAndTerminalApisProhibited": true,
+    "submissionHarnessProhibited": true,
+    "futureReadinessRequiresNewProtocolImplementationHostileTestsAndIndependentReview": true
+  },
+  "scientificFinancialProjectionDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "effects": {
+    "networkRequests": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsSubmittedOrApproved": 0,
+    "realAuthoritiesActivated": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionDownloadImageOrMaterializationEffects": 0,
+    "corpusGoldScheduleCredentialProviderOrModelEffects": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "m10Work": 0
+  }
+}
