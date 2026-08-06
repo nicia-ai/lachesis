@@ -1,0 +1,43 @@
+{
+  "protocol": "lachesis-m9b13e2-append-only-embargo-compatible-operational-supplement/1",
+  "status": "future-schema-only-no-supplement-prepared",
+  "amendedAssumption": "Acquisition runs on a trusted controlled host with no malicious or unrelated concurrent process under the operational UID. All external bytes remain hostile.",
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, controller, kernel, administrator, hypervisor, or pre-start local code, tool, and runtime installation.",
+  "retainedScope": "Ordinary operator error, accidental controller or helper races, malformed or adversarial external bytes, artifact substitution, partial persistence, retired-corpus exposure, contamination, and failure to establish or retain the trusted-session readiness invariant remain in scope and fail closed.",
+  "independentPreSubmissionReview": {
+    "protocol": "lachesis-m9b13e2-independent-supplement-review/1",
+    "requiredDecision": "pass",
+    "binds": [
+      "independent-review-package-identity-and-digest",
+      "reviewed-supplement-package-digest",
+      "reviewed-commit-and-tree",
+      "reviewer-identity-commitment",
+      "review-evidence-digest",
+      "checksum-manifest-digest",
+      "review-timestamp",
+      "review-preceded-submission-authorization"
+    ],
+    "selfReviewPermitted": false
+  },
+  "originalRegistration": {
+    "id": "63sh5",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "immutableFileCount": 27,
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "scientificFinancialProjectionDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+    "embargoProtectedThrough": "2030-08-01T00:00:00Z"
+  },
+  "historicalNoGosRequired": [
+    "M9b.13",
+    "M9b.13a",
+    "M9b.13b",
+    "M9b.13c",
+    "M9b.13d",
+    "M9b.13d.1",
+    "M9b.13e-and-independent-review",
+    "M9b.13e.1-and-independent-review"
+  ],
+  "approvalGrantsCorpusOrAcquisitionAuthority": false
+}

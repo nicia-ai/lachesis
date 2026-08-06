@@ -1,0 +1,33 @@
+{
+  "protocol": "lachesis-m9b13e2-reviewed-readiness-expectation-package/1",
+  "status": "future-schema-only-no-real-package-prepared",
+  "canonicalDigestRequired": true,
+  "independentReview": {
+    "identityRequired": true,
+    "decision": "m9b13e2-expectation-package-review-pass",
+    "reviewedCommitAndTreeRequired": true,
+    "reviewEvidenceDigestRequired": true
+  },
+  "freezes": [
+    "host-binding-policy",
+    "operational-uid-group-and-privilege-policy",
+    "exact-permitted-process-topology-and-background-process-policy",
+    "controller-source-build-and-executable",
+    "node-runtime-identity-and-version",
+    "collector-source-build-executable-and-collection-mechanism",
+    "verifier-source-build-and-executable",
+    "helper-source-build-toolchain-linked-libraries-and-executable",
+    "scanner-source-build-runtime-and-executable",
+    "trusted-roots-and-filesystem-policies",
+    "environment-allowlist",
+    "state-machine-and-census-protocols",
+    "anti-replay-ledger-protocol-namespace-and-initial-root",
+    "amendment-and-supplement-identities",
+    "complete-checksum-inventory-and-digest"
+  ],
+  "submittedReceiptMayDefineExpectedValues": false,
+  "livePackageDigest": null,
+  "liveCollectorIdentity": null,
+  "liveVerifierIdentity": null,
+  "liveLedgerRoot": null
+}

@@ -1,0 +1,26 @@
+{
+  "protocol": "lachesis-m9b13e2-provider-neutral-anti-replay-ledger/1",
+  "visibility": "private",
+  "providerNeutral": true,
+  "requires": [
+    "namespace-identity",
+    "trusted-initial-root",
+    "atomic-compare-and-swap-revision-and-root",
+    "canonical-hash-chained-events",
+    "unique-session-commitment-reservation",
+    "terminal-admitted-stopped-or-quarantined-status",
+    "no-terminal-reopening",
+    "stale-revision-and-root-rejection",
+    "conservative-persistence-ambiguity"
+  ],
+  "flow": [
+    "atomic-session-reservation",
+    "structural-and-authority-validation-and-independent-verification",
+    "atomic-terminal-admitted-or-stopped-commit"
+  ],
+  "replayDecision": "trusted-session-no-effect-stop",
+  "ambiguousPersistenceDecision": "trusted-session-no-effect-stop",
+  "retrySameSessionAfterAmbiguity": false,
+  "liveNamespace": null,
+  "liveTrustedRoot": null
+}

@@ -1,0 +1,34 @@
+{
+  "structuralValidation": {
+    "protocol": "lachesis-m9b13e2-structural-readiness-receipt-validation/1",
+    "may": [
+      "strict-schema-validation",
+      "canonical-digest-recomputation",
+      "internal-cross-reference-validation",
+      "evidence-chain-structure-validation",
+      "malformed-or-inconsistent-record-reporting"
+    ],
+    "result": "structurally-valid-nonauthoritative",
+    "grantsAdmissionAuthority": false,
+    "mayReturnTrustedSessionAdmitted": false
+  },
+  "authorityAdmission": {
+    "protocol": "lachesis-m9b13e2-authority-bound-session-admission/1",
+    "onlyOperationThatMayProspectivelyAdmit": true,
+    "ordinaryJsonContextAccepted": false,
+    "contextForm": "private-closure-bound-capability",
+    "livePositiveAuthority": null,
+    "liveDecision": "trusted-session-no-effect-stop",
+    "liveReason": "positive-readiness-authority-unavailable",
+    "liveEffects": 0
+  },
+  "futureActivationRequiresProtocolAdvance": true,
+  "futureActivationMustEmbed": [
+    "independently-reviewed-expectation-package-digest",
+    "collector-source-build-executable-and-mechanism-identities",
+    "verifier-source-build-executable-identity",
+    "trusted-input-inventory",
+    "trusted-ledger-namespace-and-root",
+    "authority-activation-identity"
+  ]
+}

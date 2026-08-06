@@ -1,0 +1,34 @@
+{
+  "stateMachineProtocol": "lachesis-m9b13e2-exact-session-state-machine/1",
+  "censusProtocol": "lachesis-m9b13e2-session-bound-process-census/1",
+  "sessionCommitmentInputs": [
+    "expectation-package-digest",
+    "host-and-boot-session-commitment",
+    "host-binding-policy",
+    "operational-uid-group-and-privilege-identity",
+    "controller-identity",
+    "collector-identity-and-mechanism",
+    "verifier-identity",
+    "trusted-input-root-filesystem-and-environment-inventories",
+    "state-machine-and-census-identities",
+    "ledger-protocol-and-namespace",
+    "fresh-controller-nonce",
+    "monotonic-session-sequence",
+    "session-start-timestamp"
+  ],
+  "admittedPath": [
+    "uninitialized->preflight",
+    "preflight->admitted-clean",
+    "admitted-clean->acquisition-active",
+    "acquisition-active->verification-active",
+    "verification-active->sealed",
+    "sealed->closed"
+  ],
+  "stoppedPaths": "exact-enumerated-prefix-then-quarantined-then-closed",
+  "ordering": "unique-contiguous-integer-sequence-and-strictly-increasing-monotonic-time",
+  "wallClockUsedAloneForOrdering": false,
+  "evidenceFromAnotherSessionAccepted": false,
+  "inventoryAndTopologyDigestsRederivedFromCompleteProcessRecords": true,
+  "everyBoundaryAndCompletionCensusExactOnce": true,
+  "staleCensusAccepted": false
+}

@@ -1,0 +1,37 @@
+{
+  "protocol": "lachesis-m9b13e2-authority-lineage-replay-correction/1",
+  "classification": "append-only-prospective-operational-amendment-correction",
+  "predecessor": {
+    "commit": "d60c757d8cf022263b0109716c81d9a88f843a84",
+    "tree": "20bcd6bfa55d11da232f9b10c531e73cec6cd7a6",
+    "decision": "m9b13e1-corrected-operational-amendment-ready-for-independent-review",
+    "independentReviewDecision": "m9b13e1-operational-amendment-review-no-go",
+    "checksumManifestSha256": "f525376c6666d6eb12e3b66b356a9bc2c8efa2464c1b90bdc3f00bbfa3379b34",
+    "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e2",
+    "bytesModified": false,
+    "reinterpreted": false
+  },
+  "corrections": [
+    "separate-structural-validation-from-authority-bearing-admission",
+    "bind-independently-reviewed-expectation-package-and-trusted-context",
+    "require-passing-independent-verification-for-admission",
+    "bind-exact-contiguous-session-census-and-evidence-lineage",
+    "add-provider-neutral-durable-anti-replay-ledger",
+    "complete-supplement-assumption-and-pre-submission-review"
+  ],
+  "protocols": {
+    "structuralValidation": "lachesis-m9b13e2-structural-readiness-receipt-validation/1",
+    "authorityAdmission": "lachesis-m9b13e2-authority-bound-session-admission/1",
+    "expectationPackage": "lachesis-m9b13e2-reviewed-readiness-expectation-package/1",
+    "stateMachine": "lachesis-m9b13e2-exact-session-state-machine/1",
+    "census": "lachesis-m9b13e2-session-bound-process-census/1",
+    "antiReplayLedger": "lachesis-m9b13e2-provider-neutral-anti-replay-ledger/1",
+    "supplement": "lachesis-m9b13e2-append-only-embargo-compatible-operational-supplement/1"
+  },
+  "livePositiveAuthority": null,
+  "liveDecision": "trusted-session-no-effect-stop",
+  "liveReason": "positive-readiness-authority-unavailable",
+  "syntheticFixtureProtocol": "lachesis-m9b13e2-synthetic-test-authority-never-live/1",
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, controller, kernel, administrator, hypervisor, or pre-start local code, tool, and runtime installation.",
+  "retainedScope": "Ordinary operator error, accidental controller or helper races, malformed or adversarial external bytes, artifact substitution, partial persistence, retired-corpus exposure, contamination, and failure to establish or retain the trusted-session readiness invariant remain in scope and fail closed."
+}

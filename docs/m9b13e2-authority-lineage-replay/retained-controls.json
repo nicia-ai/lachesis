@@ -1,0 +1,12 @@
+{
+  "protocol": "lachesis-m9b13e2-retained-operational-controls/1",
+  "finding1Split": "unchanged-from-m9b13e1",
+  "exactHelperSourceBuildRequirements": "unchanged-from-m9b13e1",
+  "embargoCompatibleSupplementRequirements": "retained-and-strengthened",
+  "scientificFinancialProjectionDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "changedScientificFinancialFields": 0,
+  "unresolvedMandatoryM9b13dFindings": [2, 3, 4, 5, 7],
+  "acquisitionReady": false,
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, controller, kernel, administrator, hypervisor, or pre-start local code, tool, and runtime installation.",
+  "retainedScope": "Ordinary operator error, accidental controller or helper races, malformed or adversarial external bytes, artifact substitution, partial persistence, retired-corpus exposure, contamination, and failure to establish or retain the trusted-session readiness invariant remain in scope and fail closed."
+}
