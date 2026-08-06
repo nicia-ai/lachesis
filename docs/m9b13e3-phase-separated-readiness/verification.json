@@ -1,0 +1,69 @@
+{
+  "protocol": "lachesis-m9b13e3-verification/1",
+  "result": "pass-ready-for-independent-review-no-authority",
+  "environment": {
+    "node": "24.19.0",
+    "pnpm": "10.33.0",
+    "networkDeniedByOperatingSystemSandbox": true
+  },
+  "predecessors": {
+    "packageManifestsPassed": 16,
+    "independentReviewManifestsPassed": 10,
+    "registrationReceiptManifestPassed": true,
+    "m9b12ThroughM9b13e2BytePreservation": "pass"
+  },
+  "registration": {
+    "archiveFilesSizeAndSha256Passed": "27-of-27",
+    "canonicalReceiptDigest": "pass",
+    "scientificFinancialProjectionDigest": "pass",
+    "changedScientificFinancialFields": 0
+  },
+  "tests": {
+    "m9b13e3FocusedFiles": 1,
+    "m9b13e3FocusedTests": 26,
+    "m9b13e3FocusedPassed": 26,
+    "relevantSerializedFiles": 17,
+    "relevantSerializedTests": 410,
+    "relevantSerializedPassed": 410,
+    "completeSerializedFiles": 74,
+    "completeSerializedTests": 1274,
+    "completeSerializedPassed": 1274,
+    "coverageSerializedTestsPassed": 1274,
+    "coverage": {
+      "statementsPercent": 90.01,
+      "branchesPercent": 80.99,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.7
+    }
+  },
+  "gates": {
+    "jsonStrictParsingAndCanonicalization": "pass",
+    "changedFileFormatting": "pass",
+    "localLinks": "pass",
+    "secretScan": "pass",
+    "strictTypeScript": "pass",
+    "lint": "pass",
+    "networkDeniedBuild": "pass",
+    "networkDeniedNodeWorkersSmokes": "pass",
+    "sourceSafety": "pass",
+    "gitDiffCheck": "pass",
+    "gitObjectIntegrity": "pass",
+    "publicExportsAdded": 0,
+    "packageVersionsChanged": 0
+  },
+  "effects": {
+    "networkRequests": 0,
+    "downloadsOrPackageInstallations": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsPreparedSubmittedOrApproved": 0,
+    "realReviewPackagesOrAuthoritiesCreated": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionImageCorpusGoldOrScheduleEffects": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "m10Work": 0
+  }
+}

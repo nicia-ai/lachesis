@@ -1,0 +1,45 @@
+{
+  "protocol": "lachesis-m9b13e3-independent-rederivation/1",
+  "sources": "local-immutable-git-objects-receipts-and-registered-bytes-only",
+  "commits": {
+    "m9b13e2Baseline": {
+      "commit": "12e3c8089b4664ef622655585c200e48fed41468",
+      "tree": "825d522cfb6dba8f96f2cc7b25e0e545a4e73acf"
+    },
+    "preservedReviewEvidence": {
+      "commit": "62497b322ce6126918f67b9120ad836b4140c6e7",
+      "tree": "acb41379bbe60bad6de3f43d8f572e1d53af52a0"
+    },
+    "phaseSeparatedCorrection": {
+      "commit": "35e999bb5f8095d3408d5c41fc83403dd4c85724",
+      "tree": "445460b3afe03eaeb9f9f894f97b26579d12eae9"
+    }
+  },
+  "registration": {
+    "id": "63sh5",
+    "immutableFileCount": 27,
+    "allFileSizesAndSha256Reproduced": true,
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "canonicalReceiptDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+  },
+  "scientificFinancialProjection": {
+    "fieldCount": 18,
+    "changedFields": 0,
+    "canonicalDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282"
+  },
+  "threeCorrections": {
+    "preEffectAdmissionEndsAtAdmittedClean": true,
+    "supplementBodyReviewAndSubmissionAuthoritySeparate": true,
+    "censusMeaningDerivedFromExactEventChronology": true
+  },
+  "implementation": {
+    "sourceSha256": "919cff5e0e1ee91e383b9945a7be43978f278d9fd11b8c36083b2ab16e6d92d3",
+    "testSha256": "32004dd9a28bbaa917f58a1f0aedba232bb90801b1f56b10dbe3210cdea8d689",
+    "livePositiveReadinessAuthority": null,
+    "liveSupplementSubmissionAuthority": null,
+    "syntheticPositiveAuthorityIsCampaignReadiness": false
+  },
+  "predecessorBytesModified": false,
+  "rederivedDecision": "m9b13e3-phase-separated-operational-amendment-ready-for-independent-review"
+}

@@ -1,0 +1,16 @@
+{
+  "protocol": "lachesis-m9b13e3-scientific-financial-invariance/1",
+  "preservedFields": 18,
+  "changedFields": 0,
+  "canonicalDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "unresolvedMandatory": [
+    "exact-platform-and-manifest-enforcement",
+    "descriptor-bound-hash-and-parse-within-trusted-controller",
+    "strong-elf-aarch64-and-signed-node-distribution-binding",
+    "trailing-and-concatenated-tar-rejection",
+    "exact-evidence-receipt-binding",
+    "terminal-framing-before-sealing"
+  ],
+  "acquisitionReady": false,
+  "m9bDecision": "NO-GO"
+}
