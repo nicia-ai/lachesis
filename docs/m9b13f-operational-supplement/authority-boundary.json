@@ -1,0 +1,38 @@
+{
+  "protocol": "lachesis-m9b13f-zero-authority-boundary/1",
+  "liveReadinessAuthority": "absent",
+  "liveSubmissionAuthority": "absent",
+  "acquisitionAuthority": false,
+  "materializationAuthority": false,
+  "corpusAuthority": false,
+  "credentialProviderAuthority": false,
+  "executionAnalysisAuthority": false,
+  "syntheticPositiveAdmissionFixtures": false,
+  "m9b13e3": {
+    "codeCorrected": false,
+    "liveUseEligible": false,
+    "evidenceOfReadiness": false,
+    "configurationOnlyActivationPermitted": false,
+    "validatorsProhibited": true,
+    "syntheticLedgerProhibited": true,
+    "admissionApisProhibited": true,
+    "monitoringApisProhibited": true,
+    "terminalReceiptsProhibited": true,
+    "submissionHarnessProhibited": true
+  },
+  "prohibitedEffects": {
+    "networkRequests": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsSubmittedOrApproved": 0,
+    "realAuthoritiesActivated": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionDownloadImageOperations": 0,
+    "corpusGoldScheduleConstructions": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "m10Work": 0
+  }
+}

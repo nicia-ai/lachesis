@@ -1,0 +1,357 @@
+{
+  "protocol": "lachesis-m9b13f-canonical-historical-operational-readiness-inventory/1",
+  "sortKey": "sequence-ascending",
+  "duplicateMilestoneRecordsPermitted": false,
+  "entryCount": 16,
+  "effectProjection": [
+    "imageAcquisitions",
+    "corpusConstructions",
+    "credentialAccesses",
+    "providerCalls",
+    "studyExecutions"
+  ],
+  "entries": [
+    {
+      "sequence": 1,
+      "milestone": "M9b.13",
+      "recordKind": "preparation-and-no-go",
+      "commit": "fc6acb2b839e4c6f208d5985d8ba419e197cebe5",
+      "tree": "5c1f4b3650db80258abffb2d313749a3dc1eb95b",
+      "protocolOrDecisionIdentity": "lachesis-m9b13-offline-corpus-materialization-readiness@1.0.0",
+      "decision": "m9b13-materialization-readiness-no-go",
+      "reviewDecision": null,
+      "manifestDigest": "fae20d627200e276d6211bb275614c88d8afa810dcba6fa75e23f931b701307d",
+      "disposition": "sealed-no-go-zero-effect-materialization-prohibited",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 2,
+      "milestone": "M9b.13a",
+      "recordKind": "prospective-runtime-review",
+      "commit": "113c3f526e67eceea3d06874c393ddd5240865e9",
+      "tree": "873eff5ef34989903ea206dfd90a5f03dfe089a7",
+      "protocolOrDecisionIdentity": "lachesis-m9b13a-runtime-requirement-review@1.0.0",
+      "decision": "m9b13a-existing-image-acquisition-ready-for-review",
+      "reviewDecision": null,
+      "manifestDigest": "7395d002c9d7bfb44a23aeefeead0ee4428faece1672b0d5b18fed8d2200eb6b",
+      "disposition": "prospective-path-only-not-acquired-not-accepted-m9b13-unchanged",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 3,
+      "milestone": "M9b.13b",
+      "recordKind": "preparation",
+      "commit": "c47752135d37e17831194ee8ba96641b4b149e8a",
+      "tree": "35c107a146751339270432d4b8be621b8842b63a",
+      "protocolOrDecisionIdentity": "lachesis-m9b13b-cryptographically-complete-acquisition-review@1.0.0",
+      "decision": "m9b13b-corrected-acquisition-authorization-ready-for-independent-review",
+      "reviewDecision": null,
+      "manifestDigest": "8b5b4baad331e56b73b1f47db0c1f5e7bf09cb32d2f65fedab9a7e373c9f02b6",
+      "disposition": "submitted-for-independent-review-not-authorized",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 4,
+      "milestone": "M9b.13b.review",
+      "recordKind": "independent-review-no-go",
+      "commit": "4e835b543c0bfa6e7971a76bfb53c24f7329fb6c",
+      "tree": "8451a92aa3373a7567ba1042563aca3d5242fe69",
+      "protocolOrDecisionIdentity": "m9b13b-acquisition-authorization-review-no-go",
+      "decision": "m9b13b-acquisition-authorization-review-no-go",
+      "reviewDecision": "m9b13b-acquisition-authorization-review-no-go",
+      "manifestDigest": "d7bbfd200ec229e596809c15fefe4232d597558576340384a88830c1bb5f7b8a",
+      "reviewedManifestDigest": "8b5b4baad331e56b73b1f47db0c1f5e7bf09cb32d2f65fedab9a7e373c9f02b6",
+      "disposition": "reviewed-no-go-seven-operational-blockers",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 5,
+      "milestone": "M9b.13c",
+      "recordKind": "preparation-and-no-go",
+      "commit": "d6ee1c71a10ceae9e3c30fda7e67f03e71092a48",
+      "tree": "fb96e26dfca48fe6816625db0efc75704d1222ee",
+      "protocolOrDecisionIdentity": "lachesis-m9b13c-offline-acquisition-boundary@1.0.0",
+      "decision": "acquisition-boundary-no-go",
+      "reviewDecision": null,
+      "manifestDigest": "56b03bdf3355dacaf45262c6fe66f4ceec0a1efb73344b79afe3edc0a01f5d3d",
+      "disposition": "no-go-offline-scanner-and-race-resistant-filesystem-primitive-unavailable",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 6,
+      "milestone": "M9b.13d",
+      "recordKind": "preparation",
+      "commit": "ad60ce42813c265316859e118efd23f5eb8d5a01",
+      "tree": "3dc116c6746fb419bf52cd8d6e3e69206eacb72a",
+      "protocolOrDecisionIdentity": "lachesis-m9b13d-offline-dependency-closure@1.0.0",
+      "decision": "m9b13d-offline-dependency-closure-ready-for-independent-review",
+      "reviewDecision": null,
+      "manifestDigest": "9ff0b8cfb95cb69b8f9a2b01dff21bffa69904964758a6e0b4c85b5e98eb4fda",
+      "disposition": "submitted-for-independent-review-not-authorized",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 7,
+      "milestone": "M9b.13d.review",
+      "recordKind": "independent-review-no-go",
+      "commit": "18d9fd3452728e0784ebf0961fe10285ff536d7f",
+      "tree": "bf6500d59d4ea78363914a435fecf3e3ccacd449",
+      "protocolOrDecisionIdentity": "lachesis-m9b13d-independent-review-evidence/1",
+      "decision": "m9b13d-offline-dependency-closure-review-no-go",
+      "reviewDecision": "m9b13d-offline-dependency-closure-review-no-go",
+      "manifestDigest": "367b5f0e305c82235240fa72e86cf7fcb617798133037ef846f732bd703d2450",
+      "reviewedManifestDigest": "9ff0b8cfb95cb69b8f9a2b01dff21bffa69904964758a6e0b4c85b5e98eb4fda",
+      "disposition": "superseded-unexecuted-descriptor-and-consumption-bindings-incomplete",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 8,
+      "milestone": "M9b.13d.1",
+      "recordKind": "correction-and-no-go",
+      "commit": "f03c9fce9d9ce035eeb9af49ed0f2e060aa505e3",
+      "tree": "ce6d8ecd6059e8f3dfad15619c6663e7f2db91f2",
+      "protocolOrDecisionIdentity": "lachesis-m9b13d1-corrected-dependency-closure@1.0.0",
+      "decision": "m9b13d1-dependency-closure-no-go",
+      "reviewDecision": null,
+      "manifestDigest": "bbbb0350f4468da23602ab02ff15dcd067d92d849d1e3f6a421384574a4bf986",
+      "disposition": "descriptor-bound-helper-execution-unavailable-on-pinned-darwin-host",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 9,
+      "milestone": "M9b.13e",
+      "recordKind": "preparation",
+      "commit": "ca0a3050e950b661c23346d31c8c2f087bf474fe",
+      "tree": "1f206793e0ff97b1e8a487d4df9c94e59a47600a",
+      "protocolOrDecisionIdentity": "lachesis-m9b13e-operational-trust-boundary-review/1",
+      "decision": "m9b13e-trusted-host-amendment-ready-for-independent-review",
+      "reviewDecision": null,
+      "manifestDigest": "38c6056789f4c6f3c63fad7b082aa1e54dca1c7dd111fe3daaee3114044c87fe",
+      "disposition": "submitted-for-independent-review-not-authorized",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 10,
+      "milestone": "M9b.13e.review",
+      "recordKind": "independent-review-no-go",
+      "commit": "ad6efa0b0f8ffa7b2c883aa816c316a0bd8792c0",
+      "tree": "0ba350208524e198755baf0ac0b8b4aa6815f222",
+      "protocolOrDecisionIdentity": "lachesis-m9b13e-independent-operational-amendment-review/1",
+      "decision": "m9b13e-operational-amendment-review-no-go",
+      "reviewDecision": "m9b13e-operational-amendment-review-no-go",
+      "manifestDigest": "582c122dfc1a96c1f8e1868947d9c387aefa8cf400b2fa9d0b984aef005d0bf2",
+      "reviewedManifestDigest": "38c6056789f4c6f3c63fad7b082aa1e54dca1c7dd111fe3daaee3114044c87fe",
+      "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e1",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 11,
+      "milestone": "M9b.13e.1",
+      "recordKind": "correction-preparation",
+      "commit": "d60c757d8cf022263b0109716c81d9a88f843a84",
+      "tree": "20bcd6bfa55d11da232f9b10c531e73cec6cd7a6",
+      "protocolOrDecisionIdentity": "lachesis-m9b13e1-corrected-operational-amendment-review/1",
+      "decision": "m9b13e1-corrected-operational-amendment-ready-for-independent-review",
+      "reviewDecision": null,
+      "manifestDigest": "f525376c6666d6eb12e3b66b356a9bc2c8efa2464c1b90bdc3f00bbfa3379b34",
+      "disposition": "submitted-for-independent-review-not-implementation-ready",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 12,
+      "milestone": "M9b.13e.1.review",
+      "recordKind": "independent-review-no-go",
+      "commit": "84145be494c914bf420fd61382a213049b516a6f",
+      "tree": "a558b3fe93dc0b8ad938a052f42449caabc5ffdf",
+      "protocolOrDecisionIdentity": "lachesis-m9b13e1-independent-operational-amendment-review/1",
+      "decision": "m9b13e1-operational-amendment-review-no-go",
+      "reviewDecision": "m9b13e1-operational-amendment-review-no-go",
+      "manifestDigest": "695128eabf3f9ffcc33fc6d7a6d42e41549e29207a81f97b43324c0155df5280",
+      "reviewedManifestDigest": "f525376c6666d6eb12e3b66b356a9bc2c8efa2464c1b90bdc3f00bbfa3379b34",
+      "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e2",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 13,
+      "milestone": "M9b.13e.2",
+      "recordKind": "correction-preparation",
+      "commit": "12e3c8089b4664ef622655585c200e48fed41468",
+      "tree": "825d522cfb6dba8f96f2cc7b25e0e545a4e73acf",
+      "protocolOrDecisionIdentity": "lachesis-m9b13e2-authority-bound-operational-amendment-review/1",
+      "decision": "m9b13e2-authority-bound-operational-amendment-ready-for-independent-review",
+      "reviewDecision": null,
+      "manifestDigest": "aacde1ccc4ea037c9265bb31ebf03f9752b0f3894a3f3edbcccaab539bb84b0e",
+      "disposition": "submitted-for-independent-review-not-implementation-ready",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 14,
+      "milestone": "M9b.13e.2.review",
+      "recordKind": "independent-review-no-go",
+      "commit": "62497b322ce6126918f67b9120ad836b4140c6e7",
+      "tree": "acb41379bbe60bad6de3f43d8f572e1d53af52a0",
+      "protocolOrDecisionIdentity": "lachesis-m9b13e2-independent-authority-lineage-replay-review/1",
+      "decision": "m9b13e2-authority-lineage-replay-review-no-go",
+      "reviewDecision": "m9b13e2-authority-lineage-replay-review-no-go",
+      "manifestDigest": "be67325b63b2e69cad6c58be8e321c22b0093759a8832896bc93f29014bed7d4",
+      "reviewedManifestDigest": "aacde1ccc4ea037c9265bb31ebf03f9752b0f3894a3f3edbcccaab539bb84b0e",
+      "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13e3",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 15,
+      "milestone": "M9b.13e.3",
+      "recordKind": "correction-preparation",
+      "commit": "f9c84bd76e88419f8875963d0c61a45d174dd6c3",
+      "tree": "985c0370daf1e2b4751ee2ab39f36d680fccc728",
+      "protocolOrDecisionIdentity": "lachesis-m9b13e3-phase-separated-operational-amendment-review/1",
+      "decision": "m9b13e3-phase-separated-operational-amendment-ready-for-independent-review",
+      "reviewDecision": null,
+      "manifestDigest": "fd7db0d26158777f75995779774b8e4a197803c2aff924961208af3748e0feaf",
+      "disposition": "submitted-for-independent-review-not-implementation-ready",
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    },
+    {
+      "sequence": 16,
+      "milestone": "M9b.13e.3.review",
+      "recordKind": "independent-review-no-go",
+      "commit": "4ca883283d74466089a5e7722840d8d316596e9c",
+      "tree": "f0d153b097171fb1b1106ffc08ab508e17d2e225",
+      "protocolOrDecisionIdentity": "lachesis-m9b13e3-independent-phase-separated-amendment-review/1",
+      "decision": "m9b13e3-phase-separated-amendment-review-no-go",
+      "reviewDecision": "m9b13e3-phase-separated-amendment-review-no-go",
+      "manifestDigest": "0b8262d9e384973a01af0543406d600671f5880e7512b161cd31b7ec927fbe6c",
+      "reviewedManifestDigest": "fd7db0d26158777f75995779774b8e4a197803c2aff924961208af3748e0feaf",
+      "disposition": "reviewed-no-go-not-live-eligible-superseded-only-as-operational-amendment-text-by-m9b13f",
+      "blockingFindings": [
+        "caller-selected-boundary-authority",
+        "ledger-events-admitted-before-phase-eligibility",
+        "ambiguous-completion-could-seal",
+        "submission-authority-only-a-typescript-type",
+        "terminal-census-after-closure",
+        "historical-no-go-inventory-allowed-additions",
+        "event-identities-only-phase-local"
+      ],
+      "effects": {
+        "imageAcquisitions": 0,
+        "corpusConstructions": 0,
+        "credentialAccesses": 0,
+        "providerCalls": 0,
+        "studyExecutions": 0
+      },
+      "liveUseProhibited": true
+    }
+  ],
+  "aggregateEffects": {
+    "imageAcquisitions": 0,
+    "corpusConstructions": 0,
+    "credentialAccesses": 0,
+    "providerCalls": 0,
+    "studyExecutions": 0
+  }
+}

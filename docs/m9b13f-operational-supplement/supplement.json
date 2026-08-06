@@ -1,0 +1,79 @@
+{
+  "protocol": "lachesis-m9b13f-embargo-compatible-operational-supplement-body/1",
+  "classification": "minimal-static-embargo-compatible-operational-supplement-body",
+  "status": "awaiting-external-independent-review",
+  "bodyDigestDefinition": "sha256-of-rfc8785-compatible-lexicographically-key-sorted-compact-json-of-this-record-with-bodyDigestSha256-omitted",
+  "bodyDigestSha256": "bda6171ec4c088dfb29ecd3884f9640922a7829e12b64c9a01b9ceaf2df11ab3",
+  "authorCommitment": "sha256:f3a9af7024c827ceb360865b9708090e3cbe203ce946f1325a482cef671f822f",
+  "assumption": "Acquisition runs on a trusted controlled host with no malicious or unrelated concurrent process under the operational UID. All external bytes remain hostile.",
+  "nonclaim": "The study does not establish security against compromise of the trusted local host, acquisition account, controller, kernel, administrator, hypervisor, or pre-start local code, tool, and runtime installation.",
+  "retainedScope": "Ordinary operator error, accidental controller or helper races, malformed or adversarial external bytes, artifact substitution, partial persistence, retired-corpus exposure, contamination, and failure to establish or retain the trusted-session readiness invariant remain in scope and fail closed.",
+  "scientificFinancialProjectionSha256": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "historicalInventory": {
+    "count": 16,
+    "path": "historical-no-go-inventory.json",
+    "order": "ascending-sequence",
+    "duplicatesPermitted": false
+  },
+  "authority": {
+    "liveReadinessAuthority": "absent",
+    "liveSubmissionAuthority": "absent",
+    "acquisitionAuthority": false,
+    "materializationAuthority": false,
+    "corpusAuthority": false,
+    "credentialProviderAuthority": false,
+    "executionAnalysisAuthority": false
+  },
+  "runtime": {
+    "implementationIncluded": false,
+    "executableAdmissionValidatorIncluded": false,
+    "ledgerIncluded": false,
+    "acquisitionControllerIncluded": false,
+    "submissionHarnessIncluded": false,
+    "syntheticAuthorityIncluded": false,
+    "effectCapableEntryPointIncluded": false,
+    "implementationReadinessClaimed": false
+  },
+  "m9b13e3Disposition": "reviewed-no-go-not-live-eligible-superseded-only-as-operational-amendment-text-by-m9b13f",
+  "futureReview": {
+    "protocol": "lachesis-m9b13f-independent-supplement-review-receipt/1",
+    "externalToBodyDigest": true,
+    "createdByThisPackage": false,
+    "bodySelectsReviewer": false,
+    "reviewerCommitmentMustDifferFromAuthorCommitment": true,
+    "requiredBindings": [
+      "supplement-body-protocol",
+      "supplement-body-digest",
+      "supplement-body-manifest-digest",
+      "supplement-body-commit",
+      "supplement-body-tree",
+      "reviewer-identity-commitment",
+      "review-evidence-digest",
+      "decision",
+      "timestamp"
+    ]
+  },
+  "packageInventory": [
+    "CHECKSUMS.sha256",
+    "authority-boundary.json",
+    "authority-boundary.md",
+    "changed-artifacts.md",
+    "external-mechanism-requirements.json",
+    "external-mechanism-requirements.md",
+    "future-readiness-requirements.json",
+    "future-readiness-requirements.md",
+    "historical-no-go-inventory.json",
+    "historical-no-go-inventory.md",
+    "independent-rederivation.json",
+    "independent-rederivation.md",
+    "nonclaims.md",
+    "registration-binding.json",
+    "registration-binding.md",
+    "scientific-financial-invariance.json",
+    "scientific-financial-invariance.md",
+    "supplement.json",
+    "supplement.md",
+    "verification.json",
+    "verification.md"
+  ]
+}

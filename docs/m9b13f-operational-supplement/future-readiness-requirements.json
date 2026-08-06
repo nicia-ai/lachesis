@@ -1,0 +1,39 @@
+{
+  "protocol": "lachesis-m9b13f-future-trusted-host-readiness-requirements/1",
+  "classification": "static-requirements-not-implementation",
+  "detailedRuntimeSchemaDesignedHere": false,
+  "requiresNewProtocolIdentityAndVersion": true,
+  "requiresNewImplementation": true,
+  "prohibitedRuntimeModuleImportsOrActivation": [
+    "M9b.13e.1",
+    "M9b.13e.2",
+    "M9b.13e.3"
+  ],
+  "requiredImplementedBindings": [
+    "authoritative-expectation-package",
+    "authoritative-collector-and-verifier",
+    "exact-controller-runtime-helper-scanner-identities",
+    "trusted-session-startup-gate",
+    "process-census-and-topology",
+    "pre-effect-admission",
+    "effect-bound-monitoring",
+    "terminal-accounting",
+    "durable-anti-replay-authority",
+    "exact-platform-and-manifest",
+    "descriptor-bound-hash-and-parse",
+    "elf-aarch64-and-signed-node-distribution-identity",
+    "trailing-and-concatenated-tar-rejection",
+    "exact-acquired-evidence-receipts",
+    "terminal-framing-before-seal",
+    "ordinary-race-protections",
+    "zero-effect-stop-and-quarantine"
+  ],
+  "requiredEvaluation": {
+    "independentHostileReview": true,
+    "offlineTests": true,
+    "separatelyReviewedMaterializationBinding": true,
+    "separateAcquisitionAuthorizationOnlyAfterPass": true
+  },
+  "currentImplementationProvided": false,
+  "currentAuthorityProvided": false
+}
