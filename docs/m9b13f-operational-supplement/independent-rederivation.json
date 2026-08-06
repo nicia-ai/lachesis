@@ -1,0 +1,88 @@
+{
+  "protocol": "lachesis-m9b13f-independent-offline-rederivation/1",
+  "sources": "local-immutable-git-objects-registration-receipt-and-registered-bytes-only",
+  "networkUsed": false,
+  "baseline": {
+    "commit": "f9c84bd76e88419f8875963d0c61a45d174dd6c3",
+    "tree": "985c0370daf1e2b4751ee2ab39f36d680fccc728",
+    "decision": "m9b13e3-phase-separated-operational-amendment-ready-for-independent-review",
+    "reviewDecision": "m9b13e3-phase-separated-amendment-review-no-go",
+    "manifestDigest": "fd7db0d26158777f75995779774b8e4a197803c2aff924961208af3748e0feaf"
+  },
+  "preservedReviewEvidence": {
+    "commit": "4ca883283d74466089a5e7722840d8d316596e9c",
+    "tree": "f0d153b097171fb1b1106ffc08ab508e17d2e225",
+    "recordManifestDigest": "0b8262d9e384973a01af0543406d600671f5880e7512b161cd31b7ec927fbe6c",
+    "disposition": "reviewed-no-go-not-live-eligible-superseded-only-as-operational-amendment-text-by-m9b13f"
+  },
+  "bodyContentCommit": {
+    "commit": "600c8cddc589a21d030ef15d05ea0b2e82d1393d",
+    "tree": "5f3f3d766ee8bba58401d455c8f088e76de4eb8c"
+  },
+  "supplementBody": {
+    "protocol": "lachesis-m9b13f-embargo-compatible-operational-supplement-body/1",
+    "canonicalRecordDigest": "bda6171ec4c088dfb29ecd3884f9640922a7829e12b64c9a01b9ceaf2df11ab3",
+    "authorCommitment": "sha256:f3a9af7024c827ceb360865b9708090e3cbe203ce946f1325a482cef671f822f",
+    "fileInventoryCount": 21,
+    "runtimeFiles": 0,
+    "reviewDecisionEmbedded": false
+  },
+  "manifestVerification": {
+    "predecessorPackageManifests": 17,
+    "independentReviewManifests": 11,
+    "registrationReceiptManifests": 1,
+    "allPassed": true
+  },
+  "registration": {
+    "id": "63sh5",
+    "immutableFileCount": 27,
+    "allNamesSizesAndSha256Reproduced": true,
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "receiptDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+  },
+  "scientificFinancialProjection": {
+    "fieldCount": 18,
+    "additions": 0,
+    "omissions": 0,
+    "changes": 0,
+    "canonicalDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282"
+  },
+  "historicalInventory": {
+    "entryCount": 16,
+    "sorted": true,
+    "duplicateFree": true,
+    "missingEntries": 0,
+    "extraEntries": 0,
+    "allLiveUseProhibited": true,
+    "identities": [
+      "M9b.13",
+      "M9b.13a",
+      "M9b.13b",
+      "M9b.13b.review",
+      "M9b.13c",
+      "M9b.13d",
+      "M9b.13d.review",
+      "M9b.13d.1",
+      "M9b.13e",
+      "M9b.13e.review",
+      "M9b.13e.1",
+      "M9b.13e.1.review",
+      "M9b.13e.2",
+      "M9b.13e.2.review",
+      "M9b.13e.3",
+      "M9b.13e.3.review"
+    ]
+  },
+  "m9b13e3ReviewFindingsPreservedUnchanged": [
+    "caller-selected-boundary-authority",
+    "ledger-events-admitted-before-phase-eligibility",
+    "ambiguous-completion-could-seal",
+    "submission-authority-only-a-typescript-type",
+    "terminal-census-after-closure",
+    "historical-no-go-inventory-allowed-additions",
+    "event-identities-only-phase-local"
+  ],
+  "predecessorBytesModified": false,
+  "rederivedDecision": "m9b13f-minimal-operational-supplement-ready-for-independent-review"
+}

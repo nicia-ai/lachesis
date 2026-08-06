@@ -1,0 +1,65 @@
+{
+  "protocol": "lachesis-m9b13f-static-operational-supplement-verification/1",
+  "decision": "m9b13f-minimal-operational-supplement-ready-for-independent-review",
+  "verificationMode": "offline-local-static-only",
+  "checks": {
+    "acceptedBaselineCommitAndTree": "pass",
+    "m9b13e3ReviewPreservedVerbatim": "pass",
+    "m9b13e3SevenFindingsPreserved": "pass",
+    "predecessorAndReviewManifests": "pass",
+    "registrationReceiptAndTwentySevenArchiveIdentities": "pass",
+    "independentEighteenFieldRederivation": "pass",
+    "historicalNoGoInventoryDerivation": "pass",
+    "jsonParsingAndCanonicalization": "pass",
+    "duplicatePathAndInventoryChecks": "pass",
+    "exactLiteralChecks": "pass",
+    "localLinkChecks": "pass",
+    "changedFileFormatting": "pass",
+    "sourceSafetyScan": "pass",
+    "secretScan": "pass",
+    "checksumReproduction": "pass",
+    "gitDiffCheck": "pass",
+    "gitIntegrityCheck": "pass"
+  },
+  "supplementBody": {
+    "protocol": "lachesis-m9b13f-embargo-compatible-operational-supplement-body/1",
+    "bodyDigestSha256": "bda6171ec4c088dfb29ecd3884f9640922a7829e12b64c9a01b9ceaf2df11ab3",
+    "inventoryCount": 21,
+    "historicalInventoryCount": 16,
+    "registrationFileCount": 27,
+    "scientificFinancialFieldCount": 18,
+    "scientificFinancialChanges": 0
+  },
+  "repositoryTests": {
+    "run": false,
+    "reason": "No repository code, workflow, package metadata, or dependency changed."
+  },
+  "authority": {
+    "liveReadinessAuthority": "absent",
+    "liveSubmissionAuthority": "absent",
+    "acquisitionAuthority": false,
+    "materializationAuthority": false,
+    "corpusAuthority": false,
+    "credentialProviderAuthority": false,
+    "executionAnalysisAuthority": false
+  },
+  "effects": {
+    "networkRequests": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsSubmittedOrApproved": 0,
+    "realAuthoritiesActivated": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionDownloadImageOperations": 0,
+    "corpusGoldScheduleConstructions": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "m10Work": 0
+  },
+  "predecessorPreserved": true,
+  "trackedWorktreeExpectedCleanAfterSealCommit": true,
+  "nextAction": "independent-read-only-review-of-the-static-supplement-body",
+  "submissionOrApprovalAuthorized": false
+}
