@@ -1,0 +1,72 @@
+{
+  "protocol": "lachesis-m9b13f1-independent-corrected-supplement-review/1",
+  "reviewed": {
+    "reviewEvidenceCommit": "0b01b5c96c39c674c3bc85d3a17001ed6b98b17e",
+    "reviewEvidenceTree": "32720b7ee53d649e4a416394648ee39cb2fcc0f3",
+    "bodyCommit": "65c007191ab5e85638356eb526c33131d9217ee1",
+    "bodyTree": "f6c368e17e99c2b14560d9be1a04eb79c28a7239",
+    "finalCommit": "5673b77d50867ebf4dd202d00699429db989e41a",
+    "finalTree": "7e350f1bff7f9e19cb3cb21c1fa292b9c7828adf",
+    "bodyProtocol": "lachesis-m9b13f1-embargo-compatible-operational-supplement-body/1",
+    "bodyDigestSha256": "56ffe1f5c1fa7e43a7ab37367b630efc60fa530a126dbb499532a378dacd663b",
+    "bodyPayloadProtocol": "lachesis-m9b13f1-canonical-body-payload-manifest/1",
+    "bodyPayloadRawSha256": "b3e5c0787329f4e6c1771f2647d00513338a0272a6c34d27a1f8b701507294e6",
+    "packageInventoryCanonicalSha256": "f8a12040854cbd4af07317e71b86b6deb60f78e85dac37bbf7cf71bd42febdff",
+    "completeManifestRawSha256": "d71d22bfef0b8098173da6666ce3e1c970bb96494aa856edb2310318e4a1ef76",
+    "submittedDecision": "m9b13f1-corrected-minimal-operational-supplement-ready-for-independent-review"
+  },
+  "decision": "m9b13f1-corrected-minimal-operational-supplement-review-no-go",
+  "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13f2",
+  "blockingFindings": [
+    {
+      "id": "decision-relevant-json-canonicalization-is-not-normatively-unique",
+      "severity": "P1",
+      "confidence": "10/10",
+      "correction": "Use RFC 8785 with strict duplicate-key and I-JSON-domain rejection for every M9b.13f.2 canonical JSON digest and signature input, and define one enumerated unsigned-attestation projection."
+    },
+    {
+      "id": "future-review-receipt-contract-omits-direct-package-author-and-evidence-inventory-bindings",
+      "severity": "P1",
+      "confidence": "10/10",
+      "correction": "Require direct package-inventory, author-key, raw-and-canonical attestation, final-Git, reviewer-key, exact-decision, and per-artifact review-evidence-inventory bindings."
+    }
+  ],
+  "acceptedReproductions": {
+    "linearThreeCommitCorrectionLineage": true,
+    "packageFiles": 30,
+    "checksumPayloadFiles": 29,
+    "substantivePayloadFiles": 19,
+    "bodyDigest": true,
+    "payloadManifestRawDigest": true,
+    "completeManifestDigest": true,
+    "packageInventoryCanonicalDigest": true,
+    "authorPublicKeyAndCommitment": true,
+    "authorSignatureUnderDocumentedProjection": true,
+    "historicalNoGoRecords": 17,
+    "registrationFiles": 27,
+    "scientificFinancialFields": 18,
+    "scientificFinancialChanges": 0,
+    "runtimeReuseProhibited": true,
+    "currentAuthorityAbsent": true,
+    "predecessorsPreserved": true
+  },
+  "reviewGrantsSubmissionAuthority": false,
+  "reviewReceiptCreated": false,
+  "reviewerKeyCreated": false,
+  "effects": {
+    "networkRequests": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsSubmittedOrApproved": 0,
+    "realAuthoritiesActivated": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionDownloadImageOperations": 0,
+    "corpusGoldScheduleConstructions": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "embargoMutations": 0,
+    "m10Work": 0
+  }
+}
