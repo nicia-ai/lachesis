@@ -1,0 +1,53 @@
+{
+  "protocol": "lachesis-m9b13g-zero-external-effect-report/1",
+  "phase": "offline-prospective-external-supplement-readiness",
+  "research": {
+    "officialPublicDocumentationOnly": true,
+    "unauthenticatedPublicApiReadsOnly": true,
+    "directUnauthenticatedPublicApiGetAttempts": 14,
+    "webResearchOperations": 10,
+    "totalUnderlyingDocumentationFetchesKnownExactly": false
+  },
+  "credentialsAndSecrets": {
+    "credentialsAccessed": 0,
+    "cookiesAccessed": 0,
+    "tokensAccessed": 0,
+    "privateKeysCreated": 0,
+    "privateKeysAccessed": 0,
+    "authenticatedSessionsUsed": 0
+  },
+  "externalMutationCounters": {
+    "mutationRequests": 0,
+    "projectsCreated": 0,
+    "componentsCreated": 0,
+    "draftRegistrationsCreated": 0,
+    "registrationsCreated": 0,
+    "filesUploaded": 0,
+    "submissions": 0,
+    "approvals": 0,
+    "publications": 0,
+    "viewOnlyLinksCreated": 0,
+    "embargoChanges": 0,
+    "registration63sh5Changes": 0,
+    "providerOrModelCalls": 0,
+    "studyRolesExecuted": 0,
+    "analysesExecuted": 0,
+    "m10Actions": 0
+  },
+  "localEffects": {
+    "repositoryPath": "docs/m9b13g-external-supplement-readiness",
+    "appendOnlyCommitCountRequired": 3,
+    "appendOnlyCommitCountBeforeFinalSeal": 2,
+    "finalSealCommitPlanned": 1,
+    "sourceSupplementFilesModified": 0,
+    "sourceReceiptFilesModified": 0,
+    "protectedUntrackedPaperPathTraversed": false,
+    "protectedDsStorePathTraversed": false
+  },
+  "predecessor": {
+    "registrationId": "63sh5",
+    "status": "unchanged-approved-embargoed-non-public",
+    "embargoEnd": "2030-08-01T00:00:00Z"
+  },
+  "result": "zero-external-mutations"
+}

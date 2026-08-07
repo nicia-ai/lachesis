@@ -1,0 +1,61 @@
+{
+  "protocol": "lachesis-m9b13g-external-supplement-readiness-decision/1",
+  "decision": "m9b13g-external-supplement-mechanism-no-go",
+  "basis": "No researched mechanism satisfies every frozen immutability, confidentiality, exact-inventory, and separately authorized approval requirement under an authoritative stable contract.",
+  "closestDocumentedCandidate": {
+    "provider": "OSF Registries general provider",
+    "schemaName": "Open-Ended Registration",
+    "schemaId": "5df83f7dd28338001ac0ab0d",
+    "schemaVersion": 3,
+    "interface": "official-authenticated-browser-workflow-only",
+    "selected": false
+  },
+  "blockingFindings": [
+    {
+      "id": "ordinary-osf-registration-auto-approval",
+      "finding": "OSF documents automatic approval after 48 hours when administrators take no action, so a later positive approval authority is not a mandatory gate."
+    },
+    {
+      "id": "license-induced-archive-closure-ambiguity",
+      "finding": "OSF documents required Registries license handling and automatic project-license upload; authoritative evidence does not prove that the archive remains exactly the frozen 57 files."
+    },
+    {
+      "id": "folder-preservation-not-established",
+      "finding": "Authoritative public documentation does not establish preservation of the exact supplement/ and independent-review-receipt/ paths through the complete registration workflow."
+    }
+  ],
+  "acceptedInputs": {
+    "supplementCommit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+    "supplementTree": "fb5f4b29609986f1aee314e6f96c2405f76b199b",
+    "supplementFileCount": 45,
+    "signedReceiptCommit": "0776b7af87f3d8731300dd2bde5b9e31c25ca745",
+    "signedReceiptTree": "5b36616a593fdf3d3e5bdfed442b6bf3c5b4bd9e",
+    "signedReceiptFileCount": 12,
+    "suppliedReceiptReviewPassRecord": "received-receipt-review-pass.json",
+    "suppliedReceiptReviewPassIndependentlyReproducedInM9b13g": false
+  },
+  "prospectiveArchive": {
+    "inventoryProtocol": "lachesis-m9b13g-prospective-attachment-inventory/1",
+    "inventoryRawSha256": "dc6453dd9bad84f9ed772dc7667a6e3a1a51f60f6ed9f248874e04118399fdf2",
+    "inventoryCanonicalSha256": "4a7193935b959b8f815839c80b87f2af6b60fd2928aaf09afa3ed8d547a9f725",
+    "attachmentCount": 57,
+    "supplementNamespaceCount": 45,
+    "independentReviewReceiptNamespaceCount": 12,
+    "submissionEnabled": false
+  },
+  "predecessor": {
+    "registrationId": "63sh5",
+    "mustRemainApprovedEmbargoedNonPublic": true,
+    "embargoEnd": "2030-08-01T00:00:00Z",
+    "modified": false
+  },
+  "authority": {
+    "draftPreparationGranted": false,
+    "uploadGranted": false,
+    "submissionGranted": false,
+    "approvalGranted": false,
+    "publicationGranted": false,
+    "operationalOrStudyAuthorityGranted": false
+  },
+  "m9bStatus": "NO-GO"
+}

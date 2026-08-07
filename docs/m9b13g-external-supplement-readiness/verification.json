@@ -1,0 +1,167 @@
+{
+  "protocol": "lachesis-m9b13g-final-independent-rederivation/1",
+  "mode": "offline-read-only-source-object-reproduction-and-local-static-validation",
+  "result": "pass-for-no-go-readiness-package",
+  "decisionRecord": {
+    "protocol": "lachesis-m9b13g-external-supplement-readiness-decision/1",
+    "rawSha256": "cbba594875d56c7ed52b71cee35ad909339e83edb16a7a5acb9f18000964e92f",
+    "canonicalSha256": "3e95b15dbe7f1df123af4a6bad9e6989a8ade4fea94b579fbdae3b39e005573f",
+    "decisionMatchesMechanismEvidence": true
+  },
+  "appendOnlyChainBeforeFinalSeal": [
+    {
+      "role": "accepted-signed-independent-review-receipt",
+      "commit": "0776b7af87f3d8731300dd2bde5b9e31c25ca745",
+      "tree": "5b36616a593fdf3d3e5bdfed442b6bf3c5b4bd9e"
+    },
+    {
+      "role": "m9b13g-received-review-and-mechanism-research",
+      "commit": "ee12b5a209f5086b65e8808f134278b68b133e4a",
+      "tree": "07da84fe13e87c785c5fd2c8978596bf26385017",
+      "parent": "0776b7af87f3d8731300dd2bde5b9e31c25ca745"
+    },
+    {
+      "role": "m9b13g-inventory-and-readiness-protocols",
+      "commit": "8490dc876d9f2dc649fdbcaf41a0a7a6e1687acf",
+      "tree": "492396ad548fb12d2a041581a0098292ba2887ea",
+      "parent": "ee12b5a209f5086b65e8808f134278b68b133e4a"
+    }
+  ],
+  "sourcePackageReproduction": {
+    "supplement": {
+      "commit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+      "tree": "fb5f4b29609986f1aee314e6f96c2405f76b199b",
+      "fileCount": 45,
+      "checksumManifestRawSha256": "76b46920ffd75a387688326d5d572ccc980f2d22d85b921cb6a279c8140c1523",
+      "checksumEntries": 44,
+      "allEntriesReproduced": true
+    },
+    "signedIndependentReviewReceipt": {
+      "commit": "0776b7af87f3d8731300dd2bde5b9e31c25ca745",
+      "tree": "5b36616a593fdf3d3e5bdfed442b6bf3c5b4bd9e",
+      "fileCount": 12,
+      "checksumManifestRawSha256": "f731e112100e994a24c15348d95b21d5f268ef6b6e59a0cbc6b82abcc97610b8",
+      "checksumEntries": 11,
+      "allEntriesReproduced": true
+    },
+    "allRawAttachmentIdentitiesReproduced": 57,
+    "allApplicableCanonicalJsonIdentitiesReproduced": 33,
+    "sourceJsonFilesRejectDuplicateKeys": true,
+    "duplicateKeysFound": 0
+  },
+  "prospectiveAttachmentInventory": {
+    "protocol": "lachesis-m9b13g-prospective-attachment-inventory/1",
+    "rawSha256": "dc6453dd9bad84f9ed772dc7667a6e3a1a51f60f6ed9f248874e04118399fdf2",
+    "canonicalSha256": "4a7193935b959b8f815839c80b87f2af6b60fd2928aaf09afa3ed8d547a9f725",
+    "attachmentCount": 57,
+    "supplementCount": 45,
+    "signedReceiptCount": 12,
+    "pathsSortedNormalizedRelativeAndUnique": true,
+    "versionsExactlyOne": true,
+    "sourcePathSetExact": true
+  },
+  "unchangedBoundIdentities": {
+    "bodyProtocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+    "bodyCanonicalSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+    "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73",
+    "signedReceiptProtocol": "lachesis-m9b13f2-independent-supplement-review-receipt/1",
+    "signedReceiptRawSha256": "f7bf3e1eac3c8557991194573d9aeaec4f4b37f1618007f0d7fe1f158b328df4",
+    "signedReceiptCanonicalSha256": "286c9f1ef0897719853b713253f8cf0d0bbe2a743a882bd5517c6abca5ae3b8b",
+    "authorIdentity": "lachesis-m9b13f2-supplement-author-ed25519-659988b38d8631ce",
+    "authorCommitment": "sha256:659988b38d8631ce57c4412f63106be40cf659310d5d08ede7e672d9d15309e7",
+    "reviewerIdentity": "lachesis-m9b13f2-independent-reviewer-ed25519-17881f6a368bb96d",
+    "reviewerCommitment": "sha256:17881f6a368bb96d2d753c1ffa411d5c3979e8312635b8906c1b3f20f6ad6d7c",
+    "originalRegistrationId": "63sh5",
+    "originalPreregistrationCanonicalSha256": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "originalManifestRawSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "registrationReceiptCanonicalSha256": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+    "scientificFinancialInvariantSha256": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+    "allUnchanged": true
+  },
+  "mechanismEvidence": {
+    "authoritativeSourcesProtocol": "lachesis-m9b13g-authoritative-mechanism-sources/1",
+    "authoritativeSourcesRawSha256": "2f88d5ebbae9d5ef9433925c7865be5478de20650a3cf407f98a5958696f1410",
+    "authoritativeSourcesCanonicalSha256": "dbd75ba9d167948ccf9dd6d22a429806d9dab8d34a93864736a3e599afbb735f",
+    "comparisonProtocol": "lachesis-m9b13g-external-mechanism-comparison/1",
+    "comparisonRawSha256": "9a782e2c05d54427226de0146fa45d5a4b16d6d2da02ff518e136033eb4ec34e",
+    "comparisonCanonicalSha256": "ce5338109dea659513fa4a132f60ed32d9d76914c49ae6051ab4249ad125ca17",
+    "openEndedSchemaId": "5df83f7dd28338001ac0ab0d",
+    "openEndedSchemaVersion": 3,
+    "openEndedSchemaCanonicalSha256": "e750a5a2870f7571032f2c84696321a1071ade6fdd8cccd8c678e0275d3d7fcc",
+    "apache20OsfLicenseId": "563c1cf88c5e4a3877f9e96d",
+    "mechanismBlockerCount": 3,
+    "mechanismSelected": false
+  },
+  "readinessProtocolIdentities": [
+    {
+      "file": "metadata.json",
+      "protocol": "lachesis-m9b13g-prospective-external-supplement-metadata/1",
+      "rawSha256": "929dd05eb2a42360ae884caff7c668a10607c10edbaa0699a692a2adccf5fba5",
+      "canonicalSha256": "7705ccf3846049571cd957ecd0ceaf9a598db36ec242eed0b1809f9b06ccd603"
+    },
+    {
+      "file": "submission-protocol.json",
+      "protocol": "lachesis-m9b13g-future-single-attempt-submission/1",
+      "rawSha256": "099ce224228c80ea91a890086e1430c0691d626987560be0ecad259fe37c029d",
+      "canonicalSha256": "4f7c0baea172489b54ec07f9feefdbef6079c944eed675a82056a3900e4cad11"
+    },
+    {
+      "file": "approval-protocol.json",
+      "protocol": "lachesis-m9b13g-separate-future-approval/1",
+      "rawSha256": "f938ca1df3cd6688dc4b6e9b9a6aa2f5ac65d4021d71059a936337d74923071b",
+      "canonicalSha256": "ebf7a8a3262ce75a80e51f475f1c468977cfff2e2e3d8a67c4b5e3e2879a7a56"
+    },
+    {
+      "file": "reconciliation-protocol.json",
+      "protocol": "lachesis-m9b13g-post-submission-and-approval-reconciliation/1",
+      "rawSha256": "a5a4df6a15d9fe677563e96baed539d939ff348e5a3b7bb7b93960a93b5e82ea",
+      "canonicalSha256": "2d6a5836d4fa3b4001dafd894d12194a8ad1306c8db12b51abbb7b32c1e4265f"
+    },
+    {
+      "file": "authorization-boundary.json",
+      "protocol": "lachesis-m9b13g-submission-readiness-authorization-boundary/1",
+      "rawSha256": "2d2cb4ef83e5528f9fb2a8f5bd9156a74eb38d4f70e1f2e2b555beec77a72339",
+      "canonicalSha256": "6b8bc41bf121f26745c5945445f43f9e974eec41d6681ac302727185bd59dd07"
+    }
+  ],
+  "staticHostileValidation": {
+    "protocol": "lachesis-m9b13g-static-hostile-readiness-tests/1",
+    "rawSha256": "44e76378bf23d6adecdc6e04724b3a39fcef8d32ce4bdbecfce9df825dad024b",
+    "canonicalSha256": "8d977e8f4cdaec77b514563cbe5491d6e783eb6d84ec6363df8bffae4f33ae3e",
+    "baselineAccepted": true,
+    "testCount": 36,
+    "rejectedAsRequired": 35,
+    "ambiguousNoRetryAsRequired": 1,
+    "passed": 36
+  },
+  "suppliedPriorReceiptReview": {
+    "recordProtocol": "lachesis-m9b13g-received-receipt-review-pass-evidence/1",
+    "recordRawSha256": "b41f3dfc89a9a0d1688b4f4f561f01d2cad376fda30304186515f06c6a8d1ebe",
+    "recordCanonicalSha256": "6e6550b6609c23355092465abe466a09ea637a538ba792b678b434d14a792300",
+    "acceptedAsSuppliedEvidence": true,
+    "independentlyRerunInM9b13g": false
+  },
+  "zeroEffectReport": {
+    "protocol": "lachesis-m9b13g-zero-external-effect-report/1",
+    "rawSha256": "3e6a4b411360ecdd6442aceea9863bc7279b994f65798f93c71792508cd957ed",
+    "canonicalSha256": "5e65eab3166b47826c3e1a079efbfd1ba8e1743d716de541bfd2b912748910a1",
+    "externalMutationCount": 0
+  },
+  "finalPackageContract": {
+    "directory": "docs/m9b13g-external-supplement-readiness",
+    "fileCount": 24,
+    "checksumManifest": "CHECKSUMS.sha256",
+    "checksumEntryCount": 23,
+    "checksumManifestSelfExcluded": true,
+    "allJsonRejectDuplicateKeys": true,
+    "targetedFormattingOnly": true,
+    "protectedPathsUntouched": true
+  },
+  "authorityGranted": {
+    "submission": false,
+    "approval": false,
+    "publication": false,
+    "operationalOrStudyExecution": false
+  },
+  "m9bStatus": "NO-GO"
+}
