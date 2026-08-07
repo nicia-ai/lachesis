@@ -1,0 +1,172 @@
+{
+  "protocol": "lachesis-m9b13f1-canonical-body-payload-manifest/1",
+  "canonicalization": {
+    "json": "strict-json-lexicographic-key-order-compact-utf8-no-trailing-newline",
+    "bodyDigestDefinition": "SHA-256 of canonical strict JSON bytes of this complete BODY-PAYLOAD.json record",
+    "pathPolicy": "normalized-relative-basename-utf8-no-alias-no-symlink"
+  },
+  "ordering": "ascending-raw-utf8-path-bytes",
+  "payload": [
+    {
+      "path": "authority-boundary.json",
+      "byteLength": 1406,
+      "rawSha256": "83df4766bcefb7c792ff87dd259792c6d78210ff5222e173e8be5bb150a5b385",
+      "canonicalJsonSha256": "3154852392d19677032353840b63e7abd964c50b473bd9957fe5f97dffa75888",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "authority-boundary.md",
+      "byteLength": 567,
+      "rawSha256": "9a563616a04d271e9953fb729903da595955bf4ceaa879d1c227810e9c38dc11",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "external-mechanism-requirements.json",
+      "byteLength": 1056,
+      "rawSha256": "c56517696eeda9b2ac2e7822ff4b83d333a3a17e6228f91960caf422e1a94f60",
+      "canonicalJsonSha256": "10827f29d2db3e2027e9eefb14cb8262b63b4e16cf6295d77db440f965c86ce6",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "external-mechanism-requirements.md",
+      "byteLength": 772,
+      "rawSha256": "3ff12351835795b0265cccd43f79f77ee037f964253bae200113cbb1b0606401",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "future-readiness-requirements.json",
+      "byteLength": 1414,
+      "rawSha256": "48facfd2bf3862238b7ee8583b5afa19b2fc8bf2e1c6b5ac58f514b64a74786c",
+      "canonicalJsonSha256": "61b5c21548495a83e5bc7f72cde7b3bb9ebd2436346ef538e529b01bf072dc74",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "future-readiness-requirements.md",
+      "byteLength": 1226,
+      "rawSha256": "c1f7307dae01a48fbb3f5a4bc1e58ecc9f82a42976b725002f171fad96b85bc5",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "historical-no-go-inventory.json",
+      "byteLength": 16488,
+      "rawSha256": "b1a25251712d5e23e13d2cc02c09e60f8c875e1286494f88d79b6e95066b103c",
+      "canonicalJsonSha256": "2fc1e1c1a744af1cdc84c82df354a568751a40b38b0fcc48df42e70cd75596ee",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "historical-no-go-inventory.md",
+      "byteLength": 1140,
+      "rawSha256": "7b47e6ff303ebf11138bb5dc8c65cf6eda591c5876069e7abdf3a086f81c0462",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "nonclaims.md",
+      "byteLength": 711,
+      "rawSha256": "8ba35a7370ca87188271ab98fe621eabf30ee3db27bcfeaef741918cf1a87ab3",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "protocol-supersession.json",
+      "byteLength": 1107,
+      "rawSha256": "962948b13e2a988526adfd9a9fbb95ec1239e93e879fe7064ef6c99fb0be016b",
+      "canonicalJsonSha256": "bdae135d0c0ea0e4b4f8fc065afc3111e928a24415daf708368ba5938bdca0c5",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "protocol-supersession.md",
+      "byteLength": 572,
+      "rawSha256": "50ff07531066b1514b79dfdb3e26928893774e11b6102a84c9eea54b839dbfb1",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "registration-binding.json",
+      "byteLength": 5034,
+      "rawSha256": "6281cecde0218a899a7116d6b0a897f8a5e93513021b1af98f8f44cc849c9caa",
+      "canonicalJsonSha256": "c1e60548f0ae8b0ddc1e7d610be414a1fcf4757c1e5b5b4ce27f5a16fde813c9",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "registration-binding.md",
+      "byteLength": 817,
+      "rawSha256": "d9a4c8b49edacc4ac170ce1c3a63cae43a21a9bdbfeff6ce6558a101a6919f40",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "review-submission-boundary.json",
+      "byteLength": 2470,
+      "rawSha256": "82f8b882287fc5a4ae33044575cf9bd324e1f40ac72cb1b8e761435c8a9f2f0d",
+      "canonicalJsonSha256": "9f052dab078cbabfd87719223b2edfc7bb38c803c76f5f7db221339f23356c6b",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "review-submission-boundary.md",
+      "byteLength": 1494,
+      "rawSha256": "9f9b15d4f9050f7105e61fe6ee60b8c6027d8a39a2bb9f8cfeb5a4ef96a39627",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "scientific-financial-invariance.json",
+      "byteLength": 1154,
+      "rawSha256": "d4c728af457274c8e434e74bf1c12bddce39270739e51d4548ea8bab9f294ad3",
+      "canonicalJsonSha256": "af0d8e8127cb1f85ec58ff93506a5148575b331be369dde83641c770c02eac52",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "scientific-financial-invariance.md",
+      "byteLength": 645,
+      "rawSha256": "b72fec7b211cb3112ac382bdca03204b33d771056bd82098c352855a81153ed2",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "supplement-body.json",
+      "byteLength": 2230,
+      "rawSha256": "c0e04a278050f1f6675b361dde87e56e643c8959f46f3ec5c9aeb45d4453483b",
+      "canonicalJsonSha256": "3f39fd1bef620089067596e1f3e9f9c0fc699d75184e137fdde37075c97cf595",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "supplement-body.md",
+      "byteLength": 1969,
+      "rawSha256": "e63069f659caa5bf17a64724d10153b0b32b2a4388a4f2b6ae3daedeb25ca13a",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    }
+  ],
+  "exclusions": {
+    "excludesThisPayloadManifest": true,
+    "excludesIdentityRecords": true,
+    "excludesAuthorPublicKeyEvidence": true,
+    "excludesAuthorAttestation": true,
+    "excludesVerificationAndSealEvidence": true,
+    "excludesPackageInventory": true,
+    "excludesGeneralChecksumManifest": true
+  }
+}

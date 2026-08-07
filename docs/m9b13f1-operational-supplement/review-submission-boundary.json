@@ -1,0 +1,60 @@
+{
+  "protocol": "lachesis-m9b13f1-review-and-submission-authority-boundary/1",
+  "futureIndependentReviewReceiptProtocol": "lachesis-m9b13f1-independent-supplement-review-receipt/1",
+  "reviewPassGrantsSubmissionAuthority": false,
+  "separateSubmissionAuthorizationRequired": true,
+  "supplementSubmissionAuthorityCurrentlyPresent": false,
+  "exactStatement": "Independent review confirms the reviewed supplement bytes only. A review pass does not authorize external submission, approval, publication, embargo change, or any study operation.",
+  "reviewerSeparation": {
+    "exactLimitation": "Distinct author and reviewer key commitments establish distinct cryptographic review principals. They do not by themselves prove distinct natural persons.",
+    "bodySelectsReviewer": false,
+    "reviewerIdentityCurrentlySelected": false,
+    "reviewerMustUseSeparatelyControlledIdentity": true,
+    "reviewerCommitmentMustDifferFromAuthorCommitment": true,
+    "reviewerMustVerifyAuthorSignature": true,
+    "reviewerMustBindExactBodyAndPackageIdentities": true,
+    "reviewerMustSignReceipt": true,
+    "reviewerMustAttestOperationalIndependence": true,
+    "reviewerMustNeverAccessAuthorPrivateKey": true
+  },
+  "reviewReceiptRequiredBindings": [
+    "body-protocol",
+    "body-digest",
+    "body-payload-manifest-raw-digest",
+    "complete-package-manifest-digest",
+    "author-attestation-digest",
+    "reviewer-public-key-identity-and-commitment",
+    "review-evidence-digest",
+    "reviewed-commit-and-tree",
+    "decision",
+    "timestamp-or-deterministic-sequence"
+  ],
+  "futureSubmissionAuthorizationContract": {
+    "createdNow": false,
+    "requiredBindings": [
+      "supplement-body-protocol-and-digest",
+      "payload-manifest-digest",
+      "complete-package-manifest-digest",
+      "author-attestation-digest",
+      "independent-review-receipt-protocol-and-digest",
+      "reviewed-commit-and-tree",
+      "exact-external-registry-or-mechanism-identity",
+      "exact-target-or-project-identity",
+      "exact-embargo-end-and-visibility",
+      "exact-attachment-inventory",
+      "exactly-one-submission-attempt",
+      "separate-approval-authority-where-applicable"
+    ],
+    "explicitExclusions": [
+      "acquisition",
+      "corpus-construction",
+      "gold-or-schedule-construction",
+      "credential-access",
+      "provider-or-model-calls",
+      "study-execution",
+      "analysis",
+      "publication",
+      "embargo-termination"
+    ]
+  }
+}

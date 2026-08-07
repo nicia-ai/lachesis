@@ -1,0 +1,22 @@
+{
+  "protocol": "lachesis-m9b13f1-prospective-supersession/1",
+  "predecessor": {
+    "protocol": "lachesis-m9b13f-embargo-compatible-operational-supplement-body/1",
+    "finalCommit": "adc0eb47ee8103ab3491b8aca1d884be22ccf2ab",
+    "finalTree": "e6aff271b90b68d24a8d5877b7e338fb6683a9cb",
+    "submittedDecision": "m9b13f-minimal-operational-supplement-ready-for-independent-review",
+    "independentReviewDecision": "m9b13f-minimal-operational-supplement-review-no-go",
+    "bodyDigest": "bda6171ec4c088dfb29ecd3884f9640922a7829e12b64c9a01b9ceaf2df11ab3",
+    "manifestDigest": "4feb24e72eef0f0994f705645b0d23bccb59783869b403c716c03e368c7a3245",
+    "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13f1",
+    "bytesModified": false,
+    "reviewReinterpreted": false
+  },
+  "correction": {
+    "protocol": "lachesis-m9b13f1-embargo-compatible-operational-supplement-body/1",
+    "classification": "append-only-corrected-static-operational-supplement",
+    "predecessorRuntimeCorrected": false,
+    "runtimeImplementationAdded": false,
+    "externalSubmissionPreparedOrPerformed": false
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "protocol": "lachesis-m9b13f1-supplement-author-attestation/1",
+  "authorPublicKeyIdentity": "lachesis-m9b13f1-supplement-author-ed25519-a4902fc3ea2a0e91",
+  "authorCommitment": "sha256:a4902fc3ea2a0e91d9936b1a0be3c162e308f3f1d62e804c6e7066cce89c873f",
+  "bodyProtocol": "lachesis-m9b13f1-embargo-compatible-operational-supplement-body/1",
+  "bodyPayloadProtocol": "lachesis-m9b13f1-canonical-body-payload-manifest/1",
+  "bodyDigestSha256": "56ffe1f5c1fa7e43a7ab37367b630efc60fa530a126dbb499532a378dacd663b",
+  "bodyPayloadManifestRawSha256": "b3e5c0787329f4e6c1771f2647d00513338a0272a6c34d27a1f8b701507294e6",
+  "preSealSourceIdentity": {
+    "definition": "exact-body-payload-manifest-and-author-public-key-evidence",
+    "bodyPayloadManifestRawSha256": "b3e5c0787329f4e6c1771f2647d00513338a0272a6c34d27a1f8b701507294e6",
+    "bodyPayloadManifestCanonicalSha256": "56ffe1f5c1fa7e43a7ab37367b630efc60fa530a126dbb499532a378dacd663b",
+    "authorPublicKeyEvidenceRawSha256": "b515909787138a4059956dd98cbc60300952418e55ef209b0346ce004e4ec759"
+  },
+  "registration": {
+    "id": "63sh5",
+    "preregistrationSha256": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "receiptSha256": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+  },
+  "scientificFinancialProjectionSha256": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "prospectiveStatus": "awaiting-external-independent-review",
+  "reviewPassGrantsSubmissionAuthority": false,
+  "separateSubmissionAuthorizationRequired": true,
+  "supplementSubmissionAuthorityCurrentlyPresent": false,
+  "noSubmissionAuthorityStatement": "Independent review confirms the reviewed supplement bytes only. A review pass does not authorize external submission, approval, publication, embargo change, or any study operation.",
+  "ceremonySequence": 1,
+  "finalGitBindingPolicy": "The later independent review receipt binds the final reviewed Git commit and tree; the author signature binds the exact pre-seal payload and public-key evidence without a commit/signature cycle.",
+  "signature": {
+    "algorithm": "Ed25519",
+    "canonicalization": "strict-json-lexicographic-key-order-compact-utf8-no-trailing-newline",
+    "signedProjection": "complete-attestation-record-with-signature.signingInputSha256-and-signature.valueBase64-omitted",
+    "signingInputSha256": "4b4cd59f67e8b6eecf9e80b9c4af4cda9f2493ebbcfb6d48257a0d6b1c04e33d",
+    "valueBase64": "fv1zZaqZq7ZzFHAxHyN+I8tOiFsTUktl1vxzvH4hq2VxuPWG+6TDGX+MHQxcwTML7vhdHmSABrUXzcOpHTigDA=="
+  }
+}

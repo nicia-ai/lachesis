@@ -1,0 +1,33 @@
+{
+  "protocol": "lachesis-m9b13f1-supplement-author-public-key/1",
+  "purpose": "M9b.13f.1 static operational supplement authorship only",
+  "algorithm": "Ed25519",
+  "publicKeyEncoding": "RFC 8410 SubjectPublicKeyInfo DER",
+  "publicKeyIdentity": "lachesis-m9b13f1-supplement-author-ed25519-a4902fc3ea2a0e91",
+  "ceremonyIdentity": "lachesis-m9b13f1-author-key-ceremony-a4902fc3ea2a0e91",
+  "spkiDerByteLength": 44,
+  "spkiDerBase64": "MCowBQYDK2VwAyEA0SVmA23jO5xxe+Ra/n/CNsX0zQwnDD88d2bu9c36ibY=",
+  "spkiDerSha256": "87b1200927225cb49bb94fe1ff08c8c0b4feb7ec63c0029e5b4c3655be628b21",
+  "rawPublicKeyBase64": "0SVmA23jO5xxe+Ra/n/CNsX0zQwnDD88d2bu9c36ibY=",
+  "rawPublicKeySha256": "f16258333c70ddff5402c612101651afd614bc8c09436e092e4c47604e751733",
+  "authorCommitment": "sha256:a4902fc3ea2a0e91d9936b1a0be3c162e308f3f1d62e804c6e7066cce89c873f",
+  "commitmentConstruction": {
+    "digest": "SHA-256",
+    "domain": "lachesis-m9b13f1-supplement-author/1",
+    "framing": "uint64-big-endian-domain-byte-length || domain-utf8 || uint64-big-endian-spki-byte-length || canonical-spki-der"
+  },
+  "ceremony": {
+    "randomness": "operating-system-cryptographic-randomness",
+    "keypairsGenerated": 1,
+    "replacementKeysGenerated": 0,
+    "backupKeysGenerated": 0,
+    "networkUsed": false,
+    "privateNamespaceOutsideRepository": true,
+    "privateNamespaceMode": "0700",
+    "privateKeyMode": "0600",
+    "privateOpeningRetained": true,
+    "privateKeyBytesRecorded": false,
+    "privateNamespaceLocatorRecorded": false
+  },
+  "custodyCommitment": "The single private Ed25519 opening is retained outside the repository under mode-0700 namespace and mode-0600 key custody; it is purpose-limited to M9b.13f.1 authorship and was neither copied nor disclosed."
+}
