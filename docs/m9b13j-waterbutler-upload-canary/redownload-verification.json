@@ -1,0 +1,12 @@
+{
+  "authorizedOnlyAfterSuccessfulCreation": true,
+  "downloadCount": 0,
+  "expectedArtifact": {
+    "bytes": 227,
+    "filename": "OSF-WATERBUTLER-CANARY-b84f6e9c88544372b25bc41e2d4782a3.txt",
+    "sha256": "d7c24846dbedd5b0f56452364d8aca96290645421e9387ca382f74e3c47a8292"
+  },
+  "performed": false,
+  "reason": "No PUT was dispatched and no remote artifact was created.",
+  "result": "not-applicable-no-remote-artifact"
+}

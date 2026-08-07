@@ -1,0 +1,19 @@
+{
+  "artifact": {
+    "bytes": 227,
+    "filename": "OSF-WATERBUTLER-CANARY-b84f6e9c88544372b25bc41e2d4782a3.txt",
+    "lineCount": 4,
+    "sha256": "d7c24846dbedd5b0f56452364d8aca96290645421e9387ca382f74e3c47a8292",
+    "utf8": true
+  },
+  "contents": [
+    "fresh-identity",
+    "exact-filename",
+    "literal-synthetic-non-study-waterbutler-transport-canary-classification",
+    "no-study-or-operational-material-statement"
+  ],
+  "createdAndHashedBeforeExternalAccess": true,
+  "freshIdentity": "b84f6e9c88544372b25bc41e2d4782a3",
+  "protectedOrOperationalMaterialPresent": false,
+  "protocol": "lachesis-m9b13j-synthetic-waterbutler-canary-artifact/1"
+}

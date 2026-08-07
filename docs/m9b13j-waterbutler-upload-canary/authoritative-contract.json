@@ -1,0 +1,28 @@
+{
+  "documentedFlow": [
+    "Read the project's OSF Storage provider entity.",
+    "Use its upload link relation without changing the canonical path.",
+    "Add kind=file and name=<exact-new-filename>.",
+    "Issue one PUT whose body is the exact raw file bytes.",
+    "Treat HTTP 201 and a valid Waterbutler file entity as new-file success.",
+    "Treat a same-name HTTP 409 as a conflict and do not update or retry."
+  ],
+  "duplicateAndVersionSemantics": {
+    "existingFileUploadRelationWithKindFile": "creates-a-new-version-and-normally-returns-200",
+    "folderUploadRelationSameName": "conflict-and-normally-returns-409",
+    "newFolderUploadRelationWithKindFileAndName": "creates-a-new-file-and-normally-returns-201"
+  },
+  "officialSource": {
+    "commit": "4099320aab22911c09d7a6a6671e433ab43e07c1",
+    "repository": "https://github.com/CenterForOpenScience/waterbutler",
+    "url": "https://github.com/CenterForOpenScience/waterbutler/blob/4099320aab22911c09d7a6a6671e433ab43e07c1/docs/api.rst#L83-L105"
+  },
+  "prohibitedAlternatives": [
+    "browser-file-input",
+    "drag-and-drop",
+    "personal-access-token",
+    "oauth-application",
+    "exported-browser-credential",
+    "retry-or-version-update"
+  ]
+}

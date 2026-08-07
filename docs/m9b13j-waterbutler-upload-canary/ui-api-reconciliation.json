@@ -1,0 +1,20 @@
+{
+  "api": {
+    "diagnosticArtifactCount": 0,
+    "oldCanaryCount": 0,
+    "providerRootArtifactCount": 0,
+    "registrations": 0,
+    "unexpectedArtifactCount": 0,
+    "viewOnlyLinks": 0
+  },
+  "browserConsoleCategories": ["third-party-telemetry-warning"],
+  "matched": true,
+  "ui": {
+    "diagnosticArtifactCount": 0,
+    "dialogCount": 0,
+    "oldCanaryCount": 0,
+    "progressbarCount": 0,
+    "unexpectedArtifactCount": 0
+  },
+  "uiTerminalState": "idle-unchanged-no-upload-initiated"
+}

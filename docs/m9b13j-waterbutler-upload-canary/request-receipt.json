@@ -1,0 +1,13 @@
+{
+  "applicationRetryCount": 0,
+  "browserFileInputSelections": 0,
+  "documentedPutCount": 0,
+  "dragAndDropActions": 0,
+  "manualRetryCount": 0,
+  "redirectReplayCount": 0,
+  "request": null,
+  "sdkRetryCount": 0,
+  "stopBeforeMutation": true,
+  "stopReason": "authenticated-page-context-exposes-no-fetch-or-xmlhttprequest-capability",
+  "terminalResponseCount": 0
+}

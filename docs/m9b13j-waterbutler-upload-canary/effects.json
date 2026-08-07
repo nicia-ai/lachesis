@@ -1,0 +1,25 @@
+{
+  "externalMutationCounters": {
+    "browserFileSelections": 0,
+    "filesDownloaded": 0,
+    "filesUploaded": 0,
+    "foldersCreated": 0,
+    "projectsOrDraftsCreated": 0,
+    "projectsOrDraftsModified": 0,
+    "publicStateChanges": 0,
+    "registrationStateChanges": 0,
+    "remoteFilesDeletedRenamedReplacedOrVersioned": 0,
+    "viewOnlyLinksCreated": 0,
+    "waterbutlerPutRequests": 0
+  },
+  "protectedAccessCounters": {
+    "authorizationHeaderValuesAccessed": 0,
+    "browserCredentialsExported": 0,
+    "cookiesAccessed": 0,
+    "oauthApplicationsCreated": 0,
+    "personalAccessTokensCreatedOrUsed": 0,
+    "registration63sh5Accesses": 0,
+    "studyModelOrProviderCalls": 0,
+    "studyRolesOrAnalysesExecuted": 0
+  }
+}

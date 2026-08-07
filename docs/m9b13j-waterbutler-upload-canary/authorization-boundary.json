@@ -1,0 +1,30 @@
+{
+  "allowedAndCompleted": {
+    "authenticatedReadOnlyApiInspection": true,
+    "completeUiApiReconciliation": true,
+    "inMemoryUploadRelationInspection": true,
+    "localAuditAppend": true,
+    "localSyntheticArtifactCreation": true
+  },
+  "authorizedButNotPerformedBecausePreflightFailed": {
+    "oneDocumentedWaterbutlerPut": true,
+    "oneSuccessConditionalRedownload": true
+  },
+  "prohibitedAndNotPerformed": {
+    "actualM9bUpload": true,
+    "browserCredentialExport": true,
+    "browserFileSelectionOrDragAndDrop": true,
+    "draftSubmissionApprovalRejectionOrCancellation": true,
+    "m10Start": true,
+    "newProjectDraftOrViewOnlyLinkCreation": true,
+    "oauthApplicationCreation": true,
+    "personalAccessTokenCreationOrUse": true,
+    "pushTagOrPublication": true,
+    "registration63sh5AccessOrMutation": true,
+    "remoteFileDeleteRenameReplaceOrVersion": true,
+    "retry": true,
+    "studyModelOrProviderCall": true,
+    "studyRoleOrAnalysisExecution": true
+  },
+  "protocol": "lachesis-m9b13j-authorization-boundary/1"
+}

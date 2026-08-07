@@ -1,0 +1,10 @@
+{
+  "contentType": null,
+  "error": null,
+  "fileEntity": null,
+  "httpStatus": null,
+  "responseObserved": false,
+  "settlementAmbiguous": false,
+  "transportFailure": false,
+  "whyAbsent": "The preflight capability gate stopped execution before request construction or dispatch."
+}

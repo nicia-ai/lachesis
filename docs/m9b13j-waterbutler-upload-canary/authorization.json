@@ -1,0 +1,19 @@
+{
+  "authorizedEffects": {
+    "documentedWaterbutlerPutMaximum": 1,
+    "successfulCreationRedownloadMaximum": 1,
+    "uploadRetriesMaximum": 0
+  },
+  "existingState": {
+    "draftId": "6a7619b506a607fe5f63a77d",
+    "projectId": "bmsda"
+  },
+  "predecessors": {
+    "m9b13i1Commit": "a61e230c7b72289b024272164dbe6047dd867255",
+    "m9b13i2ChecksumManifestSha256": "a416c32cb900e12f4cd9ef902641f53781ec97cb002c61e6c12605e0b3f30176",
+    "m9b13i2Commit": "80827411ad4d6d2292a4d80dddc48f0f32a807b5",
+    "m9b13i2Tree": "8ad76607247f210628bfaf98041acad78ebef44b"
+  },
+  "protocol": "lachesis-m9b13j-documented-waterbutler-canary-authorization/1",
+  "scope": "one-new-synthetic-waterbutler-put-subject-to-authenticated-page-execution-preflight"
+}

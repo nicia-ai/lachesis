@@ -1,0 +1,66 @@
+{
+  "draft": {
+    "editable": true,
+    "id": "6a7619b506a607fe5f63a77d",
+    "pendingApproval": false,
+    "permissions": ["admin", "write", "read"],
+    "registrationResponseKeyCount": 0,
+    "sourceProjectId": "bmsda",
+    "type": "draft-registrations",
+    "unsubmitted": true
+  },
+  "observations": [
+    {
+      "exactNameSearches": {
+        "CANARY.txt": 0,
+        "OSF-UPLOAD-DIAGNOSTIC-50f335e5df31978707c3f1beb4bd7131.txt": 0,
+        "OSF-WATERBUTLER-CANARY-b84f6e9c88544372b25bc41e2d4782a3.txt": 0
+      },
+      "providerRootArtifactCount": 0,
+      "providerRootPages": 1,
+      "providerRootPaginationComplete": true,
+      "registrations": 0,
+      "uiNameCounts": {
+        "CANARY.txt": 0,
+        "OSF-UPLOAD-DIAGNOSTIC-50f335e5df31978707c3f1beb4bd7131.txt": 0,
+        "OSF-WATERBUTLER-CANARY-b84f6e9c88544372b25bc41e2d4782a3.txt": 0
+      },
+      "viewOnlyLinks": 0
+    },
+    {
+      "exactNameSearches": {
+        "CANARY.txt": 0,
+        "OSF-UPLOAD-DIAGNOSTIC-50f335e5df31978707c3f1beb4bd7131.txt": 0,
+        "OSF-WATERBUTLER-CANARY-b84f6e9c88544372b25bc41e2d4782a3.txt": 0
+      },
+      "providerRootArtifactCount": 0,
+      "providerRootPages": 1,
+      "providerRootPaginationComplete": true,
+      "registrations": 0,
+      "uiNameCounts": {
+        "CANARY.txt": 0,
+        "OSF-UPLOAD-DIAGNOSTIC-50f335e5df31978707c3f1beb4bd7131.txt": 0,
+        "OSF-WATERBUTLER-CANARY-b84f6e9c88544372b25bc41e2d4782a3.txt": 0
+      },
+      "viewOnlyLinks": 0
+    }
+  ],
+  "project": {
+    "id": "bmsda",
+    "private": true
+  },
+  "provider": {
+    "canonicalUploadPathVerified": true,
+    "entityId": "bmsda:osfstorage",
+    "name": "osfstorage",
+    "providerCount": 1,
+    "stableLinkRelationNames": ["new_folder", "storage_addons", "upload"],
+    "uploadRelationExists": true
+  },
+  "ui": {
+    "dialogCount": 0,
+    "fileInputCount": 1,
+    "progressbarCount": 0,
+    "uploadButtonCount": 1
+  }
+}
