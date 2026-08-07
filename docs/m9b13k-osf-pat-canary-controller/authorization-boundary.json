@@ -1,0 +1,29 @@
+{
+  "allowed": [
+    "offline-private-controller-source",
+    "offline-intercepted-fetch-tests",
+    "offline-protocol-and-threat-model",
+    "local-three-commit-sealing"
+  ],
+  "externalEffects": {
+    "credentialAccesses": 0,
+    "networkRequests": 0,
+    "osfMutations": 0,
+    "patCreations": 0,
+    "patRevocations": 0,
+    "waterbutlerRequests": 0
+  },
+  "futureAuthority": "inactive-until-exact-later-user-authorization",
+  "prohibited": [
+    "real-pat-create-access-copy-use-or-revoke",
+    "osf-or-waterbutler-request",
+    "remote-upload-or-download",
+    "project-or-draft-mutation",
+    "registration-63sh5-access",
+    "study-corpus-gold-or-credential-access",
+    "model-or-provider-call",
+    "m10-start",
+    "push-tag-or-publication"
+  ],
+  "scope": "m9b13k-offline-zero-effect-readiness-only"
+}

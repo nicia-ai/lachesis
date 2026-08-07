@@ -1,0 +1,30 @@
+{
+  "attemptCount": 1,
+  "custodianVerification": {
+    "credentialInputPermitted": false,
+    "input": [
+      "activationIdentity",
+      "requestIdentity",
+      "tokenId",
+      "revocationReceiptDigest"
+    ],
+    "reason": "A successfully deleted PAT cannot reliably authenticate its own absence.",
+    "result": ["revoked", "active", "ambiguous"],
+    "separatelyControlled": true
+  },
+  "deadlineMs": 15000,
+  "finallyStyleAttemptRequired": true,
+  "protocol": "lachesis-m9b13k-osf-pat-revocation/1",
+  "request": {
+    "method": "DELETE",
+    "pathTemplate": "/v2/tokens/<bound-token-id>/",
+    "redirectPolicy": "error",
+    "retryCount": 0
+  },
+  "successRequires": "revoked-and-verified",
+  "terminalStates": [
+    "revoked-and-verified",
+    "revocation-failed-security-stop",
+    "revocation-ambiguous-security-stop"
+  ]
+}

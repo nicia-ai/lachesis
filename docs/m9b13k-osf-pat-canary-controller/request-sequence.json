@@ -1,0 +1,37 @@
+{
+  "accounting": {
+    "completeControllerDeadlineMs": 120000,
+    "concurrency": 1,
+    "durableReservationBeforeFirstDispatch": true,
+    "maximumHttpRequestCount": 18,
+    "maximumRequestBodyBytes": 245,
+    "perRequestTimeoutMs": 10000,
+    "redirectPolicy": "error",
+    "retryCount": 0,
+    "terminalRevocationDeadlineMs": 15000
+  },
+  "pagination": {
+    "filesMaximumPages": 4,
+    "filesMaximumRecords": 400,
+    "pageSize": 100,
+    "registrationsMaximumPages": 2,
+    "registrationsMaximumRecords": 100,
+    "viewOnlyLinksMaximumPages": 2,
+    "viewOnlyLinksMaximumRecords": 100
+  },
+  "protocol": "lachesis-m9b13k-osf-pat-canary-request-sequence/1",
+  "steps": [
+    "GET bound token detail and require the supplied token ID and osf.full_write scope",
+    "GET project bmsda and require private identity plus admin/write/read permissions",
+    "GET bounded complete registrations inventory and require zero",
+    "GET bounded complete view-only-link inventory and require zero",
+    "GET bounded complete OSF Storage inventory and require every protected filename absent",
+    "GET bmsda OSF Storage provider root and validate its upload relation",
+    "PUT the exact frozen bytes once with kind=file and the exact frozen filename",
+    "validate exactly one successful Waterbutler file entity",
+    "GET bounded complete post-upload file inventory and require exactly the one new artifact",
+    "GET the returned file download representation exactly once and verify exact bytes",
+    "DELETE or deactivate the exact bound PAT token ID once",
+    "obtain separately controlled custodian verification that the token is absent or inactive"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "byteLength": 245,
+  "filename": "OSF-PAT-WATERBUTLER-CANARY-1fbd9e013ac05f53c411b9e98f507d12.txt",
+  "frozenIdentity": "1fbd9e013ac05f53c411b9e98f507d12",
+  "lineTerminator": "LF",
+  "protocol": "lachesis-m9b13k-osf-pat-canary-synthetic-artifact/1",
+  "scientificOperationalOrProtectedContent": false,
+  "sha256": "4ee4d970eb65bb9b8e525618ba19d4ee28dd2c1a1d0730bd9c4f3ff016134994",
+  "utf8Lines": [
+    "frozen identity: 1fbd9e013ac05f53c411b9e98f507d12",
+    "exact filename: OSF-PAT-WATERBUTLER-CANARY-1fbd9e013ac05f53c411b9e98f507d12.txt",
+    "SYNTHETIC NON-STUDY OSF PAT WATERBUTLER CANARY",
+    "This file contains no scientific, operational or protected content."
+  ]
+}

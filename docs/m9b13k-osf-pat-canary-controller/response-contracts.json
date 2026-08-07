@@ -1,0 +1,24 @@
+{
+  "apiJsonMaximumBytes": 262144,
+  "download": {
+    "acceptedMediaTypes": ["application/octet-stream", "text/plain"],
+    "bodyByteLength": 245,
+    "bodySha256": "4ee4d970eb65bb9b8e525618ba19d4ee28dd2c1a1d0730bd9c4f3ff016134994",
+    "maximumBodyBytes": 245,
+    "redirectPermitted": false,
+    "status": 200
+  },
+  "protocol": "lachesis-m9b13k-waterbutler-response-validation/1",
+  "sanitizedReceiptProtocol": "lachesis-m9b13k-sanitized-transport-receipts/1",
+  "upload": {
+    "exactFilename": "OSF-PAT-WATERBUTLER-CANARY-1fbd9e013ac05f53c411b9e98f507d12.txt",
+    "expectedProvider": "osfstorage",
+    "expectedResource": "bmsda",
+    "expectedStatus": 201,
+    "maximumBodyBytes": 65536,
+    "regularFileKind": true,
+    "stableObjectIdentityRequired": true,
+    "unexpectedSecondEntityPermitted": false
+  },
+  "unexpectedStatePolicy": "reject-with-typed-sanitized-receipt"
+}

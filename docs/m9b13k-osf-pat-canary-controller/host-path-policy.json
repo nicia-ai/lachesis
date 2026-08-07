@@ -1,0 +1,41 @@
+{
+  "apiHost": "api.osf.io",
+  "allowedFileServiceHosts": [
+    "files.osf.io",
+    "files.us.osf.io",
+    "files.eu.osf.io",
+    "files.au.osf.io",
+    "files.ca.osf.io"
+  ],
+  "allowedProvider": "osfstorage",
+  "allowedResource": "bmsda",
+  "completeUrlStorage": "prohibited",
+  "downloadPathTemplate": "/v1/resources/bmsda/providers/osfstorage/<stable-file-id>",
+  "prohibited": [
+    "http",
+    "userinfo",
+    "fragment",
+    "non-default-port",
+    "ip-literal",
+    "localhost",
+    "private-or-link-local-destination",
+    "unicode-host",
+    "punycode-host",
+    "suffix-confusion",
+    "wrong-resource",
+    "wrong-provider",
+    "unverified-upload-relation",
+    "absolute-or-relative-redirect"
+  ],
+  "sanitizedUrlEvidence": {
+    "completeUrlDigestProtocol": "lachesis-m9b13k-complete-url-domain-separated-digest/1",
+    "storedFields": [
+      "scheme",
+      "host",
+      "pathClass",
+      "queryParameterNames",
+      "domainSeparatedCompleteUrlDigest"
+    ]
+  },
+  "uploadPath": "/v1/resources/bmsda/providers/osfstorage/"
+}

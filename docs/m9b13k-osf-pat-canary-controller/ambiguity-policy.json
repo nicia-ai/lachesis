@@ -1,0 +1,22 @@
+{
+  "ambiguousConditions": [
+    "PUT-dispatched-without-proven-terminal-response",
+    "PUT-timeout-after-dispatch",
+    "PUT-transport-interruption-after-dispatch",
+    "malformed-upload-response-after-dispatch",
+    "post-PUT-ledger-persistence-ambiguity",
+    "post-PUT-inventory-failure",
+    "post-PUT-redownload-mismatch",
+    "revocation-dispatched-without-proven-terminal-response",
+    "custodian-revocation-verification-ambiguous"
+  ],
+  "afterAmbiguity": {
+    "anotherPatPermitted": false,
+    "anotherPutPermitted": false,
+    "cleanupAuthorization": "explicit-browser-custodian-only",
+    "projectDraftDisposition": "security-stop-or-quarantine",
+    "redispatchAfterRestartPermitted": false,
+    "retryPermitted": false
+  },
+  "protocol": "lachesis-m9b13k-osf-pat-canary-terminal-reconciliation/1"
+}

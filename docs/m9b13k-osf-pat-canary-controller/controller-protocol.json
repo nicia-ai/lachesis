@@ -1,0 +1,25 @@
+{
+  "concurrency": 1,
+  "controllerProtocol": "lachesis-m9b13k-osf-pat-waterbutler-canary-controller/1",
+  "draftId": "6a7619b506a607fe5f63a77d",
+  "maximumPutCount": 1,
+  "maximumRevocationAttemptCount": 1,
+  "projectId": "bmsda",
+  "protocols": {
+    "activationBinding": "lachesis-m9b13k-osf-pat-canary-activation-binding/1",
+    "credentialCustody": "lachesis-m9b13k-anonymous-fd3-pat-custody/1",
+    "redownloadVerification": "lachesis-m9b13k-osf-pat-canary-redownload-verification/1",
+    "requestSequence": "lachesis-m9b13k-osf-pat-canary-request-sequence/1",
+    "responseValidation": "lachesis-m9b13k-waterbutler-response-validation/1",
+    "revocation": "lachesis-m9b13k-osf-pat-revocation/1",
+    "sanitizedReceipts": "lachesis-m9b13k-sanitized-transport-receipts/1",
+    "syntheticArtifact": "lachesis-m9b13k-osf-pat-canary-synthetic-artifact/1",
+    "terminalReconciliation": "lachesis-m9b13k-osf-pat-canary-terminal-reconciliation/1",
+    "zeroEffectReplay": "lachesis-m9b13k-osf-pat-canary-zero-effect-replay/1"
+  },
+  "provider": "osfstorage",
+  "providerNeutralTransport": true,
+  "publicExportPermitted": false,
+  "retryCount": 0,
+  "scope": "exactly-one-future-synthetic-waterbutler-upload-with-mandatory-terminal-pat-revocation"
+}

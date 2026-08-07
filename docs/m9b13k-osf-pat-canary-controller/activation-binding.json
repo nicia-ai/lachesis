@@ -1,0 +1,27 @@
+{
+  "immutableAfterActivationBegins": true,
+  "protocol": "lachesis-m9b13k-osf-pat-canary-activation-binding/1",
+  "requiredBindings": {
+    "activationIdentity": "fresh-domain-separated-commitment",
+    "controllerProtocol": "lachesis-m9b13k-osf-pat-waterbutler-canary-controller/1",
+    "credentialFingerprint": "domain-separated-sha256-commitment",
+    "draftId": "6a7619b506a607fe5f63a77d",
+    "expectedScope": "osf.full_write",
+    "frozenArtifactSha256": "4ee4d970eb65bb9b8e525618ba19d4ee28dd2c1a1d0730bd9c4f3ff016134994",
+    "ledgerNamespace": "single-durable-cas-namespace",
+    "projectId": "bmsda",
+    "requestIdentity": "fresh-domain-separated-commitment",
+    "requestSequenceProtocol": "lachesis-m9b13k-osf-pat-canary-request-sequence/1",
+    "tokenId": "separately-supplied-non-secret-24-lowercase-hex-identity"
+  },
+  "substitutionAfterStartPermitted": false,
+  "unauthorizedFields": [
+    "pat",
+    "token",
+    "authorizationHeader",
+    "argvCredential",
+    "environmentCredential",
+    "fileCredential",
+    "clipboardCredential"
+  ]
+}
