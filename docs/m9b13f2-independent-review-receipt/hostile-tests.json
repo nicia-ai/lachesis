@@ -1,0 +1,99 @@
+{
+  "protocol": "lachesis-m9b13f2-independent-hostile-test-evidence/1",
+  "mode": "offline-temporary-copy-and-in-memory-mutation",
+  "testCount": 49,
+  "passed": 49,
+  "failed": 0,
+  "categories": [
+    {
+      "name": "accepted-rfc8785-equivalence-and-serialization",
+      "count": 18,
+      "results": [
+        "slash-versus-escaped-slash",
+        "alternate-unicode-escape",
+        "reordered-properties",
+        "whitespace",
+        "decimal-and-exponent-equivalence",
+        "negative-zero",
+        "control-string-escaping",
+        "utf16-property-ordering",
+        "decimal-shortening",
+        "small-decimal-expansion",
+        "exponential-serialization"
+      ]
+    },
+    {
+      "name": "rejected-json-input-domain",
+      "count": 11,
+      "results": [
+        "duplicate-root-key",
+        "duplicate-nested-key",
+        "lone-high-surrogate",
+        "lone-low-surrogate",
+        "nan-token",
+        "infinity-token",
+        "unsafe-positive-integer",
+        "unsafe-negative-integer",
+        "invalid-utf8",
+        "prototype-sensitive-root-key",
+        "prototype-sensitive-nested-key"
+      ]
+    },
+    {
+      "name": "rejected-unsupported-host-values",
+      "count": 9,
+      "results": [
+        "undefined",
+        "bigint",
+        "function",
+        "symbol",
+        "non-json-object",
+        "nan",
+        "positive-infinity",
+        "negative-infinity",
+        "unsafe-host-integer"
+      ]
+    },
+    {
+      "name": "rejected-author-attestation-mutations",
+      "count": 9,
+      "results": [
+        "changed-signed-field",
+        "changed-signing-input-digest",
+        "changed-key-commitment",
+        "changed-spki-digest",
+        "omitted-projection-field",
+        "added-projection-field",
+        "null-projection-field",
+        "malformed-signature-base64",
+        "substituted-signature-bytes"
+      ]
+    },
+    {
+      "name": "rejected-substituted-public-key",
+      "count": 1,
+      "results": [
+        "distinct-valid-ed25519-author-key-substitution"
+      ]
+    },
+    {
+      "name": "rejected-checksum-bound-attestation-mutation",
+      "count": 1,
+      "results": [
+        "altered-attestation-cannot-retain-complete-package-seal"
+      ]
+    }
+  ],
+  "baselineResults": {
+    "authorSignatureVerification": "pass",
+    "all44SupplementChecksums": "pass",
+    "all25JsonCanonicalIdentities": "pass",
+    "all28SubstantiveArtifactsPreserved": "pass"
+  },
+  "effectCounters": {
+    "networkRequests": 0,
+    "privateKeysCreatedOrAccessed": 0,
+    "signaturesCreated": 0,
+    "externalEffects": 0
+  }
+}

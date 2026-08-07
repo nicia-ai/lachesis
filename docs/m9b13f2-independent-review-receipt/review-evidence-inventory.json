@@ -1,0 +1,63 @@
+{
+  "protocol": "lachesis-m9b13f2-independent-review-evidence-inventory/1",
+  "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+  "ordering": "ascending-raw-utf8-normalized-path-bytes",
+  "artifacts": [
+    {
+      "path": "hostile-tests.json",
+      "byteLength": 2586,
+      "mediaType": "application/json",
+      "rawSha256": "a56feaef87bc3ecb0a46f4d5f44d9bd821be70a8ca1dff376920496bd70315cd",
+      "canonicalJsonSha256": "62b99b017715d844709e5426f658ad9a0d9a68b7a061ce3619677c4e41685feb",
+      "classification": "review-test-evidence"
+    },
+    {
+      "path": "independent-identity-reproduction.json",
+      "byteLength": 7012,
+      "mediaType": "application/json",
+      "rawSha256": "5e59c7a21cd5b63b04b85c73e8e130deada9a503d46e3f3fd26e73783ceb1c61",
+      "canonicalJsonSha256": "c4a17609b22a16801da552d3056a11a2959a5b746d71c5571f68ba4375ba163b",
+      "classification": "review-supporting-evidence"
+    },
+    {
+      "path": "limitations.md",
+      "byteLength": 939,
+      "mediaType": "text/markdown",
+      "rawSha256": "3c0e6c1daee4a7c4bfbfe8c363fe4553d434d8e6a12899f4de48487f3d07fa62",
+      "canonicalJsonSha256": null,
+      "classification": "review-narrative"
+    },
+    {
+      "path": "review-narrative.md",
+      "byteLength": 1106,
+      "mediaType": "text/markdown",
+      "rawSha256": "99619407e9d5df6b48bde7d7ec5db948ffa30292735ed467348ef4cfdcb34c6b",
+      "canonicalJsonSha256": null,
+      "classification": "review-narrative"
+    },
+    {
+      "path": "review-record.json",
+      "byteLength": 2305,
+      "mediaType": "application/json",
+      "rawSha256": "80706a115aff3bf5c87b9c9527c5c6073953243930b038cafd30c6a4eb8b47c2",
+      "canonicalJsonSha256": "9a5ed5f8ddf303693559d62a2fd326c2e5cc8d78d5c23a2d6ad63b62b21a5b2c",
+      "classification": "review-record"
+    },
+    {
+      "path": "reviewer-projection-contract.json",
+      "byteLength": 2642,
+      "mediaType": "application/json",
+      "rawSha256": "6969438df0d4de912952962cd982e2bee9f1c44c6116760ab4e8dc86454b0bf2",
+      "canonicalJsonSha256": "8c92deb00042f55447a72fea17b0ebeeb222a2e12d3c252970928854db8219db",
+      "classification": "review-signature-evidence"
+    },
+    {
+      "path": "reviewer-public-key.json",
+      "byteLength": 2600,
+      "mediaType": "application/json",
+      "rawSha256": "1a3f6d4581ea923ebfaa85ee12e4adce8b9e5db1a4ac8a85453162161ec476e1",
+      "canonicalJsonSha256": "6bdcb8e7562f0931bbbc1807ba6f913bd7d72f550b28c16407228f116a788a58",
+      "classification": "review-signature-evidence"
+    }
+  ]
+}

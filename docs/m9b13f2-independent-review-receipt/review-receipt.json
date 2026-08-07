@@ -1,0 +1,219 @@
+{
+  "protocol": "lachesis-m9b13f2-independent-supplement-review-receipt/1",
+  "reviewedSupplement": {
+    "supplementBodyProtocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+    "supplementBodyCanonicalSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+    "bodyPayloadProtocol": "lachesis-m9b13f2-canonical-body-payload-manifest/1",
+    "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73",
+    "packageInventoryProtocol": "lachesis-m9b13f2-complete-package-inventory/1",
+    "packageInventoryCanonicalSha256": "043256e96e733fd5f368b5e4d03beb1f758573961d22b21767156149994317b2",
+    "completePackageManifestProtocol": "lachesis-m9b13f2-complete-package-checksum-manifest/1",
+    "completePackageManifestRawSha256": "76b46920ffd75a387688326d5d572ccc980f2d22d85b921cb6a279c8140c1523",
+    "finalGitCommit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+    "finalGitTree": "fb5f4b29609986f1aee314e6f96c2405f76b199b"
+  },
+  "authorEvidence": {
+    "publicKeyEvidenceProtocol": "lachesis-m9b13f2-supplement-author-public-key/1",
+    "publicKeyIdentity": "lachesis-m9b13f2-supplement-author-ed25519-659988b38d8631ce",
+    "publicKeyCommitment": "sha256:659988b38d8631ce57c4412f63106be40cf659310d5d08ede7e672d9d15309e7",
+    "spkiDerSha256": "ace9c06b550fda72f58feedd443defa5f09db4ed3ee4112c7ced0386caf31dbd",
+    "attestationProtocol": "lachesis-m9b13f2-supplement-author-attestation/1",
+    "attestationRawSha256": "cbb7c32addcd92c93667db7511f60e80201bc05ea240134e8b11cab2c4c189ef",
+    "attestationCanonicalSha256": "d573b033e09a0f7fd038aafcedeb36bc49f3ea2ef0985098aa7e946d4c2a947d",
+    "unsignedProjectionProtocol": "lachesis-m9b13f2-supplement-author-unsigned-projection/1",
+    "signingInputSha256": "fe2126f1e95bc34cd5d03cd56898e5a20aec53534e3d98fb07f551d7a4ebea4b",
+    "signatureBase64": "PbykYXu0DLOCGNZfvTaEk93NqDA/LPhzlKxUxdt+SkJKDShbemfYHddZVSJOJcDosfU+rJM4FStLVrq+sG49CA=="
+  },
+  "reviewerEvidence": {
+    "publicKeyEvidenceProtocol": "lachesis-m9b13f2-independent-reviewer-public-key/1",
+    "publicKeyIdentity": "lachesis-m9b13f2-independent-reviewer-ed25519-17881f6a368bb96d",
+    "publicKeyCommitment": "sha256:17881f6a368bb96d2d753c1ffa411d5c3979e8312635b8906c1b3f20f6ad6d7c",
+    "spkiDerSha256": "6eb6a6ae4a014f49833c2aa327a7264287bcd0f348fbcb7508a8b39683ac87ef"
+  },
+  "reviewEvidenceInventory": {
+    "protocol": "lachesis-m9b13f2-independent-review-evidence-inventory/1",
+    "canonicalSha256": "5d5045970779865af9a1c81a68f963fc4c1645b51b9e7f4b028960fb4ae7f4ba",
+    "artifactCount": 7,
+    "artifacts": [
+      {
+        "path": "hostile-tests.json",
+        "byteLength": 2586,
+        "mediaType": "application/json",
+        "rawSha256": "a56feaef87bc3ecb0a46f4d5f44d9bd821be70a8ca1dff376920496bd70315cd",
+        "canonicalJsonSha256": "62b99b017715d844709e5426f658ad9a0d9a68b7a061ce3619677c4e41685feb",
+        "classification": "review-test-evidence"
+      },
+      {
+        "path": "independent-identity-reproduction.json",
+        "byteLength": 7012,
+        "mediaType": "application/json",
+        "rawSha256": "5e59c7a21cd5b63b04b85c73e8e130deada9a503d46e3f3fd26e73783ceb1c61",
+        "canonicalJsonSha256": "c4a17609b22a16801da552d3056a11a2959a5b746d71c5571f68ba4375ba163b",
+        "classification": "review-supporting-evidence"
+      },
+      {
+        "path": "limitations.md",
+        "byteLength": 939,
+        "mediaType": "text/markdown",
+        "rawSha256": "3c0e6c1daee4a7c4bfbfe8c363fe4553d434d8e6a12899f4de48487f3d07fa62",
+        "canonicalJsonSha256": null,
+        "classification": "review-narrative"
+      },
+      {
+        "path": "review-narrative.md",
+        "byteLength": 1106,
+        "mediaType": "text/markdown",
+        "rawSha256": "99619407e9d5df6b48bde7d7ec5db948ffa30292735ed467348ef4cfdcb34c6b",
+        "canonicalJsonSha256": null,
+        "classification": "review-narrative"
+      },
+      {
+        "path": "review-record.json",
+        "byteLength": 2305,
+        "mediaType": "application/json",
+        "rawSha256": "80706a115aff3bf5c87b9c9527c5c6073953243930b038cafd30c6a4eb8b47c2",
+        "canonicalJsonSha256": "9a5ed5f8ddf303693559d62a2fd326c2e5cc8d78d5c23a2d6ad63b62b21a5b2c",
+        "classification": "review-record"
+      },
+      {
+        "path": "reviewer-projection-contract.json",
+        "byteLength": 2642,
+        "mediaType": "application/json",
+        "rawSha256": "6969438df0d4de912952962cd982e2bee9f1c44c6116760ab4e8dc86454b0bf2",
+        "canonicalJsonSha256": "8c92deb00042f55447a72fea17b0ebeeb222a2e12d3c252970928854db8219db",
+        "classification": "review-signature-evidence"
+      },
+      {
+        "path": "reviewer-public-key.json",
+        "byteLength": 2600,
+        "mediaType": "application/json",
+        "rawSha256": "1a3f6d4581ea923ebfaa85ee12e4adce8b9e5db1a4ac8a85453162161ec476e1",
+        "canonicalJsonSha256": "6bdcb8e7562f0931bbbc1807ba6f913bd7d72f550b28c16407228f116a788a58",
+        "classification": "review-signature-evidence"
+      }
+    ]
+  },
+  "decision": {
+    "exactDecision": "m9b13f2-corrected-minimal-operational-supplement-review-pass"
+  },
+  "authorityBoundary": {
+    "reviewPassGrantsSubmissionAuthority": false,
+    "reviewPassGrantsOperationalAuthority": false,
+    "separateSubmissionAuthorizationRequired": true,
+    "exactStatement": "Independent review confirms the reviewed supplement bytes only. A review pass does not authorize external submission, approval, publication, embargo change, or any study operation."
+  },
+  "reviewerUnsignedProjection": {
+    "protocol": "lachesis-m9b13f2-independent-reviewer-unsigned-projection/1",
+    "receiptProtocol": "lachesis-m9b13f2-independent-supplement-review-receipt/1",
+    "reviewedSupplement": {
+      "supplementBodyProtocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+      "supplementBodyCanonicalSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+      "bodyPayloadProtocol": "lachesis-m9b13f2-canonical-body-payload-manifest/1",
+      "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73",
+      "packageInventoryProtocol": "lachesis-m9b13f2-complete-package-inventory/1",
+      "packageInventoryCanonicalSha256": "043256e96e733fd5f368b5e4d03beb1f758573961d22b21767156149994317b2",
+      "completePackageManifestProtocol": "lachesis-m9b13f2-complete-package-checksum-manifest/1",
+      "completePackageManifestRawSha256": "76b46920ffd75a387688326d5d572ccc980f2d22d85b921cb6a279c8140c1523",
+      "finalGitCommit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+      "finalGitTree": "fb5f4b29609986f1aee314e6f96c2405f76b199b"
+    },
+    "authorEvidence": {
+      "publicKeyEvidenceProtocol": "lachesis-m9b13f2-supplement-author-public-key/1",
+      "publicKeyIdentity": "lachesis-m9b13f2-supplement-author-ed25519-659988b38d8631ce",
+      "publicKeyCommitment": "sha256:659988b38d8631ce57c4412f63106be40cf659310d5d08ede7e672d9d15309e7",
+      "spkiDerSha256": "ace9c06b550fda72f58feedd443defa5f09db4ed3ee4112c7ced0386caf31dbd",
+      "attestationProtocol": "lachesis-m9b13f2-supplement-author-attestation/1",
+      "attestationRawSha256": "cbb7c32addcd92c93667db7511f60e80201bc05ea240134e8b11cab2c4c189ef",
+      "attestationCanonicalSha256": "d573b033e09a0f7fd038aafcedeb36bc49f3ea2ef0985098aa7e946d4c2a947d",
+      "unsignedProjectionProtocol": "lachesis-m9b13f2-supplement-author-unsigned-projection/1",
+      "signingInputSha256": "fe2126f1e95bc34cd5d03cd56898e5a20aec53534e3d98fb07f551d7a4ebea4b",
+      "signatureBase64": "PbykYXu0DLOCGNZfvTaEk93NqDA/LPhzlKxUxdt+SkJKDShbemfYHddZVSJOJcDosfU+rJM4FStLVrq+sG49CA=="
+    },
+    "reviewerEvidence": {
+      "publicKeyEvidenceProtocol": "lachesis-m9b13f2-independent-reviewer-public-key/1",
+      "publicKeyIdentity": "lachesis-m9b13f2-independent-reviewer-ed25519-17881f6a368bb96d",
+      "publicKeyCommitment": "sha256:17881f6a368bb96d2d753c1ffa411d5c3979e8312635b8906c1b3f20f6ad6d7c",
+      "spkiDerSha256": "6eb6a6ae4a014f49833c2aa327a7264287bcd0f348fbcb7508a8b39683ac87ef"
+    },
+    "reviewEvidenceInventory": {
+      "protocol": "lachesis-m9b13f2-independent-review-evidence-inventory/1",
+      "canonicalSha256": "5d5045970779865af9a1c81a68f963fc4c1645b51b9e7f4b028960fb4ae7f4ba",
+      "artifactCount": 7,
+      "artifacts": [
+        {
+          "path": "hostile-tests.json",
+          "byteLength": 2586,
+          "mediaType": "application/json",
+          "rawSha256": "a56feaef87bc3ecb0a46f4d5f44d9bd821be70a8ca1dff376920496bd70315cd",
+          "canonicalJsonSha256": "62b99b017715d844709e5426f658ad9a0d9a68b7a061ce3619677c4e41685feb",
+          "classification": "review-test-evidence"
+        },
+        {
+          "path": "independent-identity-reproduction.json",
+          "byteLength": 7012,
+          "mediaType": "application/json",
+          "rawSha256": "5e59c7a21cd5b63b04b85c73e8e130deada9a503d46e3f3fd26e73783ceb1c61",
+          "canonicalJsonSha256": "c4a17609b22a16801da552d3056a11a2959a5b746d71c5571f68ba4375ba163b",
+          "classification": "review-supporting-evidence"
+        },
+        {
+          "path": "limitations.md",
+          "byteLength": 939,
+          "mediaType": "text/markdown",
+          "rawSha256": "3c0e6c1daee4a7c4bfbfe8c363fe4553d434d8e6a12899f4de48487f3d07fa62",
+          "canonicalJsonSha256": null,
+          "classification": "review-narrative"
+        },
+        {
+          "path": "review-narrative.md",
+          "byteLength": 1106,
+          "mediaType": "text/markdown",
+          "rawSha256": "99619407e9d5df6b48bde7d7ec5db948ffa30292735ed467348ef4cfdcb34c6b",
+          "canonicalJsonSha256": null,
+          "classification": "review-narrative"
+        },
+        {
+          "path": "review-record.json",
+          "byteLength": 2305,
+          "mediaType": "application/json",
+          "rawSha256": "80706a115aff3bf5c87b9c9527c5c6073953243930b038cafd30c6a4eb8b47c2",
+          "canonicalJsonSha256": "9a5ed5f8ddf303693559d62a2fd326c2e5cc8d78d5c23a2d6ad63b62b21a5b2c",
+          "classification": "review-record"
+        },
+        {
+          "path": "reviewer-projection-contract.json",
+          "byteLength": 2642,
+          "mediaType": "application/json",
+          "rawSha256": "6969438df0d4de912952962cd982e2bee9f1c44c6116760ab4e8dc86454b0bf2",
+          "canonicalJsonSha256": "8c92deb00042f55447a72fea17b0ebeeb222a2e12d3c252970928854db8219db",
+          "classification": "review-signature-evidence"
+        },
+        {
+          "path": "reviewer-public-key.json",
+          "byteLength": 2600,
+          "mediaType": "application/json",
+          "rawSha256": "1a3f6d4581ea923ebfaa85ee12e4adce8b9e5db1a4ac8a85453162161ec476e1",
+          "canonicalJsonSha256": "6bdcb8e7562f0931bbbc1807ba6f913bd7d72f550b28c16407228f116a788a58",
+          "classification": "review-signature-evidence"
+        }
+      ]
+    },
+    "decision": {
+      "exactDecision": "m9b13f2-corrected-minimal-operational-supplement-review-pass"
+    },
+    "authorityBoundary": {
+      "reviewPassGrantsSubmissionAuthority": false,
+      "reviewPassGrantsOperationalAuthority": false,
+      "separateSubmissionAuthorizationRequired": true,
+      "exactStatement": "Independent review confirms the reviewed supplement bytes only. A review pass does not authorize external submission, approval, publication, embargo change, or any study operation."
+    }
+  },
+  "reviewerSignatureEnvelope": {
+    "protocol": "lachesis-m9b13f2-independent-reviewer-signature-envelope/1",
+    "algorithm": "Ed25519",
+    "unsignedProjectionProtocol": "lachesis-m9b13f2-independent-reviewer-unsigned-projection/1",
+    "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+    "signingInputSha256": "34c0f037fff328effa2c75c4621f640157cc9399f125062740c2a7edf879f28b",
+    "signatureBase64": "FNbQ4uUmX4XtObFWTbrWxWW7W+PF/jSqyPjCNmHId0GpvZTuK1yJ75OiwTYvhiULRowO3ogsqvKJJo6kqgiiDA=="
+  }
+}

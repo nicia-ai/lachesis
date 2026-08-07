@@ -1,0 +1,107 @@
+{
+  "protocol": "lachesis-m9b13f2-signed-independent-review-receipt-verification/1",
+  "performedOffline": true,
+  "verificationScope": "pinned-supplement-git-objects-and-exact-review-receipt-allowlist",
+  "reviewedSupplement": {
+    "commit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+    "tree": "fb5f4b29609986f1aee314e6f96c2405f76b199b",
+    "parent": "6fd14342f92b3ecc94ffab72542884cc55560d2c",
+    "substantiveFilesPreserved": 28,
+    "completeFilesPreserved": 45
+  },
+  "reviewerCeremony": {
+    "authorizationPresent": true,
+    "keypairsGenerated": 1,
+    "reviewerSignaturesCreated": 1,
+    "backupKeysGenerated": 0,
+    "replacementKeysGenerated": 0,
+    "networkRequests": 0,
+    "privateNamespaceOutsideRepository": true,
+    "privateNamespaceMode": "0700",
+    "privateKeyMode": "0600",
+    "privateKeyBytesRecorded": false,
+    "privateNamespaceLocatorRecorded": false,
+    "authorPrivateKeyAccesses": 0,
+    "publicEvidenceOnlyExported": true
+  },
+  "reviewerEvidence": {
+    "protocol": "lachesis-m9b13f2-independent-reviewer-public-key/1",
+    "publicKeyIdentity": "lachesis-m9b13f2-independent-reviewer-ed25519-17881f6a368bb96d",
+    "commitment": "sha256:17881f6a368bb96d2d753c1ffa411d5c3979e8312635b8906c1b3f20f6ad6d7c",
+    "spkiDerSha256": "6eb6a6ae4a014f49833c2aa327a7264287bcd0f348fbcb7508a8b39683ac87ef",
+    "rawPublicKeySha256": "7124ce42ebd3d87fac721640ded6cdb8bc1c4aeab85ed1b69d7ff77921582d19",
+    "evidenceRawSha256": "1a3f6d4581ea923ebfaa85ee12e4adce8b9e5db1a4ac8a85453162161ec476e1",
+    "evidenceCanonicalSha256": "6bdcb8e7562f0931bbbc1807ba6f913bd7d72f550b28c16407228f116a788a58",
+    "distinctFromAuthorCommitment": true,
+    "distinctFromAuthorSpkiDer": true,
+    "exactLimitation": "Distinct cryptographic principals do not by themselves prove distinct natural persons."
+  },
+  "reviewEvidence": {
+    "inventoryProtocol": "lachesis-m9b13f2-independent-review-evidence-inventory/1",
+    "inventoryRawSha256": "5f85025017db2b1d710333e4604e38a0e81af44e676f2899b538d83bc358ccfc",
+    "inventoryCanonicalSha256": "5d5045970779865af9a1c81a68f963fc4c1645b51b9e7f4b028960fb4ae7f4ba",
+    "artifactCount": 7,
+    "allArtifactRawAndCanonicalIdentitiesReproduced": true,
+    "missingExtraDuplicateAliasOrReorderedArtifacts": 0
+  },
+  "receipt": {
+    "protocol": "lachesis-m9b13f2-independent-supplement-review-receipt/1",
+    "unsignedProjectionProtocol": "lachesis-m9b13f2-independent-reviewer-unsigned-projection/1",
+    "projectionContractProtocol": "lachesis-m9b13f2-independent-reviewer-projection-contract/1",
+    "projectionContractRawSha256": "6969438df0d4de912952962cd982e2bee9f1c44c6116760ab4e8dc86454b0bf2",
+    "projectionContractCanonicalSha256": "8c92deb00042f55447a72fea17b0ebeeb222a2e12d3c252970928854db8219db",
+    "projectionCanonicalSha256": "34c0f037fff328effa2c75c4621f640157cc9399f125062740c2a7edf879f28b",
+    "signingInputSha256": "34c0f037fff328effa2c75c4621f640157cc9399f125062740c2a7edf879f28b",
+    "signatureVerification": "pass",
+    "rawSha256": "f7bf3e1eac3c8557991194573d9aeaec4f4b37f1618007f0d7fe1f158b328df4",
+    "canonicalSha256": "286c9f1ef0897719853b713253f8cf0d0bbe2a743a882bd5517c6abca5ae3b8b"
+  },
+  "results": {
+    "exactFrozenReceiptSchema": "pass",
+    "schemaFixedReviewerProjection": "pass",
+    "duplicateKeyAndRfc8785Contract": "pass",
+    "authorSignatureReverification": "pass",
+    "reviewerSignatureIndependentVerification": "pass",
+    "reviewerAuthorCryptographicSeparation": "pass",
+    "supplementPredecessorPreservation": "pass",
+    "reviewEvidenceInventory": "pass",
+    "acyclicDigestConstruction": "pass",
+    "historicalInventory17Entries": "pass",
+    "registrationReceipt27Files": "pass",
+    "scientificFinancialProjection18Fields": "pass",
+    "exactNewAllowlistSecretScan": "pass",
+    "prohibitedEffectCounters": "pass"
+  },
+  "checksumPolicy": {
+    "protocol": "lachesis-m9b13f2-independent-review-receipt-checksum-manifest/1",
+    "manifest": "CHECKSUMS.sha256",
+    "receiptPackageFileCount": 12,
+    "checksumEntryCount": 11,
+    "manifestHashesItself": false,
+    "everyOtherReceiptPackageFileHasExactlyOneEntry": true
+  },
+  "decision": {
+    "exactDecision": "m9b13f2-corrected-minimal-operational-supplement-review-pass",
+    "signedReceiptReadyForIndependentReview": true,
+    "submissionAuthorityPresent": false,
+    "operationalAuthorityPresent": false,
+    "m9bDecision": "m9b13-materialization-readiness-no-go"
+  },
+  "effectCounters": {
+    "networkRequests": 0,
+    "osfReads": 0,
+    "osfWrites": 0,
+    "submissions": 0,
+    "publications": 0,
+    "tagsCreated": 0,
+    "pushes": 0,
+    "credentialAccesses": 0,
+    "dependenciesAcquired": 0,
+    "corpusMaterialsAcquired": 0,
+    "providerModelCalls": 0,
+    "studyRolesExecuted": 0,
+    "analysesExecuted": 0,
+    "authorPrivateKeyAccesses": 0,
+    "m10Work": 0
+  }
+}

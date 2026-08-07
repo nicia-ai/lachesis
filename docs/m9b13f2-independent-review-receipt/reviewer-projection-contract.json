@@ -1,0 +1,82 @@
+{
+  "protocol": "lachesis-m9b13f2-independent-reviewer-projection-contract/1",
+  "receiptProtocol": "lachesis-m9b13f2-independent-supplement-review-receipt/1",
+  "unsignedProjectionProtocol": "lachesis-m9b13f2-independent-reviewer-unsigned-projection/1",
+  "signatureEnvelopeProtocol": "lachesis-m9b13f2-independent-reviewer-signature-envelope/1",
+  "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+  "unsignedProjectionSchema": {
+    "topLevelFieldsExactly": [
+      "protocol",
+      "receiptProtocol",
+      "reviewedSupplement",
+      "authorEvidence",
+      "reviewerEvidence",
+      "reviewEvidenceInventory",
+      "decision",
+      "authorityBoundary"
+    ],
+    "nestedFieldsExactly": {
+      "/reviewedSupplement": [
+        "supplementBodyProtocol",
+        "supplementBodyCanonicalSha256",
+        "bodyPayloadProtocol",
+        "bodyPayloadRawSha256",
+        "packageInventoryProtocol",
+        "packageInventoryCanonicalSha256",
+        "completePackageManifestProtocol",
+        "completePackageManifestRawSha256",
+        "finalGitCommit",
+        "finalGitTree"
+      ],
+      "/authorEvidence": [
+        "publicKeyEvidenceProtocol",
+        "publicKeyIdentity",
+        "publicKeyCommitment",
+        "spkiDerSha256",
+        "attestationProtocol",
+        "attestationRawSha256",
+        "attestationCanonicalSha256",
+        "unsignedProjectionProtocol",
+        "signingInputSha256",
+        "signatureBase64"
+      ],
+      "/reviewerEvidence": [
+        "publicKeyEvidenceProtocol",
+        "publicKeyIdentity",
+        "publicKeyCommitment",
+        "spkiDerSha256"
+      ],
+      "/reviewEvidenceInventory": [
+        "protocol",
+        "canonicalSha256",
+        "artifactCount",
+        "artifacts"
+      ],
+      "/decision": [
+        "exactDecision"
+      ],
+      "/authorityBoundary": [
+        "reviewPassGrantsSubmissionAuthority",
+        "reviewPassGrantsOperationalAuthority",
+        "separateSubmissionAuthorizationRequired",
+        "exactStatement"
+      ]
+    },
+    "additionalFieldsPermitted": false,
+    "callerSelectedSubsetsPermitted": false,
+    "excludedFieldsAreAbsentNotNull": true,
+    "signatureEnvelopeExcluded": true,
+    "signatureDerivedValuesExcluded": true
+  },
+  "signatureEnvelopeFieldsExactly": [
+    "protocol",
+    "algorithm",
+    "unsignedProjectionProtocol",
+    "canonicalizationProtocol",
+    "signingInputSha256",
+    "signatureBase64"
+  ],
+  "signingBytesDefinition": "UTF8(RFC8785(reviewerUnsignedProjection))",
+  "signingInputDigestDefinition": "SHA-256(UTF8(RFC8785(reviewerUnsignedProjection)))",
+  "signatureAlgorithm": "Ed25519"
+}

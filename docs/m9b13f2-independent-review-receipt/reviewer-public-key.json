@@ -1,0 +1,47 @@
+{
+  "protocol": "lachesis-m9b13f2-independent-reviewer-public-key/1",
+  "purpose": "M9b.13f.2 independent-review receipt only",
+  "algorithm": "Ed25519",
+  "publicKeyEncoding": "RFC 8410 SubjectPublicKeyInfo DER",
+  "publicKeyIdentity": "lachesis-m9b13f2-independent-reviewer-ed25519-17881f6a368bb96d",
+  "ceremonyIdentity": "lachesis-m9b13f2-independent-reviewer-key-ceremony-17881f6a368bb96d",
+  "spkiDerByteLength": 44,
+  "spkiDerBase64": "MCowBQYDK2VwAyEAyHqrg8ks5ABzye7HJ2hYqDV9YZHNJEuP8GYRB/lC4Lk=",
+  "spkiDerSha256": "6eb6a6ae4a014f49833c2aa327a7264287bcd0f348fbcb7508a8b39683ac87ef",
+  "rawPublicKeyBase64": "yHqrg8ks5ABzye7HJ2hYqDV9YZHNJEuP8GYRB/lC4Lk=",
+  "rawPublicKeySha256": "7124ce42ebd3d87fac721640ded6cdb8bc1c4aeab85ed1b69d7ff77921582d19",
+  "reviewerCommitment": "sha256:17881f6a368bb96d2d753c1ffa411d5c3979e8312635b8906c1b3f20f6ad6d7c",
+  "commitmentConstruction": {
+    "digest": "SHA-256",
+    "domain": "lachesis-m9b13f2-independent-reviewer/1",
+    "framing": "uint64-big-endian-domain-byte-length || domain-utf8 || uint64-big-endian-spki-byte-length || canonical-spki-der"
+  },
+  "authorSeparation": {
+    "authorPublicKeyIdentity": "lachesis-m9b13f2-supplement-author-ed25519-659988b38d8631ce",
+    "authorCommitment": "sha256:659988b38d8631ce57c4412f63106be40cf659310d5d08ede7e672d9d15309e7",
+    "authorSpkiDerSha256": "ace9c06b550fda72f58feedd443defa5f09db4ed3ee4112c7ced0386caf31dbd",
+    "commitmentDistinct": true,
+    "spkiDerDistinct": true,
+    "exactLimitation": "Distinct cryptographic principals do not by themselves prove distinct natural persons."
+  },
+  "ceremony": {
+    "randomness": "operating-system-cryptographic-randomness",
+    "keypairsGenerated": 1,
+    "replacementKeysGenerated": 0,
+    "backupKeysGenerated": 0,
+    "reviewerSignaturesCreated": 1,
+    "networkUsed": false,
+    "privateNamespaceOutsideRepository": true,
+    "privateNamespaceMode": "0700",
+    "privateKeyMode": "0600",
+    "privateOpeningRetained": true,
+    "privateKeyBytesRecorded": false,
+    "privateNamespaceLocatorRecorded": false,
+    "authorPrivateKeyAccessed": false
+  },
+  "custodyCommitment": "The single reviewer private Ed25519 opening is retained outside the repository under mode-0700 namespace and mode-0600 key custody; it is purpose-limited to the M9b.13f.2 independent-review receipt and was neither copied nor disclosed.",
+  "limitations": [
+    "The signature proves control of the corresponding private key at signing time only.",
+    "It does not prove human identity, natural-person separation, ongoing custody, destruction, or absence of backups."
+  ]
+}
