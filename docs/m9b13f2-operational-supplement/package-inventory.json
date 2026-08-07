@@ -1,0 +1,242 @@
+{
+  "protocol": "lachesis-m9b13f2-complete-package-inventory/1",
+  "ordering": "ascending-raw-utf8-path-bytes",
+  "packageFileCount": 45,
+  "substantiveBodyPayloadFileCount": 28,
+  "pathsNormalizedRelativeUnique": true,
+  "symlinksPermitted": false,
+  "hiddenFilesPermitted": false,
+  "entries": [
+    {
+      "path": "BODY-PAYLOAD.json",
+      "layer": "body-payload-manifest",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "CHECKSUMS.sha256",
+      "layer": "general-non-self-referential-checksum-manifest",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "UNSIGNED-STATUS.md",
+      "layer": "frozen-unsigned-predecessor-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "author-attestation-projection.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "author-attestation-projection.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "author-attestation.json",
+      "layer": "author-attestation",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "author-ceremony-request.json",
+      "layer": "frozen-unsigned-predecessor-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "author-public-key.json",
+      "layer": "author-public-key-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "authority-boundary.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "authority-boundary.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "body-identity.json",
+      "layer": "body-identity",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "canonicalization-test-vectors.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "canonicalization.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "canonicalization.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "changed-artifacts.md",
+      "layer": "frozen-unsigned-predecessor-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "external-mechanism-requirements.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "external-mechanism-requirements.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "future-readiness-requirements.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "future-readiness-requirements.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "future-review-receipt-schema.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "future-review-receipt-schema.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "historical-no-go-inventory.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "historical-no-go-inventory.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "independent-rederivation.json",
+      "layer": "verification-and-seal-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "independent-rederivation.md",
+      "layer": "verification-and-seal-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "nonclaims.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "package-inventory.json",
+      "layer": "complete-package-inventory",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "protocol-supersession.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "protocol-supersession.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "registration-binding.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "registration-binding.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "review-evidence-inventory-schema.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "review-evidence-inventory-schema.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "review-submission-boundary.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "review-submission-boundary.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "scientific-financial-invariance.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "scientific-financial-invariance.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "supplement-body.json",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "supplement-body.md",
+      "layer": "substantive-body-payload",
+      "substantiveBodyPayload": true
+    },
+    {
+      "path": "unsigned-body-identity.json",
+      "layer": "frozen-unsigned-predecessor-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "unsigned-hostile-tests.json",
+      "layer": "frozen-unsigned-predecessor-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "unsigned-verification.json",
+      "layer": "frozen-unsigned-predecessor-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "unsigned-verification.md",
+      "layer": "frozen-unsigned-predecessor-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "verification.json",
+      "layer": "verification-and-seal-evidence",
+      "substantiveBodyPayload": false
+    },
+    {
+      "path": "verification.md",
+      "layer": "verification-and-seal-evidence",
+      "substantiveBodyPayload": false
+    }
+  ],
+  "checksumPolicy": {
+    "protocol": "lachesis-m9b13f2-complete-package-checksum-manifest/1",
+    "manifest": "CHECKSUMS.sha256",
+    "manifestHashesItself": false,
+    "everyOtherPackageFileHasExactlyOneEntry": true
+  }
+}

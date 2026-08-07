@@ -1,0 +1,46 @@
+{
+  "protocol": "lachesis-m9b13f2-supplement-author-attestation/1",
+  "unsignedProjection": {
+    "protocol": "lachesis-m9b13f2-supplement-author-unsigned-projection/1",
+    "authorPublicKeyEvidence": {
+      "protocol": "lachesis-m9b13f2-supplement-author-public-key/1",
+      "publicKeyIdentity": "lachesis-m9b13f2-supplement-author-ed25519-659988b38d8631ce",
+      "authorCommitment": "sha256:659988b38d8631ce57c4412f63106be40cf659310d5d08ede7e672d9d15309e7",
+      "spkiDerSha256": "ace9c06b550fda72f58feedd443defa5f09db4ed3ee4112c7ced0386caf31dbd",
+      "rawPublicKeySha256": "d7b4f776503646e53e8728b937e78c0af1b4c883d221c3a1e6036bcea5636691",
+      "evidenceRawSha256": "732e9eaeacdfdebfcd58b27c22655cf47177985d89c211a002788b35d9507d92",
+      "evidenceCanonicalSha256": "fd36cf814ccf2a75e53fb4d3ccce538baa34a4af3a44b89b86f38f167cfe1270"
+    },
+    "supplementBody": {
+      "protocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+      "bodyDigestSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+      "bodyPayloadProtocol": "lachesis-m9b13f2-canonical-body-payload-manifest/1",
+      "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73"
+    },
+    "registration": {
+      "id": "63sh5",
+      "embargoEnd": "2030-08-01T00:00:00Z",
+      "preregistrationSha256": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+      "manifestSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+      "receiptSha256": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+    },
+    "scientificFinancialProjectionSha256": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+    "prospectiveStatus": "awaiting-external-independent-review",
+    "authorityBoundary": {
+      "reviewPassGrantsSubmissionAuthority": false,
+      "separateSubmissionAuthorizationRequired": true,
+      "supplementSubmissionAuthorityCurrentlyPresent": false,
+      "noSubmissionAuthorityStatement": "Independent review confirms the reviewed supplement bytes only. A review pass does not authorize external submission, approval, publication, embargo change, or any study operation."
+    },
+    "ceremonySequence": 1,
+    "finalGitBindingPolicy": "The later independent review receipt binds the final reviewed Git commit and tree; the author signature binds the exact frozen body and author public-key evidence without a commit/signature cycle."
+  },
+  "signatureEnvelope": {
+    "protocol": "lachesis-m9b13f2-supplement-author-signature-envelope/1",
+    "algorithm": "Ed25519",
+    "unsignedProjectionProtocol": "lachesis-m9b13f2-supplement-author-unsigned-projection/1",
+    "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+    "signingInputSha256": "fe2126f1e95bc34cd5d03cd56898e5a20aec53534e3d98fb07f551d7a4ebea4b",
+    "valueBase64": "PbykYXu0DLOCGNZfvTaEk93NqDA/LPhzlKxUxdt+SkJKDShbemfYHddZVSJOJcDosfU+rJM4FStLVrq+sG49CA=="
+  }
+}

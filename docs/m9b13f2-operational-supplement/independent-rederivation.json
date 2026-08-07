@@ -1,0 +1,83 @@
+{
+  "protocol": "lachesis-m9b13f2-independent-rederivation/1",
+  "scope": "offline-local-public-evidence-only",
+  "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+  "results": {
+    "strictJsonAndDuplicateKeyValidation": "pass",
+    "substantivePayloadInventoryReproduction": "pass",
+    "allSubstantiveRawIdentitiesReproduction": "pass",
+    "allSubstantiveCanonicalJsonIdentitiesReproduction": "pass",
+    "bodyPayloadRawIdentityReproduction": "pass",
+    "bodyCanonicalIdentityReproduction": "pass",
+    "authorPublicKeyRfc8410SpkiReproduction": "pass",
+    "authorPublicKeyIdentityReproduction": "pass",
+    "authorCommitmentReproduction": "pass",
+    "authorPublicEvidenceRawAndCanonicalIdentityReproduction": "pass",
+    "exactUnsignedProjectionSchemaValidation": "pass",
+    "unsignedProjectionCanonicalIdentityReproduction": "pass",
+    "signingInputIdentityReproduction": "pass",
+    "authorSignatureVerificationFromExportedPublicKey": "pass",
+    "authorAttestationRawAndCanonicalIdentityReproduction": "pass",
+    "bodyIdentityReproduction": "pass",
+    "completePackageInventoryReproduction": "pass",
+    "predecessorPreservation": "pass",
+    "registrationIdentityPreservation": "pass",
+    "scientificFinancialIdentityPreservation": "pass",
+    "prospectiveOnlyAndNonauthorizingStatus": "pass"
+  },
+  "identities": {
+    "bodyDigestSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+    "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73",
+    "authorPublicKeyEvidenceRawSha256": "732e9eaeacdfdebfcd58b27c22655cf47177985d89c211a002788b35d9507d92",
+    "authorPublicKeyEvidenceCanonicalSha256": "fd36cf814ccf2a75e53fb4d3ccce538baa34a4af3a44b89b86f38f167cfe1270",
+    "authorPublicKeySpkiDerSha256": "ace9c06b550fda72f58feedd443defa5f09db4ed3ee4112c7ced0386caf31dbd",
+    "authorUnsignedProjectionCanonicalSha256": "fe2126f1e95bc34cd5d03cd56898e5a20aec53534e3d98fb07f551d7a4ebea4b",
+    "signingInputSha256": "fe2126f1e95bc34cd5d03cd56898e5a20aec53534e3d98fb07f551d7a4ebea4b",
+    "authorAttestationRawSha256": "cbb7c32addcd92c93667db7511f60e80201bc05ea240134e8b11cab2c4c189ef",
+    "authorAttestationCanonicalSha256": "d573b033e09a0f7fd038aafcedeb36bc49f3ea2ef0985098aa7e946d4c2a947d",
+    "bodyIdentityRawSha256": "a75e3f0bbc85438040f1ae90dbc1615bc8ef143c5b76a9cf986c42cb8ac65165",
+    "bodyIdentityCanonicalSha256": "51c04ccc3592411c0f794909c95888bd28c73e5499d761a1decfe5c4113940cc",
+    "packageInventoryCanonicalSha256": "043256e96e733fd5f368b5e4d03beb1f758573961d22b21767156149994317b2"
+  },
+  "predecessor": {
+    "unsignedCommit": "6fd14342f92b3ecc94ffab72542884cc55560d2c",
+    "unsignedTree": "3b51f71be773e8eeb3ff6446bdc8d5764caa4762",
+    "substantivePayloadFilesExpected": 28,
+    "substantivePayloadFilesChanged": 0
+  },
+  "unchangedExternalIdentities": {
+    "registrationId": "63sh5",
+    "preregistrationSha256": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "registrationManifestSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "registrationReceiptSha256": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+    "scientificFinancialProjectionSha256": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282"
+  },
+  "inventoryCounts": {
+    "substantivePayloadFiles": 28,
+    "completePackageFiles": 45,
+    "checksumEntries": 44
+  },
+  "effectCounters": {
+    "networkRequests": 0,
+    "osfReads": 0,
+    "osfWrites": 0,
+    "submissions": 0,
+    "publications": 0,
+    "tagsCreated": 0,
+    "pushes": 0,
+    "credentialAccesses": 0,
+    "dependenciesAcquired": 0,
+    "corpusMaterialsAcquired": 0,
+    "providerModelCalls": 0,
+    "studyRolesExecuted": 0,
+    "analysesExecuted": 0,
+    "reviewerKeysCreated": 0,
+    "reviewReceiptsCreated": 0
+  },
+  "decisionBoundary": {
+    "readyForExternalIndependentReview": true,
+    "independentReviewPassageClaimed": false,
+    "submissionAuthorityPresent": false,
+    "m9bDecision": "m9b13-materialization-readiness-no-go"
+  }
+}

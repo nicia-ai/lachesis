@@ -1,0 +1,70 @@
+{
+  "protocol": "lachesis-m9b13f2-sealing-verification/1",
+  "performedOffline": true,
+  "networkRequests": 0,
+  "verificationScope": "exact-m9b13f2-file-allowlist",
+  "authorCeremony": {
+    "authorizationPresent": true,
+    "keypairsGenerated": 1,
+    "authorSignaturesCreated": 1,
+    "backupKeysGenerated": 0,
+    "replacementKeysGenerated": 0,
+    "privateNamespaceOutsideRepository": true,
+    "privateNamespaceMode": "0700",
+    "privateKeyMode": "0600",
+    "privateKeyBytesRecorded": false,
+    "privateNamespaceLocatorRecorded": false,
+    "publicEvidenceOnlyExported": true
+  },
+  "protocols": {
+    "body": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+    "bodyPayload": "lachesis-m9b13f2-canonical-body-payload-manifest/1",
+    "canonicalization": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+    "authorPublicKeyEvidence": "lachesis-m9b13f2-supplement-author-public-key/1",
+    "authorUnsignedProjection": "lachesis-m9b13f2-supplement-author-unsigned-projection/1",
+    "authorAttestation": "lachesis-m9b13f2-supplement-author-attestation/1",
+    "packageInventory": "lachesis-m9b13f2-complete-package-inventory/1",
+    "checksumManifest": "lachesis-m9b13f2-complete-package-checksum-manifest/1"
+  },
+  "results": {
+    "frozenUnsignedCommitAndTree": "pass",
+    "all28SubstantiveArtifactsBytePreservation": "pass",
+    "all28RawIdentities": "pass",
+    "allJsonRfc8785Identities": "pass",
+    "bodyPayloadRawDigest": "pass",
+    "bodyCanonicalDigest": "pass",
+    "exactUnsignedProjectionSchema": "pass",
+    "signingInputDigest": "pass",
+    "canonicalRfc8410Spki": "pass",
+    "publicKeyIdentityAndCommitment": "pass",
+    "authorSignatureFromExportedPublicKey": "pass",
+    "authorAttestationRawAndCanonicalDigests": "pass",
+    "bodyIdentity": "pass",
+    "packageInventory": "pass",
+    "registrationAndScientificFinancialPreservation": "pass",
+    "prospectiveOnlyNonauthorizingBoundary": "pass",
+    "reviewerKeyOrReceiptAbsence": "pass"
+  },
+  "identities": {
+    "bodyDigestSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+    "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73",
+    "authorPublicKeyEvidenceRawSha256": "732e9eaeacdfdebfcd58b27c22655cf47177985d89c211a002788b35d9507d92",
+    "authorPublicKeyEvidenceCanonicalSha256": "fd36cf814ccf2a75e53fb4d3ccce538baa34a4af3a44b89b86f38f167cfe1270",
+    "authorPublicKeyIdentity": "lachesis-m9b13f2-supplement-author-ed25519-659988b38d8631ce",
+    "authorCommitment": "sha256:659988b38d8631ce57c4412f63106be40cf659310d5d08ede7e672d9d15309e7",
+    "authorPublicKeySpkiDerSha256": "ace9c06b550fda72f58feedd443defa5f09db4ed3ee4112c7ced0386caf31dbd",
+    "unsignedProjectionCanonicalSha256": "fe2126f1e95bc34cd5d03cd56898e5a20aec53534e3d98fb07f551d7a4ebea4b",
+    "signingInputSha256": "fe2126f1e95bc34cd5d03cd56898e5a20aec53534e3d98fb07f551d7a4ebea4b",
+    "authorAttestationRawSha256": "cbb7c32addcd92c93667db7511f60e80201bc05ea240134e8b11cab2c4c189ef",
+    "authorAttestationCanonicalSha256": "d573b033e09a0f7fd038aafcedeb36bc49f3ea2ef0985098aa7e946d4c2a947d",
+    "bodyIdentityCanonicalSha256": "51c04ccc3592411c0f794909c95888bd28c73e5499d761a1decfe5c4113940cc",
+    "packageInventoryCanonicalSha256": "043256e96e733fd5f368b5e4d03beb1f758573961d22b21767156149994317b2"
+  },
+  "status": {
+    "readyForExternalIndependentReview": true,
+    "independentReviewPassageClaimed": false,
+    "submissionAuthorityPresent": false,
+    "m9bDecision": "m9b13-materialization-readiness-no-go",
+    "m10Started": false
+  }
+}
