@@ -1,0 +1,189 @@
+{
+  "protocol": "lachesis-m9b13h-final-independent-rederivation/1",
+  "mode": "offline-pinned-git-object-reproduction-deterministic-archive-rebuild-and-static-hostile-validation",
+  "result": "pass-for-fail-closed-no-go-package",
+  "decisionRecord": {
+    "protocol": "lachesis-m9b13h-staged-supplement-mechanism-decision/1",
+    "rawSha256": "c9d4ea40e64980979afe7ee0a3d1560ba61032734ad27446b4a3de66e3ab8385",
+    "canonicalSha256": "b95aca99247c5f4177f29c6f8e3c25181b5e8a1eb9f44a24de698b4f7dd30eb2",
+    "matchesAuthoritativeEvidence": true
+  },
+  "appendOnlyChainBeforeFinalSeal": [
+    {
+      "role": "frozen-m9b13g-no-go",
+      "commit": "c324343d65bbbf68659c443581eb686ace9c9b68",
+      "tree": "257ff6df6aa57ab64c43a1ac60d367ae5f909313"
+    },
+    {
+      "role": "m9b13h-requirement-lineage-and-authoritative-research",
+      "commit": "6d9923aa6ed0e28be34b41499d1858cb64bc4020",
+      "tree": "8153cdb3413bd2d9e96301504486d98cbee36649",
+      "parent": "c324343d65bbbf68659c443581eb686ace9c9b68"
+    },
+    {
+      "role": "m9b13h-deterministic-archive-and-staged-protocol",
+      "commit": "03c75d4302f90de066724d7980872b0275f664eb",
+      "tree": "b6ed9d3e7e21c68dabbef11827832654d033cc11",
+      "parent": "6d9923aa6ed0e28be34b41499d1858cb64bc4020"
+    }
+  ],
+  "frozenInputPreservation": {
+    "supplement": {
+      "commit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+      "tree": "fb5f4b29609986f1aee314e6f96c2405f76b199b",
+      "filesModified": 0
+    },
+    "signedReviewReceipt": {
+      "commit": "0776b7af87f3d8731300dd2bde5b9e31c25ca745",
+      "tree": "5b36616a593fdf3d3e5bdfed442b6bf3c5b4bd9e",
+      "filesModified": 0
+    },
+    "m9b13g": {
+      "commit": "c324343d65bbbf68659c443581eb686ace9c9b68",
+      "tree": "257ff6df6aa57ab64c43a1ac60d367ae5f909313",
+      "packageSubtree": "24a0f0e4bd63822720b3b7d86649a4004c90521e",
+      "checksumManifestRawSha256": "9756e5f9d15d6a05c445eabc6867b0366668bb5e8dc4ad79d0067f56bbd6fc47",
+      "filesModified": 0,
+      "direct57FileNoGoPreserved": true
+    }
+  },
+  "unchangedSignedIdentities": {
+    "bodyProtocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+    "bodyCanonicalSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+    "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73",
+    "supplementPackageInventoryCanonicalSha256": "043256e96e733fd5f368b5e4d03beb1f758573961d22b21767156149994317b2",
+    "supplementChecksumManifestRawSha256": "76b46920ffd75a387688326d5d572ccc980f2d22d85b921cb6a279c8140c1523",
+    "signedReceiptRawSha256": "f7bf3e1eac3c8557991194573d9aeaec4f4b37f1618007f0d7fe1f158b328df4",
+    "signedReceiptCanonicalSha256": "286c9f1ef0897719853b713253f8cf0d0bbe2a743a882bd5517c6abca5ae3b8b",
+    "receiptEvidenceInventoryCanonicalSha256": "5d5045970779865af9a1c81a68f963fc4c1645b51b9e7f4b028960fb4ae7f4ba",
+    "receiptChecksumManifestRawSha256": "f731e112100e994a24c15348d95b21d5f268ef6b6e59a0cbc6b82abcc97610b8",
+    "originalRegistrationId": "63sh5",
+    "originalPreregistrationCanonicalSha256": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "originalRegistrationManifestRawSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "originalRegistrationReceiptCanonicalSha256": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+    "scientificFinancialInvariantSha256": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+    "allUnchanged": true
+  },
+  "requirementLineage": {
+    "protocol": "lachesis-m9b13h-signed-requirement-lineage/1",
+    "rawSha256": "74a040bf89b9449a3da95d101de50d9f17f4fd28984ef2c17914c0dd5879f44a",
+    "canonicalSha256": "aa33728bb082676914c443510f40c6c15c0745a3c26fb3c86085946fb48351aa",
+    "signedRequirementsReproduced": 10,
+    "m9b13gLocalConstraintsSeparated": 5,
+    "sourceRequirementArtifactRawSha256": "f423f6f887e61ce4204c56c8f961fd4185c95bfd92a6d41a80fb0cd780358df3",
+    "sourceRequirementArtifactCanonicalSha256": "d11f626a0df3fdbf1d4eb23f8889145a2b7844fe886e3a9896f83eb340986d3a",
+    "sourceAuthorityBoundaryRawSha256": "88d7ed7962da9d03a26ac4978a82aa782a7c876fa2aabe56e8abe7d67547582a",
+    "sourceAuthorityBoundaryCanonicalSha256": "da79572fe74c9a66e4405064006826c541aed8c463ac829b88a65079a0f73c93"
+  },
+  "deterministicArchive": {
+    "protocol": "lachesis-m9b13h-posix-ustar-transport/1",
+    "protocolRecordRawSha256": "3a0d33b5fef57f67f6d86ee59bda57dad7fcf2381ddfbab88b040ea01334ee04",
+    "protocolRecordCanonicalSha256": "9404eea0e5508097fe42674f451bdcd5344310258222db3889847bc73bb82e74",
+    "fileName": "m9b13f2-supplement-and-review.tar",
+    "byteLength": 210432,
+    "rawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d",
+    "regularFileCount": 57,
+    "directoryEntryCount": 2,
+    "byteIdenticalBuilds": 3,
+    "independentImplementations": 2,
+    "allInnerRawIdentitiesReproduced": 57,
+    "allApplicableInnerCanonicalJsonIdentitiesReproduced": 33,
+    "paxOrGnuExtensions": 0,
+    "linksOrSpecialEntries": 0,
+    "privateMaterialPatterns": 0
+  },
+  "externalArchiveManifest": {
+    "protocol": "lachesis-m9b13h-deterministic-external-archive-manifest/1",
+    "rawSha256": "6f652a8d3cc97b0be30482b3e841fd154fa6acb3f023d6a4c53713e1c69162e9",
+    "canonicalSha256": "e4f60b48dd065c0d067a1efc2a588bfc0d22c58a7f09e7e80f88f1da5d69e020",
+    "matchesArchiveAndAllInnerFiles": true
+  },
+  "archiveReproduction": {
+    "protocol": "lachesis-m9b13h-independent-archive-reproduction/1",
+    "rawSha256": "09b5300eb345c7357e2966b500c38873e642298dbc42fc653b867ed25be384f3",
+    "canonicalSha256": "5dba0dcf7a8e442c022330c0098c556e7ca3c36253fa44402499dfb347ac4e56",
+    "result": "pass"
+  },
+  "externalAttachmentSet": {
+    "attachmentCount": 3,
+    "archiveRawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d",
+    "manifestRawSha256": "6f652a8d3cc97b0be30482b3e841fd154fa6acb3f023d6a4c53713e1c69162e9",
+    "checksumFileRawSha256": "8bd5c4c36f36b6fcb4246d53f8285beceeadced55d4165cdd5c919a89be1970b",
+    "checksumEntries": 2,
+    "checksumVerified": true,
+    "finalSubmissionInventoryClaimed": false
+  },
+  "stagedProtocolIdentities": [
+    {
+      "file": "draft-staging-protocol.json",
+      "protocol": "lachesis-m9b13h-future-private-draft-staging/1",
+      "rawSha256": "2183baf9f0d4e18ac27abe95d16500861d95d2b5cd16e02ff78c8f514be3e370",
+      "canonicalSha256": "8a4807e10519b21a6e044a0a74408b0ecc6648eb7eb92b9886ff67050f538750",
+      "authorityPresent": false
+    },
+    {
+      "file": "submission-approval-control.json",
+      "protocol": "lachesis-m9b13h-future-submission-approval-cancellation-control/1",
+      "rawSha256": "9eab8f76c554516b0953bc63cac9e5a716c1598d81c297c2310690dbdea93d58",
+      "canonicalSha256": "4e1a3d3b870f60ed7544d70715c72c22de72b254785aaa375d88f6f94c497fd7",
+      "authorityPresent": false
+    },
+    {
+      "file": "authorization-boundary.json",
+      "protocol": "lachesis-m9b13h-staged-mechanism-authorization-boundary/1",
+      "rawSha256": "3d1b27ddee778a647057d98ae33da9ef3c824910d66e43717f5ffd4c08b1952f",
+      "canonicalSha256": "9005ce28a1890b5b1ae1a1e233297307d977aaccde59ced42ea6460cce55dca2"
+    }
+  ],
+  "licenseAnalysis": {
+    "protocol": "lachesis-m9b13h-prospective-license-analysis/1",
+    "rawSha256": "ea06a3f308d0615707f6879913a2f516916bcf4662d40284f0a23d2e0dd68211",
+    "canonicalSha256": "50baf9e3b7b1c9e2210388ca218509e4dc1e6f0fc1a6c39a9f61ee69a2632102",
+    "activeSelection": false,
+    "candidate": "Apache License 2.0",
+    "exactGeneratedArtifactBytesKnownBeforeSubmission": false,
+    "legalConclusionClaimed": false
+  },
+  "authoritativeResearch": {
+    "protocol": "lachesis-m9b13h-authoritative-osf-sources/1",
+    "rawSha256": "6de021ee72195ba580dae216d6f2b6b5d5446cf736b1cc8330196aeb355b52f2",
+    "canonicalSha256": "8f39bc3eedb059b25cf36d557865cfc23d55f3253451f87d45e1827e34b926e9",
+    "externalMutationRequests": 0
+  },
+  "hostileValidation": {
+    "protocol": "lachesis-m9b13h-static-hostile-staged-mechanism-tests/1",
+    "rawSha256": "95101a4c0478d81473145888f563aff4b9892cc2409c223a34fd1a3d50a9899f",
+    "canonicalSha256": "1cf78eb4ac9c108fec9f572879c657a629491bc97d9ebd9770f0cd8fd0c56de3",
+    "baselineAccepted": true,
+    "testCount": 34,
+    "rejectedAsRequired": 33,
+    "ambiguousMonitorNoRetryAsRequired": 1,
+    "passed": 34
+  },
+  "zeroEffectReport": {
+    "protocol": "lachesis-m9b13h-zero-external-effect-report/1",
+    "rawSha256": "5bcf1978ff263c925294671f1e39a77e256d4e04fd6dadb0f17ab013537cfe47",
+    "canonicalSha256": "eed093a8a687cacb4e35e62cce8aa75d78ad48fb8fe042bb54e3c495c789051b",
+    "externalMutations": 0
+  },
+  "finalPackageContract": {
+    "directory": "docs/m9b13h-staged-supplement-readiness",
+    "fileCount": 30,
+    "checksumManifest": "CHECKSUMS.sha256",
+    "checksumEntryCount": 29,
+    "checksumManifestSelfExcluded": true,
+    "allJsonRejectDuplicateKeys": true,
+    "targetedFormattingOnly": true,
+    "protectedPathsUntouched": true
+  },
+  "authorityGranted": {
+    "stageA": false,
+    "stageB": false,
+    "submission": false,
+    "approval": false,
+    "cancellation": false,
+    "publication": false,
+    "operationalOrStudyExecution": false
+  },
+  "m9bStatus": "NO-GO"
+}

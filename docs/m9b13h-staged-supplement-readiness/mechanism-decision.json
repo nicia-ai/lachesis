@@ -1,0 +1,90 @@
+{
+  "protocol": "lachesis-m9b13h-staged-supplement-mechanism-decision/1",
+  "decision": "m9b13h-staged-supplement-mechanism-no-go",
+  "basis": "The deterministic transport correction succeeds, but current authoritative OSF documentation does not establish that every provider-visible license and draft artifact can be enumerated and frozen before submission or that the automatic-approval lifecycle can be durably controlled through a documented complete interface.",
+  "acceptedCorrection": {
+    "m9b13gDirect57FileNoGoPreserved": true,
+    "signedRequirementsSeparatedFromM9b13gLocalConstraints": true,
+    "deterministicArchiveValid": true,
+    "archiveRawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d",
+    "archiveByteLength": 210432,
+    "innerFileCount": 57,
+    "byteIdenticalBuildCount": 3,
+    "wrapperIsMechanicalTransportOnly": true
+  },
+  "candidate": {
+    "provider": "OSF Registries general provider",
+    "schemaName": "Open-Ended Registration",
+    "schemaId": "5df83f7dd28338001ac0ab0d",
+    "schemaVersion": 3,
+    "design": "one-from-scratch-private-draft-staging-the-three-file-deterministic-archive-set",
+    "selectedForExecution": false
+  },
+  "authoritativePropertyEvaluation": [
+    {
+      "property": "private-draft-before-submission",
+      "status": "established",
+      "basis": "OSF documents Create Draft from scratch and an editable autosaved draft before submission."
+    },
+    {
+      "property": "draft-files-inspectable-and-redownloadable",
+      "status": "partially-established",
+      "basis": "OSF documents draft file preview and general API download links, but not one complete stable enumeration and byte-redownload contract for every draft and provider-generated artifact."
+    },
+    {
+      "property": "exact-embargo-selectable",
+      "status": "established-at-submission-only",
+      "basis": "OSF documents selecting an embargo end date at submission for up to four years."
+    },
+    {
+      "property": "metadata-remains-nonpublic",
+      "status": "established-for-in-progress-pending-and-embargoed-states",
+      "basis": "The API describes in-progress responses as private; OSF documents pending registrations as contributor-only and approved embargoed registrations as private."
+    },
+    {
+      "property": "immutable-registration-identity-and-server-submission-timestamp",
+      "status": "partially-established",
+      "basis": "OSF documents immutable submitted files and that the registration created date is the submission date, but the complete pending-to-registered identity receipt is not documented as one stable interface contract."
+    },
+    {
+      "property": "approval-or-cancellation-before-automatic-approval",
+      "status": "lifecycle-established-controller-not-established",
+      "basis": "OSF documents admin approval or rejection through notification email and automatic approval after the bounded interval; no durable machine-controllable terminal-action interface is established."
+    },
+    {
+      "property": "post-submission-archive-reconciliation",
+      "status": "partially-established",
+      "basis": "Registered files are immutable and downloadable in documented OSF interfaces, but complete reconciliation of submission-time generated artifacts remains unresolved."
+    }
+  ],
+  "blockingFindings": [
+    {
+      "id": "license-artifact-not-frozen-before-submission",
+      "finding": "OSF says a project-affiliated license is automatically uploaded when submitted, but does not specify the artifact's exact name, bytes, or pre-submission availability."
+    },
+    {
+      "id": "complete-draft-artifact-contract-incomplete",
+      "finding": "Authoritative documentation does not establish enumeration and exact-byte redownload of every provider-visible or provider-generated draft artifact through one stable interface."
+    },
+    {
+      "id": "durable-terminal-controller-interface-unproven",
+      "finding": "Approval and rejection are documented through notification email, but the required durable monitored controller and fail-closed terminal-action interface have not been established or tested."
+    }
+  ],
+  "requiredToReconsider": [
+    "authoritative-or-separately-authorized-private-draft-evidence-freezing-every-license-and-provider-generated-artifact-before-submission",
+    "independent-byte-redownload-and-final-draft-inventory-reconciliation",
+    "new-independent-review-of-the-exact-draft-and-staged-evidence",
+    "demonstrated-durable-approval-or-cancellation-controller-with-an-absolute-safe-deadline",
+    "new-exact-stage-b-submission-and-terminal-control-authorities"
+  ],
+  "authority": {
+    "stageADraftStagingGranted": false,
+    "stageBSubmissionGranted": false,
+    "approvalGranted": false,
+    "cancellationGranted": false,
+    "publicationGranted": false,
+    "operationalOrStudyAuthorityGranted": false
+  },
+  "m9bStatus": "NO-GO"
+}

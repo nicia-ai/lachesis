@@ -1,0 +1,60 @@
+{
+  "protocol": "lachesis-m9b13h-zero-external-effect-report/1",
+  "phase": "offline-prospective-staged-draft-mechanism-correction",
+  "publicResearch": {
+    "authoritativeDocumentationOnly": true,
+    "publicApiSpecificationOnly": true,
+    "webResearchToolOperations": 7,
+    "underlyingDocumentationFetchCountKnownExactly": false
+  },
+  "credentialsAndSecrets": {
+    "credentialsAccessed": 0,
+    "cookiesAccessed": 0,
+    "tokensAccessed": 0,
+    "privateKeysCreated": 0,
+    "privateKeysAccessed": 0,
+    "authenticatedSessionsUsed": 0,
+    "privateMaterialIncludedInArchive": 0
+  },
+  "externalMutationCounters": {
+    "mutationRequests": 0,
+    "projectsCreated": 0,
+    "draftRegistrationsCreated": 0,
+    "registrationsCreated": 0,
+    "filesUploaded": 0,
+    "submissions": 0,
+    "approvals": 0,
+    "cancellations": 0,
+    "publications": 0,
+    "withdrawals": 0,
+    "viewOnlyLinksCreated": 0,
+    "embargoChanges": 0,
+    "registration63sh5Changes": 0,
+    "providerOrModelCallsForStudyExecution": 0,
+    "studyRolesExecuted": 0,
+    "analysesExecuted": 0,
+    "m10Actions": 0
+  },
+  "localEffects": {
+    "repositoryPath": "docs/m9b13h-staged-supplement-readiness",
+    "appendOnlyCommitCountRequired": 3,
+    "appendOnlyCommitCountBeforeFinalSeal": 2,
+    "finalSealCommitPlanned": 1,
+    "deterministicArchiveFiles": 57,
+    "deterministicArchiveBytes": 210432,
+    "temporaryArchiveDuplicatesRetained": 0,
+    "sourceSupplementFilesModified": 0,
+    "sourceReceiptFilesModified": 0,
+    "m9b13gFilesModified": 0,
+    "protectedUntrackedPaperPathTraversed": false,
+    "protectedDsStorePathTraversed": false
+  },
+  "preservedIdentities": {
+    "registrationId": "63sh5",
+    "registrationMutationPerformed": false,
+    "supplementCommit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+    "signedReceiptCommit": "0776b7af87f3d8731300dd2bde5b9e31c25ca745",
+    "m9b13gCommit": "c324343d65bbbf68659c443581eb686ace9c9b68"
+  },
+  "result": "zero-external-mutations"
+}
