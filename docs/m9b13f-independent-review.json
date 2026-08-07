@@ -1,0 +1,70 @@
+{
+  "protocol": "lachesis-m9b13f-independent-static-supplement-review/1",
+  "reviewed": {
+    "reviewEvidenceCommit": "4ca883283d74466089a5e7722840d8d316596e9c",
+    "reviewEvidenceTree": "f0d153b097171fb1b1106ffc08ab508e17d2e225",
+    "bodyCommit": "600c8cddc589a21d030ef15d05ea0b2e82d1393d",
+    "bodyTree": "5f3f3d766ee8bba58401d455c8f088e76de4eb8c",
+    "finalCommit": "adc0eb47ee8103ab3491b8aca1d884be22ccf2ab",
+    "finalTree": "e6aff271b90b68d24a8d5877b7e338fb6683a9cb",
+    "bodyProtocol": "lachesis-m9b13f-embargo-compatible-operational-supplement-body/1",
+    "bodyDigestSha256": "bda6171ec4c088dfb29ecd3884f9640922a7829e12b64c9a01b9ceaf2df11ab3",
+    "manifestDigestSha256": "4feb24e72eef0f0994f705645b0d23bccb59783869b403c716c03e368c7a3245",
+    "submittedDecision": "m9b13f-minimal-operational-supplement-ready-for-independent-review"
+  },
+  "decision": "m9b13f-minimal-operational-supplement-review-no-go",
+  "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13f1",
+  "blockingFindings": [
+    {
+      "id": "body-digest-does-not-bind-substantive-component-contents",
+      "severity": "P0",
+      "confidence": "10/10"
+    },
+    {
+      "id": "historical-inventory-omits-m9b13a-independent-review",
+      "severity": "P0",
+      "confidence": "10/10"
+    },
+    {
+      "id": "author-commitment-has-publicly-guessable-fixed-preimage",
+      "severity": "P1",
+      "confidence": "10/10"
+    },
+    {
+      "id": "review-pass-is-not-explicitly-nonauthorizing",
+      "severity": "P1",
+      "confidence": "9/10"
+    }
+  ],
+  "acceptedReproductions": {
+    "threeCommitsAndTrees": true,
+    "packageFiles": 21,
+    "checksumPayloadFiles": 20,
+    "manifestDigest": true,
+    "mechanicalBodyDigest": true,
+    "predecessorPackageManifests": 17,
+    "independentReviewManifests": 11,
+    "registrationReceiptManifest": true,
+    "registrationFiles": 27,
+    "scientificFinancialFields": 18,
+    "scientificFinancialChanges": 0,
+    "runtimeReuseProhibited": true,
+    "currentAuthorityAbsent": true
+  },
+  "reviewGrantsSubmissionAuthority": false,
+  "effects": {
+    "networkRequests": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsSubmittedOrApproved": 0,
+    "realAuthoritiesActivated": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionDownloadImageOperations": 0,
+    "corpusGoldScheduleConstructions": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "m10Work": 0
+  }
+}
