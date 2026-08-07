@@ -1,0 +1,8 @@
+{
+  "cleanupNeeded": true,
+  "decision": "m9b13i-osf-private-draft-canary-no-go",
+  "m9bStatus": "NO-GO",
+  "protocol": "lachesis-m9b13i-private-draft-canary-decision/1",
+  "reason": "The first authorized synthetic upload did not create an enumerable artifact and produced an upload-time HTTP failure. No retry or later upload was attempted, so exact redownload verification could not pass.",
+  "submissionAuthority": false
+}

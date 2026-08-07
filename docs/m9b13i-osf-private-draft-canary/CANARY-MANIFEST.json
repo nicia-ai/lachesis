@@ -1,0 +1,33 @@
+{
+  "canaryId": "m9b13i-a397d9650da8c9b1fe11d5c4d1500ed1",
+  "classification": "synthetic-non-study-control-plane-test-material",
+  "deterministicTar": {
+    "format": "ustar",
+    "gid": 0,
+    "gname": "root",
+    "memberMode": 420,
+    "memberOrder": [
+      "CANARY.txt",
+      "CANARY-MANIFEST.json",
+      "CANARY.sha256"
+    ],
+    "mtimeSeconds": 0,
+    "prohibitedEntryTypes": [
+      "pax-extension",
+      "gnu-extension",
+      "link",
+      "special"
+    ],
+    "uid": 0,
+    "uname": "root"
+  },
+  "protocol": "lachesis-m9b13i-synthetic-canary-manifest/1",
+  "scientificContent": false,
+  "operationalContent": false,
+  "uploadArtifacts": [
+    "CANARY.txt",
+    "CANARY-MANIFEST.json",
+    "CANARY.sha256",
+    "canary-bundle.tar"
+  ]
+}

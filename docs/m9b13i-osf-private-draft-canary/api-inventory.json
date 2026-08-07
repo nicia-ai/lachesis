@@ -1,0 +1,57 @@
+{
+  "authentication": "existing-browser-session-without-credential-inspection",
+  "documentedEndpoints": [
+    {
+      "artifactCount": 0,
+      "endpoint": "https://api.osf.io/v2/nodes/bmsda/files/osfstorage/",
+      "classification": "project-file-inventory"
+    },
+    {
+      "count": 1,
+      "endpoint": "https://api.osf.io/v2/nodes/bmsda/draft_registrations/",
+      "classification": "associated-draft-inventory"
+    },
+    {
+      "count": 0,
+      "endpoint": "https://api.osf.io/v2/nodes/bmsda/registrations/",
+      "classification": "submitted-registration-inventory"
+    },
+    {
+      "count": 0,
+      "endpoint": "https://api.osf.io/v2/nodes/bmsda/view_only_links/",
+      "classification": "view-only-link-inventory"
+    }
+  ],
+  "draft": {
+    "apiEndpoint": "https://api.osf.io/v2/draft_registrations/6a7619b506a607fe5f63a77d/",
+    "branchedFromProjectId": "bmsda",
+    "currentUserPermissions": [
+      "admin",
+      "write",
+      "read"
+    ],
+    "id": "6a7619b506a607fe5f63a77d",
+    "registrationResponseKeys": [],
+    "type": "draft-registrations"
+  },
+  "license": {
+    "apiEndpoint": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e96d/",
+    "id": "563c1cf88c5e4a3877f9e96d",
+    "name": "Apache License 2.0",
+    "requiredFields": []
+  },
+  "project": {
+    "apiEndpoint": "https://api.osf.io/v2/nodes/bmsda/",
+    "id": "bmsda",
+    "isPublic": false,
+    "providerInventory": [
+      {
+        "id": "bmsda:osfstorage",
+        "name": "osfstorage",
+        "path": "/"
+      }
+    ]
+  },
+  "protocol": "lachesis-m9b13i-authenticated-api-inventory/1",
+  "uiReconciled": true
+}

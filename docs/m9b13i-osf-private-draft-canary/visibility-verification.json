@@ -1,0 +1,41 @@
+{
+  "authenticated": {
+    "draftEditable": true,
+    "projectPublic": false,
+    "submittedRegistrationCount": 0,
+    "viewOnlyLinkApiCount": 0,
+    "viewOnlyLinkUiIndicator": 0
+  },
+  "protocol": "lachesis-m9b13i-unauthenticated-visibility-verification/1",
+  "unauthenticated": [
+    {
+      "bodyBytes": 4190,
+      "canaryFilenameVisible": false,
+      "canaryIdentityVisible": false,
+      "classification": "project-web-shell",
+      "httpStatus": 200
+    },
+    {
+      "bodyBytes": 96,
+      "canaryFilenameVisible": false,
+      "canaryIdentityVisible": false,
+      "classification": "project-api",
+      "httpStatus": 401
+    },
+    {
+      "bodyBytes": 4190,
+      "canaryFilenameVisible": false,
+      "canaryIdentityVisible": false,
+      "classification": "draft-web-shell",
+      "httpStatus": 200
+    },
+    {
+      "bodyBytes": 96,
+      "canaryFilenameVisible": false,
+      "canaryIdentityVisible": false,
+      "classification": "draft-registration-api",
+      "httpStatus": 401
+    }
+  ],
+  "unauthenticatedMetadataOrBytesExposed": false
+}

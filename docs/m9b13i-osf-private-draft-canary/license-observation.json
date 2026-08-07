@@ -1,0 +1,23 @@
+{
+  "afterExplicitSelection": {
+    "apiLicenseId": "563c1cf88c5e4a3877f9e96d",
+    "apiLicenseName": "Apache License 2.0",
+    "authenticatedApiEnumeratedLicenseArtifact": false,
+    "draftResponseArtifactCount": 0,
+    "immediateLicenseArtifactCreated": false,
+    "projectApiArtifactCount": 0,
+    "projectUiArtifactCount": 0,
+    "requiredFields": [],
+    "selectedOnce": true
+  },
+  "beforeExplicitSelection": {
+    "draftResponseArtifactCount": 0,
+    "projectApiArtifactCount": 0,
+    "projectUiArtifactCount": 0,
+    "providerDefaultLicense": "CC0 1.0 Universal"
+  },
+  "licenseChangesAfterExplicitSelection": 0,
+  "protocol": "lachesis-m9b13i-license-observation/1",
+  "registrationStateChangeArtifactBehavior": "not-tested-because-registration-state-changes-were-prohibited",
+  "syntheticOnly": true
+}

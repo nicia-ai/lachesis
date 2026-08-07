@@ -1,0 +1,51 @@
+{
+  "artifacts": [
+    {
+      "bytes": 146,
+      "name": "CANARY.txt",
+      "sha256": "d878f95cddd658063742de8b4b0fc60a413e2274b40d423be8ec0fa7a556a532"
+    },
+    {
+      "bytes": 752,
+      "name": "CANARY-MANIFEST.json",
+      "sha256": "0ef6c6eb98b44eacb5bf86e6c65ae60b34b6fbd93fe48cd141541e377d31d92e"
+    },
+    {
+      "bytes": 164,
+      "name": "CANARY.sha256",
+      "sha256": "ee9486462a6519d2fe2148ce1dadb59406ed9ab2a883c770c2f2446f226cfe71"
+    },
+    {
+      "bytes": 10240,
+      "name": "canary-bundle.tar",
+      "sha256": "9befa3f3d9bd39b6666c6b0ca514f33e0212217eec9dbf81d62656559ca7aec8"
+    }
+  ],
+  "canaryId": "m9b13i-a397d9650da8c9b1fe11d5c4d1500ed1",
+  "containsActualM9bBytes": false,
+  "packageArtifactCount": 4,
+  "protectedMetadataScanPassed": true,
+  "protocol": "lachesis-m9b13i-synthetic-package-evidence/1",
+  "tar": {
+    "buildSha256": [
+      "9befa3f3d9bd39b6666c6b0ca514f33e0212217eec9dbf81d62656559ca7aec8",
+      "9befa3f3d9bd39b6666c6b0ca514f33e0212217eec9dbf81d62656559ca7aec8",
+      "9befa3f3d9bd39b6666c6b0ca514f33e0212217eec9dbf81d62656559ca7aec8"
+    ],
+    "format": "ustar",
+    "gid": 0,
+    "gname": "root",
+    "memberCount": 3,
+    "memberMode": 420,
+    "members": [
+      "CANARY.txt",
+      "CANARY-MANIFEST.json",
+      "CANARY.sha256"
+    ],
+    "mtimeSeconds": 0,
+    "regularFilesOnly": true,
+    "tripleReproducible": true,
+    "uid": 0,
+    "uname": "root"
+  }
+}

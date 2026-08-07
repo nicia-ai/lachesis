@@ -1,0 +1,26 @@
+{
+  "authentication": {
+    "credentialMaterialInspected": false,
+    "existingSessionAvailable": true,
+    "newCredentialCreated": false
+  },
+  "baseline": {
+    "expectedCommit": "baee5965b3f2d602aedff32725433a496c2178f9",
+    "expectedTree": "72eb6a53386086fcd694f54e8cb6eee8208aa5bc",
+    "headCommitMatched": true,
+    "headTreeMatched": true,
+    "m9b13hPredecessorPreserved": true,
+    "trackedIndexAndWorktreeClean": true
+  },
+  "completedBeforeExternalMutation": true,
+  "externalMutationStartedAt": "2026-08-07T17:43:42.999486Z",
+  "package": {
+    "artifactCount": 4,
+    "containsActualM9bBytes": false,
+    "constructedBeforeExternalMutation": true,
+    "tarSha256": "9befa3f3d9bd39b6666c6b0ca514f33e0212217eec9dbf81d62656559ca7aec8",
+    "tarTripleReproducible": true
+  },
+  "protocol": "lachesis-m9b13i-private-draft-canary-preflight/1",
+  "targetAuditPathAbsentBeforeTask": true
+}

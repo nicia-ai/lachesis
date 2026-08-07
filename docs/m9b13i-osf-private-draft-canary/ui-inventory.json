@@ -1,0 +1,27 @@
+{
+  "afterFailedUpload": {
+    "draftArtifacts": [],
+    "draftCanaryFilenameCount": 0,
+    "projectArtifacts": []
+  },
+  "afterLicenseSelection": {
+    "draftArtifacts": [],
+    "projectArtifacts": []
+  },
+  "beforeLicenseSelection": {
+    "draftArtifacts": [],
+    "projectArtifacts": []
+  },
+  "draft": {
+    "editableMetadata": true,
+    "id": "6a7619b506a607fe5f63a77d",
+    "reviewSubmissionActionInvoked": false,
+    "summaryUploadControlPresent": true
+  },
+  "project": {
+    "id": "bmsda",
+    "private": true,
+    "viewOnlyLinkIndicator": 0
+  },
+  "protocol": "lachesis-m9b13i-ui-inventory/1"
+}

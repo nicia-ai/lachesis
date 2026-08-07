@@ -1,0 +1,2 @@
+Canary identity: m9b13i-a397d9650da8c9b1fe11d5c4d1500ed1
+This is synthetic control-plane test material with no scientific or operational content.

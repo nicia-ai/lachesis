@@ -1,0 +1,38 @@
+{
+  "cleanup": {
+    "authorizedInThisTask": false,
+    "needed": true,
+    "reason": "The private canary project and draft must remain for separately authorized cleanup or reuse."
+  },
+  "counters": {
+    "actualM9bBytesSelected": 0,
+    "actualM9bBytesUploaded": 0,
+    "contributorsAdded": 0,
+    "credentialsAccessed": 0,
+    "draftCreateAttempts": 1,
+    "draftsCreated": 1,
+    "explicitCanaryLicenseSelections": 1,
+    "integrationsAdded": 0,
+    "licenseChangesAfterExplicitSelection": 0,
+    "modelOrProviderCalls": 0,
+    "pendingSubmissionsCreated": 0,
+    "privateProjectCreateAttempts": 1,
+    "privateProjectsCreated": 1,
+    "projectOrDraftDeletes": 0,
+    "publicStateChanges": 0,
+    "registration63sh5ContentAccesses": 0,
+    "registration63sh5Mutations": 0,
+    "registrationApprovals": 0,
+    "registrationCancellations": 0,
+    "registrationRejections": 0,
+    "registrationSubmissions": 0,
+    "remainingSyntheticUploadsNotAttempted": 3,
+    "successfulSyntheticUploads": 0,
+    "successfulUploadedBytes": 0,
+    "syntheticUploadAttempts": 1,
+    "syntheticBytesOfferedToUploadControl": 146,
+    "viewOnlyLinksCreated": 0
+  },
+  "protocol": "lachesis-m9b13i-external-effects/1",
+  "stopReason": "The first upload control failed and no artifact appeared; no retry or further mutation was attempted."
+}

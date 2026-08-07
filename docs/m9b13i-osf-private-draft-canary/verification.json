@@ -1,0 +1,28 @@
+{
+  "auditInventory": {
+    "requiredRecordCount": 19,
+    "syntheticArtifactCount": 4,
+    "totalFileCountIncludingChecksumManifest": 23
+  },
+  "checks": {
+    "apiUiProjectFileInventoriesReconciled": true,
+    "archiveContainsOnlyThreeAuthorizedMembers": true,
+    "archiveTripleReproducible": true,
+    "baselineCommitAndTreeMatched": true,
+    "credentialMaterialAbsent": true,
+    "draftCountExactlyOne": true,
+    "draftEditableAndUnsubmitted": true,
+    "exactRedownloadVerificationPassed": false,
+    "licenseChangedAfterExplicitSelection": false,
+    "licenseSelectedExactlyOnce": true,
+    "m9b13hPredecessorPreserved": true,
+    "projectCountExactlyOne": true,
+    "projectPrivate": true,
+    "registrationCountZero": true,
+    "unauthenticatedCanaryExposureAbsent": true,
+    "viewOnlyLinkCountZero": true
+  },
+  "decision": "m9b13i-osf-private-draft-canary-no-go",
+  "protocol": "lachesis-m9b13i-private-draft-canary-verification/1",
+  "verifiedAt": "2026-08-07T17:50:35Z"
+}

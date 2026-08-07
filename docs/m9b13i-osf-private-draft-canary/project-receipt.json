@@ -1,0 +1,16 @@
+{
+  "apiEndpoint": "https://api.osf.io/v2/nodes/bmsda/",
+  "category": "project",
+  "createdAt": "2026-08-07T17:43:42.999486Z",
+  "currentUserPermissions": [
+    "admin",
+    "write",
+    "read"
+  ],
+  "exactTitleMatchCount": 1,
+  "id": "bmsda",
+  "isPublic": false,
+  "protocol": "lachesis-m9b13i-private-project-receipt/1",
+  "title": "m9b13i-a397d9650da8c9b1fe11d5c4d1500ed1 — SYNTHETIC NON-STUDY CONTROL-PLANE CANARY — DO NOT SUBMIT",
+  "webIdentity": "https://osf.io/bmsda/"
+}

@@ -1,0 +1,22 @@
+{
+  "apiEndpoint": "https://api.osf.io/v2/draft_registrations/6a7619b506a607fe5f63a77d/",
+  "createdAt": "2026-08-07T17:45:25.036707Z",
+  "currentUserPermissions": [
+    "admin",
+    "write",
+    "read"
+  ],
+  "draftCountForProject": 1,
+  "editable": true,
+  "hasProject": true,
+  "id": "6a7619b506a607fe5f63a77d",
+  "pendingSubmission": false,
+  "protocol": "lachesis-m9b13i-unsubmitted-draft-receipt/1",
+  "registrationCountForProject": 0,
+  "registrationSchema": "Open-Ended Registration",
+  "sourceProjectId": "bmsda",
+  "submitted": false,
+  "title": "m9b13i-a397d9650da8c9b1fe11d5c4d1500ed1 — SYNTHETIC NON-STUDY CONTROL-PLANE CANARY — DO NOT SUBMIT",
+  "type": "draft-registrations",
+  "updatedAtAfterLicenseSelection": "2026-08-07T17:46:04.675742Z"
+}

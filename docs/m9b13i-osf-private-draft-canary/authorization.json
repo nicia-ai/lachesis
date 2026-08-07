@@ -1,0 +1,25 @@
+{
+  "acceptedBaseline": {
+    "archiveManifestCanonicalSha256": "e4f60b48dd065c0d067a1efc2a588bfc0d22c58a7f09e7e80f88f1da5d69e020",
+    "deterministicSupplementArchiveSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d",
+    "m9b13hCommit": "baee5965b3f2d602aedff32725433a496c2178f9",
+    "m9b13hDisposition": "m9b13h-staged-supplement-mechanism-no-go",
+    "m9b13hChecksumManifestSha256": "04a333f0533f8eb75bea0cc4c9928dd45d2ea37b7a9549e12f824d7363d86708",
+    "m9b13hTree": "72eb6a53386086fcd694f54e8cb6eee8208aa5bc"
+  },
+  "authorizationDigestSha256": "3debb2ddacaf9828b0cea2423a6c560aeee2c6eaacd466bb37ebc1457044b1f8",
+  "authorizedEffects": {
+    "draftCreatesMaximum": 1,
+    "explicitLicenseSelectionsMaximum": 1,
+    "privateProjectCreatesMaximum": 1,
+    "syntheticFileUploadsMaximum": 4
+  },
+  "canaryId": "m9b13i-a397d9650da8c9b1fe11d5c4d1500ed1",
+  "decisionSet": [
+    "m9b13i-osf-private-draft-canary-pass",
+    "m9b13i-osf-private-draft-canary-no-go",
+    "m9b13i-private-draft-canary-authentication-unavailable"
+  ],
+  "protocol": "lachesis-m9b13i-osf-private-draft-canary-authorization/1",
+  "scope": "synthetic-non-study-osf-private-draft-control-plane-canary"
+}

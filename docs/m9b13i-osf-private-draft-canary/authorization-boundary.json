@@ -1,0 +1,31 @@
+{
+  "allowedAndCompleted": {
+    "authenticatedReadOnlyInspection": true,
+    "explicitSyntheticLicenseSelectionCount": 1,
+    "privateDraftCreateCount": 1,
+    "privateProjectCreateCount": 1,
+    "syntheticUploadAttemptCount": 1
+  },
+  "prohibitedAndNotPerformed": {
+    "actualSupplementUpload": true,
+    "approval": true,
+    "cancellation": true,
+    "corpusOrGoldAccess": true,
+    "credentialInspectionOrStorage": true,
+    "deletion": true,
+    "doiCreation": true,
+    "integrationCreation": true,
+    "m10Start": true,
+    "m9b13f2ThroughM9b13hModification": true,
+    "modelOrProviderCall": true,
+    "publicStateCreation": true,
+    "pushTagOrPublication": true,
+    "registration63sh5ContentAccessOrMutation": true,
+    "registrationRejection": true,
+    "registrationSubmission": true,
+    "studyRoleOrAnalysisExecution": true,
+    "viewOnlyLinkCreation": true
+  },
+  "protocol": "lachesis-m9b13i-authorization-boundary/1",
+  "stoppedAfterFirstUploadFailure": true
+}
