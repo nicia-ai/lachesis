@@ -1,0 +1,28 @@
+{
+  "actualInitiation": {
+    "automationAgainstHiddenOrStaleElement": false,
+    "browserFileInputInteraction": true,
+    "directApiRequest": false,
+    "dragAndDrop": false,
+    "evidence": [
+      "Automation clicked the visible Upload File control.",
+      "The browser file chooser selected the absolute local CANARY.txt path.",
+      "The draft summary exposed exactly one hidden file input associated with that control.",
+      "The upload dialog displayed CANARY.txt at zero percent."
+    ]
+  },
+  "expectedPath": [
+    "The draft summary visible Upload File control clicks its associated hidden file input.",
+    "The file-input change handler selects the first File object and checks its size.",
+    "The draft custom step obtains the files relation and project identity from the draft's branched-from project.",
+    "The files component resolves the current OSF Storage folder's upload relation.",
+    "The files service appends kind=file and name=CANARY.txt to that relation.",
+    "The JSON API service sends the File bytes with an HTTP PUT and reports progress events.",
+    "Waterbutler authenticates, validates the request and target path, writes storage, and returns a file entity on success.",
+    "The client records the file identity in the draft response, closes the dialog, and refreshes the inventory."
+  ],
+  "locationConclusion": "The intended and source-defined destination is the branched-from project's OSF Storage provider through its Waterbutler upload relation, not a separate draft attachment service.",
+  "observedRequestShapeComparison": "The original network request did not survive, so its method, query shape, headers, dispatch, and response cannot be compared directly. The client-side selection path reached the upload method boundary, but this does not prove dispatch.",
+  "selectedFileCorrect": true,
+  "selectedProjectStorageContextCorrect": true
+}

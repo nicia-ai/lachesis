@@ -1,0 +1,51 @@
+{
+  "angularOsf": {
+    "commit": "3f9cbf2ab56d4cc746ccbf9b8b96ea4659042fba",
+    "repository": "https://github.com/CenterForOpenScience/angular-osf",
+    "sources": [
+      {
+        "claim": "The visible upload button clicks one hidden file input whose change event calls onFileSelected.",
+        "url": "https://github.com/CenterForOpenScience/angular-osf/blob/3f9cbf2ab56d4cc746ccbf9b8b96ea4659042fba/src/app/features/registries/components/files-control/files-control.component.html#L20-L31"
+      },
+      {
+        "claim": "The handler selects the first file and dispatches it to the upload routine; the routine uses the current folder upload link and refreshes after finalization.",
+        "url": "https://github.com/CenterForOpenScience/angular-osf/blob/3f9cbf2ab56d4cc746ccbf9b8b96ea4659042fba/src/app/features/registries/components/files-control/files-control.component.ts#L102-L164"
+      },
+      {
+        "claim": "The draft custom step obtains filesLink and projectId from branchedFrom.",
+        "url": "https://github.com/CenterForOpenScience/angular-osf/blob/3f9cbf2ab56d4cc746ccbf9b8b96ea4659042fba/src/app/features/registries/pages/draft-registration-custom-step/draft-registration-custom-step.component.ts#L24-L29"
+      },
+      {
+        "claim": "New-file upload adds kind=file and the filename before delegating to the raw PUT service.",
+        "url": "https://github.com/CenterForOpenScience/angular-osf/blob/3f9cbf2ab56d4cc746ccbf9b8b96ea4659042fba/src/app/shared/services/files.service.ts#L119-L131"
+      },
+      {
+        "claim": "The raw upload operation is an HTTP PUT with progress events.",
+        "url": "https://github.com/CenterForOpenScience/angular-osf/blob/3f9cbf2ab56d4cc746ccbf9b8b96ea4659042fba/src/app/shared/services/json-api.service.ts#L70-L80"
+      },
+      {
+        "claim": "The HTTP interceptor attaches session and CSRF behavior internally and enables credentialed requests.",
+        "url": "https://github.com/CenterForOpenScience/angular-osf/blob/3f9cbf2ab56d4cc746ccbf9b8b96ea4659042fba/src/app/core/interceptors/auth.interceptor.ts#L23-L45"
+      }
+    ]
+  },
+  "waterbutler": {
+    "commit": "4099320aab22911c09d7a6a6671e433ab43e07c1",
+    "repository": "https://github.com/CenterForOpenScience/waterbutler",
+    "sources": [
+      {
+        "claim": "A new upload is a PUT to a folder upload relation with kind=file and name; success is 201 and a same-name conflict is 409. Updating an existing file uses its upload relation and returns 200.",
+        "url": "https://github.com/CenterForOpenScience/waterbutler/blob/4099320aab22911c09d7a6a6671e433ab43e07c1/docs/api.rst#L83-L105"
+      },
+      {
+        "claim": "Provider handlers validate, authenticate, construct the provider and path, then prepare the stream before storage handling.",
+        "url": "https://github.com/CenterForOpenScience/waterbutler/blob/4099320aab22911c09d7a6a6671e433ab43e07c1/waterbutler/server/api/v1/provider/__init__.py#L42-L114"
+      },
+      {
+        "claim": "File create prevalidation requires a valid Content-Length and kind.",
+        "url": "https://github.com/CenterForOpenScience/waterbutler/blob/4099320aab22911c09d7a6a6671e433ab43e07c1/waterbutler/server/api/v1/provider/create.py#L15-L40"
+      }
+    ]
+  },
+  "sourceAcquisition": "Read-only shallow clones of the public authoritative repositories were inspected in a temporary non-repository directory. No dependency was acquired or installed."
+}

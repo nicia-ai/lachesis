@@ -1,0 +1,30 @@
+{
+  "checks": {
+    "artifactAppearedDuringInvestigation": false,
+    "auditChecksumManifestMatched": true,
+    "authoritativeUploadPathDocumented": true,
+    "credentialOrSignedUrlMaterialAbsent": true,
+    "draftEditableAndUnsubmitted": true,
+    "exactNameSearchesEmpty": true,
+    "externalMutationCountZero": true,
+    "inventoryObservationCountAtLeastThree": true,
+    "originalFailureLayerEstablished": false,
+    "pinnedCommitMatched": true,
+    "pinnedTreeMatched": true,
+    "predecessorAuditModified": false,
+    "projectPrivate": true,
+    "projectStorageEmpty": true,
+    "registrationCountZero": true,
+    "retryAuthorized": false,
+    "testedHypothesisFalsified": true,
+    "viewOnlyLinkCountZero": true
+  },
+  "evidenceFileCountExcludingChecksumManifest": 14,
+  "m9bStatus": "NO-GO",
+  "requiredFileCountIncludingChecksumManifest": 15,
+  "verifiedAgainst": {
+    "auditChecksumManifestSha256": "3112e1d44076fa2a83c9d51bad6979621f2d8e28013bf582f1747a363e30e6d8",
+    "commit": "6a639dc9d6e1743a204784907ae35b7b29150396",
+    "tree": "243c7dc18435df6bde1da7856e75de60bea3892a"
+  }
+}

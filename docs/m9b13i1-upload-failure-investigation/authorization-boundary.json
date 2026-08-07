@@ -1,0 +1,30 @@
+{
+  "allowedAndCompleted": {
+    "authenticatedReadOnlyDraftInspection": true,
+    "authenticatedReadOnlyProjectInspection": true,
+    "genericAuthoritativePublicSourceInspection": true,
+    "localAppendOnlyEvidenceCreation": true
+  },
+  "credentialMaterial": {
+    "authorizationHeadersRecorded": 0,
+    "cookiesRecorded": 0,
+    "passwordsRecorded": 0,
+    "signedUrlsRecorded": 0,
+    "tokensRecorded": 0
+  },
+  "prohibitedAndNotPerformed": {
+    "actualM9bArtifactUpload": true,
+    "approvalRejectionOrCancellation": true,
+    "draftOrProjectCreation": true,
+    "draftOrProjectDeletionOrModification": true,
+    "m10Start": true,
+    "pushTagOrPublication": true,
+    "registration63sh5AccessOrMutation": true,
+    "registrationSubmission": true,
+    "sendGridTrackingLinkAccessOrRetention": true,
+    "studyRoleOrAnalysisExecution": true,
+    "syntheticUploadOrRetry": true,
+    "viewOnlyLinkCreation": true
+  },
+  "scope": "read-only-root-cause-investigation-plus-local-append-only-evidence"
+}

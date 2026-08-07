@@ -1,0 +1,9 @@
+{
+  "causeEstablished": false,
+  "decision": "m9b13i1-upload-failure-diagnosis-no-go",
+  "m9bStatus": "NO-GO",
+  "priorUploadStateAmbiguous": false,
+  "reason": "The wrong-control hypothesis was falsified and repeated inventories establish that no artifact is observable, but the original network record did not survive. The evidence cannot distinguish pre-dispatch, transport, write authentication or CSRF, request prevalidation, provider storage, or client reconciliation failure.",
+  "retryAuthorized": false,
+  "retryProtocolReviewReady": false
+}

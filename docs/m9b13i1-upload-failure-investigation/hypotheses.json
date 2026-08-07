@@ -1,0 +1,40 @@
+{
+  "alternatives": [
+    {
+      "hypothesis": "The original write failed during write-specific authentication or CSRF validation.",
+      "status": "unproven",
+      "reason": "No original status, response body, redirect, or request record survived. A later authenticated metadata read does not test write authorization."
+    },
+    {
+      "hypothesis": "The request failed during transport or CORS handling.",
+      "status": "unproven",
+      "reason": "No original network record survived."
+    },
+    {
+      "hypothesis": "Waterbutler rejected request prevalidation, including Content-Length or request shape.",
+      "status": "unproven",
+      "reason": "The original request headers and response did not survive and were not recreated."
+    },
+    {
+      "hypothesis": "The provider or storage layer returned a transient or persistent error.",
+      "status": "unproven",
+      "reason": "The original response and server diagnostics are unavailable."
+    },
+    {
+      "hypothesis": "Waterbutler was broadly unreachable or the session was wholly unauthenticated.",
+      "status": "refuted-for-investigation-time-only",
+      "reason": "A documented provider-root metadata read later reached Waterbutler and returned an authenticated empty inventory. This does not establish conditions at the original attempt."
+    }
+  ],
+  "testedHypothesis": {
+    "hypothesis": "Browser automation targeted the wrong or stale file upload control and therefore selected the wrong path.",
+    "result": "falsified",
+    "test": "Reconcile the original interaction evidence with the current draft-summary DOM and the pinned public Angular OSF upload wiring.",
+    "testEvidence": [
+      "The visible Upload File control was selected and the browser file chooser received CANARY.txt.",
+      "The upload dialog displayed CANARY.txt, proving the selected file reached the component upload path.",
+      "The draft summary contains exactly one hidden file input associated with the visible control.",
+      "The source derives the storage link and project identity from the draft's branched-from project and the current folder upload relation."
+    ]
+  }
+}

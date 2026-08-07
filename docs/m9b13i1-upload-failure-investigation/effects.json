@@ -1,0 +1,30 @@
+{
+  "externalMutationCounters": {
+    "approvals": 0,
+    "cancellations": 0,
+    "draftsCreated": 0,
+    "filesDownloaded": 0,
+    "filesUploaded": 0,
+    "projectsCreated": 0,
+    "projectsOrDraftsDeleted": 0,
+    "projectsOrDraftsModified": 0,
+    "publicStateChanges": 0,
+    "registrationsSubmitted": 0,
+    "rejections": 0,
+    "retryAttempts": 0,
+    "viewOnlyLinksCreated": 0
+  },
+  "protectedAccessCounters": {
+    "credentialsAccessed": 0,
+    "registration63sh5Accesses": 0,
+    "sendGridTrackingLinksAccessed": 0,
+    "studyModelOrProviderCalls": 0,
+    "studyRolesOrAnalysesExecuted": 0
+  },
+  "readOnlyInvestigation": {
+    "authoritativePublicRepositoriesInspected": 2,
+    "inventoryObservations": 3,
+    "osfStateMutations": 0,
+    "waterbutlerMetadataProbes": 1
+  }
+}

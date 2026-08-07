@@ -1,0 +1,136 @@
+{
+  "artifactStopConditionTriggered": false,
+  "observations": [
+    {
+      "draft": {
+        "count": 1,
+        "editable": true,
+        "id": "6a7619b506a607fe5f63a77d",
+        "permissions": ["admin", "write", "read"],
+        "registrationResponseKeyCount": 0,
+        "sourceProjectId": "bmsda",
+        "submitted": false,
+        "updatedAt": "2026-08-07T17:46:04.675742Z"
+      },
+      "exactNameSearch": {
+        "name": "CANARY.txt",
+        "resultCount": 0
+      },
+      "project": {
+        "id": "bmsda",
+        "private": true
+      },
+      "providerRoot": {
+        "artifactCount": 0,
+        "nextPage": null,
+        "pagesRead": 1,
+        "paginationComplete": true,
+        "provider": "osfstorage"
+      },
+      "registrations": {
+        "count": 0,
+        "paginationComplete": true
+      },
+      "ui": {
+        "canaryFilenameCount": 0,
+        "projectFileCount": 0
+      },
+      "viewOnlyLinks": {
+        "count": 0,
+        "paginationComplete": true
+      },
+      "observedAt": "2026-08-07T18:14:07.644Z"
+    },
+    {
+      "draft": {
+        "count": 1,
+        "editable": true,
+        "id": "6a7619b506a607fe5f63a77d",
+        "permissions": ["admin", "write", "read"],
+        "registrationResponseKeyCount": 0,
+        "sourceProjectId": "bmsda",
+        "submitted": false,
+        "updatedAt": "2026-08-07T17:46:04.675742Z"
+      },
+      "exactNameSearch": {
+        "name": "CANARY.txt",
+        "resultCount": 0
+      },
+      "project": {
+        "id": "bmsda",
+        "private": true
+      },
+      "providerRoot": {
+        "artifactCount": 0,
+        "nextPage": null,
+        "pagesRead": 1,
+        "paginationComplete": true,
+        "provider": "osfstorage"
+      },
+      "registrations": {
+        "count": 0,
+        "paginationComplete": true
+      },
+      "ui": {
+        "canaryFilenameCount": 0,
+        "hiddenFileInputCount": 1,
+        "projectFileCount": 0,
+        "uploadButtonCount": 1
+      },
+      "viewOnlyLinks": {
+        "count": 0,
+        "paginationComplete": true
+      },
+      "observedAt": "2026-08-07T18:17:33.758Z"
+    },
+    {
+      "draft": {
+        "count": 1,
+        "editable": true,
+        "id": "6a7619b506a607fe5f63a77d",
+        "permissions": ["admin", "write", "read"],
+        "registrationResponseKeyCount": 0,
+        "sourceProjectId": "bmsda",
+        "submitted": false,
+        "updatedAt": "2026-08-07T17:46:04.675742Z"
+      },
+      "exactNameSearch": {
+        "name": "CANARY.txt",
+        "resultCount": 0
+      },
+      "project": {
+        "id": "bmsda",
+        "private": true
+      },
+      "providerRoot": {
+        "artifactCount": 0,
+        "nextPage": null,
+        "pagesRead": 1,
+        "paginationComplete": true,
+        "provider": "osfstorage"
+      },
+      "registrations": {
+        "count": 0,
+        "paginationComplete": true
+      },
+      "ui": {
+        "canaryFilenameCount": 0,
+        "projectFileCount": 0
+      },
+      "viewOnlyLinks": {
+        "count": 0,
+        "paginationComplete": true
+      },
+      "observedAt": "2026-08-07T18:20:14.688Z"
+    }
+  ],
+  "projectLog": {
+    "actions": ["project_created"],
+    "count": 1,
+    "fileOrUploadActionCount": 0,
+    "nextPage": null,
+    "paginationComplete": true
+  },
+  "providerInternalQuarantineObservability": "not-exposed-by-the-documented-read-only-representations",
+  "reconciliation": "Three separated complete provider-root inventories, three exact-name searches, three UI checks, and the complete project log contain no CANARY.txt or file event. No incomplete or hidden object is exposed by any authorized documented interface."
+}

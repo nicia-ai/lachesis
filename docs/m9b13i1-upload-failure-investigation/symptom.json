@@ -1,0 +1,25 @@
+{
+  "draftId": "6a7619b506a607fe5f63a77d",
+  "failedArtifact": {
+    "bytes": 146,
+    "name": "CANARY.txt",
+    "sha256": "d878f95cddd658063742de8b4b0fc60a413e2274b40d423be8ec0fa7a556a532"
+  },
+  "observedUiSequence": [
+    "The visible Upload File control opened the browser file chooser.",
+    "The selected CANARY.txt appeared in an upload dialog at zero percent.",
+    "An opaque minified client error was logged and the dialog closed.",
+    "No artifact became enumerable."
+  ],
+  "originalAttemptDiagnosticsStillAvailable": false,
+  "pinnedAudit": {
+    "checksumManifestSha256": "3112e1d44076fa2a83c9d51bad6979621f2d8e28013bf582f1747a363e30e6d8",
+    "commit": "6a639dc9d6e1743a204784907ae35b7b29150396",
+    "decision": "m9b13i-osf-private-draft-canary-no-go",
+    "tree": "243c7dc18435df6bde1da7856e75de60bea3892a"
+  },
+  "projectId": "bmsda",
+  "remainingSyntheticUploadsNotAttempted": 3,
+  "successfulSyntheticUploads": 0,
+  "syntheticUploadAttempts": 1
+}

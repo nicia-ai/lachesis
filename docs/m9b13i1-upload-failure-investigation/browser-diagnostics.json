@@ -1,0 +1,46 @@
+{
+  "currentReadOnlyProbe": {
+    "artifactCount": 0,
+    "contentTypeClass": "application/json",
+    "endpointClass": "waterbutler-v1-osfstorage-provider-root-metadata",
+    "httpStatus": 200,
+    "method": "GET",
+    "observedAt": "2026-08-07T18:22:42.840Z",
+    "redirectCount": 0,
+    "result": "Waterbutler was reachable and accepted the existing session for documented provider-root metadata at investigation time."
+  },
+  "nonDiagnosticRouteSemanticProbe": {
+    "contentTypeClass": "application/json",
+    "endpointClass": "waterbutler-v1-osfstorage-provider-root-without-metadata-operation",
+    "httpStatus": 403,
+    "method": "GET",
+    "reasonNonDiagnostic": "The documented folder metadata operation requires the metadata query operation. This later read cannot establish the status or layer of the original PUT failure."
+  },
+  "originalAttempt": {
+    "diagnosticRecordSurvived": false,
+    "known": {
+      "clientError": "opaque-minified-client-error-k$17",
+      "dialogFilename": "CANARY.txt",
+      "dialogProgressPercent": 0,
+      "initiationSource": "visible-upload-button-to-browser-file-input"
+    },
+    "unknown": {
+      "errorCode": true,
+      "errorMessage": true,
+      "failureLayer": true,
+      "httpStatus": true,
+      "redirectChain": true,
+      "requestContentLength": true,
+      "requestDispatchConfirmed": true,
+      "requestMethodFromNetworkRecord": true,
+      "responseContentType": true,
+      "sanitizedEndpointClassFromNetworkRecord": true,
+      "waterbutlerReached": true
+    }
+  },
+  "unrelatedDiagnosticExcluded": {
+    "endpointClass": "osf-api-myprojects-guid-lookup",
+    "httpStatus": 404,
+    "reason": "It preceded the upload attempt and is not evidence about the upload failure."
+  }
+}

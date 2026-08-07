@@ -1,0 +1,12 @@
+{
+  "provider": "osfstorage",
+  "providerAttributeNames": ["kind", "name", "node", "path", "provider"],
+  "providerRelationshipNames": ["files", "root_folder", "target"],
+  "relatedLinkNames": ["related"],
+  "stableTopLevelLinkRelationNames": ["new_folder", "storage_addons", "upload"],
+  "uploadEndpointClass": {
+    "hostClass": "files-subdomain.osf.io",
+    "pathClass": "/v1/resources/<project-id>/providers/osfstorage/",
+    "rawLinkStored": false
+  }
+}
