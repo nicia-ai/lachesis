@@ -1,0 +1,61 @@
+INACTIVE M9b.13k FUTURE PAT CEREMONY AUTHORIZATION
+
+This text authorizes nothing in its present repository form. No PAT may be
+created, supplied, accessed, used, copied, or revoked unless a later user
+instruction reproduces this authorization text exactly and explicitly
+activates it after independent read-only review.
+
+Bound implementation commit:
+1709a66bbff33cfa6065ee8bdf442cb9be19ed83
+Bound implementation tree:
+d1551cf5e33f075f159f240a8c34b3a82429db1f
+Bound controller source:
+packages/generator-ai-sdk/internal/m9b13k-osf-pat-canary-controller.ts
+Bound controller source SHA-256:
+7aaa02a667b13462181961b7bbeeb6ae3879bc355d89fe7479ce6256ba60a009
+Bound intercepted test source:
+packages/generator-ai-sdk/tests/m9b13k-osf-pat-canary-controller.test.ts
+Bound intercepted test source SHA-256:
+c09e688c4cfb0f0d1f158e58097e9231427b9d0b706c09f412e73e7c847ea723
+
+Controller protocol:
+lachesis-m9b13k-osf-pat-waterbutler-canary-controller/1
+Activation protocol:
+lachesis-m9b13k-osf-pat-canary-activation-binding/1
+Credential custody protocol:
+lachesis-m9b13k-anonymous-fd3-pat-custody/1
+Request-sequence protocol:
+lachesis-m9b13k-osf-pat-canary-request-sequence/1
+Revocation protocol:
+lachesis-m9b13k-osf-pat-revocation/1
+
+Project: bmsda
+Draft: 6a7619b506a607fe5f63a77d
+Provider: osfstorage
+Required future PAT scope: osf.full_write
+
+Synthetic artifact identity:
+1fbd9e013ac05f53c411b9e98f507d12
+Synthetic artifact filename:
+OSF-PAT-WATERBUTLER-CANARY-1fbd9e013ac05f53c411b9e98f507d12.txt
+Synthetic artifact byte length: 245
+Synthetic artifact SHA-256:
+4ee4d970eb65bb9b8e525618ba19d4ee28dd2c1a1d0730bd9c4f3ff016134994
+
+Maximum HTTP requests: 18
+Maximum request body bytes: 245
+Maximum API response bytes: 262144
+Maximum upload response bytes: 65536
+Per-request timeout milliseconds: 10000
+Complete-controller deadline milliseconds: 120000
+Terminal revocation deadline milliseconds: 15000
+Retries: 0
+Concurrency: 1
+Maximum PUT dispatches: 1
+Maximum revocation attempts: 1
+
+Any mismatch leaves this text inactive. Activation, if later authorized, is
+limited to the exact synthetic canary and requires terminal PAT revocation or
+an explicit revocation-failed/ambiguous security stop. It never authorizes
+registration 63sh5 access, M9b supplement upload, study execution, M10, or any
+other project, provider, credential, artifact, request, retry, or mutation.

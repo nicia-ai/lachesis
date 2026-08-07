@@ -1,0 +1,27 @@
+{
+  "controllerExecutionCounters": {
+    "controllerActivationsAgainstRealCredentials": 0,
+    "realHttpRequests": 0,
+    "realPatRevocationAttempts": 0,
+    "realWaterbutlerPutRequests": 0,
+    "retries": 0
+  },
+  "externalMutationCounters": {
+    "filesDownloaded": 0,
+    "filesUploaded": 0,
+    "projectsOrDraftsCreated": 0,
+    "projectsOrDraftsModified": 0,
+    "publicStateChanges": 0,
+    "registrationStateChanges": 0,
+    "remoteFilesDeletedRenamedReplacedOrVersioned": 0,
+    "viewOnlyLinksCreated": 0
+  },
+  "protectedAccessCounters": {
+    "corpusOrGoldAccesses": 0,
+    "personalAccessTokensAccessedCopiedCreatedOrRevoked": 0,
+    "providerOrModelCalls": 0,
+    "registration63sh5Accesses": 0,
+    "studyCredentialsAccessed": 0,
+    "studyRolesOrAnalysesExecuted": 0
+  }
+}

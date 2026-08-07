@@ -1,0 +1,54 @@
+{
+  "baseline": {
+    "acceptedM9b13jChecksumManifestSha256": "d83d37117c426de52410811b158373a4539d91ed35c3d13f86cfed06697dd8ee",
+    "commit": "dbcae7a9fd8695e11af300295336c1b29ab7cad5",
+    "tree": "cbc32c6f3e53d23dc861e2b57e93c14d990db85a"
+  },
+  "checks": {
+    "allTrackedChecksumManifestsPass": true,
+    "controllerHasNoNetworkImplementation": true,
+    "controllerIsPrivateAndUnexported": true,
+    "dependencyLockfileUnchanged": true,
+    "deterministicBuildPass": true,
+    "focusedInterceptedTestsPass": true,
+    "generatorAiSdkPackageVersionUnchanged": true,
+    "m9b13jChecksumManifestPreserved": true,
+    "noPublicExportsChanged": true,
+    "predecessorCommitPreserved": true,
+    "protectedUntrackedPathsNotAccessedOrModified": true,
+    "realExternalEffectsZero": true,
+    "repositoryBuildPass": true,
+    "repositoryCoverageTestsPass": true,
+    "repositoryExamplesPass": true,
+    "repositoryPublicApiAuditPass": true,
+    "repositoryReleaseChecksumAuditPass": true,
+    "repositorySmokeConsumersPass": true,
+    "repositorySourceSafetyAuditPass": true,
+    "trackedSourceLintPass": true
+  },
+  "coverage": {
+    "branchesPercent": 80.97,
+    "filesPassed": 75,
+    "functionsPercent": 97.45,
+    "linesPercent": 93.7,
+    "statementsPercent": 90.01,
+    "testsPassed": 1350
+  },
+  "implementation": {
+    "commit": "1709a66bbff33cfa6065ee8bdf442cb9be19ed83",
+    "controllerSha256": "7aaa02a667b13462181961b7bbeeb6ae3879bc355d89fe7479ce6256ba60a009",
+    "testSha256": "c09e688c4cfb0f0d1f158e58097e9231427b9d0b706c09f412e73e7c847ea723",
+    "tree": "d1551cf5e33f075f159f240a8c34b3a82429db1f"
+  },
+  "knownUnrelatedBaselineExceptions": {
+    "historicalM7cAudit": "docs/public-alpha.md differs from its older M7c preregistration binding; M9b.13k did not modify either file",
+    "packedAlpha5Audit": "the existing generator package differs from its frozen alpha.5 tarball digest; M9b.13k changes no publishable package surface",
+    "trackedWideFormatAndDocsLint": "historical checksum-bound documentation includes pre-existing formatting and TypeScript project-service exceptions; the exact M9b.13k allowlist and tracked non-doc source lint pass"
+  },
+  "m9bStatus": "NO-GO",
+  "protocolCommit": {
+    "commit": "57a572a55f50b1d3b776788b691b0454d44d464e",
+    "tree": "c3ded1ec95d57a7b192427d407ddbc686fab5f75"
+  },
+  "verifiedAt": "2026-08-07T21:01:51Z"
+}

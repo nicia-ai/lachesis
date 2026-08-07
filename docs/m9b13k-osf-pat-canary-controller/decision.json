@@ -1,0 +1,8 @@
+{
+  "authorizationEffect": "independent-read-only-review-only",
+  "decision": "m9b13k-osf-pat-canary-controller-ready-for-independent-review",
+  "m9bStatus": "NO-GO",
+  "patCreationOrUseAuthorized": false,
+  "reason": "The private controller, frozen protocol, strict anonymous-FD3 custody, durable single-dispatch accounting, URL and response validation, mandatory terminal revocation boundary, zero-effect replay, and 76-case intercepted hostile matrix passed focused and proportionate repository verification without accessing OSF or a real PAT.",
+  "realExternalEffects": 0
+}
