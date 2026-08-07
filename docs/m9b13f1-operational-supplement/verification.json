@@ -1,0 +1,93 @@
+{
+  "protocol": "lachesis-m9b13f1-static-operational-supplement-verification/1",
+  "decision": "m9b13f1-corrected-minimal-operational-supplement-ready-for-independent-review",
+  "verificationMode": "offline-local-static-only",
+  "checks": {
+    "acceptedBaselineCommitTreeAndDigests": "pass",
+    "m9b13fReviewPreservedVerbatim": "pass",
+    "m9b13fBytesAndChecksumsPreserved": "pass",
+    "allPredecessorAndReviewManifests": "pass",
+    "registrationReceiptAndTwentySevenArchiveIdentities": "pass",
+    "independentEighteenFieldRederivation": "pass",
+    "seventeenRecordHistoricalInventory": "pass",
+    "m9b13aReviewDistinctAndExact": "pass",
+    "strictJsonAndDuplicateKeyChecks": "pass",
+    "bodyPayloadPathSizeRawAndCanonicalDigests": "pass",
+    "packageInventoryPathUniqueness": "pass",
+    "authorCommitmentReproduction": "pass",
+    "authorSignatureVerification": "pass",
+    "privateCustodyPermissions": "pass",
+    "exactLiteralChecks": "pass",
+    "runtimeReuseProhibition": "pass",
+    "reviewSubmissionSeparation": "pass",
+    "formattingAndLocalLinks": "pass",
+    "sourceSafetyAndSecretScan": "pass",
+    "checksumReproduction": "pass",
+    "gitDiffAndIntegrity": "pass"
+  },
+  "hostileStaticTests": {
+    "eachSubstantiveComponentMutationChangesRederivedBodyDigest": "pass",
+    "filenameOnlyManifestSubstitution": "rejected",
+    "omittedPayloadComponent": "rejected",
+    "extraPayloadComponent": "rejected",
+    "duplicatePath": "rejected",
+    "reorderedPath": "rejected",
+    "changedRawBytesWithSameClaimedDigest": "rejected",
+    "changedCanonicalJson": "rejected",
+    "identityPointsToAnotherPayloadManifest": "rejected",
+    "missingM9b13aReview": "rejected",
+    "duplicateHistoricalReview": "rejected",
+    "changedHistoricalDisposition": "rejected",
+    "fixedStringAuthorCommitment": "rejected",
+    "wrongPublicKey": "rejected",
+    "alteredAuthorAttestation": "rejected",
+    "wrongSignature": "rejected",
+    "authorReviewerIdenticalCommitment": "rejected",
+    "reviewPassTreatedAsSubmissionAuthority": "rejected",
+    "missingSeparateSubmissionAuthorizationRequirement": "rejected",
+    "hostileJsonKeys": "rejected",
+    "checksumOrInventoryDrift": "rejected"
+  },
+  "body": {
+    "protocol": "lachesis-m9b13f1-embargo-compatible-operational-supplement-body/1",
+    "payloadProtocol": "lachesis-m9b13f1-canonical-body-payload-manifest/1",
+    "substantiveFiles": 19,
+    "bodyDigestSha256": "56ffe1f5c1fa7e43a7ab37367b630efc60fa530a126dbb499532a378dacd663b",
+    "payloadManifestRawSha256": "b3e5c0787329f4e6c1771f2647d00513338a0272a6c34d27a1f8b701507294e6"
+  },
+  "author": {
+    "publicKeyIdentity": "lachesis-m9b13f1-supplement-author-ed25519-a4902fc3ea2a0e91",
+    "commitment": "sha256:a4902fc3ea2a0e91d9936b1a0be3c162e308f3f1d62e804c6e7066cce89c873f",
+    "attestationCanonicalSha256": "a9537a0ceaec59aa7db116a3807be902c2e6b1093ff3c2b889b099913718cadf",
+    "signatureVerified": true,
+    "privateBytesOrLocatorRecorded": false
+  },
+  "authority": {
+    "reviewPassGrantsSubmissionAuthority": false,
+    "separateSubmissionAuthorizationRequired": true,
+    "supplementSubmissionAuthorityCurrentlyPresent": false
+  },
+  "repositoryTests": {
+    "run": false,
+    "reason": "No repository code, workflow, package metadata, dependency, or version changed."
+  },
+  "effects": {
+    "networkRequests": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsSubmittedOrApproved": 0,
+    "realAuthoritiesActivated": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionDownloadImageOperations": 0,
+    "corpusGoldScheduleConstructions": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "embargoMutations": 0,
+    "m10Work": 0
+  },
+  "trackedWorktreeExpectedCleanAfterSealCommit": true,
+  "nextAction": "independent-read-only-review-of-m9b13f1",
+  "submissionOrApprovalAuthorized": false
+}

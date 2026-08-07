@@ -1,0 +1,29 @@
+{
+  "protocol": "lachesis-m9b13f1-supplement-body-identity/1",
+  "supplementProtocol": "lachesis-m9b13f1-embargo-compatible-operational-supplement-body/1",
+  "bodyPayloadProtocol": "lachesis-m9b13f1-canonical-body-payload-manifest/1",
+  "bodyDigestSha256": "56ffe1f5c1fa7e43a7ab37367b630efc60fa530a126dbb499532a378dacd663b",
+  "payloadManifestRawSha256": "b3e5c0787329f4e6c1771f2647d00513338a0272a6c34d27a1f8b701507294e6",
+  "packageInventoryProtocol": "lachesis-m9b13f1-complete-package-inventory/1",
+  "packageInventoryCanonicalSha256": "f8a12040854cbd4af07317e71b86b6deb60f78e85dac37bbf7cf71bd42febdff",
+  "authorPublicKeyIdentity": "lachesis-m9b13f1-supplement-author-ed25519-a4902fc3ea2a0e91",
+  "authorPublicKeySpkiDerSha256": "87b1200927225cb49bb94fe1ff08c8c0b4feb7ec63c0029e5b4c3655be628b21",
+  "authorCommitment": "sha256:a4902fc3ea2a0e91d9936b1a0be3c162e308f3f1d62e804c6e7066cce89c873f",
+  "authorAttestationRawSha256": "21f81dc3084ab1e5fe98513018b4dbaae1b088132d78d069ba361c7630c69df4",
+  "authorAttestationCanonicalSha256": "a9537a0ceaec59aa7db116a3807be902c2e6b1093ff3c2b889b099913718cadf",
+  "scientificFinancialProjectionSha256": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "originalRegistration": {
+    "id": "63sh5",
+    "submissionTimestamp": "2026-08-02T19:19:33.924946Z",
+    "approvalTimestamp": "2026-08-02T20:03:47.850242Z",
+    "embargoEnd": "2030-08-01T00:00:00Z",
+    "immutableFileCount": 27,
+    "preregistrationSha256": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "receiptSha256": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+  },
+  "preSealSourceCommit": "65c007191ab5e85638356eb526c33131d9217ee1",
+  "preSealSourceTree": "f6c368e17e99c2b14560d9be1a04eb79c28a7239",
+  "identityOutsideBodyPayload": true,
+  "finalCommitAndTreeBoundByLaterIndependentReviewReceipt": true
+}

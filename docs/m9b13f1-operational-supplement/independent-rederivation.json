@@ -1,0 +1,103 @@
+{
+  "protocol": "lachesis-m9b13f1-independent-offline-rederivation/1",
+  "sources": "local-immutable-git-objects-registration-receipt-and-registered-bytes-only",
+  "networkUsed": false,
+  "baseline": {
+    "finalCommit": "adc0eb47ee8103ab3491b8aca1d884be22ccf2ab",
+    "finalTree": "e6aff271b90b68d24a8d5877b7e338fb6683a9cb",
+    "submittedDecision": "m9b13f-minimal-operational-supplement-ready-for-independent-review",
+    "independentReviewDecision": "m9b13f-minimal-operational-supplement-review-no-go",
+    "bodyDigest": "bda6171ec4c088dfb29ecd3884f9640922a7829e12b64c9a01b9ceaf2df11ab3",
+    "manifestDigest": "4feb24e72eef0f0994f705645b0d23bccb59783869b403c716c03e368c7a3245",
+    "preservedByteForByte": true
+  },
+  "preservedReviewEvidence": {
+    "commit": "0b01b5c96c39c674c3bc85d3a17001ed6b98b17e",
+    "tree": "32720b7ee53d649e4a416394648ee39cb2fcc0f3",
+    "decision": "m9b13f-minimal-operational-supplement-review-no-go",
+    "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13f1"
+  },
+  "correctedPreSealSource": {
+    "commit": "65c007191ab5e85638356eb526c33131d9217ee1",
+    "tree": "f6c368e17e99c2b14560d9be1a04eb79c28a7239"
+  },
+  "body": {
+    "protocol": "lachesis-m9b13f1-embargo-compatible-operational-supplement-body/1",
+    "payloadProtocol": "lachesis-m9b13f1-canonical-body-payload-manifest/1",
+    "substantivePayloadFiles": 19,
+    "bodyDigestSha256": "56ffe1f5c1fa7e43a7ab37367b630efc60fa530a126dbb499532a378dacd663b",
+    "payloadManifestRawSha256": "b3e5c0787329f4e6c1771f2647d00513338a0272a6c34d27a1f8b701507294e6",
+    "identityOutsidePayload": true,
+    "digestCycle": false
+  },
+  "package": {
+    "inventoryProtocol": "lachesis-m9b13f1-complete-package-inventory/1",
+    "inventoryCount": 30,
+    "inventoryCanonicalSha256": "f8a12040854cbd4af07317e71b86b6deb60f78e85dac37bbf7cf71bd42febdff",
+    "checksumManifestExcludesItself": true
+  },
+  "author": {
+    "algorithm": "Ed25519",
+    "publicKeyIdentity": "lachesis-m9b13f1-supplement-author-ed25519-a4902fc3ea2a0e91",
+    "publicKeySpkiDerSha256": "87b1200927225cb49bb94fe1ff08c8c0b4feb7ec63c0029e5b4c3655be628b21",
+    "commitment": "sha256:a4902fc3ea2a0e91d9936b1a0be3c162e308f3f1d62e804c6e7066cce89c873f",
+    "keypairsGenerated": 1,
+    "privateNamespaceMode": "0700",
+    "privateKeyMode": "0600",
+    "privateBytesOrLocatorRecorded": false,
+    "attestationRawSha256": "21f81dc3084ab1e5fe98513018b4dbaae1b088132d78d069ba361c7630c69df4",
+    "attestationCanonicalSha256": "a9537a0ceaec59aa7db116a3807be902c2e6b1093ff3c2b889b099913718cadf",
+    "attestationSigningInputSha256": "4b4cd59f67e8b6eecf9e80b9c4af4cda9f2493ebbcfb6d48257a0d6b1c04e33d",
+    "signatureVerified": true
+  },
+  "historicalInventory": {
+    "entryCount": 17,
+    "sorted": true,
+    "duplicateFree": true,
+    "missingEntries": 0,
+    "extraEntries": 0,
+    "m9b13aReviewDistinct": true,
+    "allLiveUseProhibited": true,
+    "identities": [
+      "M9b.13",
+      "M9b.13a",
+      "M9b.13a.review",
+      "M9b.13b",
+      "M9b.13b.review",
+      "M9b.13c",
+      "M9b.13d",
+      "M9b.13d.review",
+      "M9b.13d.1",
+      "M9b.13e",
+      "M9b.13e.review",
+      "M9b.13e.1",
+      "M9b.13e.1.review",
+      "M9b.13e.2",
+      "M9b.13e.2.review",
+      "M9b.13e.3",
+      "M9b.13e.3.review"
+    ]
+  },
+  "registration": {
+    "id": "63sh5",
+    "immutableFileCount": 27,
+    "allNamesSizesAndSha256Reproduced": true,
+    "preregistrationDigest": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestDigest": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "receiptDigest": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+  },
+  "scientificFinancialProjection": {
+    "fieldCount": 18,
+    "additions": 0,
+    "omissions": 0,
+    "changes": 0,
+    "canonicalDigest": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282"
+  },
+  "authority": {
+    "reviewPassGrantsSubmissionAuthority": false,
+    "separateSubmissionAuthorizationRequired": true,
+    "supplementSubmissionAuthorityCurrentlyPresent": false,
+    "runtimeAuthorityPresent": false
+  },
+  "rederivedDecision": "m9b13f1-corrected-minimal-operational-supplement-ready-for-independent-review"
+}
