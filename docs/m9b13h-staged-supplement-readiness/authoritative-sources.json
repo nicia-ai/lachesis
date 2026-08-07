@@ -1,0 +1,103 @@
+{
+  "protocol": "lachesis-m9b13h-authoritative-osf-sources/1",
+  "researchedAt": "2026-08-07T17:23:39Z",
+  "researchMode": "authoritative-public-documentation-and-public-api-specification-read-only",
+  "sources": [
+    {
+      "id": "osf-registration-guide",
+      "publisher": "Center for Open Science",
+      "title": "Welcome to Registrations & Preregistrations!",
+      "url": "https://help.osf.io/article/330-welcome-to-registrations",
+      "lastUpdated": "2026-08-05",
+      "supports": [
+        "from-scratch-draft-creation-before-submission",
+        "documents-can-be-attached-while-building-draft",
+        "draft-files-can-be-previewed-and-deleted",
+        "draft-metadata-and-license-can-be-edited-and-autosaved",
+        "embargo-end-is-selected-at-submission-and-may-be-up-to-four-years",
+        "pending-registration-is-visible-only-to-contributors",
+        "admin-contributors-can-approve-or-cancel-within-48-hours",
+        "one-rejection-returns-submission-to-draft",
+        "automatic-approval-after-48-hours",
+        "approved-embargoed-registration-is-private",
+        "registered-files-cannot-be-edited",
+        "registration-created-date-is-submission-date"
+      ],
+      "doesNotEstablish": [
+        "exact-byte-redownload-of-every-draft-artifact",
+        "complete-provider-visible-draft-inventory",
+        "exact-generated-license-file-bytes-before-submission",
+        "machine-controllable-approval-or-cancellation-deadline"
+      ]
+    },
+    {
+      "id": "osf-licensing-guide",
+      "publisher": "Center for Open Science",
+      "title": "Licensing",
+      "url": "https://help.osf.io/article/148-licensing",
+      "lastUpdated": "2026-05-28",
+      "supports": [
+        "no-license-option-is-unavailable-for-osf-registries",
+        "apache-license-2.0-is-an-available-osf-license",
+        "project-affiliated-license-is-automatically-uploaded-when-project-is-submitted-to-registration",
+        "submission-prompts-for-license-if-project-has-none",
+        "osf-does-not-select-a-license-for-the-user-or-provide-legal-advice"
+      ],
+      "doesNotEstablish": [
+        "generated-license-artifact-name",
+        "generated-license-artifact-exact-bytes",
+        "whether-generated-license-bytes-are-inspectable-before-submission",
+        "whether-registration-license-field-and-uploaded-license-file-are-identical-representations"
+      ]
+    },
+    {
+      "id": "osf-api-v2",
+      "publisher": "Center for Open Science",
+      "title": "OSF APIv2 Documentation",
+      "url": "https://developer.osf.io/",
+      "supports": [
+        "documented-draft-registration-create-retrieve-update-delete-resources",
+        "draft-registration-contributors-can-upload-files-and-change-metadata-before-archive",
+        "general-file-resources-provide-download-links",
+        "schema-response-in-progress-state-is-editable-and-private"
+      ],
+      "doesNotEstablish": [
+        "one-complete-stable-draft-file-upload-enumeration-redownload-submit-embargo-approve-cancel-contract",
+        "exact-provider-generated-artifact-set",
+        "exact-license-file-generation-lifecycle"
+      ]
+    },
+    {
+      "id": "osf-open-ended-schema-v3",
+      "publisher": "Center for Open Science",
+      "title": "Open-Ended Registration schema public API resource",
+      "url": "https://api.osf.io/v2/schemas/registrations/5df83f7dd28338001ac0ab0d/",
+      "carriedForwardFromFrozenM9b13g": {
+        "resourceId": "5df83f7dd28338001ac0ab0d",
+        "schemaVersion": 3,
+        "active": true,
+        "schemaCanonicalSha256": "e750a5a2870f7571032f2c84696321a1071ade6fdd8cccd8c678e0275d3d7fcc",
+        "resourceCanonicalSha256": "258bf02c234d6b95acb364553e0b110399865574af4d72a00a5a49667292ed2d"
+      }
+    },
+    {
+      "id": "osf-apache-license-resource",
+      "publisher": "Center for Open Science",
+      "title": "Apache License 2.0 public API resource",
+      "url": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e96d/",
+      "carriedForwardFromFrozenM9b13g": {
+        "resourceId": "563c1cf88c5e4a3877f9e96d",
+        "name": "Apache License 2.0",
+        "requiredFields": [],
+        "resourceCanonicalSha256": "7be8d73e292c35358a27fab7fd45ebf60adaa3cdb0c19b1d57f1d9a3e06ed960"
+      }
+    }
+  ],
+  "researchEffects": {
+    "authenticationUsed": false,
+    "credentialsAccessed": false,
+    "externalMutationRequests": 0,
+    "successfulDirectAuthenticatedRequests": 0,
+    "underlyingPublicDocumentationFetchCountKnownExactly": false
+  }
+}

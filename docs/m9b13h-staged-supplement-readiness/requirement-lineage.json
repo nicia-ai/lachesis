@@ -1,0 +1,95 @@
+{
+  "protocol": "lachesis-m9b13h-signed-requirement-lineage/1",
+  "source": {
+    "supplementCommit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+    "supplementTree": "fb5f4b29609986f1aee314e6f96c2405f76b199b",
+    "bodyProtocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+    "bodyCanonicalSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+    "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73",
+    "requirementsArtifact": {
+      "path": "docs/m9b13f2-operational-supplement/external-mechanism-requirements.json",
+      "protocol": "lachesis-m9b13f2-future-external-supplement-mechanism-requirements/1",
+      "rawSha256": "f423f6f887e61ce4204c56c8f961fd4185c95bfd92a6d41a80fb0cd780358df3",
+      "canonicalSha256": "d11f626a0df3fdbf1d4eb23f8889145a2b7844fe886e3a9896f83eb340986d3a"
+    },
+    "authorityBoundaryArtifact": {
+      "path": "docs/m9b13f2-operational-supplement/review-submission-boundary.json",
+      "protocol": "lachesis-m9b13f2-review-and-submission-authority-boundary/1",
+      "rawSha256": "88d7ed7962da9d03a26ac4978a82aa782a7c876fa2aabe56e8abe7d67547582a",
+      "canonicalSha256": "da79572fe74c9a66e4405064006826c541aed8c463ac829b88a65079a0f73c93"
+    }
+  },
+  "signedRequirements": [
+    {
+      "requirement": "new-immutable-external-identity",
+      "sourcePointer": "/laterSubmissionRequires/0"
+    },
+    {
+      "requirement": "embargo-at-least-as-restrictive-as-registration-63sh5-through-2030-08-01T00:00:00Z",
+      "sourcePointer": "/laterSubmissionRequires/1"
+    },
+    {
+      "requirement": "no-public-view-only-link",
+      "sourcePointer": "/laterSubmissionRequires/2"
+    },
+    {
+      "requirement": "no-protected-metadata-or-context-exposure",
+      "sourcePointer": "/laterSubmissionRequires/3"
+    },
+    {
+      "requirement": "exact-immutable-attachment-hashes",
+      "sourcePointer": "/laterSubmissionRequires/4"
+    },
+    {
+      "requirement": "server-submission-timestamp",
+      "sourcePointer": "/laterSubmissionRequires/5"
+    },
+    {
+      "requirement": "separate-approval-where-required",
+      "sourcePointer": "/laterSubmissionRequires/6"
+    },
+    {
+      "requirement": "independent-post-upload-byte-verification",
+      "sourcePointer": "/laterSubmissionRequires/7"
+    },
+    {
+      "requirement": "append-only-local-receipt",
+      "sourcePointer": "/laterSubmissionRequires/8"
+    },
+    {
+      "requirement": "separate-exact-submission-authorization",
+      "sourcePointer": "/laterSubmissionRequires/9"
+    }
+  ],
+  "notSignedRequirements": [
+    {
+      "constraint": "57-separately-uploaded-external-files",
+      "finding": "absent-from-signed-requirements"
+    },
+    {
+      "constraint": "preservation-of-two-native-osf-folder-paths",
+      "finding": "absent-from-signed-requirements"
+    },
+    {
+      "constraint": "absence-of-all-provider-generated-files",
+      "finding": "absent-from-signed-requirements; provider files are acceptable only if enumerated and frozen before submission"
+    },
+    {
+      "constraint": "platform-approval-can-never-occur-automatically",
+      "finding": "absent-from-signed-requirements; automatic approval remains an operational hazard requiring bounded control"
+    },
+    {
+      "constraint": "submission-before-draft-contents-are-inspected",
+      "finding": "absent-from-signed-requirements; pre-submission inspection strengthens the signed hash requirement"
+    }
+  ],
+  "transportCorrection": {
+    "wrapperPermitted": true,
+    "wrapperRole": "mechanical-transport-container-for-already-signed-and-reviewed-bytes",
+    "scientificOrOperationalAmendment": false,
+    "innerFileCount": 57,
+    "innerBytesMustRemainExact": true
+  },
+  "authorityCreated": false,
+  "m9bStatus": "NO-GO"
+}

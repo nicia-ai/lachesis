@@ -1,0 +1,36 @@
+{
+  "protocol": "lachesis-m9b13h-prospective-license-analysis/1",
+  "status": "unresolved-no-active-license-selection",
+  "osfBehavior": {
+    "licenseRequiredForRegistries": true,
+    "basis": "No License is unavailable for OSF Registries, and a user without a project license is prompted to select one when submitting.",
+    "projectLicenseAutomaticallyUploadedAtSubmission": true,
+    "exactStoredArtifactNameKnown": false,
+    "exactStoredArtifactBytesKnown": false,
+    "appearanceBeforeSubmissionEstablished": false,
+    "stableAndHashableBeforeSubmissionEstablished": false
+  },
+  "prospectiveCandidate": {
+    "activated": false,
+    "name": "Apache License 2.0",
+    "spdx": "Apache-2.0",
+    "osfLicenseId": "563c1cf88c5e4a3877f9e96d",
+    "sourceRepositoryLicensePath": "LICENSE",
+    "sourceRepositoryLicenseRawSha256": "1f25afa5f2c0bb79817c2ab472af0db34641cb0a6428219ad7b44e01ee3792ac",
+    "rationale": "All 57 archived artifacts are tracked source-form code, documentation, or verification records from the Apache-2.0 repository. Selecting Apache-2.0 would align the external record with that existing repository license rather than silently inheriting registration 63sh5's CC0 selection.",
+    "legalConclusionClaimed": false,
+    "requiredBeforeActivation": "confirmation by the relevant copyright holder or authorized legal decision-maker that one Apache-2.0 selection validly covers the combined archive"
+  },
+  "cc0Inheritance": {
+    "inheritedFromRegistration63sh5": false,
+    "reason": "The original registration's CC0 selection is not evidence that the later code-and-documentation archive may be relicensed under CC0."
+  },
+  "blockingQuestions": [
+    "exact bytes and filename of every stored license artifact",
+    "whether every license artifact exists and can be redownloaded during private draft staging",
+    "whether any different license representation is introduced only by submission",
+    "authorized confirmation that Apache-2.0 covers the combined external record"
+  ],
+  "failClosedRule": "If any provider-visible license artifact first appears during submission or its exact bytes cannot be frozen before submission, the mechanism remains NO-GO.",
+  "externalEffect": false
+}

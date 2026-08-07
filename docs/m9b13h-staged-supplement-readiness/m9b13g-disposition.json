@@ -1,0 +1,29 @@
+{
+  "protocol": "lachesis-m9b13h-m9b13g-disposition/1",
+  "m9b13g": {
+    "commit": "c324343d65bbbf68659c443581eb686ace9c9b68",
+    "tree": "257ff6df6aa57ab64c43a1ac60d367ae5f909313",
+    "packageSubtree": "24a0f0e4bd63822720b3b7d86649a4004c90521e",
+    "checksumManifestRawSha256": "9756e5f9d15d6a05c445eabc6867b0366668bb5e8dc4ad79d0067f56bbd6fc47",
+    "inventoryProtocol": "lachesis-m9b13g-prospective-attachment-inventory/1",
+    "inventoryCanonicalSha256": "4a7193935b959b8f815839c80b87f2af6b60fd2928aaf09afa3ed8d547a9f725",
+    "decision": "m9b13g-external-supplement-mechanism-no-go",
+    "preservedByteForByte": true
+  },
+  "validity": {
+    "direct57FileDesignNoGoRemainsValid": true,
+    "blockingFindingsRemainValidForThatDesign": [
+      "ordinary-osf-registration-auto-approval",
+      "license-induced-archive-closure-ambiguity",
+      "folder-preservation-not-established"
+    ]
+  },
+  "correction": {
+    "m9b13gModified": false,
+    "m9b13gDecisionReversed": false,
+    "localConstraintsSeparatedFromSignedRequirements": true,
+    "newDesign": "deterministic-single-archive-with-private-draft-inspection-before-any-separate-submission-authority"
+  },
+  "authorityCreated": false,
+  "m9bStatus": "NO-GO"
+}
