@@ -1,0 +1,21 @@
+{
+  "authorizedMutation": {
+    "diagnosticFileSelectionsMaximum": 1,
+    "diagnosticUploadAttemptsMaximum": 1,
+    "resultingUploadHttpRequestsMaximum": 1,
+    "retriesMaximum": 0
+  },
+  "diagnosticIdentity": "50f335e5df31978707c3f1beb4bd7131",
+  "existingExternalState": {
+    "draftId": "6a7619b506a607fe5f63a77d",
+    "originalFailedFilename": "CANARY.txt",
+    "projectId": "bmsda"
+  },
+  "m9b13i1": {
+    "checksumManifestSha256": "9f48d11dff28f55e24c50d76240982466247bbb3ad54c59b839ee42427b2b78a",
+    "commit": "a61e230c7b72289b024272164dbe6047dd867255",
+    "tree": "80dbd6c13157792f29b5df8e937531f1d662ef8b"
+  },
+  "protocol": "lachesis-m9b13i2-instrumented-upload-probe-authorization/1",
+  "scope": "one-instrumented-synthetic-osf-upload-probe-subject-to-preflight-and-instrumentation-stop-conditions"
+}

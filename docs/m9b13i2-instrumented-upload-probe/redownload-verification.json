@@ -1,0 +1,12 @@
+{
+  "authorizedOnlyAfterSuccessfulUpload": true,
+  "downloadCount": 0,
+  "expectedArtifact": {
+    "bytes": 276,
+    "filename": "OSF-UPLOAD-DIAGNOSTIC-50f335e5df31978707c3f1beb4bd7131.txt",
+    "sha256": "3dbd13c035c4857f9da6354974040722b83cb8678a3b81c50a57f671825f4c85"
+  },
+  "performed": false,
+  "reason": "No upload was initiated because the instrumentation precondition failed.",
+  "result": "not-applicable-no-remote-artifact"
+}

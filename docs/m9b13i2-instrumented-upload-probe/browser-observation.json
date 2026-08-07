@@ -1,0 +1,22 @@
+{
+  "browserConsole": {
+    "errorCategories": [],
+    "nonErrorCategories": ["third-party-telemetry-warning"]
+  },
+  "fileChooserInvoked": false,
+  "instrumentationStopDisplayedToUser": false,
+  "postStopUi": {
+    "canaryFilenameCount": 0,
+    "diagnosticFilenameCount": 0,
+    "dialogCount": 0,
+    "fileInputCount": 1,
+    "progressbarCount": 0,
+    "uploadButtonCount": 1
+  },
+  "projectStorageContext": {
+    "projectId": "bmsda",
+    "provider": "osfstorage",
+    "visibleUploadControlPresent": true
+  },
+  "uiTerminalState": "idle-unchanged-no-upload-initiated"
+}

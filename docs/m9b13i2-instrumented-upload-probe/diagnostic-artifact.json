@@ -1,0 +1,16 @@
+{
+  "artifact": {
+    "bytes": 276,
+    "classification": "synthetic-non-study-upload-transport-evidence",
+    "filename": "OSF-UPLOAD-DIAGNOSTIC-50f335e5df31978707c3f1beb4bd7131.txt",
+    "sha256": "3dbd13c035c4857f9da6354974040722b83cb8678a3b81c50a57f671825f4c85"
+  },
+  "containsProtectedOrStudyMaterial": false,
+  "diagnosticIdentity": "50f335e5df31978707c3f1beb4bd7131",
+  "payloadCommitment": {
+    "algorithm": "SHA-256",
+    "canonicalPreimage": "the-first-three-LF-terminated-UTF-8-lines",
+    "sha256": "f2401b8ed60ee116d5ca97c2c2039d090fdb0cf7fa8844c88503fad03e158738"
+  },
+  "protocol": "lachesis-m9b13i2-diagnostic-artifact/1"
+}

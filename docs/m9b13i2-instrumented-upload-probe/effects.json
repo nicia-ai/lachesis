@@ -1,0 +1,28 @@
+{
+  "externalMutationCounters": {
+    "diagnosticFileSelections": 0,
+    "diagnosticUploadAttempts": 0,
+    "filesDownloaded": 0,
+    "filesUploaded": 0,
+    "projectsOrDraftsCreated": 0,
+    "projectsOrDraftsDeleted": 0,
+    "projectsOrDraftsModified": 0,
+    "publicStateChanges": 0,
+    "registrationStateChanges": 0,
+    "resultingUploadHttpRequests": 0,
+    "retries": 0,
+    "viewOnlyLinksCreated": 0
+  },
+  "protectedAccessCounters": {
+    "credentialMaterialAccesses": 0,
+    "registration63sh5Accesses": 0,
+    "sendGridTrackingLinkAccesses": 0,
+    "studyModelOrProviderCalls": 0,
+    "studyRolesOrAnalysesExecuted": 0
+  },
+  "readOnlyCounters": {
+    "authenticatedApiPageResponses": 16,
+    "instrumentationProofGets": 1,
+    "projectStorageUiPageLoads": 1
+  }
+}

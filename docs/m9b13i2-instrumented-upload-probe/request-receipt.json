@@ -1,0 +1,12 @@
+{
+  "diagnosticFilename": "OSF-UPLOAD-DIAGNOSTIC-50f335e5df31978707c3f1beb4bd7131.txt",
+  "fileSelectionCount": 0,
+  "initiatingUiAction": null,
+  "request": null,
+  "resultingUploadHttpRequestCount": 0,
+  "retryCount": 0,
+  "stopBeforeMutation": true,
+  "stopReason": "required-upload-network-instrumentation-unavailable",
+  "uploadAttemptCount": 0,
+  "uploadControlActivationCount": 0
+}

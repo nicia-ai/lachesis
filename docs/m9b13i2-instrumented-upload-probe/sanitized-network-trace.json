@@ -1,0 +1,22 @@
+{
+  "credentialOrSignedUrlMaterialRecorded": false,
+  "events": [
+    {
+      "classification": "instrumentation-preflight-read-only-request",
+      "contentType": "application/vnd.api+json",
+      "endpointClass": "api.osf.io/v2/nodes/<project-id>/",
+      "method": "GET",
+      "monotonicEndMs": 3216831.223083,
+      "monotonicStartMs": 3215989.196333,
+      "redirectClasses": [],
+      "redirectCount": 0,
+      "requestBytesDispatched": 0,
+      "responseReachedBrowser": true,
+      "status": 200
+    }
+  ],
+  "rawHeadersRecorded": false,
+  "rawUrlsRecorded": false,
+  "uploadEvents": [],
+  "uploadTraceAbsentBecause": "upload-stopped-before-file-selection-and-control-activation"
+}

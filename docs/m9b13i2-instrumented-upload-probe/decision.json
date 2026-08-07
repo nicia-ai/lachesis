@@ -1,0 +1,8 @@
+{
+  "decision": "m9b13i2-instrumentation-unavailable-no-go",
+  "diagnosticUploadAttempted": false,
+  "m9bStatus": "NO-GO",
+  "projectOrDraftQuarantined": false,
+  "reason": "The required fields were captured for a harmless authenticated GET, but the available authenticated browser exposes no supported network-event or request-interception capability for the project-storage UI's upload XHR. The mandatory stop condition was invoked before file selection or upload-control activation.",
+  "retryAuthorized": false
+}

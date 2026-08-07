@@ -1,0 +1,37 @@
+{
+  "availableBrowserSurface": {
+    "browserType": "codex-in-app-browser",
+    "consoleLogCapture": true,
+    "networkEventCapture": false,
+    "requestInterception": false,
+    "tabCapabilities": ["pageAssets"]
+  },
+  "harmlessAuthenticatedGetProof": {
+    "captureMechanism": "browser-navigation-plus-sanitized-drf-request-response-render",
+    "contentType": "application/vnd.api+json",
+    "endpointClass": "api.osf.io/v2/nodes/<project-id>/",
+    "method": "GET",
+    "monotonicEndMs": 3216831.223083,
+    "monotonicStartMs": 3215989.196333,
+    "redirectClasses": [],
+    "redirectCount": 0,
+    "requestBytesDispatched": 0,
+    "responseReachedBrowser": true,
+    "status": 200,
+    "statusText": "OK"
+  },
+  "instrumentationActivatedBeforeMutation": false,
+  "instrumentationStopInvoked": true,
+  "missingRequiredUploadCaptureFields": [
+    "upload-request-method-from-the-observed-request",
+    "upload-stable-endpoint-class-from-the-observed-request",
+    "upload-redirect-count-and-classes",
+    "upload-http-status-for-every-response",
+    "upload-response-content-type",
+    "upload-sanitized-error-code-and-message",
+    "upload-request-byte-dispatch-confirmation",
+    "upload-response-arrival-confirmation"
+  ],
+  "reason": "The browser can render a navigated GET request and response and can collect console messages, but it exposes no network-event stream or request interception for an XHR initiated by the project-storage UI. Read-only page evaluation cannot install an interceptor. An upload would therefore violate the required capture contract.",
+  "result": "get-capture-proven-upload-capture-unavailable"
+}

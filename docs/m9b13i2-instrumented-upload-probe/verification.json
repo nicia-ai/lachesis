@@ -1,0 +1,27 @@
+{
+  "checks": {
+    "canaryTxtAbsentBeforeAndAfter": true,
+    "credentialOrSignedUrlMaterialAbsent": true,
+    "diagnosticArtifactAbsentBeforeAndAfter": true,
+    "diagnosticArtifactIdentityBoundBeforeExternalAccess": true,
+    "draftEditableAndUnsubmittedBeforeAndAfter": true,
+    "externalMutationCountZero": true,
+    "harmlessGetCaptureProofPassed": true,
+    "m9b13i1ChecksumManifestMatched": true,
+    "m9b13i1CommittedAsExactAllowlist": true,
+    "predecessorM9b13iPreserved": true,
+    "projectPrivateBeforeAndAfter": true,
+    "providerRootPaginationCompleteBeforeAndAfter": true,
+    "registrationCountZeroBeforeAndAfter": true,
+    "uploadInstrumentationContractSatisfied": false,
+    "uploadStopOccurredBeforeFileSelection": true,
+    "viewOnlyLinkCountZeroBeforeAndAfter": true
+  },
+  "expectedAuditFileCountIncludingChecksumManifest": 16,
+  "m9b13i1": {
+    "checksumManifestSha256": "9f48d11dff28f55e24c50d76240982466247bbb3ad54c59b839ee42427b2b78a",
+    "commit": "a61e230c7b72289b024272164dbe6047dd867255",
+    "tree": "80dbd6c13157792f29b5df8e937531f1d662ef8b"
+  },
+  "m9bStatus": "NO-GO"
+}

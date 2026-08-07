@@ -1,0 +1,30 @@
+{
+  "allowedAndCompleted": {
+    "authenticatedReadOnlyInspection": true,
+    "harmlessAuthenticatedGetInstrumentationProof": true,
+    "localDiagnosticArtifactCreation": true,
+    "localEvidenceAppend": true,
+    "m9b13i1AtomicCommit": true
+  },
+  "authorizedButNotPerformedBecauseStopCondition": {
+    "diagnosticFileSelection": true,
+    "diagnosticUploadAttempt": true,
+    "oneSuccessConditionalRedownload": true,
+    "uploadControlActivation": true
+  },
+  "prohibitedAndNotPerformed": {
+    "canaryTxtRetry": true,
+    "credentialOrTrackingUrlExposure": true,
+    "draftApprovalRejectionCancellationOrSubmission": true,
+    "existingRemoteArtifactDeletionOrModification": true,
+    "m10Start": true,
+    "newProjectDraftOrViewOnlyLinkCreation": true,
+    "pushTagOrPublication": true,
+    "realM9bArtifactUpload": true,
+    "registration63sh5AccessOrMutation": true,
+    "secondDiagnosticAttempt": true,
+    "studyModelOrProviderCall": true,
+    "studyRoleOrAnalysisExecution": true
+  },
+  "protocol": "lachesis-m9b13i2-authorization-boundary/1"
+}

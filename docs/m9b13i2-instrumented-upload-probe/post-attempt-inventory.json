@@ -1,0 +1,52 @@
+{
+  "attemptPerformed": false,
+  "draft": {
+    "editable": true,
+    "id": "6a7619b506a607fe5f63a77d",
+    "pendingApproval": false,
+    "permissions": ["admin", "write", "read"],
+    "registrationResponseKeyCount": 0,
+    "sourceProjectId": "bmsda",
+    "type": "draft-registrations",
+    "unsubmitted": true
+  },
+  "exactNameSearches": [
+    {
+      "count": 0,
+      "name": "CANARY.txt",
+      "pages": 1,
+      "paginationComplete": true,
+      "statuses": [200]
+    },
+    {
+      "count": 0,
+      "name": "OSF-UPLOAD-DIAGNOSTIC-50f335e5df31978707c3f1beb4bd7131.txt",
+      "pages": 1,
+      "paginationComplete": true,
+      "statuses": [200]
+    }
+  ],
+  "project": {
+    "id": "bmsda",
+    "private": true
+  },
+  "providerRoot": {
+    "artifactCount": 0,
+    "pages": 1,
+    "paginationComplete": true,
+    "statuses": [200]
+  },
+  "registrations": {
+    "count": 0,
+    "pages": 1,
+    "paginationComplete": true,
+    "statuses": [200]
+  },
+  "unexpectedArtifactCount": 0,
+  "viewOnlyLinks": {
+    "count": 0,
+    "pages": 1,
+    "paginationComplete": true,
+    "statuses": [200]
+  }
+}
