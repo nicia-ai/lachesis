@@ -1,0 +1,41 @@
+{
+  "protocol": "lachesis-m9b13g-post-submission-and-approval-reconciliation/1",
+  "status": "prospective-disabled-mechanism-no-go",
+  "pendingSubmissionChecks": [
+    "record exact provider, draft and pending registration identities",
+    "record server submission timestamp",
+    "verify pending rather than approved or public state",
+    "verify exact title, description, schema, license, embargo and predecessor binding",
+    "verify exactly 57 archived paths and no extra object",
+    "download and independently hash all 57 files",
+    "verify exactly one matching supplement registration exists",
+    "verify registration 63sh5 is unchanged",
+    "verify no view-only link exists"
+  ],
+  "postApprovalChecks": [
+    "record immutable registration identity",
+    "record server submission and approval timestamps",
+    "verify approved, embargoed and non-public state",
+    "verify embargo end is no earlier than 2030-08-01T00:00:00Z",
+    "redownload and independently hash all 57 files",
+    "verify exactly one supplement registration was created",
+    "verify registration 63sh5 remains unchanged",
+    "verify no view-only link exists",
+    "append one local receipt without changing preregistration, supplement or signed-review bytes"
+  ],
+  "ambiguousDisposition": {
+    "conditions": [
+      "timeout",
+      "interruption",
+      "unknown response",
+      "partial upload",
+      "partial reconciliation",
+      "missing returned identity",
+      "conflicting registration state"
+    ],
+    "classification": "ambiguous-no-retry",
+    "automaticRetryPermitted": false,
+    "manualRetryPermitted": false,
+    "requiredNextStep": "independent incident review and new explicit authority; never reuse the consumed submission authority"
+  }
+}

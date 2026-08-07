@@ -1,0 +1,33 @@
+{
+  "protocol": "lachesis-m9b13g-submission-readiness-authorization-boundary/1",
+  "currentAuthority": {
+    "publicDocumentationResearch": true,
+    "unauthenticatedPublicApiReads": true,
+    "localAppendOnlyReadinessArtifacts": true,
+    "localAppendOnlyCommits": true
+  },
+  "currentNonauthority": {
+    "credentialOrCookieAccess": false,
+    "osfAuthentication": false,
+    "draftCreation": false,
+    "projectOrComponentCreation": false,
+    "fileUpload": false,
+    "registrationSubmission": false,
+    "registrationApproval": false,
+    "registration63sh5Modification": false,
+    "viewOnlyLinkCreation": false,
+    "publication": false,
+    "embargoChange": false,
+    "materialization": false,
+    "operationalOrStudyAuthority": false,
+    "m10Work": false
+  },
+  "futurePhaseSeparation": [
+    "draft preparation and upload require a new exact authority",
+    "one submission attempt requires a later positive single-use authority",
+    "approval requires a distinct later positive single-use authority after reconciliation",
+    "post-approval local receipt creation requires separate authorization"
+  ],
+  "exactStatement": "M9b.13g is an offline readiness analysis only. It grants no authority to authenticate, create, upload, submit, approve, publish, change an embargo, modify registration 63sh5, materialize any corpus, or execute any study operation.",
+  "m9bDecision": "m9b13-materialization-readiness-no-go"
+}

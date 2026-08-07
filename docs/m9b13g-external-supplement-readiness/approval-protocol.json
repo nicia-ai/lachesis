@@ -1,0 +1,35 @@
+{
+  "protocol": "lachesis-m9b13g-separate-future-approval/1",
+  "status": "disabled-mechanism-no-go",
+  "requiredAuthority": {
+    "separateFromSubmission": true,
+    "issuedAfterSubmission": true,
+    "singleUse": true,
+    "bindsExactPendingRegistrationIdentity": true,
+    "bindsSubmissionResponseAndReconciliationDigest": true
+  },
+  "preconditions": [
+    "The one submission attempt returned an unambiguous pending registration identity.",
+    "The pending registration reconciles to the exact provider, schema, metadata, embargo and 57-file inventory.",
+    "Registration 63sh5 remains unchanged.",
+    "Exactly one matching pending supplement registration exists.",
+    "No view-only link exists.",
+    "A positive unexpired approval authority has been supplied after reconciliation."
+  ],
+  "action": "Approve exactly the bound pending registration once through the official administrator email/browser workflow.",
+  "postcondition": "Stop and begin read-only post-approval reconciliation.",
+  "ordinaryOsfAutoApprovalConflict": {
+    "documented": true,
+    "autoApprovalAfterHours": 48,
+    "consequence": "Submission can mature without the required positive later approval authority.",
+    "disposition": "blocking-no-go-until-an-authoritative-mechanism-makes-positive-separate-approval-mandatory"
+  },
+  "forbidden": [
+    "approval-with-submission-authority",
+    "approval-before-reconciliation",
+    "approval-of-any-other-registration",
+    "passive-reliance-on-auto-approval",
+    "publication-or-embargo-ending",
+    "retry-of-submission"
+  ]
+}

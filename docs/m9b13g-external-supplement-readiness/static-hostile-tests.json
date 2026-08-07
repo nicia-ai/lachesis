@@ -1,0 +1,188 @@
+{
+  "protocol": "lachesis-m9b13g-static-hostile-readiness-tests/1",
+  "mode": "offline-deterministic-contract-mutations",
+  "testCount": 36,
+  "tests": [
+    {
+      "id": "attachment-count-56",
+      "mutation": "remove-one-attachment",
+      "expected": "reject"
+    },
+    {
+      "id": "attachment-count-58",
+      "mutation": "add-one-attachment",
+      "expected": "reject"
+    },
+    {
+      "id": "duplicate-path",
+      "mutation": "repeat-normalized-path",
+      "expected": "reject"
+    },
+    {
+      "id": "aliased-path",
+      "mutation": "insert-parent-traversal",
+      "expected": "reject"
+    },
+    {
+      "id": "repeated-separator",
+      "mutation": "insert-repeated-separator",
+      "expected": "reject"
+    },
+    {
+      "id": "flattened-namespace-collision",
+      "mutation": "remove-required-namespace-prefixes",
+      "expected": "reject"
+    },
+    {
+      "id": "one-byte-attachment-mutation",
+      "mutation": "change-bound-raw-byte",
+      "expected": "reject"
+    },
+    {
+      "id": "wrong-supplement-commit",
+      "mutation": "change-supplement-commit",
+      "expected": "reject"
+    },
+    {
+      "id": "wrong-supplement-tree",
+      "mutation": "change-supplement-tree",
+      "expected": "reject"
+    },
+    {
+      "id": "wrong-receipt-commit",
+      "mutation": "change-receipt-commit",
+      "expected": "reject"
+    },
+    {
+      "id": "wrong-receipt-tree",
+      "mutation": "change-receipt-tree",
+      "expected": "reject"
+    },
+    {
+      "id": "altered-supplement-manifest",
+      "mutation": "change-supplement-manifest-digest",
+      "expected": "reject"
+    },
+    {
+      "id": "altered-receipt-manifest",
+      "mutation": "change-receipt-manifest-digest",
+      "expected": "reject"
+    },
+    {
+      "id": "altered-title",
+      "mutation": "change-metadata-title",
+      "expected": "reject"
+    },
+    {
+      "id": "altered-description",
+      "mutation": "change-metadata-description",
+      "expected": "reject"
+    },
+    {
+      "id": "altered-license",
+      "mutation": "change-license-id",
+      "expected": "reject"
+    },
+    {
+      "id": "early-embargo",
+      "mutation": "set-embargo-before-2030-08-01",
+      "expected": "reject"
+    },
+    {
+      "id": "public-visibility",
+      "mutation": "set-public-true",
+      "expected": "reject"
+    },
+    {
+      "id": "view-only-link",
+      "mutation": "set-view-only-link-count-one",
+      "expected": "reject"
+    },
+    {
+      "id": "update-63sh5",
+      "mutation": "select-registration-update",
+      "expected": "reject"
+    },
+    {
+      "id": "add-file-to-63sh5",
+      "mutation": "select-predecessor-file-addition",
+      "expected": "reject"
+    },
+    {
+      "id": "mutable-resource-substitution",
+      "mutation": "replace-archive-with-resource-link",
+      "expected": "reject"
+    },
+    {
+      "id": "duplicate-supplement-discovered",
+      "mutation": "set-matching-registration-count-one",
+      "expected": "reject"
+    },
+    {
+      "id": "wrong-schema",
+      "mutation": "change-schema-id-or-version",
+      "expected": "reject"
+    },
+    {
+      "id": "wrong-provider",
+      "mutation": "change-provider",
+      "expected": "reject"
+    },
+    {
+      "id": "absent-submission-authority",
+      "mutation": "remove-submission-authority",
+      "expected": "reject"
+    },
+    {
+      "id": "reused-submission-authority",
+      "mutation": "mark-authority-consumed",
+      "expected": "reject"
+    },
+    {
+      "id": "stale-submission-authority",
+      "mutation": "expire-authority",
+      "expected": "reject"
+    },
+    {
+      "id": "second-attempt",
+      "mutation": "set-attempt-count-two",
+      "expected": "reject"
+    },
+    {
+      "id": "automatic-retry",
+      "mutation": "enable-automatic-retry",
+      "expected": "reject"
+    },
+    {
+      "id": "partial-upload",
+      "mutation": "mark-one-upload-incomplete",
+      "expected": "reject"
+    },
+    {
+      "id": "ambiguous-submission",
+      "mutation": "set-response-ambiguous",
+      "expected": "ambiguous-no-retry"
+    },
+    {
+      "id": "missing-separate-approval",
+      "mutation": "remove-approval-authority",
+      "expected": "reject"
+    },
+    {
+      "id": "post-approval-archive-mismatch",
+      "mutation": "change-redownloaded-byte",
+      "expected": "reject"
+    },
+    {
+      "id": "multiple-supplement-registrations",
+      "mutation": "set-matching-registration-count-two",
+      "expected": "reject"
+    },
+    {
+      "id": "scientific-financial-mutation",
+      "mutation": "change-invariant-field-or-digest",
+      "expected": "reject"
+    }
+  ],
+  "externalEffects": 0
+}

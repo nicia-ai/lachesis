@@ -1,0 +1,95 @@
+{
+  "protocol": "lachesis-m9b13g-future-single-attempt-submission/1",
+  "status": "disabled-mechanism-no-go",
+  "interface": {
+    "provider": "OSF Registries",
+    "mode": "official-authenticated-browser-workflow",
+    "browserAutomationPermitted": false,
+    "apiOnlyWorkflowClaimed": false,
+    "reason": "The official browser documentation covers the complete draft, metadata, attachment, embargo, submission and administrator workflow; API v2 does not freeze the complete workflow as one documented contract."
+  },
+  "mechanismBlockers": [
+    "ordinary-osf-registration-auto-approval-after-48-hours",
+    "required-license-may-create-an-uninventoried-archive-file",
+    "two-folder-archive-path-preservation-not-authoritatively-established"
+  ],
+  "requiredFutureAuthorities": {
+    "draftPreparationAuthority": {
+      "required": true,
+      "grantsOnly": "Create exactly one named private draft/source object and upload the exact 57 prospective attachments without submission."
+    },
+    "submissionAuthority": {
+      "required": true,
+      "mustBePositive": true,
+      "availableInM9b13g": false,
+      "singleUse": true,
+      "mustBeUnexpired": true,
+      "mustNotBeStaleOrPreviouslyConsumed": true
+    },
+    "approvalAuthority": {
+      "required": true,
+      "separateFromSubmissionAuthority": true,
+      "issuedOnlyAfterSubmissionReconciliation": true,
+      "availableInM9b13g": false
+    }
+  },
+  "submissionAuthorityBindings": {
+    "attachmentInventoryProtocol": "lachesis-m9b13g-prospective-attachment-inventory/1",
+    "attachmentInventoryCanonicalSha256": "4a7193935b959b8f815839c80b87f2af6b60fd2928aaf09afa3ed8d547a9f725",
+    "attachmentCount": 57,
+    "supplementChecksumManifestRawSha256": "76b46920ffd75a387688326d5d572ccc980f2d22d85b921cb6a279c8140c1523",
+    "receiptChecksumManifestRawSha256": "f731e112100e994a24c15348d95b21d5f268ef6b6e59a0cbc6b82abcc97610b8",
+    "supplementBodyCanonicalSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+    "signedReceiptRawSha256": "f7bf3e1eac3c8557991194573d9aeaec4f4b37f1618007f0d7fe1f158b328df4",
+    "signedReceiptCanonicalSha256": "286c9f1ef0897719853b713253f8cf0d0bbe2a743a882bd5517c6abca5ae3b8b",
+    "supplementCommit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+    "supplementTree": "fb5f4b29609986f1aee314e6f96c2405f76b199b",
+    "receiptCommit": "0776b7af87f3d8731300dd2bde5b9e31c25ca745",
+    "receiptTree": "5b36616a593fdf3d3e5bdfed442b6bf3c5b4bd9e",
+    "provider": "OSF Registries general provider",
+    "schemaId": "5df83f7dd28338001ac0ab0d",
+    "schemaVersion": 3,
+    "title": "Lachesis M9 Operational Supplement: Trusted Controlled Host Boundary",
+    "metadataRecord": "metadata.json",
+    "licenseId": "563c1cf88c5e4a3877f9e96d",
+    "licenseName": "Apache License 2.0",
+    "embargoEndNoEarlierThan": "2030-08-01T00:00:00Z",
+    "public": false,
+    "viewOnlyLinks": 0,
+    "targetProjectOrDraftRegistrationId": "required-exact-runtime-binding",
+    "attemptLimit": 1,
+    "automaticRetryPermitted": false,
+    "separateApprovalAuthorityRequired": true
+  },
+  "preflight": [
+    "All mechanism blockers have authoritative corrections and a new independent review pass.",
+    "Registration 63sh5 is unchanged and remains approved, embargoed and non-public through 2030-08-01.",
+    "No existing or pending supplement registration matches the title, predecessor and package identities.",
+    "The exact target private project or draft-registration identity matches the unconsumed authority.",
+    "The draft contains exactly 57 version-one files under the two required namespaces and no other file.",
+    "Every uploaded byte length and digest matches attachment-inventory.json before submission.",
+    "Title, description, license, schema, provider, embargo and visibility exactly match metadata.json.",
+    "No view-only link exists.",
+    "Submission and separate approval authorities are valid for their respective phases."
+  ],
+  "singleAttemptSequence": [
+    "Atomically mark the exact submission authority consumed before invoking Submit.",
+    "Select embargoed private registration with the bound end date.",
+    "Invoke Submit exactly once through the official browser workflow.",
+    "Record the response and any returned registration or request identity.",
+    "Stop immediately without approval, retry, publication or any other mutation.",
+    "Classify any timeout, interruption, unknown response or partial reconciliation as ambiguous-no-retry."
+  ],
+  "forbidden": [
+    "update-registration-63sh5",
+    "add-file-to-registration-63sh5",
+    "resource-link-substitution",
+    "automatic-retry",
+    "second-submission-attempt",
+    "view-only-link",
+    "publication",
+    "early-embargo-termination",
+    "approval-with-submission-authority",
+    "study-operation"
+  ]
+}

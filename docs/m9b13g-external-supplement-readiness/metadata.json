@@ -1,0 +1,86 @@
+{
+  "protocol": "lachesis-m9b13g-prospective-external-supplement-metadata/1",
+  "provider": {
+    "service": "OSF Registries",
+    "provider": "OSF Registries general provider",
+    "schemaName": "Open-Ended Registration",
+    "schemaId": "5df83f7dd28338001ac0ab0d",
+    "schemaVersion": 3,
+    "schemaCanonicalSha256": "e750a5a2870f7571032f2c84696321a1071ade6fdd8cccd8c678e0275d3d7fcc"
+  },
+  "title": "Lachesis M9 Operational Supplement: Trusted Controlled Host Boundary",
+  "description": "Operational supplement to embargoed OSF registration 63sh5. This separate append-only record would archive exactly the frozen 45-file M9b.13f.2 operational supplement and its 12-file signed independent-review receipt under the supplement/ and independent-review-receipt/ namespaces. Supplement body protocol lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1 has canonical SHA-256 6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36. The signed receipt protocol lachesis-m9b13f2-independent-supplement-review-receipt/1 has raw SHA-256 f7bf3e1eac3c8557991194573d9aeaec4f4b37f1618007f0d7fe1f158b328df4 and canonical SHA-256 286c9f1ef0897719853b713253f8cf0d0bbe2a743a882bd5517c6abca5ae3b8b. This supplement changes no scientific or financial field, grants no submission or operational authority, and does not modify registration 63sh5. It must remain embargoed and non-public through at least 2030-08-01T00:00:00Z, with no view-only link.",
+  "openEndedRegistrationResponses": {
+    "summary": "Operational supplement to embargoed OSF registration 63sh5. The attachment inventory is exactly the independently reviewed M9b.13f.2 supplement and signed receipt. It changes no scientific or financial field and grants no operational authority.",
+    "uploader": "exact-57-file-attachment-inventory"
+  },
+  "predecessorRegistration": {
+    "id": "63sh5",
+    "statusRequired": "approved-embargoed-non-public",
+    "embargoEnd": "2030-08-01T00:00:00Z",
+    "preregistrationCanonicalSha256": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestRawSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "registrationReceiptCanonicalSha256": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+    "mustRemainUnchanged": true
+  },
+  "supplement": {
+    "commit": "13a2ff00fe6b04d8d38a8a3d0bc867db23d04f17",
+    "tree": "fb5f4b29609986f1aee314e6f96c2405f76b199b",
+    "bodyProtocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+    "bodyCanonicalSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+    "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73",
+    "packageInventoryCanonicalSha256": "043256e96e733fd5f368b5e4d03beb1f758573961d22b21767156149994317b2",
+    "checksumManifestRawSha256": "76b46920ffd75a387688326d5d572ccc980f2d22d85b921cb6a279c8140c1523",
+    "fileCount": 45
+  },
+  "signedReviewReceipt": {
+    "commit": "0776b7af87f3d8731300dd2bde5b9e31c25ca745",
+    "tree": "5b36616a593fdf3d3e5bdfed442b6bf3c5b4bd9e",
+    "protocol": "lachesis-m9b13f2-independent-supplement-review-receipt/1",
+    "rawSha256": "f7bf3e1eac3c8557991194573d9aeaec4f4b37f1618007f0d7fe1f158b328df4",
+    "canonicalSha256": "286c9f1ef0897719853b713253f8cf0d0bbe2a743a882bd5517c6abca5ae3b8b",
+    "evidenceInventoryCanonicalSha256": "5d5045970779865af9a1c81a68f963fc4c1645b51b9e7f4b028960fb4ae7f4ba",
+    "checksumManifestRawSha256": "f731e112100e994a24c15348d95b21d5f268ef6b6e59a0cbc6b82abcc97610b8",
+    "fileCount": 12
+  },
+  "attachmentInventory": {
+    "protocol": "lachesis-m9b13g-prospective-attachment-inventory/1",
+    "canonicalSha256": "4a7193935b959b8f815839c80b87f2af6b60fd2928aaf09afa3ed8d547a9f725",
+    "attachmentCount": 57
+  },
+  "principals": {
+    "authorIdentity": "lachesis-m9b13f2-supplement-author-ed25519-659988b38d8631ce",
+    "authorCommitment": "sha256:659988b38d8631ce57c4412f63106be40cf659310d5d08ede7e672d9d15309e7",
+    "reviewerIdentity": "lachesis-m9b13f2-independent-reviewer-ed25519-17881f6a368bb96d",
+    "reviewerCommitment": "sha256:17881f6a368bb96d2d753c1ffa411d5c3979e8312635b8906c1b3f20f6ad6d7c"
+  },
+  "scientificFinancialInvariantSha256": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "visibility": {
+    "public": false,
+    "embargoed": true,
+    "embargoEndNoEarlierThan": "2030-08-01T00:00:00Z",
+    "viewOnlyLinkCount": 0,
+    "viewOnlyLinkCreationPermitted": false
+  },
+  "license": {
+    "name": "Apache License 2.0",
+    "spdx": "Apache-2.0",
+    "osfLicenseId": "563c1cf88c5e4a3877f9e96d",
+    "sourceRepositoryLicenseRawSha256": "1f25afa5f2c0bb79817c2ab472af0db34641cb0a6428219ad7b44e01ee3792ac",
+    "rationale": "The 57 files are source-form documentation and machine-readable records from an Apache-2.0 repository. Apache-2.0 preserves the repository's existing copyright and patent terms and avoids silently applying the original registration's CC0 choice.",
+    "archiveFileSideEffectResolved": false
+  },
+  "retainedScope": [
+    "the accepted M9b.13f.2 supplement bytes",
+    "the accepted signed review-receipt bytes",
+    "the unchanged scientific and financial invariant",
+    "the original registration's embargo and non-public status"
+  ],
+  "nonclaims": [
+    "This metadata does not authorize creating a draft, project or registration.",
+    "This metadata does not authorize upload, submission, approval, publication or embargo change.",
+    "This metadata does not grant operational or study authority.",
+    "This metadata does not claim the blocked OSF mechanism is presently executable.",
+    "Distinct author and reviewer cryptographic principals do not prove distinct natural persons or organizational independence."
+  ]
+}
