@@ -1,0 +1,78 @@
+{
+  "protocol": "lachesis-m9b13h-posix-ustar-transport/1",
+  "purpose": "mechanical-transport-container-for-the-accepted-signed-supplement-and-signed-review-receipt",
+  "format": {
+    "standard": "POSIX.1-1988 ustar",
+    "compression": "none",
+    "blockSizeBytes": 512,
+    "magicBytes": "757374617200",
+    "versionBytes": "3030",
+    "paxPermitted": false,
+    "gnuExtensionsPermitted": false,
+    "implementationSpecificExtensionsPermitted": false
+  },
+  "entryContract": {
+    "ordering": "ascending-raw-utf8-nfc-relative-path-bytes",
+    "pathEncoding": "UTF-8 NFC",
+    "maximumObservedPathBytes": 65,
+    "ustarPrefixFieldUsed": false,
+    "regularFileCount": 57,
+    "directoryEntryCount": 2,
+    "totalEntryCount": 59,
+    "regularFileMode": "0644",
+    "directoryMode": "0755",
+    "uid": 0,
+    "gid": 0,
+    "uname": "",
+    "gname": "",
+    "mtimeEpochSeconds": 0,
+    "symlinksPermitted": false,
+    "hardLinksPermitted": false,
+    "devicesPermitted": false,
+    "specialEntriesPermitted": false,
+    "filePadding": "zero-bytes-to-next-512-byte-boundary",
+    "terminalBlocks": "exactly-two-512-byte-zero-blocks-with-no-trailing-bytes"
+  },
+  "headerEncoding": {
+    "name": "UTF-8-bytes-NUL-padded-to-100",
+    "modeUidGidDevmajorDevminor": "zero-padded-octal-width-minus-one-followed-by-NUL",
+    "sizeMtime": "zero-padded-octal-width-minus-one-followed-by-NUL",
+    "checksum": "six-zero-padded-octal-digits-NUL-space-calculated-with-eight-checksum-field-spaces",
+    "regularTypeflag": "0",
+    "directoryTypeflag": "5",
+    "linknamePrefixUnameGname": "all-zero-empty-fields"
+  },
+  "archive": {
+    "fileName": "m9b13f2-supplement-and-review.tar",
+    "byteLength": 210432,
+    "rawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d"
+  },
+  "manifest": {
+    "fileName": "external-archive-manifest.json",
+    "protocol": "lachesis-m9b13h-deterministic-external-archive-manifest/1",
+    "rawSha256": "6f652a8d3cc97b0be30482b3e841fd154fa6acb3f023d6a4c53713e1c69162e9",
+    "canonicalSha256": "e4f60b48dd065c0d067a1efc2a588bfc0d22c58a7f09e7e80f88f1da5d69e020"
+  },
+  "externalChecksum": {
+    "fileName": "EXTERNAL-ARCHIVE-CHECKSUMS.sha256",
+    "rawSha256": "8bd5c4c36f36b6fcb4246d53f8285beceeadced55d4165cdd5c919a89be1970b",
+    "entryCount": 2,
+    "selfExcluded": true
+  },
+  "prospectiveInitialDraftAttachmentSet": [
+    "EXTERNAL-ARCHIVE-CHECKSUMS.sha256",
+    "external-archive-manifest.json",
+    "m9b13f2-supplement-and-review.tar"
+  ],
+  "sourceInventory": {
+    "protocol": "lachesis-m9b13g-prospective-attachment-inventory/1",
+    "canonicalSha256": "4a7193935b959b8f815839c80b87f2af6b60fd2928aaf09afa3ed8d547a9f725",
+    "supplementFiles": 45,
+    "signedReviewReceiptFiles": 12
+  },
+  "wrapperStatus": {
+    "scientificOrOperationalAmendment": false,
+    "innerBytesMutated": false,
+    "authorityGranted": false
+  }
+}

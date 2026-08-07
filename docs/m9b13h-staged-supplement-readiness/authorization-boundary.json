@@ -1,0 +1,49 @@
+{
+  "protocol": "lachesis-m9b13h-staged-mechanism-authorization-boundary/1",
+  "currentAuthority": {
+    "offline-requirement-lineage-analysis": true,
+    "authoritative-public-documentation-research": true,
+    "local-deterministic-archive-construction": true,
+    "local-static-validation": true,
+    "append-only-local-commits": true
+  },
+  "currentNonauthority": {
+    "draftStagingAuthorityPresent": false,
+    "draftStagingAuthorityValue": null,
+    "submissionAuthorityPresent": false,
+    "submissionAuthorityValue": null,
+    "approvalAuthorityPresent": false,
+    "approvalAuthorityValue": null,
+    "cancellationAuthorityPresent": false,
+    "cancellationAuthorityValue": null,
+    "cleanupAuthorityPresent": false,
+    "externalRegistryAccessAuthority": false,
+    "credentialCookieOrPrivateKeyAccessAuthority": false,
+    "publicationAuthority": false,
+    "embargoMutationAuthority": false,
+    "operationalOrStudyAuthority": false,
+    "m10Authority": false
+  },
+  "externalEffectCounters": {
+    "authenticatedRequests": 0,
+    "projectsCreated": 0,
+    "draftsCreated": 0,
+    "filesUploaded": 0,
+    "submissions": 0,
+    "approvals": 0,
+    "cancellations": 0,
+    "viewOnlyLinks": 0,
+    "publications": 0,
+    "registration63sh5Mutations": 0,
+    "studyOrOperationalEffects": 0
+  },
+  "phaseSeparation": [
+    "M9b.13h may be independently reviewed but cannot self-authorize Stage A",
+    "Stage A requires one later exact private-draft-staging authority",
+    "Stage B remains unavailable until Stage A reconciliation and a new independent review pass",
+    "Stage B requires separate exact submission and approval-or-cancellation authorities",
+    "post-terminal local receipt creation requires separate authority"
+  ],
+  "exactStatement": "M9b.13h creates a deterministic local transport and prospective controls only. It does not authorize or perform any OSF access, draft creation, upload, submission, approval, cancellation, publication, embargo change, registration 63sh5 mutation, study operation, or M10 action.",
+  "m9bStatus": "NO-GO"
+}

@@ -1,0 +1,62 @@
+{
+  "protocol": "lachesis-m9b13h-independent-archive-reproduction/1",
+  "archive": {
+    "fileName": "m9b13f2-supplement-and-review.tar",
+    "byteLength": 210432,
+    "rawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d"
+  },
+  "builds": [
+    {
+      "build": 1,
+      "implementation": "checked-in-node-builder",
+      "process": "fresh-process",
+      "output": "committed-archive",
+      "rawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d"
+    },
+    {
+      "build": 2,
+      "implementation": "independent-python-standard-library-free-ustar-writer",
+      "process": "fresh-process-isolated-temporary-output",
+      "outputRetained": false,
+      "rawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d"
+    },
+    {
+      "build": 3,
+      "implementation": "independent-python-standard-library-free-ustar-writer",
+      "process": "second-fresh-isolated-output",
+      "outputRetained": false,
+      "rawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d"
+    }
+  ],
+  "buildComparison": {
+    "buildCount": 3,
+    "byteIdentical": true,
+    "implementations": 2,
+    "temporaryDuplicatesRemoved": true
+  },
+  "independentReadback": {
+    "reader": "python-standard-library-tarfile-plus-independent-raw-ustar-parser",
+    "entryCount": 59,
+    "regularFilesRehashed": 57,
+    "directoryEntries": 2,
+    "allInnerByteLengthsMatch": true,
+    "allInnerRawSha256Match": true,
+    "allHeadersMatchProtocol": true,
+    "allHeaderChecksumsValid": true,
+    "allFilePaddingZero": true,
+    "terminalZeroBlocks": 2,
+    "trailingBytes": 0,
+    "paxRecords": 0,
+    "gnuExtensionRecords": 0,
+    "symlinks": 0,
+    "hardLinks": 0,
+    "specialEntries": 0
+  },
+  "manifest": {
+    "rawSha256": "6f652a8d3cc97b0be30482b3e841fd154fa6acb3f023d6a4c53713e1c69162e9",
+    "canonicalSha256": "e4f60b48dd065c0d067a1efc2a588bfc0d22c58a7f09e7e80f88f1da5d69e020",
+    "matchesArchive": true
+  },
+  "externalChecksumRawSha256": "8bd5c4c36f36b6fcb4246d53f8285beceeadced55d4165cdd5c919a89be1970b",
+  "externalEffects": 0
+}

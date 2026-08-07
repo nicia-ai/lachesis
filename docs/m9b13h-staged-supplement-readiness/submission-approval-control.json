@@ -1,0 +1,75 @@
+{
+  "protocol": "lachesis-m9b13h-future-submission-approval-cancellation-control/1",
+  "stage": "B",
+  "status": "unauthorized-and-disabled",
+  "submissionAuthority": {
+    "present": false,
+    "value": null,
+    "singleUse": true,
+    "attemptLimit": 1,
+    "automaticRetryPermitted": false
+  },
+  "terminalControlAuthority": {
+    "approvalAuthorityPresent": false,
+    "cancellationAuthorityPresent": false,
+    "requirement": "at-least-one-exact-positive-terminal-control-authority-must-exist-before-submission",
+    "authorityMustBindDraftSubmissionAndController": true
+  },
+  "preconditions": [
+    "exact-private-draft-identity-and-state-are-frozen",
+    "complete-provider-visible-final-inventory-is-known",
+    "every-staged-byte-has-been-redownloaded-and-verified",
+    "no-file-or-representation-first-appears-only-during-submission",
+    "draft-has-passed-a-new-independent-review",
+    "exact-positive-single-use-submission-authority-exists",
+    "exact-positive-approval-or-cancellation-authority-exists",
+    "durable-controller-can-immediately-approve-or-timely-cancel",
+    "absolute-terminal-control-deadline-is-bound",
+    "durable-monitoring-is-running-before-submission",
+    "registration-63sh5-is-reverified-unchanged",
+    "zero-duplicate-or-pending-matching-supplement-registrations-exist"
+  ],
+  "automaticApprovalHazard": {
+    "documented": true,
+    "osfRule": "admin-contributors-may-approve-or-cancel-within-48-hours-and-the-submission-otherwise-auto-approves",
+    "cycleDetail": "current-help-documentation-states-the-cycle-runs-from-midnight-on-submission-day-to-midnight-on-the-second-day",
+    "dismissed": false,
+    "minimumSafetyMarginSeconds": 43200,
+    "futureAuthorityMustBind": [
+      "server-submission-timestamp",
+      "calculated-osf-auto-approval-boundary",
+      "absolute-terminal-control-deadline-at-least-12-hours-before-that-boundary",
+      "controller-and-monitor-identities",
+      "approval-or-cancellation-action-identity",
+      "authority-expiry-no-later-than-terminal-control-deadline"
+    ]
+  },
+  "oneAttemptSequence": [
+    "atomically-consume-submission-authority-before-submit",
+    "submit-exact-frozen-draft-once-with-bound-embargo",
+    "record-server-response-identity-and-submission-timestamp",
+    "continuously-reconcile-pending-state-and-complete-archive",
+    "if-all-checks-pass-use-exact-approval-authority-immediately",
+    "otherwise-use-exact-cancellation-authority-before-the-bound-deadline",
+    "monitor-durably-until-approved-or-cancelled-terminal-state",
+    "redownload-and-rehash-complete-approved-archive-if-approved",
+    "append-one-local-receipt-under-separate-authority",
+    "stop-with-zero-retry"
+  ],
+  "ambiguousDisposition": {
+    "conditions": [
+      "submission-timeout-or-unknown-response",
+      "approval-timeout-or-unknown-response",
+      "cancellation-timeout-or-unknown-response",
+      "controller-or-monitor-interruption",
+      "partial-reconciliation",
+      "conflicting-provider-state"
+    ],
+    "automaticRetryPermitted": false,
+    "secondSubmissionPermitted": false,
+    "requiredResponse": "continue-read-only-monitoring-and-escalate-before-deadline-without-reusing-any-consumed-authority"
+  },
+  "unattendedPendingStatePermitted": false,
+  "submissionIfLicenseAppearsOnlyAtSubmissionPermitted": false,
+  "m9b13hGrantsStageBAuthority": false
+}

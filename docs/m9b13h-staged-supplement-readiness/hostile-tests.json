@@ -1,0 +1,178 @@
+{
+  "protocol": "lachesis-m9b13h-static-hostile-staged-mechanism-tests/1",
+  "mode": "offline-deterministic-mutations",
+  "testCount": 34,
+  "tests": [
+    {
+      "id": "nondeterministic-mtime",
+      "mutation": "change-one-header-mtime",
+      "expected": "reject"
+    },
+    {
+      "id": "nondeterministic-owner",
+      "mutation": "change-one-header-uid-gid-or-name",
+      "expected": "reject"
+    },
+    {
+      "id": "nondeterministic-mode",
+      "mutation": "change-one-header-mode",
+      "expected": "reject"
+    },
+    {
+      "id": "nondeterministic-order",
+      "mutation": "swap-two-entries",
+      "expected": "reject"
+    },
+    {
+      "id": "pax-extension",
+      "mutation": "insert-pax-header",
+      "expected": "reject"
+    },
+    {
+      "id": "gnu-extension",
+      "mutation": "insert-gnu-longname-or-sparse-entry",
+      "expected": "reject"
+    },
+    {
+      "id": "missing-inner-file",
+      "mutation": "remove-one-regular-file",
+      "expected": "reject"
+    },
+    {
+      "id": "added-inner-file",
+      "mutation": "add-one-regular-file",
+      "expected": "reject"
+    },
+    {
+      "id": "duplicate-inner-file",
+      "mutation": "repeat-one-path",
+      "expected": "reject"
+    },
+    {
+      "id": "mutated-inner-byte",
+      "mutation": "flip-one-payload-byte",
+      "expected": "reject"
+    },
+    {
+      "id": "archive-traversal",
+      "mutation": "insert-parent-or-absolute-path",
+      "expected": "reject"
+    },
+    {
+      "id": "symlink-entry",
+      "mutation": "change-type-to-symlink",
+      "expected": "reject"
+    },
+    {
+      "id": "hardlink-entry",
+      "mutation": "change-type-to-hardlink",
+      "expected": "reject"
+    },
+    {
+      "id": "wrong-inner-namespace",
+      "mutation": "remove-or-change-required-prefix",
+      "expected": "reject"
+    },
+    {
+      "id": "wrapper-manifest-mismatch",
+      "mutation": "change-manifest-archive-digest",
+      "expected": "reject"
+    },
+    {
+      "id": "nonidentical-rebuild",
+      "mutation": "supply-different-rebuild-digest",
+      "expected": "reject"
+    },
+    {
+      "id": "bad-terminal-blocks",
+      "mutation": "add-remove-or-mutate-terminal-zero-block",
+      "expected": "reject"
+    },
+    {
+      "id": "unexpected-license-artifact",
+      "mutation": "draft-enumeration-adds-unbound-license-file",
+      "expected": "reject"
+    },
+    {
+      "id": "license-only-at-submission",
+      "mutation": "license-lifecycle-defers-bytes-until-submit",
+      "expected": "reject"
+    },
+    {
+      "id": "provider-rename",
+      "mutation": "provider-renames-one-staged-object",
+      "expected": "reject"
+    },
+    {
+      "id": "provider-flattening",
+      "mutation": "provider-flattens-or-collides-staged-name",
+      "expected": "reject"
+    },
+    {
+      "id": "public-draft-metadata",
+      "mutation": "draft-metadata-visible-without-authentication",
+      "expected": "reject"
+    },
+    {
+      "id": "view-only-link",
+      "mutation": "create-view-only-link",
+      "expected": "reject"
+    },
+    {
+      "id": "wrong-embargo",
+      "mutation": "embargo-before-2030-08-01",
+      "expected": "reject"
+    },
+    {
+      "id": "second-draft",
+      "mutation": "draft-count-two",
+      "expected": "reject"
+    },
+    {
+      "id": "stage-a-submission",
+      "mutation": "attempt-submit-during-stage-a",
+      "expected": "reject"
+    },
+    {
+      "id": "missing-submission-authority",
+      "mutation": "stage-b-submission-authority-absent",
+      "expected": "reject"
+    },
+    {
+      "id": "missing-terminal-authority",
+      "mutation": "approval-and-cancellation-authorities-absent",
+      "expected": "reject"
+    },
+    {
+      "id": "unattended-auto-approval",
+      "mutation": "monitoring-stops-before-terminal-state",
+      "expected": "reject"
+    },
+    {
+      "id": "unsafe-deadline",
+      "mutation": "deadline-inside-required-safety-margin",
+      "expected": "reject"
+    },
+    {
+      "id": "ambiguous-terminal-action",
+      "mutation": "approval-or-cancellation-response-ambiguous",
+      "expected": "ambiguous-monitor-no-retry"
+    },
+    {
+      "id": "second-submission",
+      "mutation": "submission-attempt-count-two",
+      "expected": "reject"
+    },
+    {
+      "id": "registration-63sh5-mutation",
+      "mutation": "change-original-registration-state",
+      "expected": "reject"
+    },
+    {
+      "id": "scientific-financial-change",
+      "mutation": "change-invariant-or-scientific-financial-field",
+      "expected": "reject"
+    }
+  ],
+  "externalEffects": 0
+}

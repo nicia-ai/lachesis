@@ -1,0 +1,94 @@
+{
+  "protocol": "lachesis-m9b13h-future-private-draft-staging/1",
+  "stage": "A",
+  "status": "disabled-awaiting-independent-review-and-separate-exact-authorization",
+  "authority": {
+    "protocol": "lachesis-m9b13h-future-private-draft-staging-authority/1",
+    "present": false,
+    "value": null,
+    "singleUse": true,
+    "mustBindExactTargetAccountAndProvider": true,
+    "mustExpire": true
+  },
+  "interface": {
+    "provider": "OSF Registries general provider",
+    "schemaName": "Open-Ended Registration",
+    "schemaId": "5df83f7dd28338001ac0ab0d",
+    "schemaVersion": 3,
+    "mode": "official-authenticated-browser-workflow",
+    "apiOnlyWorkflowClaimed": false,
+    "browserAutomationPermitted": false
+  },
+  "futureAuthorityBindings": {
+    "draftCount": 1,
+    "draftIdentity": "must-be-recorded-from-the-one-authorized-create-response",
+    "title": "Lachesis M9 Operational Supplement: Trusted Controlled Host Boundary",
+    "predecessorRegistration": "63sh5",
+    "provider": "OSF Registries general provider",
+    "schemaId": "5df83f7dd28338001ac0ab0d",
+    "schemaVersion": 3,
+    "prospectiveLicense": "Apache License 2.0",
+    "prospectiveLicenseId": "563c1cf88c5e4a3877f9e96d",
+    "archiveProtocol": "lachesis-m9b13h-posix-ustar-transport/1",
+    "archiveRawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d",
+    "manifestRawSha256": "6f652a8d3cc97b0be30482b3e841fd154fa6acb3f023d6a4c53713e1c69162e9",
+    "manifestCanonicalSha256": "e4f60b48dd065c0d067a1efc2a588bfc0d22c58a7f09e7e80f88f1da5d69e020",
+    "externalChecksumRawSha256": "8bd5c4c36f36b6fcb4246d53f8285beceeadced55d4165cdd5c919a89be1970b"
+  },
+  "initialAttachmentSet": [
+    {
+      "path": "EXTERNAL-ARCHIVE-CHECKSUMS.sha256",
+      "rawSha256": "8bd5c4c36f36b6fcb4246d53f8285beceeadced55d4165cdd5c919a89be1970b"
+    },
+    {
+      "path": "external-archive-manifest.json",
+      "rawSha256": "6f652a8d3cc97b0be30482b3e841fd154fa6acb3f023d6a4c53713e1c69162e9"
+    },
+    {
+      "path": "m9b13f2-supplement-and-review.tar",
+      "rawSha256": "978c996fd5c55d559fa1c36a2f0eba2f7ef43e7fe27603c2dc7c74dc63f0201d"
+    }
+  ],
+  "authorizedActionsOnlyIfFutureAuthorityExists": [
+    "create-one-from-scratch-private-draft",
+    "enter-exact-metadata-and-schema-responses",
+    "select-prospective-license-without-submitting",
+    "upload-the-three-exact-initial-attachments",
+    "enumerate-every-provider-visible-and-provider-generated-artifact",
+    "preview-and-redownload-every-artifact",
+    "hash-every-redownloaded-byte",
+    "record-file-name-path-version-size-media-type-and-provider-identity",
+    "record-complete-private-metadata-and-schema-response-export",
+    "inspect-license-and-name-path-behavior"
+  ],
+  "requiredDraftInspection": [
+    "draft-is-private-and-visible-only-to-authorized-contributors",
+    "no-view-only-link-exists",
+    "registration-63sh5-is-unchanged",
+    "exactly-one-draft-exists",
+    "all-three-staged-files-redownload-and-match",
+    "all-provider-generated-files-are-enumerated-and-hashed",
+    "license-file-name-origin-bytes-and-lifecycle-are-known",
+    "no-artifact-is-deferred-until-submission",
+    "provider-preserves-or-explicitly-binds-every-visible-name",
+    "complete-final-submission-inventory-can-be-frozen-before-submission"
+  ],
+  "forbidden": [
+    "submission",
+    "approval",
+    "cancellation-of-any-submission",
+    "publication",
+    "view-only-link",
+    "modification-of-registration-63sh5",
+    "second-draft",
+    "automatic-draft-recreation",
+    "study-or-operational-effect"
+  ],
+  "failureDisposition": {
+    "recordDraftIdentity": true,
+    "automaticDeletePermitted": false,
+    "automaticRecreatePermitted": false,
+    "requiredState": "quarantined-private-draft-pending-separate-exact-cleanup-or-disposition-authority"
+  },
+  "stageBEnabled": false
+}
