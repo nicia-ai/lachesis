@@ -1,0 +1,87 @@
+{
+  "protocol": "lachesis-m9b13f2-future-independent-review-receipt-schema/1",
+  "futureReviewReceiptProtocol": "lachesis-m9b13f2-independent-supplement-review-receipt/1",
+  "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+  "reviewEvidenceInventoryProtocol": "lachesis-m9b13f2-independent-review-evidence-inventory/1",
+  "receiptTopLevelFieldsExactly": [
+    "protocol",
+    "reviewedSupplement",
+    "authorEvidence",
+    "reviewerEvidence",
+    "reviewEvidenceInventory",
+    "decision",
+    "authorityBoundary",
+    "reviewerUnsignedProjection",
+    "reviewerSignatureEnvelope"
+  ],
+  "requiredBindings": {
+    "reviewedSupplement": [
+      "supplementBodyProtocol",
+      "supplementBodyCanonicalSha256",
+      "bodyPayloadProtocol",
+      "bodyPayloadRawSha256",
+      "packageInventoryProtocol",
+      "packageInventoryCanonicalSha256",
+      "completePackageManifestProtocol",
+      "completePackageManifestRawSha256",
+      "finalGitCommit",
+      "finalGitTree"
+    ],
+    "authorEvidence": [
+      "publicKeyEvidenceProtocol",
+      "publicKeyIdentity",
+      "publicKeyCommitment",
+      "spkiDerSha256",
+      "attestationProtocol",
+      "attestationRawSha256",
+      "attestationCanonicalSha256",
+      "unsignedProjectionProtocol",
+      "signingInputSha256",
+      "signatureBase64"
+    ],
+    "reviewerEvidence": [
+      "publicKeyEvidenceProtocol",
+      "publicKeyIdentity",
+      "publicKeyCommitment",
+      "spkiDerSha256"
+    ],
+    "reviewEvidenceInventory": [
+      "protocol",
+      "canonicalSha256",
+      "artifactCount",
+      "artifacts"
+    ],
+    "reviewEvidenceArtifact": [
+      "path",
+      "byteLength",
+      "mediaType",
+      "rawSha256",
+      "canonicalJsonSha256",
+      "classification"
+    ],
+    "decision": ["exactDecision"],
+    "authorityBoundary": [
+      "reviewPassGrantsSubmissionAuthority",
+      "reviewPassGrantsOperationalAuthority",
+      "separateSubmissionAuthorizationRequired",
+      "exactStatement"
+    ],
+    "reviewerSignature": [
+      "unsignedProjectionProtocol",
+      "signingInputSha256",
+      "signatureBase64"
+    ]
+  },
+  "requiredLiteralValues": {
+    "/protocol": "lachesis-m9b13f2-independent-supplement-review-receipt/1",
+    "/authorityBoundary/reviewPassGrantsSubmissionAuthority": false,
+    "/authorityBoundary/reviewPassGrantsOperationalAuthority": false,
+    "/authorityBoundary/separateSubmissionAuthorizationRequired": true
+  },
+  "authorAndReviewerCommitmentsMustDiffer": true,
+  "opaqueReviewEvidenceDigestPermitted": false,
+  "ambiguousSingularAuthorAttestationDigestPermitted": false,
+  "additionalFieldsPermitted": false,
+  "receiptIsExternallySupplied": true,
+  "receiptCanSelfAuthorizeSubmission": false
+}

@@ -1,0 +1,247 @@
+{
+  "protocol": "lachesis-m9b13f2-canonical-body-payload-manifest/1",
+  "supplementBodyProtocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+  "canonicalization": {
+    "protocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+    "payloadJsonDigestDefinition": "SHA-256(UTF8(RFC8785(accepted-strict-JSON-value)))",
+    "bodyDigestDefinition": "SHA-256(UTF8(RFC8785(complete-BODY-PAYLOAD-record)))",
+    "strictPreparseValidationRequired": true
+  },
+  "ordering": "ascending-raw-utf8-path-bytes",
+  "payload": [
+    {
+      "path": "author-attestation-projection.json",
+      "byteLength": 7175,
+      "rawSha256": "9750c64028b7cb97591be183ca4cdc4e8a5610fcb1c32390a5d29616d9d54247",
+      "canonicalJsonSha256": "342b4a7324abb6c548345a1cf3f7606a47459f101668caba93b9e24de783d86d",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "author-attestation-projection.md",
+      "byteLength": 1256,
+      "rawSha256": "6a12c4404ab1c1bd5b2153cf3f238193da899bd5cebd10cf1735d455b2669aa9",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "authority-boundary.json",
+      "byteLength": 1406,
+      "rawSha256": "71a403e842241dc0844ab8ebabe53afd387762bbf08b26126ad0d82a6b3addf6",
+      "canonicalJsonSha256": "4357e6b266809ae7f636cb31ca5eeaef9bf09658382d08fed0539c900bbe332b",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "authority-boundary.md",
+      "byteLength": 567,
+      "rawSha256": "9a563616a04d271e9953fb729903da595955bf4ceaa879d1c227810e9c38dc11",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "canonicalization-test-vectors.json",
+      "byteLength": 2324,
+      "rawSha256": "688a865e9271c3ea7ab51e6f01fe827c172e99f13ff4bb473967d22f46bbd2fd",
+      "canonicalJsonSha256": "3d8bf84d97ecbd26a6874f1687f07809cec858b20e97eb4d10504779cefee610",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "canonicalization.json",
+      "byteLength": 1776,
+      "rawSha256": "12092f12d5bc0e0f54031b03d5f784a034619cfb7821c2e565c6448601744c89",
+      "canonicalJsonSha256": "a05a9d95f8ce817ef2980aa91f22b03420a9d530ede5908e4bc2b1cf01a60613",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "canonicalization.md",
+      "byteLength": 1199,
+      "rawSha256": "8b9331da0e1ee1806f2fa39bb8a8b365bfada51ca5510692866597f241a8857c",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "external-mechanism-requirements.json",
+      "byteLength": 1056,
+      "rawSha256": "f423f6f887e61ce4204c56c8f961fd4185c95bfd92a6d41a80fb0cd780358df3",
+      "canonicalJsonSha256": "d11f626a0df3fdbf1d4eb23f8889145a2b7844fe886e3a9896f83eb340986d3a",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "external-mechanism-requirements.md",
+      "byteLength": 772,
+      "rawSha256": "e890f3e395913078f7a8348a703ab7bded1ae10e6d9cb91b30b8118cba402b5a",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "future-readiness-requirements.json",
+      "byteLength": 1414,
+      "rawSha256": "d30e90dfd1e3233d4bc80411f3d3f7f8bd5040d1e88281c1841f5eaadabcf4a2",
+      "canonicalJsonSha256": "dd614c7e7031321a83ef9cf7f13bc9eb149c004183df58991b8e18c2ca426936",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "future-readiness-requirements.md",
+      "byteLength": 1226,
+      "rawSha256": "15d91a5d979a5eef9a3f4f0b931303b9f2e74839725a654f8db72e305c2b307e",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "future-review-receipt-schema.json",
+      "byteLength": 2734,
+      "rawSha256": "91afe1c06cf8aae30d66a7769c5438e5c796a80eb2d0a753bbd8ded9dd4d4e77",
+      "canonicalJsonSha256": "a71b31c8bac5b85c300da70a82c60b1052387f17edcf67dcdd434622fd9fa311",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "future-review-receipt-schema.md",
+      "byteLength": 1302,
+      "rawSha256": "8fa971b41038ab07df63a50bbc34133be1b96e5ef2b967ee42d4975685af25c8",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "historical-no-go-inventory.json",
+      "byteLength": 16488,
+      "rawSha256": "afda087f9a2bb308ab3673b0ccae134696924a9035c157466fb665a59e7e62aa",
+      "canonicalJsonSha256": "cc23c4b5225b7eb2cd539f2680b1969800bb2b88f4233ebc13e7427e35772d03",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "historical-no-go-inventory.md",
+      "byteLength": 1140,
+      "rawSha256": "7b47e6ff303ebf11138bb5dc8c65cf6eda591c5876069e7abdf3a086f81c0462",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "nonclaims.md",
+      "byteLength": 711,
+      "rawSha256": "8ba35a7370ca87188271ab98fe621eabf30ee3db27bcfeaef741918cf1a87ab3",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "protocol-supersession.json",
+      "byteLength": 1840,
+      "rawSha256": "fdb18c44b721bb5cb0b0b115e1c24f8880f34d480a057597556eb6897920b08c",
+      "canonicalJsonSha256": "1dd0c7b77248b08c1ca5645ca3d37dab98116fb11a7c263605b871d61f918f76",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "protocol-supersession.md",
+      "byteLength": 818,
+      "rawSha256": "64bcef48dfe978321bc573a24c757508e51252628b8cf1a15fff493120526429",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "registration-binding.json",
+      "byteLength": 5034,
+      "rawSha256": "904bd0e489b79db4233e43da6f43e02dd86b0374b181f40229e76890469b9e0f",
+      "canonicalJsonSha256": "1cf1ec42584e6dd07d1c6c8c1f43566c293db5931c681cf1b63fd6b210918d7c",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "registration-binding.md",
+      "byteLength": 817,
+      "rawSha256": "ebf63201b488df3e68ac672baca386cfa5adfcc954d0211c224fa2da93c616fa",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "review-evidence-inventory-schema.json",
+      "byteLength": 3011,
+      "rawSha256": "7e32ee61f46f4bd7ffe70ceb4bac6cd3b4936f5db2825c69bf924e7ad33d5d6a",
+      "canonicalJsonSha256": "f48f4bc92e66c51e833dc6d0616484e8d022760a48cc7d814cf2d5001b0e337a",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "review-evidence-inventory-schema.md",
+      "byteLength": 1206,
+      "rawSha256": "9d8760bd365c3b7c8cc98b336d628a53f0afd54377cde17c6500b9b425c07b45",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "review-submission-boundary.json",
+      "byteLength": 3722,
+      "rawSha256": "88d7ed7962da9d03a26ac4978a82aa782a7c876fa2aabe56e8abe7d67547582a",
+      "canonicalJsonSha256": "da79572fe74c9a66e4405064006826c541aed8c463ac829b88a65079a0f73c93",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "review-submission-boundary.md",
+      "byteLength": 1962,
+      "rawSha256": "053565138245fa2a9d06b187cf0ed44970fa64b636baf1907359a1077e34ad8a",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "scientific-financial-invariance.json",
+      "byteLength": 1154,
+      "rawSha256": "2f30ac727ab07b8415c78f27bcb48d32f620cf180d659b861af54a9063ee1223",
+      "canonicalJsonSha256": "c3de2b808ce913fac243be692c14fbefc6bdd8500df51f51561128f08c176dc1",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "scientific-financial-invariance.md",
+      "byteLength": 645,
+      "rawSha256": "b72fec7b211cb3112ac382bdca03204b33d771056bd82098c352855a81153ed2",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    },
+    {
+      "path": "supplement-body.json",
+      "byteLength": 2622,
+      "rawSha256": "c8477143bc5f52e68d32574214a908c74189aa29337bc20776fc4b0bcfdadfe5",
+      "canonicalJsonSha256": "ce942678aea6fccff8c82032cb573f8f772c5d083a6ef2e3837c00aed93993e3",
+      "mediaType": "application/json",
+      "classification": "authoritative-machine-record"
+    },
+    {
+      "path": "supplement-body.md",
+      "byteLength": 2206,
+      "rawSha256": "8a31c3048bb47d3cae8afd005929a687adf2b53c0478011244432d21083d2a62",
+      "canonicalJsonSha256": null,
+      "mediaType": "text/markdown",
+      "classification": "normative-markdown"
+    }
+  ],
+  "exclusions": {
+    "excludesThisPayloadManifest": true,
+    "excludesIdentityRecords": true,
+    "excludesAuthorPublicKeyEvidence": true,
+    "excludesAuthorAttestation": true,
+    "excludesVerificationAndSealEvidence": true,
+    "excludesPackageInventory": true,
+    "excludesGeneralChecksumManifest": true,
+    "excludesUnsignedCeremonyRequest": true
+  }
+}

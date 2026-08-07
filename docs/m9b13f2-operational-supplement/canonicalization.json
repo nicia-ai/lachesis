@@ -1,0 +1,48 @@
+{
+  "protocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+  "standard": "RFC 8785 JSON Canonicalization Scheme",
+  "inputEncoding": "UTF-8",
+  "outputEncoding": "UTF-8",
+  "inputRequirements": {
+    "strictJsonGrammarRequired": true,
+    "duplicateObjectKeysRejectedBeforeOrdinaryParsing": true,
+    "prototypeSensitiveObjectKeysRejected": [
+      "__proto__",
+      "prototype",
+      "constructor"
+    ],
+    "iJsonCompatibleValuesRequired": true,
+    "loneUnicodeSurrogatesRejected": true,
+    "nonFiniteNumbersRejected": true,
+    "integersOutsideSafeInteroperableRangeRejected": true,
+    "minimumSafeInteger": -9007199254740991,
+    "maximumSafeInteger": 9007199254740991,
+    "unsupportedHostValuesRejected": [
+      "bigint",
+      "undefined",
+      "function",
+      "symbol",
+      "non-json-object"
+    ]
+  },
+  "canonicalOutputRequirements": {
+    "propertyOrdering": "RFC-8785-UTF-16-code-unit-lexicographic-order-recursively",
+    "stringEscaping": "RFC-8785-section-3.2.2.2",
+    "numberSerialization": "RFC-8785-section-3.2.2.3-ECMAScript-IEEE-754-binary64",
+    "whitespaceOutsideStrings": false,
+    "trailingNewline": false,
+    "exactlyOneCanonicalByteSequencePerAcceptedValue": true
+  },
+  "decisionRelevantDigestDefinition": "SHA-256(UTF8(RFC8785(accepted-strict-JSON-value)))",
+  "ordinaryJsonParseOrStringifyAloneIsSufficient": false,
+  "requiredPreparseValidation": [
+    "validate-utf8",
+    "validate-strict-json-token-grammar",
+    "reject-duplicate-object-keys-at-every-depth",
+    "reject-lone-unicode-surrogates",
+    "reject-non-finite-or-unsupported-numeric-state",
+    "reject-integers-outside-safe-interoperable-range",
+    "then-parse-and-rfc8785-canonicalize"
+  ],
+  "conformanceVectors": "canonicalization-test-vectors.json"
+}

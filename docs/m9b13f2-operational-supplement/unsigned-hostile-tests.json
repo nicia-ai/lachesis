@@ -1,0 +1,214 @@
+{
+  "protocol": "lachesis-m9b13f2-unsigned-offline-hostile-test-results/1",
+  "mode": "offline-static-unsigned-body",
+  "authorCeremonyTests": "public-evidence-fixture-only-no-m9b13f2-private-key-or-signature-created",
+  "testCount": 49,
+  "passed": 49,
+  "failed": 0,
+  "results": [
+    {
+      "id": "slash-escape-equivalence",
+      "result": "pass"
+    },
+    {
+      "id": "alternate-unicode-escape-equivalence",
+      "result": "pass"
+    },
+    {
+      "id": "property-order-equivalence",
+      "result": "pass"
+    },
+    {
+      "id": "whitespace-equivalence",
+      "result": "pass"
+    },
+    {
+      "id": "exponent-decimal-equivalence",
+      "result": "pass"
+    },
+    {
+      "id": "negative-zero-equivalence",
+      "result": "pass"
+    },
+    {
+      "id": "duplicate-root-key",
+      "result": "pass"
+    },
+    {
+      "id": "duplicate-nested-key",
+      "result": "pass"
+    },
+    {
+      "id": "lone-high-surrogate",
+      "result": "pass"
+    },
+    {
+      "id": "lone-low-surrogate",
+      "result": "pass"
+    },
+    {
+      "id": "non-finite-token",
+      "result": "pass"
+    },
+    {
+      "id": "positive-infinity-token",
+      "result": "pass"
+    },
+    {
+      "id": "unsafe-positive-integer",
+      "result": "pass"
+    },
+    {
+      "id": "unsafe-negative-integer",
+      "result": "pass"
+    },
+    {
+      "id": "prototype-sensitive-keys",
+      "result": "pass"
+    },
+    {
+      "id": "exact-body-and-payload-identities",
+      "result": "pass"
+    },
+    {
+      "id": "all-payload-bindings",
+      "result": "pass"
+    },
+    {
+      "id": "mutate-every-substantive-payload",
+      "result": "pass"
+    },
+    {
+      "id": "projection-schema-enumerated",
+      "result": "pass"
+    },
+    {
+      "id": "projection-omitted-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "projection-null-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "projection-additional-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "projection-reordered-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "projection-caller-selected-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "public-signature-fixture",
+      "result": "pass"
+    },
+    {
+      "id": "changed-signing-input-sha-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "changed-signed-value-reused-signature-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "substituted-author-key-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "changed-author-commitment-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "changed-spki-digest-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "complete-review-receipt-bindings",
+      "result": "pass"
+    },
+    {
+      "id": "missing-package-inventory-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "missing-raw-attestation-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "missing-canonical-attestation-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "opaque-review-digest-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "ambiguous-author-attestation-digest-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "substituted-final-git-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "review-pass-as-authority-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "review-evidence-valid",
+      "result": "pass"
+    },
+    {
+      "id": "review-evidence-omitted",
+      "result": "pass"
+    },
+    {
+      "id": "review-evidence-added",
+      "result": "pass"
+    },
+    {
+      "id": "review-evidence-duplicated",
+      "result": "pass"
+    },
+    {
+      "id": "review-evidence-aliased",
+      "result": "pass"
+    },
+    {
+      "id": "review-evidence-reordered",
+      "result": "pass"
+    },
+    {
+      "id": "review-evidence-inventory-schema",
+      "result": "pass"
+    },
+    {
+      "id": "all-18-scientific-financial-mutations",
+      "result": "pass"
+    },
+    {
+      "id": "historical-m9b13a-review",
+      "result": "pass"
+    },
+    {
+      "id": "historical-m9b13a-review-omission-rejected",
+      "result": "pass"
+    },
+    {
+      "id": "runtime-e1-e3-evidence-reuse-rejected",
+      "result": "pass"
+    }
+  ],
+  "effects": {
+    "networkRequests": 0,
+    "privateSigningKeysCreatedOrAccessed": 0,
+    "authorSignaturesCreated": 0,
+    "reviewerKeysCreated": 0,
+    "reviewReceiptsCreated": 0,
+    "externalEffects": 0
+  }
+}

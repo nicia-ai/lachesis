@@ -1,0 +1,23 @@
+{
+  "protocol": "lachesis-m9b13f2-unsigned-body-identity/1",
+  "supplementProtocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+  "bodyPayloadProtocol": "lachesis-m9b13f2-canonical-body-payload-manifest/1",
+  "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+  "bodyDigestSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+  "payloadManifestRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73",
+  "substantivePayloadFileCount": 28,
+  "scientificFinancialProjectionSha256": "e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+  "originalRegistration": {
+    "id": "63sh5",
+    "embargoEnd": "2030-08-01T00:00:00Z",
+    "preregistrationSha256": "097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+    "manifestSha256": "5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+    "receiptSha256": "ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b"
+  },
+  "authorPublicKeyEvidencePresent": false,
+  "authorAttestationPresent": false,
+  "authorSignaturePresent": false,
+  "sealedPackageIdentityPresent": false,
+  "readyForIndependentReview": false,
+  "authorityPresent": false
+}

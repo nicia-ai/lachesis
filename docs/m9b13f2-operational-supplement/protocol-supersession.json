@@ -1,0 +1,32 @@
+{
+  "protocol": "lachesis-m9b13f2-prospective-supersession/1",
+  "immediatePredecessor": {
+    "protocol": "lachesis-m9b13f1-embargo-compatible-operational-supplement-body/1",
+    "finalCommit": "5673b77d50867ebf4dd202d00699429db989e41a",
+    "finalTree": "7e350f1bff7f9e19cb3cb21c1fa292b9c7828adf",
+    "bodyDigest": "56ffe1f5c1fa7e43a7ab37367b630efc60fa530a126dbb499532a378dacd663b",
+    "payloadManifestRawSha256": "b3e5c0787329f4e6c1771f2647d00513338a0272a6c34d27a1f8b701507294e6",
+    "packageInventoryCanonicalSha256": "f8a12040854cbd4af07317e71b86b6deb60f78e85dac37bbf7cf71bd42febdff",
+    "completeManifestRawSha256": "d71d22bfef0b8098173da6666ce3e1c970bb96494aa856edb2310318e4a1ef76",
+    "submittedDecision": "m9b13f1-corrected-minimal-operational-supplement-ready-for-independent-review",
+    "independentReviewDecision": "m9b13f1-corrected-minimal-operational-supplement-review-no-go",
+    "reviewEvidenceCommit": "863a24d01f2d2cda75e17d69356a7add1558fb9d",
+    "reviewEvidenceTree": "13eeb350f0250e9e60bc7a04b4c66bd981f70908",
+    "reviewEvidenceManifestRawSha256": "b16bd52e1f6c6ae65f80dac328077647ea0f56c3dd8a6932ac6ac11c702e216e",
+    "disposition": "reviewed-no-go-superseded-prospectively-by-m9b13f2",
+    "bytesModified": false,
+    "reviewReinterpreted": false
+  },
+  "correction": {
+    "protocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+    "classification": "append-only-corrected-static-operational-supplement",
+    "correctsOnly": [
+      "normatively-exact-rfc8785-canonicalization-and-author-signing-projection",
+      "direct-review-receipt-and-review-evidence-inventory-bindings"
+    ],
+    "scientificOrOperationalSubstanceChanged": false,
+    "predecessorRuntimeCorrected": false,
+    "runtimeImplementationAdded": false,
+    "externalSubmissionPreparedOrPerformed": false
+  }
+}

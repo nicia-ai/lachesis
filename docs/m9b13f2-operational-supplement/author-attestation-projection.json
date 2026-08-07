@@ -1,0 +1,137 @@
+{
+  "protocol": "lachesis-m9b13f2-author-attestation-projection-contract/1",
+  "attestationProtocol": "lachesis-m9b13f2-supplement-author-attestation/1",
+  "unsignedProjectionProtocol": "lachesis-m9b13f2-supplement-author-unsigned-projection/1",
+  "signatureEnvelopeProtocol": "lachesis-m9b13f2-supplement-author-signature-envelope/1",
+  "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+  "unsignedProjectionSchema": {
+    "topLevelFieldsExactly": [
+      "protocol",
+      "authorPublicKeyEvidence",
+      "supplementBody",
+      "registration",
+      "scientificFinancialProjectionSha256",
+      "prospectiveStatus",
+      "authorityBoundary",
+      "ceremonySequence",
+      "finalGitBindingPolicy"
+    ],
+    "nestedFieldsExactly": {
+      "/authorPublicKeyEvidence": [
+        "protocol",
+        "publicKeyIdentity",
+        "authorCommitment",
+        "spkiDerSha256",
+        "rawPublicKeySha256",
+        "evidenceRawSha256",
+        "evidenceCanonicalSha256"
+      ],
+      "/supplementBody": [
+        "protocol",
+        "bodyDigestSha256",
+        "bodyPayloadProtocol",
+        "bodyPayloadRawSha256"
+      ],
+      "/registration": [
+        "id",
+        "embargoEnd",
+        "preregistrationSha256",
+        "manifestSha256",
+        "receiptSha256"
+      ],
+      "/authorityBoundary": [
+        "reviewPassGrantsSubmissionAuthority",
+        "separateSubmissionAuthorizationRequired",
+        "supplementSubmissionAuthorityCurrentlyPresent",
+        "noSubmissionAuthorityStatement"
+      ]
+    },
+    "fieldTypesAndFormats": {
+      "/protocol": "exact-string:lachesis-m9b13f2-supplement-author-unsigned-projection/1",
+      "/authorPublicKeyEvidence/protocol": "exact-string:lachesis-m9b13f2-supplement-author-public-key/1",
+      "/authorPublicKeyEvidence/publicKeyIdentity": "nonempty-string",
+      "/authorPublicKeyEvidence/authorCommitment": "string:sha256-colon-lowercase-hex-64",
+      "/authorPublicKeyEvidence/spkiDerSha256": "lowercase-hex-64",
+      "/authorPublicKeyEvidence/rawPublicKeySha256": "lowercase-hex-64",
+      "/authorPublicKeyEvidence/evidenceRawSha256": "lowercase-hex-64",
+      "/authorPublicKeyEvidence/evidenceCanonicalSha256": "lowercase-hex-64",
+      "/supplementBody/protocol": "exact-string:lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+      "/supplementBody/bodyDigestSha256": "lowercase-hex-64",
+      "/supplementBody/bodyPayloadProtocol": "exact-string:lachesis-m9b13f2-canonical-body-payload-manifest/1",
+      "/supplementBody/bodyPayloadRawSha256": "lowercase-hex-64",
+      "/registration/id": "exact-string:63sh5",
+      "/registration/embargoEnd": "exact-string:2030-08-01T00:00:00Z",
+      "/registration/preregistrationSha256": "exact-lowercase-hex-64:097d4848a264fc8484ca590c79388e3a00279a6310392205db7868104cee13b4",
+      "/registration/manifestSha256": "exact-lowercase-hex-64:5e53f4aeb8bf22213692557023b695bf88013372c8b235a7f844fdcf5545b189",
+      "/registration/receiptSha256": "exact-lowercase-hex-64:ae33915d355ca96aff4b4846a6f2d374491d4d9eea28540d87332368f61ef70b",
+      "/scientificFinancialProjectionSha256": "exact-lowercase-hex-64:e5cd02100a1004849acc18f3f302e880580a38ef45a0733868826c32a23ff282",
+      "/prospectiveStatus": "exact-string:awaiting-external-independent-review",
+      "/authorityBoundary/reviewPassGrantsSubmissionAuthority": "exact-boolean:false",
+      "/authorityBoundary/separateSubmissionAuthorizationRequired": "exact-boolean:true",
+      "/authorityBoundary/supplementSubmissionAuthorityCurrentlyPresent": "exact-boolean:false",
+      "/authorityBoundary/noSubmissionAuthorityStatement": "exact-string:Independent review confirms the reviewed supplement bytes only. A review pass does not authorize external submission, approval, publication, embargo change, or any study operation.",
+      "/ceremonySequence": "safe-integer-minimum-1",
+      "/finalGitBindingPolicy": "exact-string:The later independent review receipt binds the final reviewed Git commit and tree; the author signature binds the exact frozen body and author public-key evidence without a commit/signature cycle."
+    },
+    "requiredLiteralValues": {
+      "/protocol": "lachesis-m9b13f2-supplement-author-unsigned-projection/1",
+      "/supplementBody/protocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+      "/supplementBody/bodyPayloadProtocol": "lachesis-m9b13f2-canonical-body-payload-manifest/1",
+      "/registration/id": "63sh5",
+      "/registration/embargoEnd": "2030-08-01T00:00:00Z",
+      "/prospectiveStatus": "awaiting-external-independent-review",
+      "/authorityBoundary/reviewPassGrantsSubmissionAuthority": false,
+      "/authorityBoundary/separateSubmissionAuthorizationRequired": true,
+      "/authorityBoundary/supplementSubmissionAuthorityCurrentlyPresent": false
+    },
+    "additionalFieldsPermitted": false,
+    "callerSelectedSubsetsPermitted": false,
+    "schemaFieldListOrderIsNormative": true,
+    "callerMayReorderSchemaFieldLists": false,
+    "rawObjectMemberOrderAffectsCanonicalSigningBytes": false
+  },
+  "completeAttestationSchema": {
+    "topLevelFieldsExactly": [
+      "protocol",
+      "unsignedProjection",
+      "signatureEnvelope"
+    ],
+    "signatureEnvelopeFieldsExactly": [
+      "protocol",
+      "algorithm",
+      "unsignedProjectionProtocol",
+      "canonicalizationProtocol",
+      "signingInputSha256",
+      "valueBase64"
+    ],
+    "signatureEnvelopeAbsentFromUnsignedProjection": true,
+    "excludedFieldsAreAbsentNotNull": true,
+    "signatureBytesExcludedFromUnsignedProjection": true,
+    "signatureDerivedFieldsExcludedFromUnsignedProjection": true,
+    "fieldTypesAndFormats": {
+      "/protocol": "exact-string:lachesis-m9b13f2-supplement-author-attestation/1",
+      "/unsignedProjection": "exact-object:unsignedProjectionSchema",
+      "/signatureEnvelope/protocol": "exact-string:lachesis-m9b13f2-supplement-author-signature-envelope/1",
+      "/signatureEnvelope/algorithm": "exact-string:Ed25519",
+      "/signatureEnvelope/unsignedProjectionProtocol": "exact-string:lachesis-m9b13f2-supplement-author-unsigned-projection/1",
+      "/signatureEnvelope/canonicalizationProtocol": "exact-string:lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+      "/signatureEnvelope/signingInputSha256": "lowercase-hex-64",
+      "/signatureEnvelope/valueBase64": "canonical-base64-of-exactly-64-bytes"
+    },
+    "additionalFieldsPermitted": false
+  },
+  "signingBytesDefinition": "UTF8(RFC8785(unsignedProjection))",
+  "signingInputDigestDefinition": "SHA-256(UTF8(RFC8785(unsignedProjection)))",
+  "signatureAlgorithm": "Ed25519",
+  "mandatoryVerification": [
+    "validate-complete-attestation-schema",
+    "validate-exact-unsigned-projection-schema",
+    "validate-rfc8785-domain-before-canonicalization",
+    "recompute-signing-input-sha256",
+    "verify-author-public-key-evidence-raw-and-canonical-identities",
+    "verify-body-protocol-digest-and-payload-raw-digest",
+    "verify-registration-and-scientific-financial-identities",
+    "verify-prospective-only-and-nonauthorizing-status",
+    "verify-ed25519-signature-over-exact-signing-bytes"
+  ]
+}

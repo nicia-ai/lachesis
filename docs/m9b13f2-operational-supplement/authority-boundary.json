@@ -1,0 +1,43 @@
+{
+  "protocol": "lachesis-m9b13f2-zero-authority-boundary/1",
+  "liveReadinessAuthority": "absent",
+  "liveSubmissionAuthority": "absent",
+  "supplementSubmissionAuthorityCurrentlyPresent": false,
+  "supplementApprovalAuthority": false,
+  "externalRegistryOrOsfAuthority": false,
+  "trustedSessionActivationAuthority": false,
+  "acquisitionAuthority": false,
+  "materializationAuthority": false,
+  "corpusGoldScheduleAuthority": false,
+  "credentialProviderModelAuthority": false,
+  "executionAnalysisAuthority": false,
+  "publicationAuthority": false,
+  "gitPushAuthority": false,
+  "embargoMutationAuthority": false,
+  "m10Authority": false,
+  "syntheticPositiveAdmissionFixtures": false,
+  "effectCapableEntryPoint": false,
+  "m9b13e1ToE3RuntimeUse": {
+    "reuse": false,
+    "imports": false,
+    "activation": false,
+    "evidentiaryUse": false,
+    "configurationOnlyActivation": false
+  },
+  "prohibitedEffects": {
+    "networkRequests": 0,
+    "externalRegistryOrOsfAccesses": 0,
+    "externalRegistryOrOsfMutations": 0,
+    "supplementsSubmittedOrApproved": 0,
+    "realAuthoritiesActivated": 0,
+    "trustedSessionActivations": 0,
+    "acquisitionDownloadImageOperations": 0,
+    "corpusGoldScheduleConstructions": 0,
+    "credentialAccesses": 0,
+    "providerOrModelCalls": 0,
+    "studyExecutionsOrAnalyses": 0,
+    "publicationsOrPushes": 0,
+    "embargoMutations": 0,
+    "m10Work": 0
+  }
+}

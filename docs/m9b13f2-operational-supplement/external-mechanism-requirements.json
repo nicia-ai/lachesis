@@ -1,0 +1,27 @@
+{
+  "protocol": "lachesis-m9b13f2-future-external-supplement-mechanism-requirements/1",
+  "classification": "static-requirements-no-external-mechanism-selected",
+  "currentExternalRegistrySelected": false,
+  "currentExternalRegistryAccessed": false,
+  "currentExternalRegistryConfigured": false,
+  "laterSubmissionRequires": [
+    "new-immutable-external-identity",
+    "embargo-at-least-as-restrictive-as-registration-63sh5-through-2030-08-01T00:00:00Z",
+    "no-public-view-only-link",
+    "no-protected-metadata-or-context-exposure",
+    "exact-immutable-attachment-hashes",
+    "server-submission-timestamp",
+    "separate-approval-where-required",
+    "independent-post-upload-byte-verification",
+    "append-only-local-receipt",
+    "separate-exact-submission-authorization"
+  ],
+  "prohibited": [
+    "modify-registration-63sh5",
+    "replace-or-withdraw-registration-63sh5",
+    "change-registration-63sh5-embargo",
+    "publish-registration-63sh5",
+    "present-a-clone-as-the-original-registration",
+    "expose-protected-context-publicly"
+  ]
+}

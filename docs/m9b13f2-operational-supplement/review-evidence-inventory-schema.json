@@ -1,0 +1,72 @@
+{
+  "protocol": "lachesis-m9b13f2-future-review-evidence-inventory-schema/1",
+  "futureInventoryProtocol": "lachesis-m9b13f2-independent-review-evidence-inventory/1",
+  "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+  "inventorySchema": {
+    "topLevelFieldsExactly": [
+      "protocol",
+      "canonicalizationProtocol",
+      "ordering",
+      "artifacts"
+    ],
+    "requiredLiteralValues": {
+      "/protocol": "lachesis-m9b13f2-independent-review-evidence-inventory/1",
+      "/canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+      "/ordering": "ascending-raw-utf8-normalized-path-bytes"
+    },
+    "artifactFieldsExactly": [
+      "path",
+      "byteLength",
+      "mediaType",
+      "rawSha256",
+      "canonicalJsonSha256",
+      "classification"
+    ],
+    "fieldTypesAndFormats": {
+      "/protocol": "exact-string:lachesis-m9b13f2-independent-review-evidence-inventory/1",
+      "/canonicalizationProtocol": "exact-string:lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+      "/ordering": "exact-string:ascending-raw-utf8-normalized-path-bytes",
+      "/artifacts": "nonempty-array-of-exact-artifact-objects",
+      "/artifacts/*/path": "normalized-relative-nfc-utf8-path",
+      "/artifacts/*/byteLength": "safe-integer-minimum-0",
+      "/artifacts/*/mediaType": "nonempty-ascii-media-type-string",
+      "/artifacts/*/rawSha256": "lowercase-hex-64",
+      "/artifacts/*/canonicalJsonSha256": "lowercase-hex-64-for-json-otherwise-null",
+      "/artifacts/*/classification": "enum:review-record|review-narrative|review-test-evidence|review-signature-evidence|review-supporting-evidence"
+    },
+    "additionalFieldsPermitted": false
+  },
+  "pathPolicy": {
+    "relativePathsOnly": true,
+    "absolutePathsRejected": true,
+    "emptyPathsRejected": true,
+    "dotSegmentsRejected": true,
+    "parentTraversalRejected": true,
+    "backslashAliasesRejected": true,
+    "repeatedSeparatorsRejected": true,
+    "percentEncodedAliasesRejected": true,
+    "unicodeNormalization": "NFC",
+    "nonNormalizedUnicodeRejected": true,
+    "duplicatePathsRejected": true,
+    "caseFoldAliasesRejectedWhereTargetStorageIsCaseInsensitive": true,
+    "symlinksRejected": true
+  },
+  "artifactBinding": {
+    "rawBytesBoundForEveryArtifact": true,
+    "jsonArtifactsAlsoBindRfc8785CanonicalDigest": true,
+    "nonJsonCanonicalJsonSha256MustBeNull": true,
+    "missingArtifactsRejected": true,
+    "extraArtifactsRejected": true,
+    "reorderedArtifactsRejected": true,
+    "callerSuppliedOpaqueDigestAccepted": false
+  },
+  "inventoryCanonicalDigestDefinition": "SHA-256(UTF8(RFC8785(complete-inventory-record)))",
+  "inventoryDoesNotContainItsOwnDigest": true,
+  "receiptMustBindInventoryProtocolAndCanonicalDigestDirectly": true,
+  "chronology": {
+    "externalToSupplementBody": true,
+    "createdOnlyAfterFinalSupplementCommitAndIndependentReview": true,
+    "suppliedIndependentlyToSubmissionAuthority": true,
+    "selfAuthorizing": false
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "protocol": "lachesis-m9b13f2-author-ceremony-authorization-request/1",
+  "authorizationPresent": false,
+  "ceremonyAttempted": false,
+  "privateSigningMaterialCreatedOrAccessed": false,
+  "authorPublicKeyEvidenceCreated": false,
+  "authorAttestationCreated": false,
+  "authorSignatureCreated": false,
+  "frozenUnsignedBody": {
+    "protocol": "lachesis-m9b13f2-embargo-compatible-operational-supplement-body/1",
+    "bodyDigestSha256": "6501a94a5c3330cb655a7555a2ca3b3117149e2c0fddde51a3f403b594b84f36",
+    "bodyPayloadProtocol": "lachesis-m9b13f2-canonical-body-payload-manifest/1",
+    "bodyPayloadRawSha256": "4fadee9708bd0c6fe9a97cdf008fc1a786b7c98566eb2094cb00f7b49b915c73"
+  },
+  "exactSeparateAuthorizationRequired": "Authorize this session to generate exactly one fresh offline Ed25519 M9b.13f.2 author keypair, retain its private key solely in a new non-repository mode-0700 namespace with a mode-0600 private-key file, export only canonical public-key evidence, and create exactly one author signature over the frozen M9b.13f.2 unsigned projection. Generate no backup or replacement key and do not record the private bytes or namespace locator.",
+  "authorizedCeremonyConstraints": {
+    "algorithm": "Ed25519",
+    "keypairsExactly": 1,
+    "authorSignaturesExactly": 1,
+    "backupKeys": 0,
+    "replacementKeys": 0,
+    "networkRequests": 0,
+    "privateNamespaceOutsideRepository": true,
+    "privateNamespaceMode": "0700",
+    "privateKeyMode": "0600",
+    "privateBytesRecorded": false,
+    "privateNamespaceLocatorRecorded": false,
+    "reviewerKeyOrReceiptPermitted": false
+  },
+  "packageStatus": "unsigned-deterministic-body-awaiting-separate-author-ceremony-authorization",
+  "submissionOrOperationalAuthority": false
+}

@@ -1,0 +1,78 @@
+{
+  "protocol": "lachesis-m9b13f2-rfc8785-canonicalization-test-vectors/1",
+  "canonicalizationProtocol": "lachesis-m9b13f2-rfc8785-json-canonicalization/1",
+  "acceptedEquivalentInputs": [
+    {
+      "id": "slash-escape-equivalence",
+      "rawInputs": ["{\"value\":\"/\"}", "{\"value\":\"\\/\"}"],
+      "canonicalJson": "{\"value\":\"/\"}"
+    },
+    {
+      "id": "alternate-unicode-escape-equivalence",
+      "rawInputs": ["{\"value\":\"a\"}", "{\"value\":\"\\u0061\"}"],
+      "canonicalJson": "{\"value\":\"a\"}"
+    },
+    {
+      "id": "property-order-equivalence",
+      "rawInputs": ["{\"b\":1,\"a\":2}", "{\"a\":2,\"b\":1}"],
+      "canonicalJson": "{\"a\":2,\"b\":1}"
+    },
+    {
+      "id": "whitespace-equivalence",
+      "rawInputs": ["{\"value\":1}", " { \"value\" : 1 } "],
+      "canonicalJson": "{\"value\":1}"
+    },
+    {
+      "id": "exponent-decimal-equivalence",
+      "rawInputs": ["{\"value\":1}", "{\"value\":1.0}", "{\"value\":1e0}"],
+      "canonicalJson": "{\"value\":1}"
+    },
+    {
+      "id": "negative-zero-equivalence",
+      "rawInputs": ["{\"value\":0}", "{\"value\":-0}"],
+      "canonicalJson": "{\"value\":0}"
+    }
+  ],
+  "rejectedInputs": [
+    {
+      "id": "duplicate-root-key",
+      "rawInput": "{\"a\":1,\"a\":2}",
+      "reason": "duplicate-object-key"
+    },
+    {
+      "id": "duplicate-nested-key",
+      "rawInput": "{\"a\":{\"b\":1,\"b\":2}}",
+      "reason": "duplicate-object-key"
+    },
+    {
+      "id": "lone-high-surrogate",
+      "rawInput": "{\"value\":\"\\ud800\"}",
+      "reason": "lone-unicode-surrogate"
+    },
+    {
+      "id": "lone-low-surrogate",
+      "rawInput": "{\"value\":\"\\udc00\"}",
+      "reason": "lone-unicode-surrogate"
+    },
+    {
+      "id": "non-finite-token",
+      "rawInput": "{\"value\":NaN}",
+      "reason": "invalid-json-and-non-finite-number"
+    },
+    {
+      "id": "positive-infinity-token",
+      "rawInput": "{\"value\":Infinity}",
+      "reason": "invalid-json-and-non-finite-number"
+    },
+    {
+      "id": "unsafe-positive-integer",
+      "rawInput": "{\"value\":9007199254740992}",
+      "reason": "outside-safe-interoperable-integer-range"
+    },
+    {
+      "id": "unsafe-negative-integer",
+      "rawInput": "{\"value\":-9007199254740992}",
+      "reason": "outside-safe-interoperable-integer-range"
+    }
+  ]
+}
