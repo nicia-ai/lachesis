@@ -1,0 +1,124 @@
+{
+  "protocol": "lachesis-m9b13g-authoritative-mechanism-sources/1",
+  "researchMode": "public-documentation-and-unauthenticated-public-api-read-only",
+  "researchedAt": "2026-08-07T16:38:40Z",
+  "sources": [
+    {
+      "id": "osf-registration-guide",
+      "publisher": "Center for Open Science",
+      "title": "Welcome to Registrations & Preregistrations!",
+      "url": "https://help.osf.io/article/330-welcome-to-registrations",
+      "authority": "official-support-documentation",
+      "supports": [
+        "registration-is-frozen-after-submission",
+        "start-from-scratch-or-existing-project",
+        "project-files-are-included-up-to-5gb",
+        "open-ended-registration-is-flexible",
+        "embargo-is-private-and-limited-to-four-years",
+        "submission-and-archiving-are-distinct",
+        "ordinary-registration-auto-approves-after-48-hours",
+        "registration-update-cannot-upload-or-update-documents",
+        "resource-links-require-public-doi-backed-resources"
+      ]
+    },
+    {
+      "id": "osf-advanced-registration-actions",
+      "publisher": "Center for Open Science",
+      "title": "Advanced Actions on Registrations",
+      "url": "https://help.osf.io/article/113-advanced-actions-registrations",
+      "authority": "official-support-documentation",
+      "supports": [
+        "registration-updates-are-metadata-study-design-updates",
+        "view-only-links-are-separate-shareable-access-mechanisms",
+        "early-embargo-ending-and-withdrawal-are-separate-mutating-actions"
+      ]
+    },
+    {
+      "id": "osf-licensing-guide",
+      "publisher": "Center for Open Science",
+      "title": "Licensing",
+      "url": "https://help.osf.io/article/148-licensing",
+      "authority": "official-support-documentation",
+      "supports": [
+        "no-license-is-unavailable-for-osf-registries",
+        "project-license-is-automatically-uploaded-with-registration",
+        "registration-submission-prompts-for-license-if-project-has-none"
+      ]
+    },
+    {
+      "id": "osf-api-v2",
+      "publisher": "Center for Open Science",
+      "title": "OSF APIv2 Documentation",
+      "url": "https://developer.osf.io/",
+      "authority": "official-api-documentation",
+      "supports": [
+        "undocumented-routes-fields-are-unstable",
+        "draft-registration-create-and-update-are-documented",
+        "registration-and-file-read-endpoints-are-documented",
+        "file-mutation-uses-waterbutler-links",
+        "complete-embargo-submission-and-approval-workflow-is-not-documented-as-one-api-contract"
+      ]
+    },
+    {
+      "id": "osf-open-ended-schema-v3",
+      "publisher": "Center for Open Science",
+      "title": "Open-Ended Registration schema API resource",
+      "url": "https://api.osf.io/v2/schemas/registrations/5df83f7dd28338001ac0ab0d/",
+      "authority": "official-unauthenticated-public-api",
+      "observed": {
+        "resourceId": "5df83f7dd28338001ac0ab0d",
+        "name": "Open-Ended Registration",
+        "schemaVersion": 3,
+        "embeddedVersion": 3,
+        "active": true,
+        "questionIds": ["summary", "uploader"],
+        "hasFiles": true,
+        "schemaCanonicalSha256": "e750a5a2870f7571032f2c84696321a1071ade6fdd8cccd8c678e0275d3d7fcc",
+        "resourceCanonicalSha256": "258bf02c234d6b95acb364553e0b110399865574af4d72a00a5a49667292ed2d"
+      }
+    },
+    {
+      "id": "osf-apache-license-resource",
+      "publisher": "Center for Open Science",
+      "title": "Apache License 2.0 API resource",
+      "url": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e96d/",
+      "authority": "official-unauthenticated-public-api",
+      "observed": {
+        "resourceId": "563c1cf88c5e4a3877f9e96d",
+        "name": "Apache License 2.0",
+        "requiredFields": [],
+        "resourceCanonicalSha256": "7be8d73e292c35358a27fab7fd45ebf60adaa3cdb0c19b1d57f1d9a3e06ed960"
+      }
+    },
+    {
+      "id": "zenodo-record-lifecycle",
+      "publisher": "CERN/Zenodo",
+      "title": "About records",
+      "url": "https://help.zenodo.org/docs/deposit/about-records/",
+      "authority": "official-support-documentation",
+      "supports": [
+        "published-record-metadata-is-always-public",
+        "files-and-persistent-identifier-are-described-as-immutable"
+      ]
+    },
+    {
+      "id": "zenodo-file-management",
+      "publisher": "CERN/Zenodo",
+      "title": "Manage files",
+      "url": "https://help.zenodo.org/docs/deposit/manage-files/",
+      "authority": "official-support-documentation",
+      "supports": [
+        "published-files-can-be-corrected-during-a-limited-post-publication-window",
+        "embargo-restricts-files-but-not-record-metadata"
+      ]
+    }
+  ],
+  "researchEffects": {
+    "authenticationUsed": false,
+    "credentialsAccessed": false,
+    "externalMutationRequests": 0,
+    "directUnauthenticatedPublicApiGetAttempts": 14,
+    "webResearchOperations": 10,
+    "totalUnderlyingDocumentationFetchesKnownExactly": false
+  }
+}

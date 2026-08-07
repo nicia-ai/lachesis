@@ -1,0 +1,95 @@
+{
+  "protocol": "lachesis-m9b13g-external-mechanism-comparison/1",
+  "originalRegistration": "63sh5",
+  "requirements": {
+    "originalRegistrationUnchanged": true,
+    "exactImmutableFilesRequired": true,
+    "minimumEmbargoEnd": "2030-08-01T00:00:00Z",
+    "nonPublicRequired": true,
+    "viewOnlyLinkForbidden": true,
+    "stableRegistrationIdentityAndServerTimestampRequired": true,
+    "independentDownloadAndRehashRequired": true,
+    "documentedStableInterfaceRequired": true,
+    "separateApprovalAuthorityRequired": true
+  },
+  "mechanisms": [
+    {
+      "id": "update-registration-63sh5",
+      "mechanism": "Update registration 63sh5",
+      "outcome": "rejected",
+      "reasons": [
+        "It would modify the metadata or schema response of the immutable predecessor.",
+        "OSF documents that registration updates cannot upload or update documents."
+      ]
+    },
+    {
+      "id": "add-files-to-registration-63sh5",
+      "mechanism": "Add files to registration 63sh5",
+      "outcome": "rejected",
+      "reasons": [
+        "OSF documents that submitted registration files cannot be added, removed or modified.",
+        "The mechanism is unavailable and would violate predecessor immutability."
+      ]
+    },
+    {
+      "id": "add-resource-link-to-registration-63sh5",
+      "mechanism": "Add a resource or supplement link to registration 63sh5",
+      "outcome": "rejected",
+      "reasons": [
+        "Adding the resource changes registration metadata.",
+        "The resource workflow links a public DOI-backed object and does not itself archive the 57 bytesets in registration 63sh5.",
+        "A linked mutable resource cannot substitute for the required immutable archive."
+      ]
+    },
+    {
+      "id": "second-osf-registration",
+      "mechanism": "Create a second separately embargoed OSF registration",
+      "outcome": "blocked-candidate",
+      "advantages": [
+        "A second identity can name 63sh5 as an immutable predecessor without changing it.",
+        "OSF registrations freeze submitted files and provide timestamps.",
+        "OSF supports a private embargo for up to four years."
+      ],
+      "blockingReasons": [
+        "Ordinary OSF registrations automatically approve after 48 hours, so later approval is not a mandatory separately authorized gate.",
+        "The documented license workflow may add a license artifact, and public documentation does not prove exact 57-file closure.",
+        "Public documentation does not prove preservation of the required two-folder namespace through the complete submission and archive workflow."
+      ]
+    },
+    {
+      "id": "new-project-or-component-registration",
+      "mechanism": "Create a registration from a new private project or component containing only the frozen supplement package",
+      "outcome": "blocked-candidate",
+      "advantages": [
+        "OSF documents that files in the selected project or component are included in the registration archive.",
+        "A dedicated source can avoid unrelated project files."
+      ],
+      "blockingReasons": [
+        "The source object is mutable until archiving and must be independently reconciled immediately before submission.",
+        "The ordinary-registration auto-approval rule defeats a mandatory later approval gate.",
+        "Automatic license upload may create a 58th archive file.",
+        "Exact folder preservation is not established by the cited public documentation."
+      ]
+    },
+    {
+      "id": "alternative-immutable-repository",
+      "mechanism": "Use Zenodo as a representative immutable timestamped attachment-capable alternative",
+      "outcome": "rejected",
+      "reasons": [
+        "Zenodo documents that record metadata is always public, including for embargoed files.",
+        "Zenodo documents a limited post-publication file-correction window, which is incompatible with immediate immutable-byte closure.",
+        "Publication is not a separately approved post-submission gate in the required sense."
+      ]
+    }
+  ],
+  "closestDocumentedCandidate": {
+    "provider": "OSF Registries",
+    "registrationProvider": "OSF Registries general provider",
+    "schemaName": "Open-Ended Registration",
+    "schemaId": "5df83f7dd28338001ac0ab0d",
+    "schemaVersion": 3,
+    "interface": "official-authenticated-browser-workflow-only",
+    "status": "not-selected-unresolved-blockers"
+  },
+  "decision": "m9b13g-external-supplement-mechanism-no-go"
+}

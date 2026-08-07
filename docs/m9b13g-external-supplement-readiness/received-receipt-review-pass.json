@@ -1,0 +1,23 @@
+{
+  "protocol": "lachesis-m9b13g-received-receipt-review-pass-evidence/1",
+  "evidenceKind": "supplied-prior-review-result",
+  "receivedDecision": "m9b13f2-signed-independent-review-receipt-review-pass",
+  "receivedFrom": "task-authorization-input",
+  "independentlyReproducedInThisM9b13gSession": false,
+  "receipt": {
+    "commit": "0776b7af87f3d8731300dd2bde5b9e31c25ca745",
+    "tree": "5b36616a593fdf3d3e5bdfed442b6bf3c5b4bd9e",
+    "protocol": "lachesis-m9b13f2-independent-supplement-review-receipt/1",
+    "rawSha256": "f7bf3e1eac3c8557991194573d9aeaec4f4b37f1618007f0d7fe1f158b328df4",
+    "canonicalSha256": "286c9f1ef0897719853b713253f8cf0d0bbe2a743a882bd5517c6abca5ae3b8b",
+    "evidenceInventoryCanonicalSha256": "5d5045970779865af9a1c81a68f963fc4c1645b51b9e7f4b028960fb4ae7f4ba",
+    "checksumManifestRawSha256": "f731e112100e994a24c15348d95b21d5f268ef6b6e59a0cbc6b82abcc97610b8",
+    "fileCount": 12
+  },
+  "meaning": "The result is accepted as supplied prior review evidence for mechanism planning; this record does not claim that M9b.13g independently reran that receipt review.",
+  "authority": {
+    "submissionAuthorityGranted": false,
+    "approvalAuthorityGranted": false,
+    "operationalAuthorityGranted": false
+  }
+}
