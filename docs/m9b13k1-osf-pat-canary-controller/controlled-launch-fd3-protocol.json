@@ -1,0 +1,15 @@
+{
+  "allowedCredentialSource": "owned-anonymous-fd3-only",
+  "closeRule": "close-only-after-bound-launcher-proves-ownership",
+  "credentialFormat": "64-ASCII-alphanumeric-bytes-plus-one-LF",
+  "directInvocationBehavior": "stop-before-reading-or-closing-fd3",
+  "fallbacks": [],
+  "implementationStatus": "unavailable-no-live-credential-launcher",
+  "liveFd3CloseCount": 0,
+  "liveFd3ReadCount": 0,
+  "maximumBytesIncludingTerminator": 65,
+  "maximumReads": 1,
+  "protocol": "lachesis-m9b13k1-controlled-launch-owned-fd3/1",
+  "terminalDecision": "m9b13k1-correction-no-go",
+  "zeroizationRequiredAfterFutureOwnedRead": true
+}

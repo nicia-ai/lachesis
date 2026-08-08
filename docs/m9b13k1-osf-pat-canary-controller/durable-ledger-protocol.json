@@ -1,0 +1,38 @@
+{
+  "campaignMaximumHttpRequests": 18,
+  "casRequired": true,
+  "eventBindings": [
+    "activation-identity",
+    "request-identity",
+    "campaign-controller-identity",
+    "ledger-root-and-revision",
+    "cumulative-http-request-index",
+    "request-class-and-method",
+    "sanitized-domain-separated-complete-url-digest",
+    "host-path-class-and-query-name-inventory",
+    "project-draft-provider-identities",
+    "artifact-identity-and-digest",
+    "token-id-without-pat",
+    "response-status-and-bounded-response-digest",
+    "outcome-or-ambiguity-class",
+    "prior-and-current-canonical-event-digests",
+    "durable-timestamp-and-deadline-evidence"
+  ],
+  "implementationStatus": "unavailable-no-bound-rollback-proof-store",
+  "liveLedgerReads": 0,
+  "liveLedgerWrites": 0,
+  "protocol": "lachesis-m9b13k1-durable-cas-receipt-ledger/1",
+  "reject": [
+    "stale-root",
+    "rollback",
+    "replacement",
+    "truncation",
+    "duplicate-index",
+    "broken-hash-chain",
+    "foreign-activation",
+    "ambiguous-persistence",
+    "caller-selected-namespace-reset"
+  ],
+  "reservationBeforeConsequentialDispatch": true,
+  "terminalDecision": "m9b13k1-correction-no-go"
+}

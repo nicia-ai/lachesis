@@ -1,0 +1,17 @@
+{
+  "currentLiveBehavior": "zero-effect-stop-before-ledger-or-credential-access",
+  "futureCredentialReadPermittedAfterAnyPutOrRevocationState": false,
+  "futureRestartStatesRequiringZeroCredentialReads": [
+    "put-reserved",
+    "put-possibly-dispatched",
+    "put-dispatched",
+    "upload-ambiguous",
+    "upload-completed",
+    "revocation-pending",
+    "revocation-ambiguous",
+    "terminal"
+  ],
+  "namespaceReplacementPermitted": false,
+  "requestCounterResetPermitted": false,
+  "terminalDecision": "m9b13k1-correction-no-go"
+}

@@ -1,0 +1,21 @@
+{
+  "counterSource": "no-effect-live-entry-by-construction",
+  "futureCounterSourceRequired": "validated-durable-ledger-events-only",
+  "futureReservationStates": [
+    "reserved-not-dispatched",
+    "actually-dispatched",
+    "completion-persisted",
+    "dispatch-ambiguous"
+  ],
+  "liveCredentialReads": 0,
+  "liveCustodianInvocations": 0,
+  "liveHttpDispatches": 0,
+  "liveLedgerWrites": 0,
+  "livePutDispatches": 0,
+  "liveRevocationDispatches": 0,
+  "maximumCampaignHttpRequests": 18,
+  "maximumPutDispatches": 1,
+  "maximumRevocationAttempts": 1,
+  "retries": 0,
+  "terminalDecision": "m9b13k1-correction-no-go"
+}

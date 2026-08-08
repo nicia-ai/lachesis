@@ -1,0 +1,20 @@
+{
+  "completeControllerDeadlineMs": 120000,
+  "futureEnforcementRequirements": [
+    "controller-owned-timers",
+    "controller-owned-abort-signals",
+    "bounded-streaming-response-reader",
+    "socket-or-request-destruction-on-abort",
+    "late-completion-quarantine",
+    "credential-zeroization-before-unbounded-wait"
+  ],
+  "liveEffectPathExists": false,
+  "perRequestDeadlineMs": 10000,
+  "responseCeilings": {
+    "api": 262144,
+    "download": 245,
+    "upload": 65536
+  },
+  "revocationDeadlineMs": 15000,
+  "terminalDecision": "m9b13k1-correction-no-go"
+}

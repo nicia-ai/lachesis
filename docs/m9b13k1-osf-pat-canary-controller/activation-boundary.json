@@ -1,0 +1,11 @@
+{
+  "candidateInspection": "offline-structural-only",
+  "candidateReflectionInLiveOutcome": false,
+  "dependencyParametersAcceptedByLiveEntry": 0,
+  "effectAdmission": "always-denied",
+  "futureAuthorityForm": "module-private-independently-frozen-closure-capability",
+  "futureAuthorityPresent": false,
+  "ordinaryCallersCanConstructAuthority": false,
+  "protocol": "lachesis-m9b13k1-independent-activation-capability/1",
+  "testAuthorityPresent": false
+}

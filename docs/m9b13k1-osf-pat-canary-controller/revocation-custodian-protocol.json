@@ -1,0 +1,16 @@
+{
+  "credentialInputPermitted": false,
+  "custodianResultDomain": ["revoked", "active", "ambiguous"],
+  "implementationStatus": "unavailable-no-separately-controlled-live-verifier",
+  "liveCustodianInvocations": 0,
+  "liveRevocationAttempts": 0,
+  "protocol": "lachesis-m9b13k1-credential-free-revocation-custodian/1",
+  "requiredFutureInput": [
+    "activation-identity",
+    "request-identity",
+    "token-id",
+    "durable-revocation-receipt-digest"
+  ],
+  "successRequires": "durably-dispatched-revocation-and-custodian-result-revoked",
+  "terminalDecision": "m9b13k1-correction-no-go"
+}

@@ -1,0 +1,17 @@
+{
+  "apiResponseMaximumBytes": 262144,
+  "controllerDeadlineMs": 120000,
+  "controllerOwnedAbortSignalsRequired": true,
+  "implementationStatus": "unavailable-no-bound-live-http-transport",
+  "liveHttpRequests": 0,
+  "maximumRequestBodyBytes": 245,
+  "perRequestTimeoutMs": 10000,
+  "protocol": "lachesis-m9b13k1-bounded-abortable-http-transport/1",
+  "redirectPolicy": "error",
+  "responseHandling": "bounded-stream-before-buffer",
+  "retries": 0,
+  "revocationDeadlineMs": 15000,
+  "socketCleanupRequiredOnAbort": true,
+  "terminalDecision": "m9b13k1-correction-no-go",
+  "uploadResponseMaximumBytes": 65536
+}

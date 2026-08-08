@@ -1,0 +1,36 @@
+{
+  "activationProtocol": "lachesis-m9b13k1-independent-activation-capability/1",
+  "controllerProtocol": "lachesis-m9b13k1-osf-pat-canary-controller/1",
+  "effectAdmission": "denied-before-effect-subsystem-construction",
+  "livePositiveAuthority": null,
+  "ordinaryInputAuthority": false,
+  "phases": [
+    {
+      "authorityEffect": "none",
+      "name": "structural-validation"
+    },
+    {
+      "authorityEffect": "positive-only-if-separately-frozen-closure-exists",
+      "name": "independent-authority"
+    },
+    {
+      "authorityEffect": "unreachable-while-live-authority-is-null",
+      "name": "runtime-effect-admission"
+    }
+  ],
+  "requiredFutureBindings": [
+    "corrected-source-sha256",
+    "corrected-test-sha256",
+    "package-manifest-sha256",
+    "controller-and-activation-protocols",
+    "project-draft-provider-and-artifact",
+    "credential-custody-protocol",
+    "token-id",
+    "durable-ledger-implementation-identity-and-root",
+    "transport-implementation-identity",
+    "custodian-implementation-identity",
+    "request-limits-and-deadlines"
+  ],
+  "schemaValidityConveysAuthority": false,
+  "terminalDecision": "m9b13k1-correction-no-go"
+}

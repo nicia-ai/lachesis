@@ -1,0 +1,17 @@
+{
+  "implementationStatus": "unreachable-no-live-put-or-download",
+  "protocol": "lachesis-m9b13k1-stable-file-object-reconciliation/1",
+  "requiredEqualIdentity": [
+    "provider-root-upload-relation-resource-and-provider",
+    "put-destination-resource-provider-and-path",
+    "upload-response-entity-id-path-resource-and-provider",
+    "post-upload-inventory-id-path-resource-and-provider",
+    "download-relation-object-id",
+    "actual-download-request-object-id",
+    "downloaded-byte-receipt-object-id"
+  ],
+  "requiredFilename": "OSF-PAT-WATERBUTLER-CANARY-1fbd9e013ac05f53c411b9e98f507d12.txt",
+  "requiredProject": "bmsda",
+  "requiredProvider": "osfstorage",
+  "terminalDecision": "m9b13k1-correction-no-go"
+}

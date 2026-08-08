@@ -1,0 +1,25 @@
+{
+  "concreteEffectPathStatus": "absent-by-no-go-decision",
+  "requiredCurrentAssertions": [
+    "ordinary-input-never-inspected-by-live-entry",
+    "dependency-shaped-input-cannot-be-supplied",
+    "structural-validity-is-nonauthoritative",
+    "caller-substitution-remains-nonauthoritative",
+    "two-caller-namespaces-remain-nonauthoritative",
+    "no-fd3-child-exits-cleanly",
+    "no-credential-ledger-transport-or-custodian-access",
+    "exact-artifact-identity-preserved",
+    "private-build-and-export-surface-unchanged",
+    "explicit-corrected-source-coverage-gate"
+  ],
+  "requiredFutureEffectPathSuites": [
+    "controlled-launch-owned-fd3",
+    "crash-at-every-ledger-boundary",
+    "cas-concurrency-rollback-and-self-consistent-mutation",
+    "never-settling-transport-and-abort-races",
+    "slow-and-oversized-streaming-response",
+    "hostile-url-and-stable-object-reconciliation",
+    "credential-free-independent-revocation-custodian"
+  ],
+  "terminalDecision": "m9b13k1-correction-no-go"
+}
