@@ -1,0 +1,57 @@
+{
+  "correctedController": {
+    "branches": {
+      "covered": 4,
+      "percent": 100,
+      "total": 4
+    },
+    "explicitInclude": "packages/generator-ai-sdk/internal/m9b13k1-osf-pat-canary-controller.ts",
+    "functions": {
+      "covered": 3,
+      "percent": 100,
+      "total": 3
+    },
+    "lines": {
+      "covered": 41,
+      "percent": 100,
+      "total": 41
+    },
+    "statements": {
+      "covered": 41,
+      "percent": 100,
+      "total": 41
+    }
+  },
+  "focusedRun": {
+    "filesPassed": 1,
+    "networkDeniedByOperatingSystem": true,
+    "testsPassed": 12
+  },
+  "protocol": "lachesis-m9b13k1-coverage-evidence/1",
+  "repositoryRun": {
+    "branches": {
+      "covered": 8532,
+      "percent": 81,
+      "total": 10533
+    },
+    "filesPassed": 76,
+    "functions": {
+      "covered": 2640,
+      "percent": 97.45,
+      "total": 2709
+    },
+    "lines": {
+      "covered": 11950,
+      "percent": 93.72,
+      "total": 12750
+    },
+    "networkDeniedByOperatingSystem": true,
+    "statements": {
+      "covered": 12520,
+      "percent": 90.04,
+      "total": 13904
+    },
+    "testsPassed": 1362
+  },
+  "thresholdsMet": true
+}

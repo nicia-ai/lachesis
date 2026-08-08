@@ -1,0 +1,28 @@
+{
+  "derivedDecision": "m9b13k1-correction-no-go",
+  "implementation": {
+    "commit": "ed6ba05649fe66ed32e25618f98e478d85f62410",
+    "correctedSourceSha256": "c14f66ef2d9a8f146357c3357352f68a6896b85397ff3c1527130c200580bcf4",
+    "correctedTestSha256": "f9a7f88019afa8741137a213fb5a498e5345c4fbf19a8a6a566f99c452ad7c32",
+    "tree": "1aa9bf3245d294e31018a94064f2b3e1eb9eb033",
+    "vitestConfigSha256": "3717fe4070c093cfaf29d1c67867e7ad0f4308e101ebb814c8d55f35d8fef0df"
+  },
+  "preservedFailedReview": {
+    "commit": "860df21e45a1a48fb8949a2b02e387dd09a24012",
+    "tree": "1903189bc5034da16a379bf5df6704585b1a6403"
+  },
+  "protocol": "lachesis-m9b13k1-independent-rederivation/1",
+  "rederivedFacts": [
+    "the predecessor package has zero diff against the reviewed commit",
+    "ordinary input is ignored by the only live entry point",
+    "the live positive authority is module-private and null",
+    "no security dependency is accepted by the live entry point",
+    "the live entry point stops before credential ledger transport or custodian construction",
+    "the corrected controller is absent from public package output",
+    "the required real effect-capable implementations remain unavailable"
+  ],
+  "reviewedBaseline": {
+    "commit": "154e1cac4aa4e85075ae3b577bcc824607a34ad9",
+    "tree": "d2d3f5e386bbecb04be3f8e88616b4651d6275c6"
+  }
+}

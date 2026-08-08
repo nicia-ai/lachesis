@@ -1,0 +1,46 @@
+{
+  "currentNoGoBoundary": {
+    "filesPassed": 1,
+    "networkDeniedByOperatingSystem": true,
+    "testsPassed": 12,
+    "verifiedCases": [
+      "hostile-proxy-input-is-not-inspected",
+      "dependency-shaped-input-cannot-inject-security-components",
+      "two-caller-selected-ledger-namespaces-have-identical-denied-outcomes",
+      "structurally-valid-future-candidate-is-nonauthoritative",
+      "malformed-and-substituted-candidates-are-denied",
+      "frozen-245-byte-artifact-identity-is-exact",
+      "isolated-process-without-controlled-fd3-exits-cleanly",
+      "deliberately-inherited-fd3-remains-open-and-unread"
+    ]
+  },
+  "effectPathSuites": [
+    {
+      "reason": "no controlled live credential launcher exists",
+      "status": "not-implementable-under-authorized-scope",
+      "suite": "owned-fd3-correct-malformed-read-failure-zeroization"
+    },
+    {
+      "reason": "no bound rollback-proof durable ledger exists",
+      "status": "not-implementable-under-authorized-scope",
+      "suite": "crash-restart-cas-concurrency-rollback"
+    },
+    {
+      "reason": "no live HTTP transport is permitted or implemented",
+      "status": "not-implementable-under-authorized-scope",
+      "suite": "never-settling-slow-oversized-abort-race"
+    },
+    {
+      "reason": "upload and download effects are unreachable",
+      "status": "not-implementable-under-authorized-scope",
+      "suite": "hostile-url-stable-object-identity"
+    },
+    {
+      "reason": "no separately controlled live custodian exists",
+      "status": "not-implementable-under-authorized-scope",
+      "suite": "credential-free-revocation-verification"
+    }
+  ],
+  "protocol": "lachesis-m9b13k1-hostile-test-matrix/1",
+  "terminalDecision": "m9b13k1-correction-no-go"
+}

@@ -1,0 +1,10 @@
+{
+  "authorizationEffect": "none",
+  "decision": "m9b13k1-correction-no-go",
+  "independentReadOnlyReviewPermitted": true,
+  "m9bStatus": "NO-GO",
+  "networkOrOsfAccessAuthorized": false,
+  "patCeremonyOrActivationAuthorized": false,
+  "reason": "No real checksum-bound controlled FD3 launcher, rollback-proof durable CAS ledger, bounded abortable OSF transport, monotonic deadline implementation, or separately controlled credential-free revocation custodian can be implemented and exercised within the authorized credential-free network-denied scope. The correction therefore removes live effect admission instead of representing injected mocks as ceremony-ready.",
+  "realExternalEffects": 0
+}

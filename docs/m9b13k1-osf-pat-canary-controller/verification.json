@@ -1,0 +1,60 @@
+{
+  "checks": {
+    "changedFileFormattingPass": true,
+    "changedSourceLintPass": true,
+    "correctedControllerExplicitCoveragePass": true,
+    "correctedControllerPrivateAndBuildExcluded": true,
+    "fullSerializedCoveragePass": true,
+    "fullSerializedTestsPass": true,
+    "nodeAndWorkersSmokesPass": true,
+    "packageExportAuditPass": false,
+    "predecessorChecksumManifestPass": true,
+    "predecessorPackageByteIdentical": true,
+    "publicApiAuditPass": true,
+    "releaseAndM8HistoricalChecksumsPass": true,
+    "repositoryBuildPass": true,
+    "repositoryTrackedWideFormattingPass": false,
+    "repositoryTrackedWideLintPass": false,
+    "secretPatternAuditPass": true,
+    "sourceSafetyAuditPass": true,
+    "strictTypecheckPass": true
+  },
+  "coverage": {
+    "correctedController": {
+      "branchesPercent": 100,
+      "functionsPercent": 100,
+      "linesPercent": 100,
+      "statementsPercent": 100
+    },
+    "repository": {
+      "branchesPercent": 81,
+      "filesPassed": 76,
+      "functionsPercent": 97.45,
+      "linesPercent": 93.72,
+      "statementsPercent": 90.04,
+      "testsPassed": 1362
+    }
+  },
+  "implementation": {
+    "commit": "ed6ba05649fe66ed32e25618f98e478d85f62410",
+    "sourceSha256": "c14f66ef2d9a8f146357c3357352f68a6896b85397ff3c1527130c200580bcf4",
+    "testSha256": "f9a7f88019afa8741137a213fb5a498e5345c4fbf19a8a6a566f99c452ad7c32",
+    "tree": "1aa9bf3245d294e31018a94064f2b3e1eb9eb033"
+  },
+  "knownUnrelatedBaselineExceptions": {
+    "packedAlpha5Audit": "the existing @nicia-ai/lachesis-generator package differs from its frozen alpha.5 tarball digest; the private M9b.13k.1 source is excluded from package output",
+    "trackedWideFormat": "14 older M9 documentation files fail the repository-wide Prettier check; no M9b.13k.1 file is among them",
+    "trackedWideLint": "two older docs/m9b13h-staged-supplement-readiness helper scripts are outside the ESLint TypeScript project service; both corrected TypeScript files pass"
+  },
+  "networkDeniedByOperatingSystemForExecutableVerification": true,
+  "predecessor": {
+    "manifestSha256": "dcff1600481214910c7575173598f50d63cc3d800fcd6b5193a6dbcf4298cc73",
+    "reviewedCommit": "154e1cac4aa4e85075ae3b577bcc824607a34ad9",
+    "reviewedTree": "d2d3f5e386bbecb04be3f8e88616b4651d6275c6"
+  },
+  "protectedUntrackedPathsModified": false,
+  "protectedUntrackedPathsTraversed": false,
+  "realExternalEffects": 0,
+  "terminalDecision": "m9b13k1-correction-no-go",
+  "verifiedAt": "2026-08-08T18:25:54Z"
+}
