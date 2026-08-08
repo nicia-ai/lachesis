@@ -1,0 +1,21 @@
+{
+  "disposition": "m9b13k-failed-independent-review-superseded-no-go",
+  "m9bStatus": "NO-GO",
+  "oldDecision": "m9b13k-osf-pat-canary-controller-ready-for-independent-review",
+  "oldImplementationCommit": "1709a66bbff33cfa6065ee8bdf442cb9be19ed83",
+  "oldPackageManifestSha256": "dcff1600481214910c7575173598f50d63cc3d800fcd6b5193a6dbcf4298cc73",
+  "oldReviewedCommit": "154e1cac4aa4e85075ae3b577bcc824607a34ad9",
+  "oldReviewedTree": "d2d3f5e386bbecb04be3f8e88616b4651d6275c6",
+  "oldPackageByteDisposition": "preserved-without-modification",
+  "patCeremonyAuthorized": false,
+  "supersededClaims": [
+    "positive-activation-authority",
+    "caller-independent-security-dependencies",
+    "operational-deadline-enforcement",
+    "credential-free-ambiguous-restart",
+    "durable-identity-bound-effect-receipts",
+    "owned-fd3-closure",
+    "stable-file-identity-reconciliation",
+    "complete-hostile-test-and-coverage-evidence"
+  ]
+}
