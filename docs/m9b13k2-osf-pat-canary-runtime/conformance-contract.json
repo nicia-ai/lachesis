@@ -1,0 +1,31 @@
+{
+  "allowedEffects": [
+    "synthetic-child-processes",
+    "private-mode-0700-temporary-namespaces",
+    "private-mode-0600-synthetic-files",
+    "local-sqlite-and-filesystem-durability",
+    "anonymous-pipes-and-local-fifos",
+    "loopback-only-tls-on-127.0.0.1",
+    "synthetic-non-osf-credentials",
+    "crash-kill-restart-and-concurrency"
+  ],
+  "externalNetworkBoundary": {
+    "allow": ["localhost:*"],
+    "deny": "network*",
+    "mechanism": "macOS sandbox-exec"
+  },
+  "liveActivationAvailable": false,
+  "m9bStatus": "NO-GO",
+  "prohibitedEffects": [
+    "pat-access-or-metadata",
+    "dns-or-external-networking",
+    "osf-or-waterbutler-requests",
+    "browser-activity",
+    "provider-or-model-calls",
+    "study-or-corpus-effects",
+    "push-or-publication"
+  ],
+  "protocol": "lachesis-m9b13k2-local-synthetic-conformance-only/1",
+  "realCredentialEffects": 0,
+  "realOsfEffects": 0
+}

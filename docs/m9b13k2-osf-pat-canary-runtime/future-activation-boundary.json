@@ -1,0 +1,39 @@
+{
+  "activationCapsuleGenerated": false,
+  "authorityAvailable": false,
+  "bindingFields": [
+    "reviewedCommit",
+    "reviewedTree",
+    "packageManifestSha256",
+    "controllerImplementationSha256",
+    "launcherImplementationSha256",
+    "ledgerImplementationSha256",
+    "transportImplementationSha256",
+    "activationIdentity",
+    "requestIdentity",
+    "ledgerNamespaceCommitment",
+    "ledgerStoreIdentity",
+    "ledgerInitialRoot",
+    "projectId",
+    "draftId",
+    "provider",
+    "artifactIdentity",
+    "artifactFilename",
+    "artifactSha256",
+    "artifactByteLength",
+    "tokenId",
+    "custodianIdentity",
+    "limits",
+    "ceremonyRequiresIndependentAuthorization",
+    "revocationRequiresIndependentReceipt"
+  ],
+  "effectAdmission": "denied",
+  "liveStopBefore": [
+    "fd3-access",
+    "ledger-access-or-creation",
+    "transport-construction-or-dispatch",
+    "custodian-invocation"
+  ],
+  "ordinaryJsonCanActivate": false,
+  "protocol": "lachesis-m9b13k2-checksum-bound-activation-capsule/1"
+}

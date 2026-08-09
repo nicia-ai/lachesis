@@ -72,6 +72,7 @@ export default defineConfig({
         "packages/runtime/src/**/*.ts",
         "packages/generator/src/**/*.ts",
         "packages/generator-ai-sdk/internal/m9b13k1-osf-pat-canary-controller.ts",
+        "packages/generator-ai-sdk/src/internal/m9b13k2/**/*.ts",
         "apps/benchmark/src/controller.ts",
         "apps/benchmark/src/ledger.ts",
         "apps/benchmark/src/manifests.ts",

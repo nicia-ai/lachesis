@@ -1,0 +1,27 @@
+{
+  "activation": "lachesis-m9b13k2-checksum-bound-activation-capsule/1",
+  "conformance": "lachesis-m9b13k2-local-synthetic-conformance-only/1",
+  "custodian": "lachesis-m9b13k2-independent-ed25519-custodian-receipt/1",
+  "deadlines": "lachesis-m9b13k2-controller-owned-deadlines/1",
+  "ledger": "lachesis-m9b13k2-private-sqlite-cas-ledger/1",
+  "limits": {
+    "apiResponseMaximumBytes": 262144,
+    "concurrency": 1,
+    "controllerDeadlineMs": 120000,
+    "maximumHttpRequests": 18,
+    "maximumPutDispatches": 1,
+    "maximumRequestBodyBytes": 245,
+    "maximumRevocationDispatches": 1,
+    "perRequestTimeoutMs": 10000,
+    "redirectPolicy": "error",
+    "retries": 0,
+    "revocationDeadlineMs": 15000,
+    "uploadResponseMaximumBytes": 65536
+  },
+  "object": "lachesis-m9b13k2-stable-waterbutler-object/1",
+  "ownedFd3Launch": "lachesis-m9b13k2-controlled-owned-fd3-launch/1",
+  "replay": "lachesis-m9b13k2-zero-effect-durable-replay/1",
+  "revocation": "lachesis-m9b13k2-two-phase-revocation/1",
+  "runtime": "lachesis-m9b13k2-concrete-osf-pat-canary-runtime/1",
+  "transport": "lachesis-m9b13k2-bounded-node-https-transport/1"
+}
