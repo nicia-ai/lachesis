@@ -1,0 +1,15 @@
+{
+  "acceptedPredecessor": {
+    "commit": "16deb9a1584b2a86cad65db9ded8d3d526aeca2b",
+    "decision": "m9b13k1-correction-no-go",
+    "manifestSha256": "9a84859b1d4420b8efaec2301e8a809a40438820d7549cb722c48f7d0bb8d3e4",
+    "tree": "7e9fe6eea75e240accfbed76e9b551e56ac04709"
+  },
+  "appendOnly": true,
+  "m9b13k1ByteDisposition": "preserved-without-modification",
+  "m9b13kByteDisposition": "preserved-without-modification",
+  "m9bStatus": "NO-GO",
+  "milestone": "M9b.13k.2",
+  "patCeremonyAuthorized": false,
+  "protocol": "lachesis-m9b13k2-runtime-lineage/1"
+}
