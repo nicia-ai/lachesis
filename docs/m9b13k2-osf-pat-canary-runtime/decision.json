@@ -1,0 +1,12 @@
+{
+  "authorizationEffect": "none",
+  "decision": "m9b13k2-concrete-runtime-ready-for-independent-review",
+  "independentReadOnlyReviewPermitted": true,
+  "liveActivationAvailable": false,
+  "m9bStatus": "NO-GO",
+  "networkOrOsfAccessAuthorized": false,
+  "patCeremonyOrActivationAuthorized": false,
+  "reason": "The concrete local launcher, durable ledger, bounded transport, deadline controller, stable-object reconciliation and two-phase credential-free custodian receipt boundary pass adversarial local conformance and repository gates. The activation capsule and future independently authenticated custodian ceremony remain absent, so readiness is limited to read-only review of the construction.",
+  "realCredentialEffects": 0,
+  "realOsfEffects": 0
+}

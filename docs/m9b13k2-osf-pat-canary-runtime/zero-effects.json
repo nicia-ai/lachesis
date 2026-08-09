@@ -1,0 +1,16 @@
+{
+  "activationCapsulesGenerated": 0,
+  "browserActions": 0,
+  "credentialReadsFromRealSources": 0,
+  "dnsLookups": 0,
+  "externalHttpRequestsByRuntimeOrTests": 0,
+  "m9bStatus": "NO-GO",
+  "modelOrProviderCalls": 0,
+  "osfMutations": 0,
+  "patCeremonies": 0,
+  "patMetadataInspections": 0,
+  "protocol": "lachesis-m9b13k2-zero-effect-durable-replay/1",
+  "pushesOrPublications": 0,
+  "realPatBytesHandled": 0,
+  "syntheticCredentialPrefix": "M9B13K2SYNTHETICNONOSF"
+}

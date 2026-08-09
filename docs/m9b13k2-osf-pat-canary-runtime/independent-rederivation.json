@@ -1,0 +1,25 @@
+{
+  "derivedDecision": "m9b13k2-concrete-runtime-ready-for-independent-review",
+  "implementation": {
+    "commit": "806ca880c674262024a02db0a0c0660ce127d70b",
+    "runtimeImplementationIdentity": "9b2a1aeab9450eec9f8a6e2360b03914a4c92bd3da1a5835dab8c62c513eb325",
+    "tree": "c2f7be1072fdc82981d6f36ec3dd19c3109e5fb0"
+  },
+  "m9bStatus": "NO-GO",
+  "protocol": "lachesis-m9b13k2-independent-runtime-rederivation/1",
+  "rederivedFacts": [
+    "M9b.13k and M9b.13k.1 tracked artifacts are unchanged",
+    "the live no-argument entry stops before every local or external effect",
+    "ordinary JSON can pass structural inspection but cannot supply activation authority",
+    "the launcher installs and owns child FD3 only after independent FD4 proof",
+    "the SQLite state and separate anchor expose commit-before-anchor ambiguity across SIGKILL",
+    "request PUT and revocation counters are derived from canonical durable events",
+    "the production transport factory is internal and the conformance route accepts loopback only",
+    "one stable Waterbutler identity is bound across upload inventory download and bytes",
+    "the effect controller cannot produce an independent revocation terminal result",
+    "the synthetic custodian identity is ineligible for future activation",
+    "the private runtime is included by build but not exported from the package root",
+    "all real credential and OSF effect counts are zero"
+  ],
+  "reviewScope": "independent-read-only-local-runtime-review-only"
+}

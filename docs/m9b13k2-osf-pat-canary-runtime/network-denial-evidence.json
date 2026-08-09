@@ -1,0 +1,26 @@
+{
+  "dnsUsed": false,
+  "externalConnectionProbe": {
+    "destination": "203.0.113.1:443",
+    "destinationClass": "RFC-5737-documentation-network-non-loopback",
+    "maximumObservationMs": 300,
+    "outcome": "no-connect-blocked",
+    "successExitCode": 0
+  },
+  "loopbackAllowRules": [
+    "(allow network* (local ip \"localhost:*\"))",
+    "(allow network* (remote ip \"localhost:*\"))"
+  ],
+  "networkDenyRule": "(deny network*)",
+  "operatingSystemMechanism": "/usr/bin/sandbox-exec",
+  "protocol": "lachesis-m9b13k2-local-synthetic-conformance-only/1",
+  "runsInsideBoundary": [
+    "focused-process-filesystem-and-loopback-tls-tests",
+    "focused-runtime-coverage",
+    "full-serialized-repository-tests",
+    "full-serialized-repository-coverage",
+    "node-and-workers-smokes",
+    "cli-valid-invalid-and-usage-smokes",
+    "source-safety-and-checksum-audits"
+  ]
+}

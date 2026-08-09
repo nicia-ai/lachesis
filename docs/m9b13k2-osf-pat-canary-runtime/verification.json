@@ -1,0 +1,48 @@
+{
+  "checks": {
+    "buildIncludedPrivateRuntime": true,
+    "changedFileFormattingPass": true,
+    "changedSourceLintPass": true,
+    "cliValidInvalidUsageSmokesPass": true,
+    "focusedRuntimeCoveragePass": true,
+    "focusedRuntimeTestsPass": true,
+    "fullSerializedCoveragePass": true,
+    "fullSerializedTestsPass": true,
+    "gitDiffCheckPass": true,
+    "nodeAndWorkersSmokesPass": true,
+    "packedAlpha5AuditPass": false,
+    "predecessorBytePreservationPass": true,
+    "predecessorHistoricalManifestsPass": true,
+    "publicApiAuditPass": true,
+    "releaseAndM8HistoricalChecksumsPass": true,
+    "repositoryBuildPass": true,
+    "repositoryTrackedWideFormattingPass": false,
+    "repositoryTrackedWideLintPass": false,
+    "secretPatternAuditPass": true,
+    "sourceSafetyAuditPass": true,
+    "strictTypecheckPass": true
+  },
+  "knownUnrelatedBaselineExceptions": {
+    "packedAlpha5Audit": "the accepted repository baseline @nicia-ai/lachesis-generator package differs from its frozen alpha.5 tarball digest",
+    "trackedWideFormat": "14 older M9 documentation files fail the repository-wide Prettier check; no M9b.13k.2 tracked file fails",
+    "trackedWideLint": "two older docs/m9b13h-staged-supplement-readiness helper scripts are outside the ESLint TypeScript project service; all M9b.13k.2 sources and tests pass"
+  },
+  "networkDeniedByOperatingSystemForExecutableVerification": true,
+  "predecessors": {
+    "m9b13k": {
+      "commit": "154e1cac4aa4e85075ae3b577bcc824607a34ad9",
+      "manifestSha256": "dcff1600481214910c7575173598f50d63cc3d800fcd6b5193a6dbcf4298cc73"
+    },
+    "m9b13k1": {
+      "commit": "16deb9a1584b2a86cad65db9ded8d3d526aeca2b",
+      "manifestSha256": "9a84859b1d4420b8efaec2301e8a809a40438820d7549cb722c48f7d0bb8d3e4",
+      "tree": "7e9fe6eea75e240accfbed76e9b551e56ac04709"
+    }
+  },
+  "protectedUntrackedPathsModified": false,
+  "protectedPathNote": "An initial read-only root Prettier check enumerated paper/README.md among baseline failures; it did not modify paper/ or .DS_Store. Every subsequent command used explicit tracked or milestone paths.",
+  "realCredentialEffects": 0,
+  "realOsfEffects": 0,
+  "terminalDecision": "m9b13k2-concrete-runtime-ready-for-independent-review",
+  "verifiedAt": "2026-08-09T20:17:31Z"
+}

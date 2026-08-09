@@ -1,0 +1,36 @@
+{
+  "buildOutput": {
+    "directory": "packages/generator-ai-sdk/dist/internal/m9b13k2",
+    "includedByPackageBuild": true,
+    "modules": {
+      "controller": "c4be84f3771b0b0faf65d167c513897286580da4777968862945f3488ce78b67",
+      "credential": "7066dbe1e725061191f3376054ddcc28d2409297ba755f6ba152893f3d13a6e8",
+      "custodian": "6b61bd481320c1e78806bec1b73e913cda1031d43e0e179af015dffca8470cca",
+      "ledger": "2a911de0d204b3b9e4d5f806530e39df44c4be927e1bea09ed295430961f5f74",
+      "protocol": "688e6bd2c5ac7f4409f26c409654b29c4604f43b61a7a55a890979f3085ade91",
+      "reconciliation": "220a8551a0122462f68d7f76cbfc824aa022f52011050eb72c872faaab5c7501",
+      "transport": "f2dc6cf03dea4aa94b0329d9c3cb8efb50bdcbc146808f2eda9e7df93b2221dd"
+    },
+    "perModuleArtifacts": [
+      "<module>.js",
+      "<module>.js.map",
+      "<module>.d.ts",
+      "<module>.d.ts.map"
+    ],
+    "rootPackageExported": false
+  },
+  "implementationCommit": "806ca880c674262024a02db0a0c0660ce127d70b",
+  "implementationTree": "c2f7be1072fdc82981d6f36ec3dd19c3109e5fb0",
+  "protocol": "lachesis-m9b13k2-concrete-osf-pat-canary-runtime/1",
+  "runtimeImplementationIdentity": "9b2a1aeab9450eec9f8a6e2360b03914a4c92bd3da1a5835dab8c62c513eb325",
+  "sourceSha256": {
+    "controller": "707bfc82971081a160c95d8512bc3059da2bde8fef22bcad93e0bdfda7554542",
+    "credentialLauncher": "8a5d9e502a1dff00e345b21ae67a7c125c939356446f36c5ca816db8173565bd",
+    "custodian": "d2f6b7d2112f65645ccd67e5714cbe60ca5f3053b32ff07ddb71e288686aa406",
+    "ledger": "09517d0114d47df25395d8ab9efe77c2abcc3b9313d999cdfa1927de3255a183",
+    "protocol": "a71a0110fe114b7c6d16af2ff0941631cef7da40e0e5229509232cc5eee8f3d8",
+    "reconciliation": "9e7ba1257412b4d4b0b5982253eb5afbf82afd062efbd0b9c0ec4e9cda5e9f8b",
+    "transport": "f17169366265cb48c54a98b2ff5b2ec27bb63eafb1df26f6d11051664bf4f7db"
+  },
+  "vitestConfigSha256": "1374ccc30c0d0499d8d1fcfea9a4b3b58a7a80523c8d902bf71ba1cc85072001"
+}

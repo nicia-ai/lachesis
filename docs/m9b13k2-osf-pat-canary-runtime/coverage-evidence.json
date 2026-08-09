@@ -1,0 +1,27 @@
+{
+  "focusedRuntime": {
+    "branchesPercent": 84.98,
+    "files": 7,
+    "functionsPercent": 98.33,
+    "linesPercent": 94.28,
+    "statementsPercent": 90.42,
+    "testFilesPassed": 5,
+    "testsPassed": 71
+  },
+  "networkDeniedByOperatingSystem": true,
+  "protocol": "lachesis-m9b13k2-local-synthetic-conformance-only/1",
+  "repository": {
+    "branchesPercent": 81.26,
+    "functionsPercent": 97.49,
+    "linesPercent": 93.76,
+    "statementsPercent": 90.07,
+    "testFilesPassed": 81,
+    "testsPassed": 1433
+  },
+  "thresholds": {
+    "branchesPercent": 80,
+    "functionsPercent": 85,
+    "linesPercent": 90,
+    "statementsPercent": 90
+  }
+}
