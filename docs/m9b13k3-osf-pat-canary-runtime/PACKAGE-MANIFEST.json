@@ -1,0 +1,57 @@
+{
+  "protocol": "lachesis-m9b13k3-no-go-evidence-package/1",
+  "decision": "m9b13k3-corrected-concrete-runtime-no-go",
+  "implementationCommit": "894ebd829791b6eccbd573021d3477e64d04487a",
+  "implementationTree": "2c06f73f6d6adb2896004ea6f40bc711b690e8d2",
+  "reviewEvidenceCommit": "ea6b7e4c64a2acf970f41fd4b937d327f5331594",
+  "reviewedSealCommit": "90ad380b5b0b71c931602cc7f38799bfab5fac52",
+  "reviewedSealTree": "6ed2b5b36b674cd58e799f9414202671a6efd5f2",
+  "runtimeIdentity": "8cf1bbec55feb8c7664d55897af46e13b710c40bf1a202c35eac6e64976577b1",
+  "projections": [
+    {
+      "path": "docs/m9b13k3-osf-pat-canary-runtime/DECISION.json",
+      "sha256": "9cc75fa08bad1cb6d543e047fa2d3930ac3d455f853f45ae63e86bd3f04691a6"
+    },
+    {
+      "path": "docs/m9b13k3-osf-pat-canary-runtime/IMPLEMENTATION-INVENTORY.json",
+      "sha256": "170a31efd59d60ada3ecf3c01943b01e718b7dfae4d5dd52e6a0fc47781e4d3f"
+    },
+    {
+      "path": "docs/m9b13k3-osf-pat-canary-runtime/INDEPENDENT-REDERIVATION.md",
+      "sha256": "45f9a349f62c09be0e0e0087154fcdb5335c9a3233dda426e643dd9f82ea0be5"
+    },
+    {
+      "path": "docs/m9b13k3-osf-pat-canary-runtime/NETWORK-DENIAL-EVIDENCE.json",
+      "sha256": "088551bfa0d9c2c3acca80e4672fbd077ed4394c2a729a9d491f390f440e8a8c"
+    },
+    {
+      "path": "docs/m9b13k3-osf-pat-canary-runtime/PROTOCOLS.json",
+      "sha256": "0017dcd3d822d48b16639b045ccffcb53c995f39c7b8da8c6d9df0905cc76ee7"
+    },
+    {
+      "path": "docs/m9b13k3-osf-pat-canary-runtime/VERIFICATION.json",
+      "sha256": "84fe693a0bc07578f847746f8d027d75ea08804843003b3c832d2d15c0b574a8"
+    },
+    {
+      "path": "docs/m9b13k3-osf-pat-canary-runtime/VERIFICATION.md",
+      "sha256": "2704d125bd199c3e7713641a76bc44c615a5284b6932216ccc95d6612574590b"
+    },
+    {
+      "path": "docs/m9b13k3-osf-pat-canary-runtime/ZERO-EFFECTS.json",
+      "sha256": "3acdcaaabc75646d71a5ffda6c61d8d2926d6dfb443e182008cb09e7d2eddd1f"
+    },
+    {
+      "path": "packages/generator-ai-sdk/tests/m9b13k3-corrections.test.ts",
+      "sha256": "ef15419c7f7e97837e9f89ec734656fd5d023b09d985e91a262430a315f4e064"
+    }
+  ],
+  "noncircularity": {
+    "runtimeIdentityExcludes": [
+      "IMPLEMENTATION-INVENTORY.json",
+      "PACKAGE-MANIFEST.json",
+      "CHECKSUMS.sha256"
+    ],
+    "packageManifestExcludes": ["PACKAGE-MANIFEST.json", "CHECKSUMS.sha256"],
+    "checksumManifestExcludes": ["CHECKSUMS.sha256"]
+  }
+}

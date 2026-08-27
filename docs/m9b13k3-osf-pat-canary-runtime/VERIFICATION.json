@@ -1,0 +1,66 @@
+{
+  "environment": {
+    "macOS": "26.6.1 (25G76)",
+    "node": "24.19.0",
+    "pnpm": "10.33.0"
+  },
+  "runtimeIdentity": "8cf1bbec55feb8c7664d55897af46e13b710c40bf1a202c35eac6e64976577b1",
+  "implementationCommit": "894ebd829791b6eccbd573021d3477e64d04487a",
+  "implementationTree": "2c06f73f6d6adb2896004ea6f40bc711b690e8d2",
+  "gates": [
+    { "name": "changed-file formatting", "result": "pass" },
+    { "name": "workspace typecheck", "result": "pass" },
+    { "name": "M9b.13k.3 lint", "result": "pass" },
+    {
+      "name": "workspace lint",
+      "result": "baseline-fail",
+      "detail": "two historical M9b.13h .mjs files are outside the TypeScript project service"
+    },
+    { "name": "workspace build", "result": "pass" },
+    { "name": "Node and Workers smokes", "result": "pass" },
+    { "name": "source-safety audit", "result": "pass" },
+    { "name": "public-API audit", "result": "pass" },
+    {
+      "name": "package audit",
+      "result": "baseline-fail",
+      "detail": "frozen @nicia-ai/lachesis-generator tarball digest differs"
+    },
+    { "name": "predecessor M9b.13k.2 checksums", "result": "pass" },
+    { "name": "focused M9b.13k.3", "result": "pass", "tests": "12/12" },
+    {
+      "name": "focused correction coverage",
+      "result": "fail",
+      "detail": "statements 71.77%, branches 53.43%, functions 74.28%, lines 74.93%; below 90/80/85/90 thresholds"
+    },
+    {
+      "name": "focused M9",
+      "result": "baseline-fail",
+      "tests": "1001/1002",
+      "detail": "M9b.13d.1 fixture expects Darwin release 25.5.0; host reports 25.6.0"
+    },
+    {
+      "name": "complete serialized tests",
+      "result": "baseline-fail",
+      "tests": "1444/1445",
+      "detail": "same Darwin release fixture drift"
+    },
+    {
+      "name": "complete serialized coverage",
+      "result": "baseline-fail",
+      "tests": "1443/1445",
+      "detail": "Darwin release fixture drift plus one 5-second M9b.13d synthetic OCI timeout; coverage summary not emitted"
+    },
+    {
+      "name": "isolated timeout rerun plus M9b.13k.3",
+      "result": "pass",
+      "tests": "18/18"
+    },
+    {
+      "name": "CLI usage and invalid-command exits",
+      "result": "pass",
+      "detail": "both returned documented usage with exit status 2"
+    },
+    { "name": "git diff --check", "result": "pass" }
+  ],
+  "decision": "m9b13k3-corrected-concrete-runtime-no-go"
+}

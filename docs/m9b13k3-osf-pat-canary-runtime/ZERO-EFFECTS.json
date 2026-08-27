@@ -1,0 +1,24 @@
+{
+  "activationCapsulesGenerated": 0,
+  "browserActions": 0,
+  "credentialsRead": 0,
+  "dnsRequests": 0,
+  "liveCustodianAuthoritiesConstructed": 0,
+  "nonLoopbackNetworkRequests": 0,
+  "osfPatActions": 0,
+  "osfWaterbutlerRequests": 0,
+  "projectMutations": 0,
+  "pushes": 0,
+  "realDownloads": 0,
+  "realRevocations": 0,
+  "realUploads": 0,
+  "registration63sh5Accesses": 0,
+  "syntheticLoopbackRequests": "test-fixture only",
+  "liveControllerObservation": {
+    "authorityAvailable": false,
+    "credentialReads": 0,
+    "externalEffects": "none",
+    "ledgerAccesses": 0,
+    "transportCapabilitiesCreated": 0
+  }
+}

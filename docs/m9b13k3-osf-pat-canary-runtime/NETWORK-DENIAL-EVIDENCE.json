@@ -1,0 +1,18 @@
+{
+  "policy": "sandbox-exec deny network*; allow local and remote only when IP is localhost:*",
+  "independence": "policy imposed by the operating-system sandbox outside the runtime under test",
+  "nonLoopbackNetwork": "denied",
+  "dns": "denied",
+  "browserActivity": "none",
+  "executedUnderPolicy": [
+    "focused M9b.13k.3 test",
+    "focused correction coverage",
+    "focused M9 test suite",
+    "complete serialized repository test suite",
+    "complete serialized repository coverage suite",
+    "typecheck",
+    "lint",
+    "build and smokes",
+    "source-safety, public-API, and package audits"
+  ]
+}

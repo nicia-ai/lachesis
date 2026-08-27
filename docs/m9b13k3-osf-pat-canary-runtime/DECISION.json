@@ -1,0 +1,14 @@
+{
+  "decision": "m9b13k3-corrected-concrete-runtime-no-go",
+  "blocking": true,
+  "primaryBlocker": "Node 24 node:sqlite DatabaseSync accepts a pathname and cannot open an already verified descriptor, so audit-to-open database identity cannot be pinned against replacement on macOS",
+  "additionalBlockers": [
+    "complete durable ledger grammar and campaign continuity are not integrated",
+    "raw-response stable-object reconciliation is not integrated",
+    "serialized deadline admission and genuine same-root two-process CAS are not integrated",
+    "authenticated launcher ownership and live human custodian authority remain absent",
+    "focused correction coverage is below repository release thresholds"
+  ],
+  "liveActivationAvailable": false,
+  "authorizesEffects": false
+}
