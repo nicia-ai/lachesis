@@ -1,0 +1,23 @@
+{
+  "decision": "m9b13k3-corrected-concrete-runtime-no-go",
+  "implemented": [
+    "live entry is inert with zero capability, credential, ledger, or effect counts",
+    "production and forged transports reject before synthetic credential custody",
+    "caller token field rejects before request dispatch",
+    "245-byte all-X upload body rejects and internal frozen bytes are sent",
+    "construction and callback-registration faults remain pre-dispatch",
+    "write and end faults remain after-dispatch ambiguous",
+    "cross-principal synthetic custodian receipt rejects",
+    "inventory mutation changes identity and duplicate entries reject",
+    "FD3 reports frame consistency without launcher authentication",
+    "path identity returns explicit NO-GO"
+  ],
+  "notImplemented": [
+    "complete ledger transition grammar",
+    "namespace deletion and recreation campaign-continuity proof",
+    "raw-response stable-object reconciliation",
+    "ancestor-symlink, hardlink, and swap-race prevention across SQLite open",
+    "serialized deadline reservation barriers",
+    "genuine two-process same-root CAS contention campaign"
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "protocol": "lachesis-m9b13k3-source-bound-runtime-identity/1",
+  "entries": [
+    {
+      "kind": "source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k3/controller.ts",
+      "byteLength": 6084,
+      "sha256": "d114089572b6ffb7b69efdc721220cadd5514e9386f398e59c839f0e14c45501"
+    },
+    {
+      "kind": "source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k3/credential.ts",
+      "byteLength": 8970,
+      "sha256": "d72e26a5e5d317f961a3b17dbe0763b2262d5af34dadabb0cd829c84cd9dd8ac"
+    },
+    {
+      "kind": "source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k3/custodian.ts",
+      "byteLength": 10162,
+      "sha256": "c7292be7b6b8ace27791f3a8ec4ea202963773e49a74d5ecf2a7d7607584a19e"
+    },
+    {
+      "kind": "source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k3/path-identity.ts",
+      "byteLength": 1257,
+      "sha256": "a042852401322bc88a9058e9ca367b01488cb614c8800a34c57305f3adfda146"
+    },
+    {
+      "kind": "source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k3/protocol.ts",
+      "byteLength": 7483,
+      "sha256": "803430b5d45ee8f90edb3e46a5406c3e39d661a5e298b53cb59c43f2887d027a"
+    },
+    {
+      "kind": "source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k3/transport.ts",
+      "byteLength": 17628,
+      "sha256": "313a3347749b14f381dc3200dc7a71e33ecc3d65948ff43908c33f325e793885"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/controller.js",
+      "byteLength": 5032,
+      "sha256": "e746fa0dba34629b8d1d1a7d71641ee57da67033a33bd55b631a337ad8c18000"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/credential.js",
+      "byteLength": 8205,
+      "sha256": "bd6d5ff3701c37f1dee536b93a8951a15c86b379c0da01e805472512a515e8f3"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/custodian.js",
+      "byteLength": 8942,
+      "sha256": "637581527109bf0bf46c3eed22ca3fff338044ccc918a0dcc1d12fc012f3f073"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/path-identity.js",
+      "byteLength": 893,
+      "sha256": "e0c1232e1e38d57294cc65046a788f01180bb26279e410a1e6db347906f0dde2"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/protocol.js",
+      "byteLength": 6458,
+      "sha256": "76c366ff16e2ba7a63b9477253ade32316ea579d80223e88eb52fb811921db78"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/transport.js",
+      "byteLength": 14536,
+      "sha256": "58f92e5ad668e83200b97e4bb215f43be936b7bfff15276653d02c359e43c66d"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/controller.d.ts",
+      "byteLength": 2287,
+      "sha256": "c0bd59bed2a90131dd248ed78ceb76574be7ed879a14521d014eaf043476baae"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/credential.d.ts",
+      "byteLength": 2217,
+      "sha256": "ce3c61341abd229c86ba2209b419bbda8a3e69af8c53f08d6c3282350b1c5830"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/custodian.d.ts",
+      "byteLength": 4469,
+      "sha256": "6aeb63b131f50dfda9df8521a7b52169490445517edfac7e1bcf54db187b0cde"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/path-identity.d.ts",
+      "byteLength": 907,
+      "sha256": "0eb23bb0b01e2e6f738757cee16eafec2934b6d4073d30aa65f514e43294cfb2"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/protocol.d.ts",
+      "byteLength": 6622,
+      "sha256": "daf4b1959897b6c592b299a633197930de38de5c595014b36d5dae9dd6de31a8"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k3/transport.d.ts",
+      "byteLength": 3960,
+      "sha256": "f108b9b4c385cf92327ac9d99f4cf2c7bfba7e4171ed2a0157500c836a57818b"
+    },
+    {
+      "kind": "build-config",
+      "path": "packages/generator-ai-sdk/tsconfig.build.json",
+      "byteLength": 531,
+      "sha256": "8dd9faee4aa99b183eac9582c97a37564699089d272fe185e927e41c4efc76cc"
+    },
+    {
+      "kind": "protocol-descriptor",
+      "path": "docs/m9b13k3-osf-pat-canary-runtime/PROTOCOLS.json",
+      "byteLength": 763,
+      "sha256": "0017dcd3d822d48b16639b045ccffcb53c995f39c7b8da8c6d9df0905cc76ee7"
+    }
+  ]
+}
