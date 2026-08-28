@@ -1,0 +1,25 @@
+{
+  "focusedTests": 25,
+  "genuineSameRootRaces": 100,
+  "covered": [
+    "two independent normalized builds are byte-identical",
+    "create, snapshot, append, audit, cross-process reopen and append",
+    "duplicate and escaped-equivalent JSON keys",
+    "hostile own keys including __proto__ and constructor",
+    "oversized canonical payload",
+    "ancestor symlink, leaf symlink, normalized alias and wrong mode",
+    "log hardlink and second pathname to the same inode",
+    "namespace swap, namespace mode change and log replacement after admission",
+    "parent rename after admission",
+    "concurrent namespace creation",
+    "100 two-process same-stale-root readiness barriers",
+    "crash at every specified durability boundary",
+    "every byte boundary through the record header and around the footer",
+    "rollback, truncation, appended garbage, duplicate sequence and broken previous root",
+    "malformed helper output and helper timeout",
+    "executable substitution before invocation and replacement while running",
+    "zero-effect stale-root replay"
+  ],
+  "authority": "synthetic storage payloads only",
+  "externalEffects": "none"
+}

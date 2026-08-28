@@ -1,0 +1,59 @@
+{
+  "protocol": "lachesis-m9b13k4-source-build-bound-ledger-identity/1",
+  "entries": [
+    {
+      "kind": "native-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4/native/m9b13k4-ledger.c",
+      "byteLength": 25174,
+      "sha256": "e0850bf5a7f1fa3fa9d634c5b46e3059371b0d20c2230ddab70ab4ebb5fd9737"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4/ledger.ts",
+      "byteLength": 17730,
+      "sha256": "c0f4a11d8743f238f724e7b51c808d1c50b5f4013f79f74d4cde595422413260"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4/protocol.ts",
+      "byteLength": 9443,
+      "sha256": "417e6e2c7d51e8ae05c7333e4f830eb1059882168647513c2315a645ffd14a50"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4/ledger.js",
+      "byteLength": 15498,
+      "sha256": "d313aca202f34e16ffec3ca8954db7320241904fde64a253d918ede7dcbd0389"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4/protocol.js",
+      "byteLength": 9154,
+      "sha256": "5fca72d86d1274f919f8a8738e677b68b1c89b0e577946b7d3324390e7427a1e"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4/ledger.d.ts",
+      "byteLength": 2490,
+      "sha256": "035282866cd324b20a1d286d0b1ec0d1f73a1efdd954aae49867c0d3cfabc3f9"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4/protocol.d.ts",
+      "byteLength": 2879,
+      "sha256": "e5f411bc19fc0c84bc098736a2464945af316e6b3f30e7bc74167a8a9c120435"
+    },
+    {
+      "kind": "build-protocol",
+      "path": "docs/m9b13k4-descriptor-pinned-ledger/BUILD-PROTOCOL.json",
+      "byteLength": 999,
+      "sha256": "98539e20e86242968773a1d536c4c48bf2121874c50b32c964a159ea17af936d"
+    },
+    {
+      "kind": "executable",
+      "path": "build/m9b13k4/arm64/m9b13k4-ledger-helper",
+      "byteLength": 53456,
+      "sha256": "39af7eecf5241261a54273241e420f223d05278e25e4e294b97cfd104467ba95"
+    }
+  ]
+}
