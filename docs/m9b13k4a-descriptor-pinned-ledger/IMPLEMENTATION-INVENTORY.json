@@ -1,0 +1,83 @@
+{
+  "protocol": "lachesis-m9b13k4a-source-build-bound-ledger-identity/2",
+  "entries": [
+    {
+      "kind": "native-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4a/native/m9b13k4a-ledger.c",
+      "byteLength": 30359,
+      "sha256": "da8f24385504dc4c080bf13b7aab63cee0dada78d132eb100e68712f318389b7"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4a/ledger.ts",
+      "byteLength": 22810,
+      "sha256": "3c8f5fdc1c942294b726a3e62e7ce97b5d319a1aa5fd1a3371764661482d86af"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4a/protocol.ts",
+      "byteLength": 9606,
+      "sha256": "f9fe3c3e8b6e528971ad93d1cad310d77e423e74c7f1a9315b8ca92eb2f89f91"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4a/ledger.js",
+      "byteLength": 19693,
+      "sha256": "4798f1ef24a0e4bffa8ae114d041b45ae22d80a3a7e269bee913d8550fed5baf"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4a/protocol.js",
+      "byteLength": 9282,
+      "sha256": "dd9f9ec4fbf25cfd1dc1fca1bf525efe0a5c4a3e5ff7af686cb2d93c226c6a1c"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4a/ledger.d.ts",
+      "byteLength": 3160,
+      "sha256": "4fdcaa66a92e6113b77bce847d01c85a6c5a8e116671c98a2ee7c96554decaab"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4a/protocol.d.ts",
+      "byteLength": 3046,
+      "sha256": "c65689b7ff060dce3de66a12ff7caf922421e8a158ea0d7212f7749719f7aea0"
+    },
+    {
+      "kind": "build-protocol",
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/BUILD-PROTOCOL.json",
+      "byteLength": 1048,
+      "sha256": "4e75f8fdc52b82be89986f1b31b0ff4d1d1a818a8c7395d24ee10fafb7791dba"
+    },
+    {
+      "kind": "executable",
+      "path": "build/m9b13k4a/arm64/m9b13k4a-ledger-helper",
+      "byteLength": 53776,
+      "sha256": "fb8301df7125d4df8319c8898365fd74e7a00fbcd8e9ac30d6fb28e90261d3dd"
+    },
+    {
+      "kind": "sandbox-profile",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4a/network/m9b13k4a-loopback-only.sb",
+      "byteLength": 191,
+      "sha256": "9a4be391712afa9dcfc096780741e75cd3b04856a8b71c2468642ff67f10eff4"
+    },
+    {
+      "kind": "hostile-test",
+      "path": "packages/generator-ai-sdk/tests/m9b13k4a-descriptor-ledger.test.ts",
+      "byteLength": 29308,
+      "sha256": "977f06c93227c6d98d8cd1b751b2d6d6ade3bbdc0cc5c67c236589d5ba3f04f2"
+    },
+    {
+      "kind": "configuration",
+      "path": "packages/generator-ai-sdk/tsconfig.build.json",
+      "byteLength": 531,
+      "sha256": "8dd9faee4aa99b183eac9582c97a37564699089d272fe185e927e41c4efc76cc"
+    },
+    {
+      "kind": "configuration",
+      "path": "vitest.config.ts",
+      "byteLength": 2884,
+      "sha256": "1374ccc30c0d0499d8d1fcfea9a4b3b58a7a80523c8d902bf71ba1cc85072001"
+    }
+  ]
+}

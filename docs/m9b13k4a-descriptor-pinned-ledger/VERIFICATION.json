@@ -1,0 +1,94 @@
+{
+  "environment": {
+    "macOS": "26.6.1 (25G76)",
+    "darwin": "25.6.0",
+    "architecture": "arm64",
+    "node": "24.19.0",
+    "pnpm": "10.33.0",
+    "compiler": "Apple clang 21.0.0 (clang-2100.1.1.101)"
+  },
+  "preservationCommit": "6d132cf7a3c9393eba7f7449d6ae5f12b61c99eb",
+  "preservationTree": "808e3d521c380beced16d2e115a1ac2bf1234aa4",
+  "implementationCommit": "60cbbc0c6858896f00840c61fe0f17e037e53871",
+  "implementationTree": "2890fe5fa10e7e20aa765feebf92fa865efcd370",
+  "implementationIdentity": "16ac5ed843aab33a3f68e26c91a2a0dabda1aac3993931e61b9e9e3c0291e908",
+  "helper": {
+    "sourceSha256": "da8f24385504dc4c080bf13b7aab63cee0dada78d132eb100e68712f318389b7",
+    "normalizedExecutableSha256": "fb8301df7125d4df8319c8898365fd74e7a00fbcd8e9ac30d6fb28e90261d3dd",
+    "normalizedExecutableBytes": 53776,
+    "independentBuildsByteIdentical": true
+  },
+  "gates": [
+    {
+      "name": "focused suite inside corrected sandbox",
+      "result": "pass",
+      "tests": "31/31",
+      "genuineBarrierRaces": 100
+    },
+    {
+      "name": "focused corrected-wrapper coverage",
+      "result": "pass",
+      "statements": 91,
+      "branches": 85.97,
+      "functions": 94.11,
+      "lines": 92.11
+    },
+    {
+      "name": "complete serialized repository tests",
+      "result": "baseline-fail",
+      "tests": "1500/1501",
+      "detail": "historical M9b.13d1 fixture pins Darwin 25.5.0 while this host reports 25.6.0"
+    },
+    {
+      "name": "complete serialized repository coverage",
+      "result": "baseline-fail",
+      "tests": "1500/1501",
+      "detail": "same isolated Darwin fixture mismatch; aggregate summary suppressed by failed test"
+    },
+    {
+      "name": "isolated historical M9b.13d1 rerun",
+      "result": "baseline-fail",
+      "tests": "1/2",
+      "detail": "same exact 25.5.0 versus 25.6.0 mismatch"
+    },
+    { "name": "workspace typecheck", "result": "pass" },
+    { "name": "workspace build", "result": "pass" },
+    { "name": "changed TypeScript lint", "result": "pass" },
+    {
+      "name": "changed TypeScript/JSON/Markdown formatting",
+      "result": "pass"
+    },
+    {
+      "name": "workspace formatting",
+      "result": "baseline-fail",
+      "detail": "19 pre-existing files, including paper/README.md, remain unformatted and untouched"
+    },
+    {
+      "name": "workspace lint",
+      "result": "baseline-fail",
+      "detail": "two historical M9b.13h .mjs files are outside the TypeScript project service"
+    },
+    {
+      "name": "native clang-format and -Wall -Wextra -Werror compile",
+      "result": "pass"
+    },
+    {
+      "name": "ASan/UBSan native create/snapshot/audit",
+      "result": "pass"
+    },
+    { "name": "Node and Workers smokes", "result": "pass" },
+    { "name": "CLI valid/invalid smokes", "result": "pass" },
+    { "name": "source-safety and unsafe-escape audits", "result": "pass" },
+    { "name": "secret scan over M9b.13k.4a paths", "result": "pass" },
+    { "name": "public-API audit", "result": "pass" },
+    {
+      "name": "package audit",
+      "result": "baseline-fail",
+      "detail": "frozen @nicia-ai/lachesis-generator tarball digest differs"
+    },
+    { "name": "M9b.13k.3 predecessor checksums", "result": "pass" },
+    { "name": "M9b.13k.4 predecessor checksums", "result": "pass" },
+    { "name": "git diff --check", "result": "pass" }
+  ],
+  "decision": "m9b13k4a-corrected-descriptor-ledger-ready-for-independent-review"
+}

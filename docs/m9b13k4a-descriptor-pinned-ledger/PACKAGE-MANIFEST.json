@@ -1,0 +1,64 @@
+{
+  "protocol": "lachesis-m9b13k4a-corrected-descriptor-ledger-package/2",
+  "decision": "m9b13k4a-corrected-descriptor-ledger-ready-for-independent-review",
+  "reviewedSealCommit": "31cf28e1621f9ea98186e62a2e795c6d5ba4416a",
+  "reviewedSealTree": "5ae43651c0a30a4f4ab9750efed8515b004dad7d",
+  "preservationCommit": "6d132cf7a3c9393eba7f7449d6ae5f12b61c99eb",
+  "preservationTree": "808e3d521c380beced16d2e115a1ac2bf1234aa4",
+  "implementationCommit": "60cbbc0c6858896f00840c61fe0f17e037e53871",
+  "implementationTree": "2890fe5fa10e7e20aa765feebf92fa865efcd370",
+  "implementationIdentity": "16ac5ed843aab33a3f68e26c91a2a0dabda1aac3993931e61b9e9e3c0291e908",
+  "normalizedHelperSha256": "fb8301df7125d4df8319c8898365fd74e7a00fbcd8e9ac30d6fb28e90261d3dd",
+  "profileSha256": "9a4be391712afa9dcfc096780741e75cd3b04856a8b71c2468642ff67f10eff4",
+  "projections": [
+    {
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/BUILD-PROTOCOL.json",
+      "sha256": "4e75f8fdc52b82be89986f1b31b0ff4d1d1a818a8c7395d24ee10fafb7791dba"
+    },
+    {
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/DECISION.json",
+      "sha256": "d4213929c3fa97b9b793ac191444c91cdc8eea733c746df7fe61314eaf6eec90"
+    },
+    {
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/HOSTILE-TEST-MATRIX.json",
+      "sha256": "a7601672ef90ade382389a9dd173d2e5a021a9def08c9ffd0e0424245033b92f"
+    },
+    {
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/IMPLEMENTATION-INVENTORY.json",
+      "sha256": "29add3f1e9baaec6536bcd46c8d8620a3077e19740d14417d19f6443fd422c94"
+    },
+    {
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/INDEPENDENT-REDERIVATION.md",
+      "sha256": "9a46ba0a91f2350a9de848b3c670858c2d616ad27b8e871cff2997a1719e9611"
+    },
+    {
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/NETWORK-DENIAL-EVIDENCE.json",
+      "sha256": "d2695276ba8eaa66d8caab2b09b41586627df9b25a4977fb2ceffce58a2550c7"
+    },
+    {
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/VERIFICATION.json",
+      "sha256": "baae1dc3d03956c76208d71638bd218a449d902697b712f6ff1e524e6275e5a1"
+    },
+    {
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/VERIFICATION.md",
+      "sha256": "0971e3574e2728d3aff15116a4185139713c55c5ce62257d28b6766fbd700378"
+    },
+    {
+      "path": "docs/m9b13k4a-descriptor-pinned-ledger/ZERO-EFFECTS.json",
+      "sha256": "0593c1bf6f25971dc99cb32f9ac8e723d8beacb9dec615a8838e4452d90ba28b"
+    },
+    {
+      "path": "packages/generator-ai-sdk/tests/m9b13k4a-descriptor-ledger.test.ts",
+      "sha256": "977f06c93227c6d98d8cd1b751b2d6d6ade3bbdc0cc5c67c236589d5ba3f04f2"
+    }
+  ],
+  "noncircularity": {
+    "implementationIdentityExcludes": [
+      "IMPLEMENTATION-INVENTORY.json",
+      "PACKAGE-MANIFEST.json",
+      "CHECKSUMS.sha256"
+    ],
+    "packageManifestExcludes": ["PACKAGE-MANIFEST.json", "CHECKSUMS.sha256"],
+    "checksumManifestExcludes": ["CHECKSUMS.sha256"]
+  }
+}

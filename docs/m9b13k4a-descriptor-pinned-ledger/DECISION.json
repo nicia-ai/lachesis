@@ -1,0 +1,11 @@
+{
+  "decision": "m9b13k4a-corrected-descriptor-ledger-ready-for-independent-review",
+  "scope": "offline local storage mechanics only",
+  "suitableFor": "independent adversarial read-only review",
+  "controllerIntegrated": false,
+  "m9bDecision": "NO-GO",
+  "liveAuthorityAvailable": false,
+  "authorizesActivationCredentialsOrOsf": false,
+  "implementationIdentity": "16ac5ed843aab33a3f68e26c91a2a0dabda1aac3993931e61b9e9e3c0291e908",
+  "normalizedHelperSha256": "fb8301df7125d4df8319c8898365fd74e7a00fbcd8e9ac30d6fb28e90261d3dd"
+}

@@ -1,0 +1,12 @@
+{
+  "protocol": "lachesis-m9b13k4a-zero-external-effects/2",
+  "controllerIntegrated": false,
+  "credentialsReadOrWritten": false,
+  "providerOrModelCalls": 0,
+  "osfRequests": 0,
+  "nonLoopbackConnectionsSucceeded": 0,
+  "corpusOrStudyWork": false,
+  "publication": false,
+  "push": false,
+  "scope": "local synthetic storage mechanics and verification only"
+}

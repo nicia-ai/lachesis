@@ -1,0 +1,52 @@
+{
+  "protocol": "lachesis-m9b13k4a-operation-specific-network-denial/2",
+  "profilePath": "packages/generator-ai-sdk/src/internal/m9b13k4a/network/m9b13k4a-loopback-only.sb",
+  "profileBytes": 191,
+  "profileSha256": "9a4be391712afa9dcfc096780741e75cd3b04856a8b71c2468642ff67f10eff4",
+  "boundary": "/usr/bin/sandbox-exec -f <profile> <child>",
+  "children": {
+    "node": "v24.19.0 arm64",
+    "pnpm": "10.33.0",
+    "nativeHelperSha256": "fb8301df7125d4df8319c8898365fd74e7a00fbcd8e9ac30d6fb28e90261d3dd"
+  },
+  "commands": [
+    {
+      "purpose": "focused suite and all spawned native helpers",
+      "command": "/usr/bin/sandbox-exec -f packages/generator-ai-sdk/src/internal/m9b13k4a/network/m9b13k4a-loopback-only.sb pnpm exec vitest run packages/generator-ai-sdk/tests/m9b13k4a-descriptor-ledger.test.ts --pool=forks --maxWorkers=1",
+      "result": "31/31 pass"
+    },
+    {
+      "purpose": "IPv4 loopback TCP",
+      "destination": "127.0.0.1 ephemeral",
+      "result": "success: ok"
+    },
+    {
+      "purpose": "IPv6 loopback TCP",
+      "destination": "::1 ephemeral",
+      "result": "success: ok"
+    },
+    {
+      "purpose": "numeric non-loopback IPv4",
+      "destination": "192.0.2.1:9",
+      "result": "EPERM"
+    },
+    {
+      "purpose": "numeric non-loopback IPv6",
+      "destination": "[2001:db8::1]:9",
+      "result": "EPERM"
+    },
+    {
+      "purpose": "direct DNS UDP access",
+      "destination": "127.0.0.1:53",
+      "result": "EPERM"
+    },
+    {
+      "purpose": "system resolver observation",
+      "destination": "example.invalid",
+      "result": "ECONNREFUSED (recorded but explicitly not used as denial proof)"
+    }
+  ],
+  "syntheticOnly": true,
+  "externalPacketPermitted": false,
+  "osfContacted": false
+}

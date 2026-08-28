@@ -1,0 +1,90 @@
+{
+  "protocol": "lachesis-m9b13k4a-hostile-conformance/2",
+  "focusedCases": 31,
+  "mapping": [
+    {
+      "finding": "snapshot/audit pathname authority",
+      "tests": [
+        "snapshot retained-log replacement",
+        "audit retained-log replacement"
+      ],
+      "result": "ambiguous security stop"
+    },
+    {
+      "finding": "unsafe ancestors",
+      "tests": [
+        "user 0777",
+        "user 0770",
+        "group writable",
+        "world writable",
+        "root 0775 non-sticky",
+        "approved /private/tmp 01777",
+        "unexpected root sticky",
+        "post-admission mode change"
+      ],
+      "result": "all unsafe cases reject; approved system ancestor succeeds"
+    },
+    {
+      "finding": "reserved header bytes",
+      "tests": [
+        "12 independent offsets",
+        "three simultaneous offsets",
+        "CRC recomputed",
+        "snapshot",
+        "audit",
+        "append-open/reopen"
+      ],
+      "result": "all reject"
+    },
+    {
+      "finding": "complete helper path",
+      "tests": [
+        "0777/0770/group/world parents",
+        "root writable",
+        "unexpected sticky",
+        "ancestor symlink",
+        "leaf alias",
+        "pre-existing build",
+        "hardlink",
+        "directory replacement before spawn",
+        "directory/executable replacement while running",
+        "mode change",
+        "missing leaf"
+      ],
+      "result": "all reject; in-run replacement is ambiguous"
+    },
+    {
+      "finding": "network policy",
+      "tests": [
+        "IPv4 loopback",
+        "IPv6 loopback",
+        "IPv4 TEST-NET",
+        "IPv6 documentation prefix",
+        "direct DNS UDP",
+        "focused suite inside boundary"
+      ],
+      "result": "loopback succeeds; denied probes return EPERM"
+    },
+    {
+      "finding": "EINTR",
+      "tests": [
+        "snapshot/audit pread",
+        "stdin read",
+        "flock",
+        "header/payload/footer write",
+        "fsync",
+        "barrier read/write",
+        "response write"
+      ],
+      "result": "all succeed once; audit proves exactly one append"
+    }
+  ],
+  "preserved": {
+    "sameRootCasRaces": 100,
+    "crashBoundaries": 12,
+    "framingAndTearMatrix": "pass",
+    "crossProcessReopen": "pass",
+    "deterministicBuild": "pass",
+    "asanUbsanCreateSnapshotAudit": "pass"
+  }
+}

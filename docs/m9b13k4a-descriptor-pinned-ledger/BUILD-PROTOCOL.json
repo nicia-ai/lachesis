@@ -1,0 +1,21 @@
+{
+  "protocol": "lachesis-m9b13k4a-native-helper-reproducible-build/2",
+  "compiler": "/usr/bin/xcrun",
+  "compilerVersion": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+  "target": "arm64-apple-darwin25.6.0",
+  "sdk": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+  "arguments": ["clang", "-std=c17", "-Os", "-Wall", "-Wextra", "-Werror"],
+  "fixedOutputLeaf": "m9b13k4a-ledger-helper",
+  "linkedLibraries": [
+    "/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)"
+  ],
+  "normalization": [
+    "remove existing ad-hoc signature",
+    "replace the single LC_UUID with the first 16 bytes of source SHA-256",
+    "ad-hoc sign using fixed identifier org.nicia.lachesis.m9b13k4a-ledger"
+  ],
+  "sourceSha256": "da8f24385504dc4c080bf13b7aab63cee0dada78d132eb100e68712f318389b7",
+  "normalizedExecutableBytes": 53776,
+  "normalizedExecutableSha256": "fb8301df7125d4df8319c8898365fd74e7a00fbcd8e9ac30d6fb28e90261d3dd",
+  "independentBuildsByteIdentical": true
+}
