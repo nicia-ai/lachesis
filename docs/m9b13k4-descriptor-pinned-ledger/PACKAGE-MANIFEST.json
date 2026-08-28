@@ -1,0 +1,57 @@
+{
+  "protocol": "lachesis-m9b13k4-descriptor-ledger-feasibility-package/1",
+  "decision": "m9b13k4-descriptor-pinned-ledger-feasibility-pass",
+  "lineageCommit": "e7ea12693616e555cffb179364c39f7ae1e79c5d",
+  "implementationCommit": "7b74736b65a32589ba7aee234cb195bd8100de8b",
+  "implementationTree": "465a6ad37a08b5c6e82d158cb1a6b9467f600b61",
+  "acceptedPredecessorCommit": "3e5887d9eb264cf86a013e35688e73e0d307b3f1",
+  "implementationIdentity": "d52fadda1be127f610f838f12e7c361ad949d65e46c76e09e6e21e02ddca5ecf",
+  "normalizedHelperSha256": "39af7eecf5241261a54273241e420f223d05278e25e4e294b97cfd104467ba95",
+  "projections": [
+    {
+      "path": "docs/m9b13k4-descriptor-pinned-ledger/BUILD-PROTOCOL.json",
+      "sha256": "98539e20e86242968773a1d536c4c48bf2121874c50b32c964a159ea17af936d"
+    },
+    {
+      "path": "docs/m9b13k4-descriptor-pinned-ledger/DECISION.json",
+      "sha256": "38826ccd5562c4e9849298f6ed82e01b4705a96f5b39ca6a3195aafb32031b68"
+    },
+    {
+      "path": "docs/m9b13k4-descriptor-pinned-ledger/IMPLEMENTATION-INVENTORY.json",
+      "sha256": "309d3de43d0966df9f36d226ad93e5070b37d371b49b591ddbefc30ec141ab63"
+    },
+    {
+      "path": "docs/m9b13k4-descriptor-pinned-ledger/INDEPENDENT-REDERIVATION.md",
+      "sha256": "5b6ef6eef56005f8bd921f55a5602d60a93b0abe4f5044655bd852be517c5a86"
+    },
+    {
+      "path": "docs/m9b13k4-descriptor-pinned-ledger/NETWORK-DENIAL-EVIDENCE.json",
+      "sha256": "6eef9013999f8461c14c9791d00b09dbd03dff4dd62f245cafc2ac21baef2843"
+    },
+    {
+      "path": "docs/m9b13k4-descriptor-pinned-ledger/VERIFICATION.json",
+      "sha256": "d129e971e9c9fa4cbc5d280cd783e1581a9ff3b66bec78b5682c546cfca274f5"
+    },
+    {
+      "path": "docs/m9b13k4-descriptor-pinned-ledger/VERIFICATION.md",
+      "sha256": "d557bf47bd0fbb49ada1d75ce071aa550f461379a66d406c54b55b730c397b9d"
+    },
+    {
+      "path": "docs/m9b13k4-descriptor-pinned-ledger/ZERO-EFFECTS.json",
+      "sha256": "2b474696b219254c1862d44aa3d2fda8c177f070b62b31ae54f7b8c6a885c911"
+    },
+    {
+      "path": "packages/generator-ai-sdk/tests/m9b13k4-descriptor-ledger.test.ts",
+      "sha256": "2add8d2e8435456cbf204c0648e293574c483534fa813f3b1a3dcda3df0135ff"
+    }
+  ],
+  "noncircularity": {
+    "implementationIdentityExcludes": [
+      "IMPLEMENTATION-INVENTORY.json",
+      "PACKAGE-MANIFEST.json",
+      "CHECKSUMS.sha256"
+    ],
+    "packageManifestExcludes": ["PACKAGE-MANIFEST.json", "CHECKSUMS.sha256"],
+    "checksumManifestExcludes": ["CHECKSUMS.sha256"]
+  }
+}

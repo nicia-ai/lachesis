@@ -1,0 +1,11 @@
+{
+  "decision": "m9b13k4-descriptor-pinned-ledger-feasibility-pass",
+  "scope": "offline local storage mechanics only",
+  "suitableFor": "independent read-only review",
+  "controllerIntegrated": false,
+  "m9bDecision": "NO-GO",
+  "liveAuthorityAvailable": false,
+  "authorizesActivationCredentialsOrOsf": false,
+  "implementationIdentity": "d52fadda1be127f610f838f12e7c361ad949d65e46c76e09e6e21e02ddca5ecf",
+  "normalizedHelperSha256": "39af7eecf5241261a54273241e420f223d05278e25e4e294b97cfd104467ba95"
+}

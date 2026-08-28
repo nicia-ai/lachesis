@@ -1,0 +1,13 @@
+{
+  "activationCapsules": 0,
+  "browserActions": 0,
+  "credentialsCreatedReadOrUsed": 0,
+  "dnsRequests": 0,
+  "externalNetworkRequests": 0,
+  "osfOrWaterbutlerRequests": 0,
+  "projectDraftOrRegistrationMutations": 0,
+  "pushes": 0,
+  "realUploadsDownloadsRevocationsOrCleanup": 0,
+  "scientificOrStudyActions": 0,
+  "syntheticEffects": "private temporary local ledger files and subprocesses only"
+}

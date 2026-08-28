@@ -1,0 +1,18 @@
+{
+  "operatingSystemPolicy": "sandbox-exec",
+  "policy": "deny network*; allow local and remote only when IP is localhost:*",
+  "focusedNativePolicy": "deny network* with no exception",
+  "nonLoopbackNetwork": "denied",
+  "dns": "denied",
+  "browserActivity": "none",
+  "executedUnderPolicy": [
+    "focused native helper and wrapper tests",
+    "focused corrected-runtime coverage",
+    "focused M9 tests",
+    "complete serialized repository tests",
+    "complete serialized repository coverage",
+    "typecheck and build",
+    "Node and Workers smokes",
+    "source-safety, public-API, and package audits"
+  ]
+}

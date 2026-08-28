@@ -1,0 +1,80 @@
+{
+  "environment": {
+    "macOS": "26.6.1 (25G76)",
+    "darwin": "25.6.0",
+    "architecture": "arm64",
+    "node": "24.19.0",
+    "pnpm": "10.33.0",
+    "compiler": "Apple clang 21.0.0 (clang-2100.1.1.101)"
+  },
+  "implementationCommit": "7b74736b65a32589ba7aee234cb195bd8100de8b",
+  "implementationTree": "465a6ad37a08b5c6e82d158cb1a6b9467f600b61",
+  "implementationIdentity": "d52fadda1be127f610f838f12e7c361ad949d65e46c76e09e6e21e02ddca5ecf",
+  "helper": {
+    "sourceSha256": "e0850bf5a7f1fa3fa9d634c5b46e3059371b0d20c2230ddab70ab4ebb5fd9737",
+    "normalizedExecutableSha256": "39af7eecf5241261a54273241e420f223d05278e25e4e294b97cfd104467ba95",
+    "normalizedExecutableBytes": 53456,
+    "independentBuildsByteIdentical": true
+  },
+  "gates": [
+    {
+      "name": "focused native/helper suite",
+      "result": "pass",
+      "tests": "25/25",
+      "genuineBarrierRaces": 100
+    },
+    {
+      "name": "focused coverage",
+      "result": "pass",
+      "statements": 91.35,
+      "branches": 85.08,
+      "functions": 92.85,
+      "lines": 93.02
+    },
+    {
+      "name": "focused M9",
+      "result": "baseline-fail",
+      "tests": "1023/1027",
+      "detail": "one fixed Darwin release mismatch and three load-sensitive historical timeouts; all timeout cases passed in isolation"
+    },
+    {
+      "name": "complete serialized repository tests",
+      "result": "baseline-fail",
+      "tests": "1465/1470",
+      "detail": "one fixed Darwin release mismatch and four load-sensitive historical timeouts; all timeout cases passed in isolation"
+    },
+    {
+      "name": "complete serialized repository coverage",
+      "result": "baseline-fail",
+      "tests": "1469/1470",
+      "detail": "only the fixed Darwin 25.5.0 versus 25.6.0 evidence mismatch; coverage summary suppressed by failed test"
+    },
+    {
+      "name": "historical timeout isolation",
+      "result": "pass",
+      "tests": "5/5"
+    },
+    { "name": "workspace typecheck", "result": "pass" },
+    { "name": "workspace build", "result": "pass" },
+    { "name": "changed TypeScript lint", "result": "pass" },
+    { "name": "changed TypeScript/JSON/Markdown formatting", "result": "pass" },
+    { "name": "native clang-format and -Werror compile", "result": "pass" },
+    {
+      "name": "workspace lint",
+      "result": "baseline-fail",
+      "detail": "two historical M9b.13h .mjs files are outside the TypeScript project service"
+    },
+    { "name": "Node and Workers smokes", "result": "pass" },
+    { "name": "source-safety audit", "result": "pass" },
+    { "name": "secret scan over M9b.13k.4 paths", "result": "pass" },
+    { "name": "public-API audit", "result": "pass" },
+    {
+      "name": "package audit",
+      "result": "baseline-fail",
+      "detail": "frozen @nicia-ai/lachesis-generator tarball digest differs"
+    },
+    { "name": "M9b.13k.3 predecessor checksums", "result": "pass" },
+    { "name": "git diff --check", "result": "pass" }
+  ],
+  "decision": "m9b13k4-descriptor-pinned-ledger-feasibility-pass"
+}
