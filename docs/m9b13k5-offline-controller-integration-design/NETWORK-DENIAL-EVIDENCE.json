@@ -1,0 +1,12 @@
+{
+  "protocol": "lachesis-m9b13k5-network-denial-evidence/1",
+  "profile": "packages/generator-ai-sdk/src/internal/m9b13k4b/network/m9b13k4b-loopback-only.sb",
+  "checks": [
+    { "name": "IPv4 loopback", "result": "success" },
+    { "name": "IPv6 loopback", "result": "success" },
+    { "name": "numeric non-loopback IPv4", "result": "EPERM" },
+    { "name": "numeric non-loopback IPv6", "result": "EPERM" },
+    { "name": "direct DNS UDP", "result": "EPERM" }
+  ],
+  "externalEndpointContacted": false
+}

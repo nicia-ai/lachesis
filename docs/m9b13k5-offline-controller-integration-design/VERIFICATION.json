@@ -1,0 +1,43 @@
+{
+  "protocol": "lachesis-m9b13k5-verification/1",
+  "authoritativeRuntime": "Node 24.20.0",
+  "sandboxProfile": "packages/generator-ai-sdk/src/internal/m9b13k4b/network/m9b13k4b-loopback-only.sb",
+  "focusedTests": { "files": 2, "passed": 60, "failed": 0 },
+  "combinedLedgerAndModelTests": {
+    "files": 6,
+    "passed": 165,
+    "failed": 0
+  },
+  "propertyRuns": 128,
+  "coverage": {
+    "statements": { "covered": 325, "total": 343, "percent": 94.75 },
+    "branches": { "covered": 225, "total": 248, "percent": 90.72 },
+    "functions": { "covered": 40, "total": 40, "percent": 100 },
+    "lines": { "covered": 313, "total": 327, "percent": 95.71 }
+  },
+  "completeSerializedTests": {
+    "passed": 1608,
+    "failed": 2,
+    "classification": "accepted unrelated baseline failures",
+    "failures": [
+      "M9b.13d.1 fixture pins Darwin 25.5.0 while the host reports 25.6.0",
+      "M9b.13k.2 attempts a nested sandbox inside the enforced sandbox and exits 71"
+    ]
+  },
+  "checks": [
+    { "name": "package strict TypeScript on Node 24", "result": "pass" },
+    { "name": "package build on Node 24", "result": "pass" },
+    { "name": "workspace typecheck and build", "result": "pass" },
+    { "name": "Node and Workers smoke consumers", "result": "pass" },
+    { "name": "CLI valid/invalid smoke exits 0/1", "result": "pass" },
+    { "name": "changed-source lint", "result": "pass" },
+    { "name": "source-safety and unsafe-escape audit", "result": "pass" },
+    { "name": "public API audit; M9b.13k.5 remains private", "result": "pass" },
+    { "name": "four predecessor checksum manifests", "result": "pass" },
+    {
+      "name": "global lint",
+      "result": "accepted baseline: two M9b.13h project-service errors"
+    },
+    { "name": "git diff --check", "result": "pass" }
+  ]
+}

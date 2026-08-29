@@ -1,0 +1,18 @@
+{
+  "protocol": "lachesis-m9b13k5-zero-effects-record/1",
+  "milestone": "M9b.13k.5",
+  "externalEffects": 0,
+  "networkRequests": 0,
+  "credentialReads": 0,
+  "patCeremonies": 0,
+  "ledgerNamespacesCreated": 0,
+  "nativeHelpersInvoked": 0,
+  "httpsTransportsConstructed": 0,
+  "osfOperations": 0,
+  "browserOperations": 0,
+  "providerOrModelCalls": 0,
+  "pushes": 0,
+  "publications": 0,
+  "activationCapsulesCreated": 0,
+  "statement": "Only documentation, private pure TypeScript, deterministic local tests, local builds, checksum verification, and local commits occurred."
+}

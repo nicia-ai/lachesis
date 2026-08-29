@@ -1,0 +1,126 @@
+{
+  "protocol": "lachesis-m9b13k5-offline-controller-integration-design-package/1",
+  "decision": "m9b13k5-offline-controller-integration-design-ready-for-independent-review",
+  "reviewedImplementationCommit": "1d7a0ec5bac2f257e553351f46e0c46e7678a250",
+  "reviewedImplementationTree": "4d084937969fc611d10ab698bfb65cb236c120ba",
+  "designProtocolIdentity": "6b08681bb2b94c4f0dfc6d70dfc539ad8b2d32cd7614c8ed3ec58ff8f8f537e0",
+  "stateModelIdentity": "04d5cfef64860ebcc14ebcdfe95e6a6aa401dfdd71c128c73d7a9e1789dbb7ef",
+  "files": [
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/ACCEPTED-LEDGER-REVIEW-RECEIPT.md",
+      "sha256": "4fe5376c22d68c970791a0393680e3a927191c6f22d92605ba322b5a1e41451d"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/ACTIVATION-SCHEMA.md",
+      "sha256": "638f66685f69c84a3306a8ae1a857e5c4493db25e0a8018fe81c569307d9ee09"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/AUTHORITY-GRAPH.md",
+      "sha256": "3d0daa51df10aa7edcf8ef77f55767db3fc68604507035c64b7940de00136095"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/CREDENTIAL-LIFECYCLE.md",
+      "sha256": "7be22d3954f56c8e9e5682487d4851532e31bd6404f3bcd2fd804144b9a0bfb1"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/DEADLINE-CHRONOLOGY.md",
+      "sha256": "cc8c21aaba6d722f9f01885f1d2456d7cd11bb1c43c92efe2d91b57306bc353f"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/DECISION.json",
+      "sha256": "14a07b1fdae948701af35d38dba3bcb6f9bb3b63ff0dbbaee2a428561ecf1eb0"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/HOSTILE-TEST-MATRIX.json",
+      "sha256": "00eff1462392efb8f4a016ff3ce95a62a88a881b07afdba63930a6eb186e701e"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/IMPLEMENTATION-INVENTORY.json",
+      "sha256": "a5f51181ce0b56b631af4b7acf671101c04f5f142c54849a6a443b06c9059df0"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/IMPLEMENTATION-PLAN.md",
+      "sha256": "3840f4dc7497f4a53a5f15bd2c61d9c0849f0c8a84d75cd95aa3c08bb10a3809"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/INDEPENDENT-REDERIVATION.md",
+      "sha256": "01dee08d8a16a9558cafd24265686156555704231c1aee75338736011ee3f431"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/LEDGER-EVENT-MAPPING.md",
+      "sha256": "e9e91b8f69a551f30e4eec6c093962b3945466e75178a75dd0b447b77c63d251"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/NETWORK-DENIAL-EVIDENCE.json",
+      "sha256": "185a927aa86ad3c03a7e2df60889fd63b135dbe681b0c423a50c69517a8c1d76"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/RAW-RESPONSE-SCHEMAS.md",
+      "sha256": "74e53b77408d085fe1c27179329a6d0e159924aad4a11d82c6ce088d191008f0"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/README.md",
+      "sha256": "d2d22b1c9cf00ecac4990e57c3e594fdd1757139f0184761cb5a4bb8b6995fdc"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/REQUEST-ACCOUNTING.md",
+      "sha256": "0d24768cb5830985b242378f0cefbdf9c1215a0829f1851cdb8d2c90838f8f33"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/RESTART-AMBIGUITY.md",
+      "sha256": "42ad66cdb280a9749413b524955f7e6d3b2f36024e5d4a8ffbb521f012220ed7"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/REVOCATION-CUSTODIAN-BOUNDARY.md",
+      "sha256": "80e80804de6a09204dbf0ea5d160f1314ee5e1c503a009946080f2b1ed81d9fd"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/STABLE-OBJECT-RECONCILIATION.md",
+      "sha256": "437c43b3e5d0032a40a0f454b30c54aa949e9b2a45c7dccdd617afcd0f720872"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/STATE-MACHINE.md",
+      "sha256": "00d2f918188e033eeb24c63e9eb0c9f090fc2e611fc3f3a9d15c6ab490f7f3ce"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/TOKEN-ARTIFACT-BINDING.md",
+      "sha256": "eed975f7c29c57ea2c8656e4363d3077bdd77413e79ea1944e6412a488d2ca32"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/TRANSPORT-CAPABILITY-CONTRACT.md",
+      "sha256": "db1cd0ffb9fd629442e59ce4711b940f979aa9184405365725a683c9cc2c03ce"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/VERIFICATION.json",
+      "sha256": "9e3d1e2eecb7867e05f84c514ade456b588fbf9da8d81dd5fc203ee357e73cb5"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/VERIFICATION.md",
+      "sha256": "554f18f2c634d4150811507a4d01572792602ccff435be4f41c0a2de38874b93"
+    },
+    {
+      "path": "docs/m9b13k5-offline-controller-integration-design/ZERO-EFFECTS.json",
+      "sha256": "be84b15e757fe206d6bb2787800aac284511358898969bd81e748849655c6a3b"
+    },
+    {
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k5/protocol.ts",
+      "sha256": "01aec1e0dc31483fe968b416d8c61ad39d89060b1ed5fd28e69203d0f7968043"
+    },
+    {
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k5/response-schemas.ts",
+      "sha256": "b8d961cfc79a7b984fa77d4b350a2f114529efbd90f887fdc9ab9310c1538ea5"
+    },
+    {
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k5/state-model.ts",
+      "sha256": "82e2dea30734e65dbe4cd2cddbe5a27a0967ffbf28a91b90e0674473be82d23b"
+    },
+    {
+      "path": "packages/generator-ai-sdk/tests/m9b13k5-protocol-and-responses.test.ts",
+      "sha256": "f9914544a8b2b7b416e42b6aada09033bb7db7076c098cd73fd0f527ac273cf6"
+    },
+    {
+      "path": "packages/generator-ai-sdk/tests/m9b13k5-state-model.test.ts",
+      "sha256": "a1bd07e6e7a616d07918cc08867d55a2e4241ec2852f8eb92df14717a2b71ae8"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "protocol": "lachesis-m9b13k5-offline-controller-integration-design-decision/1",
+  "decision": "m9b13k5-offline-controller-integration-design-ready-for-independent-review",
+  "m9bDisposition": "NO-GO",
+  "reviewedImplementationCommit": "1d7a0ec5bac2f257e553351f46e0c46e7678a250",
+  "reviewedImplementationTree": "4d084937969fc611d10ab698bfb65cb236c120ba",
+  "designProtocolIdentity": "6b08681bb2b94c4f0dfc6d70dfc539ad8b2d32cd7614c8ed3ec58ff8f8f537e0",
+  "stateModelIdentity": "04d5cfef64860ebcc14ebcdfe95e6a6aa401dfdd71c128c73d7a9e1789dbb7ef",
+  "authorityGranted": [
+    "independent read-only review of this static design",
+    "independent read-only review of this pure zero-I/O state model"
+  ],
+  "authorityNotGranted": [
+    "ledger adapter or native ledger integration",
+    "effect-capable controller or transport",
+    "activation capsule construction",
+    "credential launcher, credential access, or PAT ceremony",
+    "custodian tool",
+    "OSF access or canary execution",
+    "provider or model calls",
+    "push, publication, corpus work, study work, or M10"
+  ]
+}
