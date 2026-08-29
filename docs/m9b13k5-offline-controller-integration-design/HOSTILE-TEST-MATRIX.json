@@ -1,0 +1,106 @@
+{
+  "protocol": "lachesis-m9b13k5-hostile-model-matrix/1",
+  "scope": "pure-zero-io-controller-integration-model",
+  "stateInventory": 22,
+  "transitionSpecifications": 37,
+  "stateEventPairs": 440,
+  "propertyRuns": 128,
+  "categories": [
+    {
+      "name": "transition-grammar",
+      "cases": [
+        "every-allowed-transition-specification",
+        "every-unspecified-state-event-pair",
+        "skipped-predecessor-state",
+        "duplicate-event",
+        "terminal-reopening",
+        "quarantine-from-every-nonterminal-state"
+      ]
+    },
+    {
+      "name": "capability-separation",
+      "cases": [
+        "ordinary-json-capability",
+        "object-cloned-capability",
+        "production-transport-in-synthetic-runtime",
+        "foreign-ledger-capability",
+        "synthetic-terminal-presented-as-live"
+      ]
+    },
+    {
+      "name": "binding-and-ledger",
+      "cases": [
+        "foreign-activation",
+        "cross-token-tampering",
+        "artifact-byte-replacement",
+        "changed-ledger-store",
+        "recreated-namespace",
+        "stale-sequence",
+        "rollback-root",
+        "cloned-receipt",
+        "event-identity-mutation"
+      ]
+    },
+    {
+      "name": "dispatch-and-deadlines",
+      "cases": [
+        "request-constructed-failure",
+        "reservation-committed-failure",
+        "request-object-created-failure",
+        "first-possible-byte-failure",
+        "body-write-failure",
+        "request-end-failure",
+        "response-headers-failure",
+        "response-completion-failure",
+        "controller-deadline-equality",
+        "revocation-deadline-equality"
+      ]
+    },
+    {
+      "name": "effect-accounting-and-restart",
+      "cases": [
+        "request-count-18",
+        "request-count-19",
+        "second-put",
+        "second-revocation",
+        "all-22-restart-states",
+        "possible-put-reconcile-only",
+        "no-second-pat-in-any-state"
+      ]
+    },
+    {
+      "name": "raw-response-and-object",
+      "cases": [
+        "duplicate-json-key",
+        "unknown-hostile-key",
+        "malformed-utf8",
+        "oversized-response",
+        "strict-schema-mismatch",
+        "upload-file-identity-versus-different-download-object",
+        "path-mismatch",
+        "download-relation-mismatch"
+      ]
+    },
+    {
+      "name": "custodian-and-terminal",
+      "cases": [
+        "cross-custodian-receipt",
+        "cross-token-custodian-receipt",
+        "live-receipt-in-synthetic-model",
+        "revoked-terminal",
+        "active-token-security-stop",
+        "ambiguous-security-stop",
+        "premature-terminal-report"
+      ]
+    },
+    {
+      "name": "model-properties",
+      "cases": [
+        "zero-effect-deterministic-replay",
+        "all-safe-precondition-counts-0-through-16",
+        "unique-event-identities",
+        "monotone-sequence-and-counters"
+      ]
+    }
+  ]
+}
