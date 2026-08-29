@@ -1,0 +1,18 @@
+{
+  "protocol": "lachesis-m9b13k4c-bytewise-identity-correction-decision/4",
+  "decision": "m9b13k4c-bytewise-identity-correction-ready-for-independent-review",
+  "m9Disposition": "NO-GO pending final independent read-only review",
+  "implementationIdentity": "cf35bd5756e8397ed9fa010e356ac30787ef69ba19ab13a7c057eac0f32d9ceb",
+  "authorityGranted": [
+    "one final independent read-only review of the corrected identity derivation",
+    "one final independent read-only review of the preserved append-only ledger package"
+  ],
+  "authorityNotGranted": [
+    "controller integration",
+    "activation",
+    "credentials",
+    "OSF access",
+    "publication",
+    "push"
+  ]
+}

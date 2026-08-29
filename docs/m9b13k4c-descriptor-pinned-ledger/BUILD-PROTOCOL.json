@@ -1,0 +1,50 @@
+{
+  "protocol": "lachesis-m9b13k4c-preserved-native-helper-build/4",
+  "runtimeBuildProtocol": "lachesis-m9b13k4b-native-helper-reproducible-build/3",
+  "runtimeBehaviorChanged": false,
+  "compiler": "/usr/bin/xcrun",
+  "compilerVersion": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+  "target": "arm64-apple-darwin25.6.0",
+  "sdk": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+  "productionArguments": [
+    "clang",
+    "-std=c17",
+    "-Os",
+    "-Wall",
+    "-Wextra",
+    "-Werror"
+  ],
+  "conformanceArguments": [
+    "clang",
+    "-std=c17",
+    "-Os",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-DM9B13K4B_CONFORMANCE=1"
+  ],
+  "productionOutputLeaf": "m9b13k4b-ledger-helper",
+  "conformanceOutputLeaf": "m9b13k4b-ledger-conformance-helper",
+  "linkedLibraries": [
+    "/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)"
+  ],
+  "normalization": [
+    "remove existing ad-hoc signature",
+    "replace the single LC_UUID with the first 16 bytes of source SHA-256",
+    "ad-hoc sign with a variant-specific fixed identifier"
+  ],
+  "sourceSha256": "812eafbe99fd7a559619c9f6068f174ed59f59815d6c523d9f233ae9b0572a49",
+  "production": {
+    "identifier": "org.nicia.lachesis.m9b13k4b-ledger",
+    "normalizedExecutableBytes": 53696,
+    "normalizedExecutableSha256": "7edfb6ece84e6d9b4d292700234880bc73c57484c6bc7fd73ec29136c2b64c6e",
+    "independentBuildsByteIdentical": true,
+    "syntheticFailureEnvironmentAbsent": true
+  },
+  "conformance": {
+    "identifier": "org.nicia.lachesis.m9b13k4b-ledger-conformance",
+    "normalizedExecutableBytes": 53984,
+    "normalizedExecutableSha256": "16f2a69cb84c52a4a96532546f7783cc3f1bd80125f98dff3eb926e6363f1625",
+    "independentBuildsByteIdentical": true
+  }
+}

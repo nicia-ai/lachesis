@@ -1,0 +1,73 @@
+{
+  "protocol": "lachesis-m9b13k4c-bytewise-identity-correction-package/4",
+  "decision": "m9b13k4c-bytewise-identity-correction-ready-for-independent-review",
+  "implementationIdentity": "cf35bd5756e8397ed9fa010e356ac30787ef69ba19ab13a7c057eac0f32d9ceb",
+  "predecessorCommit": "4d447b72432479a734e327ff42270e34ea3dbfd7",
+  "predecessorTree": "aaf1e8b0d4ce3af72ede47d93701cefb5d2dc5bf",
+  "files": [
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/BUILD-PROTOCOL.json",
+      "sha256": "e70bf4b60c86595257027cc5562e4dba1a83af8fac6ed363976fc1ca33352272"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/BYTEWISE-ORDERING-PROTOCOL.md",
+      "sha256": "0890ffda09f8e568d1bab2036aa2aa98ca135d5fbc1a4b4832c91952cda3cf3c"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/DECISION.json",
+      "sha256": "65d80a865aed2df1ec842a0a4a229c953a9ee75982ba873e7b460ca81f44dd66"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/FAILED-M9B13K4B-INDEPENDENT-REVIEW.md",
+      "sha256": "489048f04410735b3d612a8f5fc6cf39b1c93bcd57a30b79c59bffe3df3c90f6"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/IMPLEMENTATION-INVENTORY.json",
+      "sha256": "274a9dd4c9bc03fc907e2ab7384fd58e2929f12cc57b19306593c271bfd9991b"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/INDEPENDENT-REDERIVATION.md",
+      "sha256": "a4f976db4b3eec0eccc253abc327d3e9c54815108180344d7864c693a086507d"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/NETWORK-DENIAL-EVIDENCE.json",
+      "sha256": "feb65da58615c3151988eda5a9c55a31379c7db4b00c703c6baced6a2a9ddfa3"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/ORDERING-VECTORS.json",
+      "sha256": "548b5600d3733aa044b932526f8c28b5d50ffd4be3c4e2014f6571703c668b9f"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/README.md",
+      "sha256": "96f09fea054b4f125681cb9397fc311e10b68c7f6c33353f9e9182d8ff9242b5"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/SUPERSESSION-DISPOSITION.md",
+      "sha256": "c8ceea8ea3be9b051574eb0b3ece05787196cc69a1aebab10ca9bad359873945"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/VERIFICATION.json",
+      "sha256": "f73d225a5a48cde252baedcb3f1075447268b8673c200649d4969a9545f14079"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/VERIFICATION.md",
+      "sha256": "cf8b6d4dedb10ed5b76c6c7c211581b2a6244c00698ec0ffaa71f9c4b52bc1f2"
+    },
+    {
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/ZERO-EFFECTS.json",
+      "sha256": "0ad62e4a4e6af61e792fc0eab64ab8e550c7465c1171be550400721209b9061a"
+    },
+    {
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4c/implementation-order.ts",
+      "sha256": "e79bc2c22197ba23c941c025924742a391aebee9d9ecc2307f4b1beb3e3ef06b"
+    },
+    {
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4c/protocol.ts",
+      "sha256": "cd45aae05b075498f823058db039a897565caec5313f23aee14dfa4d4b3e4c5c"
+    },
+    {
+      "path": "packages/generator-ai-sdk/tests/m9b13k4c-implementation-identity.test.ts",
+      "sha256": "183fb8aa36d6a6cc8cea5b9f12b46d5ea920778f87be631a2c444fbcfd269a9a"
+    }
+  ]
+}

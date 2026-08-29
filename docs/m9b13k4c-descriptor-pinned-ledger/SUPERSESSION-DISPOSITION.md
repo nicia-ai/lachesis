@@ -20,4 +20,3 @@ changes, or public exports.
 The exact predecessor disposition is:
 
 `m9b13k4b-corrected-descriptor-ledger-review-no-go`
-

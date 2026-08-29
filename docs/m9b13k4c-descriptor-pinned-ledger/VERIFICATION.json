@@ -1,0 +1,91 @@
+{
+  "protocol": "lachesis-m9b13k4c-verification/4",
+  "implementationIdentity": "cf35bd5756e8397ed9fa010e356ac30787ef69ba19ab13a7c057eac0f32d9ceb",
+  "gates": [
+    {
+      "name": "corrected bytewise identity suite",
+      "result": "pass",
+      "tests": "16/16"
+    },
+    {
+      "name": "preserved k4, k4a, and k4b suites",
+      "result": "pass",
+      "tests": "89/89"
+    },
+    {
+      "name": "combined corrected and predecessor suites",
+      "result": "pass",
+      "tests": "105/105"
+    },
+    {
+      "name": "focused corrected identity coverage",
+      "result": "pass",
+      "tests": "16/16",
+      "statements": "41/43 (95.34%)",
+      "branches": "18/20 (90.00%)",
+      "functions": "5/5 (100.00%)",
+      "lines": "38/40 (95.00%)"
+    },
+    {
+      "name": "complete serialized repository tests",
+      "result": "baseline-fail",
+      "tests": "1548/1550",
+      "details": [
+        "historical M9b.13d1 fixture expects Darwin 25.5.0 while the current kernel reports 25.6.0",
+        "historical M9b.13k.2 transport test attempts a nested sandbox proof and exits 71 inside the already enforced k4b sandbox"
+      ]
+    },
+    {
+      "name": "complete serialized repository coverage",
+      "result": "baseline-fail",
+      "tests": "1547/1550",
+      "details": [
+        "the same two ordinary-run baseline failures",
+        "coverage-only M9b.12f immutable-package rederivation exceeded its 5000 ms test timeout",
+        "aggregate coverage summary suppressed by failed tests"
+      ]
+    },
+    { "name": "workspace typecheck on Node 24.20.0", "result": "pass" },
+    { "name": "workspace build on Node 24.20.0", "result": "pass" },
+    { "name": "changed TypeScript lint", "result": "pass" },
+    {
+      "name": "global lint",
+      "result": "baseline-fail",
+      "detail": "two historical M9b.13h project-service parsing errors"
+    },
+    { "name": "changed and tracked-file formatting", "result": "pass" },
+    {
+      "name": "deterministic production and conformance helper builds",
+      "result": "pass"
+    },
+    { "name": "Node and Workers smokes", "result": "pass" },
+    {
+      "name": "CLI valid and invalid smokes",
+      "result": "pass",
+      "exitCodes": [0, 1]
+    },
+    { "name": "source-safety and unsafe-escape audit", "result": "pass" },
+    { "name": "secret-value audit of changed scope", "result": "pass" },
+    { "name": "public-API audit", "result": "pass" },
+    { "name": "k4, k4a, and k4b checksum manifests", "result": "pass" },
+    { "name": "independent reference identity", "result": "pass" },
+    {
+      "name": "full-inventory permutation cases",
+      "result": "pass",
+      "cases": 24,
+      "identities": 1
+    },
+    {
+      "name": "all bound-entry mutations change identity",
+      "result": "pass",
+      "mutations": 22
+    },
+    { "name": "comparator source mutation changes identity", "result": "pass" },
+    {
+      "name": "non-loopback and direct-DNS sandbox denial",
+      "result": "pass",
+      "denials": 3
+    },
+    { "name": "git diff check", "result": "pass" }
+  ]
+}

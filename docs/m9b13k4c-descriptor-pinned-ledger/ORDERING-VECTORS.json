@@ -1,0 +1,160 @@
+{
+  "protocol": "lachesis-m9b13k4c-independent-ordering-vectors/4",
+  "keyEncoding": "UTF-8(kind + U+0000 + path)",
+  "vectors": [
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "A",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0041"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "a",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0061"
+      },
+      "result": "left-first"
+    },
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "Z",
+        "keyUtf8Hex": "636f6e66696775726174696f6e005a"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "a",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0061"
+      },
+      "result": "left-first"
+    },
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "9",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0039"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "A",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0041"
+      },
+      "result": "left-first"
+    },
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "a-",
+        "keyUtf8Hex": "636f6e66696775726174696f6e00612d"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "a.",
+        "keyUtf8Hex": "636f6e66696775726174696f6e00612e"
+      },
+      "result": "left-first"
+    },
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "a.",
+        "keyUtf8Hex": "636f6e66696775726174696f6e00612e"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "a/",
+        "keyUtf8Hex": "636f6e66696775726174696f6e00612f"
+      },
+      "result": "left-first"
+    },
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "a/",
+        "keyUtf8Hex": "636f6e66696775726174696f6e00612f"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "a_",
+        "keyUtf8Hex": "636f6e66696775726174696f6e00615f"
+      },
+      "result": "left-first"
+    },
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "a_",
+        "keyUtf8Hex": "636f6e66696775726174696f6e00615f"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "aa",
+        "keyUtf8Hex": "636f6e66696775726174696f6e006161"
+      },
+      "result": "left-first"
+    },
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "a",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0061"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "a/child",
+        "keyUtf8Hex": "636f6e66696775726174696f6e00612f6368696c64"
+      },
+      "result": "left-first-prefix"
+    },
+    {
+      "left": {
+        "kind": "build-protocol",
+        "path": "z",
+        "keyUtf8Hex": "6275696c642d70726f746f636f6c007a"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "A",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0041"
+      },
+      "result": "left-first-before-nul"
+    },
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "A",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0041"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "a",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0061"
+      },
+      "result": "left-first-after-nul"
+    },
+    {
+      "left": {
+        "kind": "configuration",
+        "path": "same",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0073616d65"
+      },
+      "right": {
+        "kind": "configuration",
+        "path": "same",
+        "keyUtf8Hex": "636f6e66696775726174696f6e0073616d65"
+      },
+      "result": "equal-and-rejected-as-duplicate"
+    }
+  ],
+  "unicodeSchemaDisposition": {
+    "nonAscii": "rejected",
+    "canonicalEquivalents": ["U+00E9", "U+0065 U+0301"],
+    "result": "both rejected before ordering"
+  },
+  "permutationFixtureSize": 4,
+  "permutationsChecked": 24,
+  "independentReferenceEncoders": [
+    "Node SHA-256",
+    "Workers-compatible Web Crypto SHA-256"
+  ]
+}

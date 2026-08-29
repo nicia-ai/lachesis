@@ -1,0 +1,137 @@
+{
+  "protocol": "lachesis-m9b13k4c-source-build-bound-ledger-identity/4",
+  "entries": [
+    {
+      "kind": "build-protocol",
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/BUILD-PROTOCOL.json",
+      "byteLength": 1808,
+      "sha256": "e70bf4b60c86595257027cc5562e4dba1a83af8fac6ed363976fc1ca33352272"
+    },
+    {
+      "kind": "configuration",
+      "path": "docs/m9b13k4c-descriptor-pinned-ledger/BYTEWISE-ORDERING-PROTOCOL.md",
+      "byteLength": 1282,
+      "sha256": "0890ffda09f8e568d1bab2036aa2aa98ca135d5fbc1a4b4832c91952cda3cf3c"
+    },
+    {
+      "kind": "configuration",
+      "path": "packages/generator-ai-sdk/tsconfig.build.json",
+      "byteLength": 531,
+      "sha256": "8dd9faee4aa99b183eac9582c97a37564699089d272fe185e927e41c4efc76cc"
+    },
+    {
+      "kind": "configuration",
+      "path": "vitest.config.ts",
+      "byteLength": 2884,
+      "sha256": "1374ccc30c0d0499d8d1fcfea9a4b3b58a7a80523c8d902bf71ba1cc85072001"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4b/ledger.d.ts",
+      "byteLength": 3786,
+      "sha256": "bacae78f3ea20a83217f1781da4ddd0d7aab5930f647bb35512bcf6db9d40382"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4b/protocol.d.ts",
+      "byteLength": 3308,
+      "sha256": "e72813fdf255e72848c82a1f8876d2814fd36063cdf5f2fc0d3e0f70a7108df0"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4c/implementation-order.d.ts",
+      "byteLength": 381,
+      "sha256": "273e9987991c1ecc3bf66c51b68c8cec455d0d1852c0d2204e4c7b3b505a6052"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4c/protocol.d.ts",
+      "byteLength": 1465,
+      "sha256": "4195417b98c4c082ee37535baac8ae3892072d92816f4882d619e64839d1d06e"
+    },
+    {
+      "kind": "executable",
+      "path": "build/m9b13k4b/arm64/m9b13k4b-ledger-conformance-helper",
+      "byteLength": 53984,
+      "sha256": "16f2a69cb84c52a4a96532546f7783cc3f1bd80125f98dff3eb926e6363f1625"
+    },
+    {
+      "kind": "executable",
+      "path": "build/m9b13k4b/arm64/m9b13k4b-ledger-helper",
+      "byteLength": 53696,
+      "sha256": "7edfb6ece84e6d9b4d292700234880bc73c57484c6bc7fd73ec29136c2b64c6e"
+    },
+    {
+      "kind": "hostile-test",
+      "path": "packages/generator-ai-sdk/tests/m9b13k4b-descriptor-ledger.test.ts",
+      "byteLength": 42809,
+      "sha256": "1fd44203d36b0026f8ccc5cd40aef5448bbbff8106be4f72c253923d2b635977"
+    },
+    {
+      "kind": "hostile-test",
+      "path": "packages/generator-ai-sdk/tests/m9b13k4c-implementation-identity.test.ts",
+      "byteLength": 9418,
+      "sha256": "183fb8aa36d6a6cc8cea5b9f12b46d5ea920778f87be631a2c444fbcfd269a9a"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4b/ledger.js",
+      "byteLength": 26840,
+      "sha256": "ac4fb645ea5fe5ff47b69818e7f9c51f64bb4581305b8eb7d9f43ce7253811bd"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4b/protocol.js",
+      "byteLength": 9569,
+      "sha256": "c4a0ee05a6dcaec05e1dea385f4057251c5c9847da7904f9f0ec0620ff7e8c0f"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4c/implementation-order.js",
+      "byteLength": 991,
+      "sha256": "b7adb03aca1324cea6d55899705847e3dc440fa7bd05d971855df0cf457d12be"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k4c/protocol.js",
+      "byteLength": 2748,
+      "sha256": "d5470294fdeb85fcab04fd21a78a6ab4339f0a56f1201c26433ac1a8ae1d9e5d"
+    },
+    {
+      "kind": "native-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4b/native/m9b13k4b-ledger.c",
+      "byteLength": 33636,
+      "sha256": "812eafbe99fd7a559619c9f6068f174ed59f59815d6c523d9f233ae9b0572a49"
+    },
+    {
+      "kind": "sandbox-profile",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4b/network/m9b13k4b-loopback-only.sb",
+      "byteLength": 191,
+      "sha256": "9a4be391712afa9dcfc096780741e75cd3b04856a8b71c2468642ff67f10eff4"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4b/ledger.ts",
+      "byteLength": 30155,
+      "sha256": "a31c76fb352f471fd190ccc78fa4a80ea3fab60b465ee6b1b47f030ea31bec24"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4b/protocol.ts",
+      "byteLength": 9893,
+      "sha256": "03e62cc8de2984d03abc1a186fe9c8e56d582c4c4313d8a05bbeef1d761a84ff"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4c/implementation-order.ts",
+      "byteLength": 1088,
+      "sha256": "e79bc2c22197ba23c941c025924742a391aebee9d9ecc2307f4b1beb3e3ef06b"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k4c/protocol.ts",
+      "byteLength": 3124,
+      "sha256": "cd45aae05b075498f823058db039a897565caec5313f23aee14dfa4d4b3e4c5c"
+    }
+  ]
+}

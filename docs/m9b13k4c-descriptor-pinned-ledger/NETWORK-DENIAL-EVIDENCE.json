@@ -1,0 +1,27 @@
+{
+  "protocol": "lachesis-m9b13k4c-loopback-only-network-evidence/4",
+  "profilePath": "packages/generator-ai-sdk/src/internal/m9b13k4b/network/m9b13k4b-loopback-only.sb",
+  "profileSha256": "9a4be391712afa9dcfc096780741e75cd3b04856a8b71c2468642ff67f10eff4",
+  "probes": [
+    { "name": "IPv4 loopback", "result": "success" },
+    { "name": "IPv6 loopback", "result": "success" },
+    {
+      "name": "numeric non-loopback IPv4 192.0.2.1:9",
+      "result": "denied",
+      "error": "EPERM"
+    },
+    {
+      "name": "numeric non-loopback IPv6 [2001:db8::1]:9",
+      "result": "denied",
+      "error": "EPERM"
+    },
+    {
+      "name": "direct DNS UDP 127.0.0.1:53",
+      "result": "denied",
+      "error": "EPERM"
+    }
+  ],
+  "authoritativeVerificationNode": "v24.20.0",
+  "substantiveCommandsInsideProfile": true,
+  "externalEndpointContacted": false
+}
