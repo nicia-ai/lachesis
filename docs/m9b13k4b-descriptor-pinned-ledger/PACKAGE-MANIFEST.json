@@ -1,0 +1,93 @@
+{
+  "protocol": "lachesis-m9b13k4b-corrected-descriptor-ledger-package/3",
+  "decision": "m9b13k4b-corrected-descriptor-ledger-ready-for-independent-review",
+  "reviewedSealCommit": "1a5276ee017625ae75fbd5f5c25b502cd016f7fe",
+  "reviewedSealTree": "fccd8857bdfdbcd78ee3af1ab26b89b2f27cfde9",
+  "preservationCommit": "0006708ffaf9eaf1c1de954ff10b8bb2155bb7b8",
+  "preservationTree": "f6ab80af7006f0c290337be5800257358875ed9a",
+  "implementationCommit": "4554bb782785f42565979645377d097e9b749954",
+  "implementationTree": "1a264228800fff55a9f6434d37a9e4b9fd6cb244",
+  "implementationIdentity": "ead3f08507c92c03f6380ab17a1bf44046bc07a1e5f72c46bd0183f135e82db9",
+  "productionHelperSha256": "7edfb6ece84e6d9b4d292700234880bc73c57484c6bc7fd73ec29136c2b64c6e",
+  "conformanceHelperSha256": "16f2a69cb84c52a4a96532546f7783cc3f1bd80125f98dff3eb926e6363f1625",
+  "profileSha256": "9a4be391712afa9dcfc096780741e75cd3b04856a8b71c2468642ff67f10eff4",
+  "projections": [
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/BARRIER-LIFECYCLE-PROTOCOL.md",
+      "sha256": "bd3b65d1086ce28dd1fac73219984982f9bed36b705e7ee78cfdbf843b6aa115"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/BUILD-PROTOCOL.json",
+      "sha256": "be6b4d246bf31eac22e5176332dfae9120ef6d9b5c0aeb1b4a2fb2d778d9b76e"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/DECISION.json",
+      "sha256": "b380c89cf9f9d9c58e0601483fc6dfa95989956489794c601105a1da40e8f92f"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/EINTR-EVIDENCE.md",
+      "sha256": "85cf11c3f0159069d7a555a181b7079dcb214b46e37e3e4c3a2b1a28687753a9"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/EXTERNAL-LOCK-REGRESSION.md",
+      "sha256": "0f149cd50de2104c663be08c0732cb10d00a8f4f914a7b71fe6e5e398fdecb9f"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/FAILED-M9B13K4A-INDEPENDENT-REVIEW.md",
+      "sha256": "ada9fb4eba4434733b84891390e4f312d4e552bd657fc793ecaf6cc6c017a48d"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/HOSTILE-TEST-MATRIX.json",
+      "sha256": "8a5c7277be9b6f396ccd790e6ec4b158187663815af9e99635004a5f353d0723"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/IMPLEMENTATION-INVENTORY.json",
+      "sha256": "3d907ed68892909ba60130f8798ce2ff12977c3c7fb14a96f756aecdfd3cb1ee"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/INDEPENDENT-REDERIVATION.md",
+      "sha256": "c594c299ddca08e2f612d2d6641150111efc09c037965f845148483708f7029a"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/NETWORK-DENIAL-EVIDENCE.json",
+      "sha256": "736e8fcaa302e616dd1e7ac0a70e744cb68f8b8e8c6491d61fcae7d7b7e577ff"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/README.md",
+      "sha256": "05280e25979d797514ccb9deb22db2840cb4724f748b4736c9f42f71757c6d6c"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/RESERVED-BYTE-REGRESSION.md",
+      "sha256": "697e9d98ae79b1721ea6543f4e9cd65972ab181270ebdb541419d2e8953608db"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/SUPERSESSION-DISPOSITION.md",
+      "sha256": "0261c372662803ad9cbc4b38afc72746523481ae795eeb1551b936a7c08e0805"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/VERIFICATION.json",
+      "sha256": "636228c4c15f38c15bb1c4619dd4923fba2ec6b1527989c8bc3c41de54c0dd33"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/VERIFICATION.md",
+      "sha256": "9e88e97a35cd683beebe92e6fda47e961504d4245643449a6407a251a8f144cf"
+    },
+    {
+      "path": "docs/m9b13k4b-descriptor-pinned-ledger/ZERO-EFFECTS.json",
+      "sha256": "72cd43ca0cacae83edf45feffe98126e463575f5c6e890c32240c877e13b38c9"
+    },
+    {
+      "path": "packages/generator-ai-sdk/tests/m9b13k4b-descriptor-ledger.test.ts",
+      "sha256": "1fd44203d36b0026f8ccc5cd40aef5448bbbff8106be4f72c253923d2b635977"
+    }
+  ],
+  "noncircularity": {
+    "implementationIdentityExcludes": [
+      "IMPLEMENTATION-INVENTORY.json",
+      "PACKAGE-MANIFEST.json",
+      "CHECKSUMS.sha256"
+    ],
+    "packageManifestExcludes": ["PACKAGE-MANIFEST.json", "CHECKSUMS.sha256"],
+    "checksumManifestExcludes": ["CHECKSUMS.sha256"]
+  }
+}

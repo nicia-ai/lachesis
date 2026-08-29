@@ -1,0 +1,17 @@
+{
+  "protocol": "lachesis-m9b13k4b-corrected-descriptor-ledger-decision/3",
+  "decision": "m9b13k4b-corrected-descriptor-ledger-ready-for-independent-review",
+  "m9bStatus": "NO-GO",
+  "implementationIdentity": "ead3f08507c92c03f6380ab17a1bf44046bc07a1e5f72c46bd0183f135e82db9",
+  "authorizedNextStep": "independent adversarial read-only ledger review",
+  "unauthorized": [
+    "controller integration",
+    "activation",
+    "credentials or PATs",
+    "OSF or external services",
+    "provider or model calls",
+    "publication",
+    "push",
+    "M10"
+  ]
+}

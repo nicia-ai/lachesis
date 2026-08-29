@@ -1,0 +1,77 @@
+{
+  "protocol": "lachesis-m9b13k4b-hostile-test-matrix/3",
+  "focusedTests": 33,
+  "result": "pass",
+  "families": [
+    {
+      "name": "barrier lifecycle",
+      "result": "pass",
+      "cases": [
+        "invalid namespace before readiness",
+        "malformed operation before readiness",
+        "readiness EOF",
+        "readiness descriptor error",
+        "child error",
+        "timeout before readiness",
+        "timeout after readiness before release",
+        "child death after readiness",
+        "append death immediately after release",
+        "repeated release",
+        "late data error and close events"
+      ]
+    },
+    {
+      "name": "reserved version-1 header bytes",
+      "result": "pass",
+      "individualOffsets": [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59],
+      "combinedMutation": true,
+      "zeroReservedControl": "pass",
+      "byteOrder": "big-endian",
+      "specificFailure": "m9b13k4b-helper-reserved-header-unsupported"
+    },
+    {
+      "name": "genuine asynchronous EINTR",
+      "result": "pass",
+      "cases": ["barrier read", "blocked flock", "blocked stdin read"],
+      "expectedReceivedSignalCount": 1,
+      "expectedActualEintrCount": 1
+    },
+    {
+      "name": "synthetic EINTR and partial progress",
+      "result": "pass",
+      "cases": [
+        "read",
+        "pread",
+        "flock",
+        "record header write",
+        "record payload write",
+        "record footer write",
+        "fsync"
+      ],
+      "partialWriteBytes": 3,
+      "duplicatePayloads": 0,
+      "productionEnablementRejected": true
+    },
+    {
+      "name": "externally lock-held final pathname race",
+      "result": "pass",
+      "snapshotRepetitions": 5,
+      "auditRepetitions": 5,
+      "specificFailure": "m9b13k4b-helper-post-inspect-identity-ambiguous"
+    },
+    {
+      "name": "preserved native ledger behavior",
+      "result": "pass",
+      "cases": [
+        "100 two-process stale-root CAS races",
+        "crash boundaries",
+        "torn frames and trailing garbage",
+        "rollback and recreation",
+        "ancestor mode and identity changes",
+        "symlink and hardlink rejection",
+        "helper replacement",
+        "timeout and executable substitution"
+      ]
+    }
+  ]
+}

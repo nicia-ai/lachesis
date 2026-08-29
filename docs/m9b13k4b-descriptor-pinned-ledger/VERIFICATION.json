@@ -1,0 +1,62 @@
+{
+  "protocol": "lachesis-m9b13k4b-verification/3",
+  "implementationIdentity": "ead3f08507c92c03f6380ab17a1bf44046bc07a1e5f72c46bd0183f135e82db9",
+  "gates": [
+    {
+      "name": "corrected focused suite inside exact sandbox",
+      "result": "pass",
+      "tests": "33/33"
+    },
+    {
+      "name": "preserved k4, k4a, and corrected k4b suites",
+      "result": "pass",
+      "tests": "89/89"
+    },
+    {
+      "name": "focused corrected-wrapper coverage",
+      "result": "pass",
+      "statements": 90.27,
+      "branches": 85.75,
+      "functions": 96.82,
+      "lines": 92.12
+    },
+    {
+      "name": "complete serialized repository tests",
+      "result": "baseline-fail",
+      "tests": "1532/1534",
+      "details": [
+        "historical M9b.13d1 fixture expects Darwin 25.5.0 while the current kernel reports 25.6.0",
+        "historical M9b.13k.2 transport test attempts a nested sandbox proof and exits 71 inside the already enforced k4b sandbox"
+      ]
+    },
+    {
+      "name": "complete serialized repository coverage",
+      "result": "baseline-fail",
+      "tests": "1532/1534",
+      "detail": "the same two isolated failures suppress the aggregate coverage summary"
+    },
+    { "name": "isolated historical failures", "result": "reproduced" },
+    { "name": "workspace typecheck", "result": "pass" },
+    { "name": "workspace build", "result": "pass" },
+    { "name": "changed TypeScript lint", "result": "pass" },
+    {
+      "name": "global lint",
+      "result": "baseline-fail",
+      "detail": "two historical M9b.13h project-service parsing errors"
+    },
+    { "name": "changed-file formatting", "result": "pass" },
+    { "name": "strict native compile and clang-format", "result": "pass" },
+    { "name": "ASan and UBSan", "result": "pass" },
+    { "name": "Node and Workers smokes inside sandbox", "result": "pass" },
+    { "name": "CLI valid and invalid smokes inside sandbox", "result": "pass" },
+    { "name": "source-safety audit", "result": "pass" },
+    { "name": "public-API audit", "result": "pass" },
+    { "name": "predecessor checksum manifests", "result": "pass" },
+    {
+      "name": "all bound-byte mutations change identity",
+      "result": "pass",
+      "mutations": 14
+    },
+    { "name": "git diff check", "result": "pass" }
+  ]
+}

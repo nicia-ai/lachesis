@@ -1,0 +1,17 @@
+{
+  "protocol": "lachesis-m9b13k4b-zero-effects/3",
+  "credentialsCreatedOrAccessed": 0,
+  "patsCreatedOrAccessed": 0,
+  "osfRequests": 0,
+  "waterbutlerRequests": 0,
+  "successfulNonLoopbackConnections": 0,
+  "browserActions": 0,
+  "providerOrModelCalls": 0,
+  "remoteMutations": 0,
+  "publications": 0,
+  "pushes": 0,
+  "controllerIntegrations": 0,
+  "activationArtifacts": 0,
+  "allSubstantiveExecutablesSandboxed": true,
+  "result": "zero-external-effects"
+}
