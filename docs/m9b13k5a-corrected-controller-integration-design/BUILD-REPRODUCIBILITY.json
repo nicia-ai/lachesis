@@ -1,0 +1,20 @@
+{
+  "protocol": "lachesis-m9b13k5a-clean-root-build-reproducibility/1",
+  "reviewedImplementationCommit": "6972e212d431454a3a4b024064d83033834a512b",
+  "reviewedImplementationTree": "1c9549168bd01c6d4cf39cc5b6f00752465c1c5b",
+  "runtime": {
+    "node": "v24.20.0",
+    "pnpm": "10.33.0",
+    "typescript": "6.0.3"
+  },
+  "sourceRoots": 2,
+  "sourceRootConstruction": "git archive of reviewed implementation commit into two fresh mktemp roots",
+  "dependencyPolicy": "read-only symlinks to the preinstalled workspace dependency trees and already-built dependency declarations; no resolution, download, or network access",
+  "buildCommand": "pnpm --dir <root>/packages/generator-ai-sdk build",
+  "correctedEmittedFileCount": 12,
+  "byteIdentical": true,
+  "normalizedComparator": "sorted SHA-256 and relative path lines compared with cmp",
+  "emittedInventoryDigest": "0bf63534777b4ebb865f653a1b03fe10134fc00a00bb297898d9cf9e7c94cd4b",
+  "offlineInstallAttempt": "stopped before build because eslint-10.7.0.tgz was absent from the local pnpm store; no download was attempted",
+  "externalEffects": 0
+}

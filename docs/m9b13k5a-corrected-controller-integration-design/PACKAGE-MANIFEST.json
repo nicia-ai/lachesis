@@ -1,0 +1,93 @@
+{
+  "protocol": "lachesis-m9b13k5a-sealed-package-manifest/1",
+  "decision": "m9b13k5a-corrected-controller-integration-design-ready-for-independent-review",
+  "m9bDisposition": "NO-GO",
+  "baselineCommit": "d89aeac7d859a03e19b9902927c65b228eff9aad",
+  "baselineTree": "63b80c9f1e352110a9e69664ff74b3ba40410e2e",
+  "failedReviewCommit": "0ac536f1c7c14c7f3056735fe23d3e6c941707e2",
+  "failedReviewTree": "c60c85db98863a7a3dd1c19cdf7acacb7bc9df01",
+  "reviewedImplementationCommit": "6972e212d431454a3a4b024064d83033834a512b",
+  "reviewedImplementationTree": "1c9549168bd01c6d4cf39cc5b6f00752465c1c5b",
+  "acceptedM9b13k4cImplementationIdentity": "cf35bd5756e8397ed9fa010e356ac30787ef69ba19ab13a7c057eac0f32d9ceb",
+  "correctedControllerProtocolIdentity": "504be41010938ad16c76fcfd3f54acf3cf2e6f5932d3de01333ca5a5e19a4f37",
+  "correctedStateModelIdentity": "dd71ea66af137be312891b393ee04467a3e74abcb2433e54140cf54e58cb62be",
+  "implementationGroups": {
+    "correctedSources": "70bfe40fc622584a9458d3f5d769881d431b2476888ca2f0830b081dbb739575",
+    "emittedArtifacts": "0bf63534777b4ebb865f653a1b03fe10134fc00a00bb297898d9cf9e7c94cd4b",
+    "testsAndFixtures": "e8f516337e650e98856b2b025487427fa935c25f7dcc1be5bb6efadee9dcb557",
+    "packageAndBuildConfiguration": "8393b087f93fcca40cf5736e62b4d69010c0da92285b6fb81ba284dd30bbb722",
+    "protocolArtifacts": "b6a99bda999db8cc06103e39086579486490318eb80e203c4e2b013443b0e5df"
+  },
+  "artifacts": [
+    {
+      "path": "FAILED-M9B13K5-INDEPENDENT-REVIEW.md",
+      "sha256": "a632994ca14ba863c5363d3cba3a8a86835bfca2e5d208183ce5fe5980e585b9"
+    },
+    {
+      "path": "REVIEW-EVIDENCE.sha256",
+      "sha256": "b32b428a6b72d26f15277ad95020d3d98ad65a18e362bc2b975ee0d0b71acd86"
+    },
+    {
+      "path": "README.md",
+      "sha256": "c295afbf33379228aa613736d24e57f3cab4b4f6dd09e843653fecafedf0aad3"
+    },
+    {
+      "path": "STATE-AND-REPLAY.md",
+      "sha256": "5539c43a28d215b5a7849745d6a00f5eec2f0b3039062e4833907c2576cdf376"
+    },
+    {
+      "path": "ACCEPTED-LEDGER-AND-CAPABILITY-BOUNDARY.md",
+      "sha256": "ba1a6a11098d7924ca1305ef2462333ee0263d3e3bc801ee990c8a68f6291812"
+    },
+    {
+      "path": "RAW-RESPONSE-AND-RECONCILIATION.md",
+      "sha256": "af7d1d2888fb9450bd0a61530eb32e60d21bd8c4bf3d6d1a3807e2cda23dc6b5"
+    },
+    {
+      "path": "DEADLINES-AND-CUSTODIAN.md",
+      "sha256": "28264a1cf776de52550485c8edb15f1524ec04d6936efdc9dc8359740671a6a6"
+    },
+    {
+      "path": "FUTURE-IMPLEMENTATION-ORDER.md",
+      "sha256": "55aaa8bfc85eaebddf0c1582aa505bb4976e943349f494c1e5716ad32c6ad9bd"
+    },
+    {
+      "path": "REQUEST-TOPOLOGY.json",
+      "sha256": "d372eea84b3a7be69c09bbda74c5e1d37a3e4aa777e3abd1fccf9d9c81cac1dd"
+    },
+    {
+      "path": "HOSTILE-TEST-MATRIX.json",
+      "sha256": "a610cc1043c000aadec3fbdd03355767385ee3b3e3df51376e587ccd33fa4a3e"
+    },
+    {
+      "path": "PROTOCOL-IDENTITIES.json",
+      "sha256": "2da532a770a33c6006486a1f341e7f84dfe924dc0fa208e4480575a777161035"
+    },
+    {
+      "path": "BUILD-REPRODUCIBILITY.json",
+      "sha256": "8b2859215fdf220b17f91920a8e5230d8109568bc651ec74c605139e26ab9e81"
+    },
+    {
+      "path": "IMPLEMENTATION-INVENTORY.json",
+      "sha256": "37c64cc08f394c4c710664788b3cde986c18075061780e97e09f58912bc30ab8"
+    },
+    {
+      "path": "VERIFICATION.json",
+      "sha256": "4339aecbec039d31462b29a666661ad4a445b8f56a2ec1481aab569b484d5bef"
+    },
+    {
+      "path": "ZERO-EFFECTS.json",
+      "sha256": "13479d534d5178b1402cb4321ccb44a16c9d3fda80b17745a4e43474a70479a9"
+    },
+    {
+      "path": "INDEPENDENT-REDERIVATION.md",
+      "sha256": "87e5c6ad7504d19eb922d5b5a2b684bc741b363f36b82011a640d9273eda8006"
+    },
+    {
+      "path": "DECISION.json",
+      "sha256": "11185d92cbb7f5791fab019b30811aea5647e030f8d42eba4ce09562fb513fff"
+    }
+  ],
+  "authority": "independent read-only review only",
+  "externalEffects": 0
+}

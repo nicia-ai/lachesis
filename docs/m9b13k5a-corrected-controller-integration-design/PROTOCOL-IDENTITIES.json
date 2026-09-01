@@ -1,0 +1,17 @@
+{
+  "protocol": "lachesis-m9b13k5a-protocol-identities/1",
+  "correctedControllerProtocolIdentity": "504be41010938ad16c76fcfd3f54acf3cf2e6f5932d3de01333ca5a5e19a4f37",
+  "correctedStateModelIdentity": "dd71ea66af137be312891b393ee04467a3e74abcb2433e54140cf54e58cb62be",
+  "acceptedM9b13k4cImplementationIdentity": "cf35bd5756e8397ed9fa010e356ac30787ef69ba19ab13a7c057eac0f32d9ceb",
+  "comparatorProtocol": "lachesis-m9b13k4c-source-build-bound-ledger-identity/4",
+  "independentRederivationMatchesExecutable": true,
+  "stateCount": 9,
+  "eventKindCount": 15,
+  "allowedTransitionCount": 18,
+  "stateEventPairCount": 135,
+  "forbiddenTransitionCount": 117,
+  "operationCount": 10,
+  "shortestRequestCount": 10,
+  "longestRequestCount": 18,
+  "acceptedLedgerPayloadLimitBytes": 65536
+}

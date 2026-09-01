@@ -1,0 +1,22 @@
+{
+  "protocol": "lachesis-m9b13k5a-corrected-controller-integration-design-decision/1",
+  "decision": "m9b13k5a-corrected-controller-integration-design-ready-for-independent-review",
+  "m9bDisposition": "NO-GO",
+  "reviewedImplementationCommit": "6972e212d431454a3a4b024064d83033834a512b",
+  "reviewedImplementationTree": "1c9549168bd01c6d4cf39cc5b6f00752465c1c5b",
+  "correctedControllerProtocolIdentity": "504be41010938ad16c76fcfd3f54acf3cf2e6f5932d3de01333ca5a5e19a4f37",
+  "correctedStateModelIdentity": "dd71ea66af137be312891b393ee04467a3e74abcb2433e54140cf54e58cb62be",
+  "acceptedM9b13k4cImplementationIdentity": "cf35bd5756e8397ed9fa010e356ac30787ef69ba19ab13a7c057eac0f32d9ceb",
+  "authorityGranted": [
+    "independent read-only review of the sealed static corrected design and pure zero-I/O model"
+  ],
+  "authorityNotGranted": [
+    "authenticated launcher or credential access",
+    "revocation custodian implementation",
+    "transport, live controller, or integration activation",
+    "activation capsule preparation",
+    "OSF or Waterbutler access",
+    "provider or model calls",
+    "push, publication, corpus work, study work, or M10"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "protocol": "lachesis-m9b13k5a-verification/1",
+  "focused": { "filesPassed": 1, "testsPassed": 14, "testsFailed": 0 },
+  "preservedLedgerAndM9": {
+    "filesPassed": 7,
+    "testsPassed": 179,
+    "testsFailed": 0
+  },
+  "fullSerialized": {
+    "filesPassed": 88,
+    "filesFailed": 1,
+    "testsPassed": 1623,
+    "testsFailed": 1,
+    "historicalBaseline": "immutable M9b.13d.1 Darwin release golden expects 25.5.0; host reports 25.6.0"
+  },
+  "coverageFullSerialized": {
+    "filesPassed": 87,
+    "filesFailed": 2,
+    "testsPassed": 1622,
+    "testsFailed": 2,
+    "historicalBaselines": [
+      "immutable M9b.13d.1 Darwin release golden expects 25.5.0; host reports 25.6.0",
+      "M9b.13k.2 genuine SIGKILL coverage run encountered transient SQLite database-is-locked"
+    ]
+  },
+  "focusedCoverage": {
+    "statements": 83.48,
+    "branches": 82.17,
+    "functions": 100,
+    "lines": 87.37
+  },
+  "strictTypecheck": "pass",
+  "workspaceBuild": "pass",
+  "changedFileFormat": "pass",
+  "changedFileLint": "pass",
+  "workspaceFormatHistoricalBaseline": "18 predecessor files plus protected paper/README.md",
+  "workspaceLintHistoricalBaseline": "two immutable M9b.13h scripts absent from type-aware project service",
+  "nodeSmoke": "pass",
+  "workersDryRunSmoke": "pass-no-deployment",
+  "cliValid": "pass",
+  "cliInvalid": "expected-rejection",
+  "sourceSafety": "pass",
+  "publicApiAudit": "pass",
+  "m9b13k5PredecessorManifest": "pass",
+  "m9b13k4cPredecessorManifest": "pass",
+  "cleanRootBuilds": "two-byte-identical",
+  "gitDiffCheck": "pass",
+  "propertyTests": [
+    {
+      "seed": 331677701,
+      "runs": 2048,
+      "result": "official-shaped responses pass and foreign-host substitutions fail"
+    },
+    { "seed": 5130505, "runs": 4, "result": "replay equivalence passes" }
+  ]
+}

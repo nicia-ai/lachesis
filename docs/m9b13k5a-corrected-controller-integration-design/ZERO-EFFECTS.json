@@ -1,0 +1,22 @@
+{
+  "protocol": "lachesis-m9b13k5a-zero-effects/1",
+  "m9bDisposition": "NO-GO",
+  "credentialsRead": 0,
+  "patCeremonies": 0,
+  "osfRequests": 0,
+  "waterbutlerRequests": 0,
+  "networkRequestsForImplementationOrTests": 0,
+  "uploads": 0,
+  "downloads": 0,
+  "revocations": 0,
+  "browserActions": 0,
+  "providerOrModelCalls": 0,
+  "activationCapsules": 0,
+  "liveControllers": 0,
+  "corpusOrStudyActions": 0,
+  "publications": 0,
+  "pushes": 0,
+  "workerDeployments": 0,
+  "wranglerSmokeMode": "local dry-run only",
+  "externalEffects": 0
+}

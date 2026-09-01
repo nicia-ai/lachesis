@@ -1,0 +1,221 @@
+{
+  "protocol": "lachesis-m9b13k5a-complete-source-build-inventory/1",
+  "reviewedImplementationCommit": "6972e212d431454a3a4b024064d83033834a512b",
+  "reviewedImplementationTree": "1c9549168bd01c6d4cf39cc5b6f00752465c1c5b",
+  "acceptedM9b13k4cImplementationIdentity": "cf35bd5756e8397ed9fa010e356ac30787ef69ba19ab13a7c057eac0f32d9ceb",
+  "comparatorProtocol": "lachesis-m9b13k4c-source-build-bound-ledger-identity/4",
+  "runtime": { "node": "v24.20.0", "pnpm": "10.33.0", "typescript": "6.0.3" },
+  "groupDigests": {
+    "correctedSources": "70bfe40fc622584a9458d3f5d769881d431b2476888ca2f0830b081dbb739575",
+    "emittedArtifacts": "0bf63534777b4ebb865f653a1b03fe10134fc00a00bb297898d9cf9e7c94cd4b",
+    "testsAndFixtures": "e8f516337e650e98856b2b025487427fa935c25f7dcc1be5bb6efadee9dcb557",
+    "packageAndBuildConfiguration": "8393b087f93fcca40cf5736e62b4d69010c0da92285b6fb81ba284dd30bbb722",
+    "protocolArtifacts": "b6a99bda999db8cc06103e39086579486490318eb80e203c4e2b013443b0e5df"
+  },
+  "entries": [
+    {
+      "kind": "configuration",
+      "path": "package.json",
+      "byteLength": 8155,
+      "sha256": "4b87e1a85ac7a9ecc123b4da1b4313741586379e1857323dddf32935c9881db0"
+    },
+    {
+      "kind": "configuration",
+      "path": "pnpm-lock.yaml",
+      "byteLength": 129050,
+      "sha256": "295cd4ced51818d4fea824f38caabe3cafde3d46865c2808f4b8f55f5b1485ef"
+    },
+    {
+      "kind": "configuration",
+      "path": "tsconfig.base.json",
+      "byteLength": 1732,
+      "sha256": "d52da2a411dbd633a141ce2534522f9b504a536fb3092d32ded4f68bb0a851a7"
+    },
+    {
+      "kind": "configuration",
+      "path": "vitest.config.ts",
+      "byteLength": 2884,
+      "sha256": "1374ccc30c0d0499d8d1fcfea9a4b3b58a7a80523c8d902bf71ba1cc85072001"
+    },
+    {
+      "kind": "configuration",
+      "path": "eslint.config.mjs",
+      "byteLength": 2969,
+      "sha256": "3f083f5d27fb3bbd9005fd487592a13a35ad6cebc1d290a3e5a7cb5003b8b682"
+    },
+    {
+      "kind": "package-manifest",
+      "path": "packages/generator-ai-sdk/package.json",
+      "byteLength": 962,
+      "sha256": "f28af0d2f9332ff7937f49eba05c8084fcf121a93d226d87d588189ffed687e4"
+    },
+    {
+      "kind": "configuration",
+      "path": "packages/generator-ai-sdk/tsconfig.json",
+      "byteLength": 191,
+      "sha256": "2ce0f836b99fde71b2617ec80d4f6aa474ce6bf3c8e90e47336573ab3cd592f6"
+    },
+    {
+      "kind": "configuration",
+      "path": "packages/generator-ai-sdk/tsconfig.build.json",
+      "byteLength": 531,
+      "sha256": "8dd9faee4aa99b183eac9582c97a37564699089d272fe185e927e41c4efc76cc"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k5a/protocol.ts",
+      "byteLength": 16412,
+      "sha256": "5e703160d3a88459abfee6058f409d677dc73444184b8e48c5f950a47cf652aa"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k5a/responses.ts",
+      "byteLength": 17311,
+      "sha256": "9e92680f057b8c68f393f59413534d0f63fc953a40ff279046b6ade8a047e187"
+    },
+    {
+      "kind": "typescript-source",
+      "path": "packages/generator-ai-sdk/src/internal/m9b13k5a/state-model.ts",
+      "byteLength": 26744,
+      "sha256": "e1c1439571c9730652dfb765d8bc0434f88f800ee89fdb4acf314f4e62c12ec5"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/protocol.js",
+      "byteLength": 15535,
+      "sha256": "2fdb2d7ee50b52153f77619df5256cd1839de5eb955db4a383b8baf4769275e4"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/protocol.d.ts",
+      "byteLength": 51051,
+      "sha256": "6d1706507eacefeb94771f21db3ac0a3adae36357a1fc345797911b1ae2cde2c"
+    },
+    {
+      "kind": "source-map",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/protocol.js.map",
+      "byteLength": 11702,
+      "sha256": "af30b9408b460e1215514e6805e9c73aa2000edfa08c1ebc3fc95c72c4ec5a92"
+    },
+    {
+      "kind": "declaration-map",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/protocol.d.ts.map",
+      "byteLength": 3554,
+      "sha256": "0fb311aec8c61c701e4618f705a4c4ed4dc231ee82c13b7bb2fa04e0f1e51df7"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/responses.js",
+      "byteLength": 16751,
+      "sha256": "fb69b22b585eecc3ce731f3cf2ee6901aaacaed75fa22477df4b680394f7dd1b"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/responses.d.ts",
+      "byteLength": 11939,
+      "sha256": "ee56cd89711a3ca55c62eedd296bfafddc65ca8b2a683c2c6c316531a8020fe6"
+    },
+    {
+      "kind": "source-map",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/responses.js.map",
+      "byteLength": 15851,
+      "sha256": "533277f547b7697d5b2d3145bab19ef6a554b073cdd38783fce0030afdf4e601"
+    },
+    {
+      "kind": "declaration-map",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/responses.d.ts.map",
+      "byteLength": 2124,
+      "sha256": "34454842fa77a14e2b21546b2b2e3c13863f3c5a6af6c81728453b50634becbb"
+    },
+    {
+      "kind": "javascript",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/state-model.js",
+      "byteLength": 25202,
+      "sha256": "a8704299b7cbd5c4ba0b269bfa39660cc36a6d2ae190e7d7766d93743dd95ff7"
+    },
+    {
+      "kind": "declaration",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/state-model.d.ts",
+      "byteLength": 3388,
+      "sha256": "e6753e260093f680ae0a530d2554ffdf563d0059392a9f11dd651f86c43b44ad"
+    },
+    {
+      "kind": "source-map",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/state-model.js.map",
+      "byteLength": 17181,
+      "sha256": "1d04fd3daf15c0e289bbf6c7d331f6f3a9d37b2843829d4acb409dcc4e4f3f36"
+    },
+    {
+      "kind": "declaration-map",
+      "path": "packages/generator-ai-sdk/dist/internal/m9b13k5a/state-model.d.ts.map",
+      "byteLength": 2664,
+      "sha256": "8619b6e26eef6f5d8baeb292db198f46611d10f264de5c1be2efad1b6ce9b3d9"
+    },
+    {
+      "kind": "hostile-test",
+      "path": "packages/generator-ai-sdk/tests/m9b13k5a-corrected-design.test.ts",
+      "byteLength": 35923,
+      "sha256": "36f92060f7d705d49b1ae8429fff789d59728e579ecc62e921d33110274b7412"
+    },
+    {
+      "kind": "fixture",
+      "path": "packages/generator-ai-sdk/tests/fixtures/m9b13k5a/official-shaped-responses.json",
+      "byteLength": 3847,
+      "sha256": "c131a63d558dcef6d6c511412aa8b13f36b4771ca287735e79e4fb09e2de1ed0"
+    },
+    {
+      "kind": "fixture",
+      "path": "packages/generator-ai-sdk/tests/fixtures/m9b13k5a/hostile-near-misses.json",
+      "byteLength": 1037,
+      "sha256": "5705ee43d790469b8867142bebc783eb73131de1e542e098a3da516a4e8c7641"
+    },
+    {
+      "kind": "protocol-artifact",
+      "path": "docs/m9b13k5a-corrected-controller-integration-design/README.md",
+      "byteLength": 1299,
+      "sha256": "c295afbf33379228aa613736d24e57f3cab4b4f6dd09e843653fecafedf0aad3"
+    },
+    {
+      "kind": "protocol-artifact",
+      "path": "docs/m9b13k5a-corrected-controller-integration-design/STATE-AND-REPLAY.md",
+      "byteLength": 1765,
+      "sha256": "5539c43a28d215b5a7849745d6a00f5eec2f0b3039062e4833907c2576cdf376"
+    },
+    {
+      "kind": "protocol-artifact",
+      "path": "docs/m9b13k5a-corrected-controller-integration-design/ACCEPTED-LEDGER-AND-CAPABILITY-BOUNDARY.md",
+      "byteLength": 1310,
+      "sha256": "ba1a6a11098d7924ca1305ef2462333ee0263d3e3bc801ee990c8a68f6291812"
+    },
+    {
+      "kind": "protocol-artifact",
+      "path": "docs/m9b13k5a-corrected-controller-integration-design/RAW-RESPONSE-AND-RECONCILIATION.md",
+      "byteLength": 1190,
+      "sha256": "af7d1d2888fb9450bd0a61530eb32e60d21bd8c4bf3d6d1a3807e2cda23dc6b5"
+    },
+    {
+      "kind": "protocol-artifact",
+      "path": "docs/m9b13k5a-corrected-controller-integration-design/DEADLINES-AND-CUSTODIAN.md",
+      "byteLength": 1082,
+      "sha256": "28264a1cf776de52550485c8edb15f1524ec04d6936efdc9dc8359740671a6a6"
+    },
+    {
+      "kind": "protocol-artifact",
+      "path": "docs/m9b13k5a-corrected-controller-integration-design/FUTURE-IMPLEMENTATION-ORDER.md",
+      "byteLength": 705,
+      "sha256": "55aaa8bfc85eaebddf0c1582aa505bb4976e943349f494c1e5716ad32c6ad9bd"
+    },
+    {
+      "kind": "protocol-artifact",
+      "path": "docs/m9b13k5a-corrected-controller-integration-design/REQUEST-TOPOLOGY.json",
+      "byteLength": 1055,
+      "sha256": "d372eea84b3a7be69c09bbda74c5e1d37a3e4aa777e3abd1fccf9d9c81cac1dd"
+    },
+    {
+      "kind": "protocol-artifact",
+      "path": "docs/m9b13k5a-corrected-controller-integration-design/HOSTILE-TEST-MATRIX.json",
+      "byteLength": 1268,
+      "sha256": "a610cc1043c000aadec3fbdd03355767385ee3b3e3df51376e587ccd33fa4a3e"
+    }
+  ]
+}
