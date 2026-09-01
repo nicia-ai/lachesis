@@ -1,0 +1,134 @@
+{
+  "token-detail": {
+    "data": {
+      "type": "tokens",
+      "id": "synthetic-token-1",
+      "attributes": {
+        "name": "Synthetic controller token",
+        "scopes": ["osf.full_write"]
+      },
+      "links": { "self": "https://api.osf.io/v2/tokens/synthetic-token-1/" }
+    }
+  },
+  "project": {
+    "data": {
+      "type": "nodes",
+      "id": "bmsda",
+      "attributes": {
+        "title": "Synthetic private project",
+        "public": false,
+        "current_user_permissions": ["read", "write", "admin"]
+      },
+      "relationships": {
+        "files": {
+          "links": {
+            "href": "https://api.osf.io/v2/nodes/bmsda/files/",
+            "meta": {}
+          }
+        },
+        "registrations": {
+          "links": {
+            "href": "https://api.osf.io/v2/nodes/bmsda/registrations/",
+            "meta": {}
+          }
+        }
+      },
+      "links": { "self": "https://api.osf.io/v2/nodes/bmsda/" }
+    }
+  },
+  "registrations": {
+    "data": [],
+    "links": {
+      "first": "https://api.osf.io/v2/nodes/bmsda/registrations/?page=1",
+      "last": "https://api.osf.io/v2/nodes/bmsda/registrations/?page=1",
+      "prev": null,
+      "next": null
+    },
+    "meta": { "total": 0, "per_page": 100 }
+  },
+  "view-only-links": {
+    "data": [],
+    "links": {
+      "first": "https://api.osf.io/v2/nodes/bmsda/view_only_links/?page=1",
+      "last": "https://api.osf.io/v2/nodes/bmsda/view_only_links/?page=1",
+      "prev": null,
+      "next": null
+    },
+    "meta": { "total": 0, "per_page": 100 }
+  },
+  "file-list": {
+    "data": [],
+    "links": {
+      "first": "https://api.osf.io/v2/nodes/bmsda/files/osfstorage/?page=1",
+      "last": "https://api.osf.io/v2/nodes/bmsda/files/osfstorage/?page=1",
+      "prev": null,
+      "next": null
+    },
+    "meta": { "total": 0, "per_page": 100 }
+  },
+  "provider-root": {
+    "data": [
+      {
+        "type": "files",
+        "id": "bmsda:osfstorage",
+        "attributes": {
+          "name": "osfstorage",
+          "kind": "folder",
+          "path": "/",
+          "materialized_path": "/",
+          "provider": "osfstorage",
+          "resource": "bmsda",
+          "size": 0
+        },
+        "relationships": {
+          "node": {
+            "links": {
+              "href": "https://api.osf.io/v2/nodes/bmsda/",
+              "meta": {}
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.osf.io/v2/files/bmsda:osfstorage/",
+          "download": "https://files.osf.io/v1/resources/bmsda/providers/osfstorage/",
+          "upload": "https://files.osf.io/v1/resources/bmsda/providers/osfstorage/"
+        }
+      }
+    ],
+    "links": {
+      "first": "https://api.osf.io/v2/nodes/bmsda/files/osfstorage/?page=1",
+      "last": "https://api.osf.io/v2/nodes/bmsda/files/osfstorage/?page=1",
+      "prev": null,
+      "next": null
+    },
+    "meta": { "total": 1, "per_page": 100 }
+  },
+  "upload": {
+    "data": {
+      "type": "files",
+      "id": "synthetic-file-identity",
+      "attributes": {
+        "name": "m9b13k5-offline-controller-integration-proof.txt",
+        "kind": "file",
+        "path": "/synthetic-file-identity",
+        "materialized_path": "/m9b13k5-offline-controller-integration-proof.txt",
+        "provider": "osfstorage",
+        "resource": "bmsda",
+        "size": 245
+      },
+      "relationships": {
+        "node": {
+          "links": {
+            "href": "https://api.osf.io/v2/nodes/bmsda/",
+            "meta": {}
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.osf.io/v2/files/synthetic-file-identity/",
+        "download": "https://files.osf.io/v1/resources/bmsda/providers/osfstorage/synthetic-file-identity",
+        "upload": "https://files.osf.io/v1/resources/bmsda/providers/osfstorage/synthetic-file-identity"
+      }
+    }
+  }
+}

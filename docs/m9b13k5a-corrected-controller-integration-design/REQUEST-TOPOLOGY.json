@@ -1,0 +1,29 @@
+{
+  "protocol": "lachesis-m9b13k5a-request-topology/1",
+  "shortestRequestCount": 10,
+  "longestRequestCount": 18,
+  "maximumPath": [
+    { "operation": "token-detail", "pages": 1, "requests": [1] },
+    { "operation": "project", "pages": 1, "requests": [2] },
+    { "operation": "registration-inventory", "pages": 2, "requests": [3, 4] },
+    { "operation": "view-only-link-inventory", "pages": 2, "requests": [5, 6] },
+    {
+      "operation": "pre-upload-file-inventory",
+      "pages": 4,
+      "requests": [7, 8, 9, 10]
+    },
+    { "operation": "provider-root", "pages": 1, "requests": [11] },
+    { "operation": "canary-put", "pages": 1, "requests": [12] },
+    {
+      "operation": "post-upload-file-inventory",
+      "pages": 4,
+      "requests": [13, 14, 15, 16]
+    },
+    { "operation": "canary-download", "pages": 1, "requests": [17] },
+    { "operation": "pat-revocation", "pages": 1, "requests": [18] }
+  ],
+  "maximumFormula": "1 + 1 + 2 + 2 + 4 + 1 + 1 + 4 + 1 + 1 = 18",
+  "mandatoryOperations": 10,
+  "retries": 0,
+  "concurrency": 1
+}

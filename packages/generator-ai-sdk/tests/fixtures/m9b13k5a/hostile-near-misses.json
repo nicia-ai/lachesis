@@ -1,0 +1,44 @@
+[
+  {
+    "name": "missing-top-level-data",
+    "kind": "token-detail",
+    "value": { "id": "synthetic-token-1" }
+  },
+  {
+    "name": "foreign-project",
+    "kind": "project",
+    "value": {
+      "data": {
+        "type": "nodes",
+        "id": "other",
+        "attributes": {
+          "title": "Foreign",
+          "public": false,
+          "current_user_permissions": ["read", "write"]
+        },
+        "relationships": {
+          "files": { "links": { "href": "https://api.osf.io/", "meta": {} } },
+          "registrations": {
+            "links": { "href": "https://api.osf.io/", "meta": {} }
+          }
+        },
+        "links": { "self": "https://api.osf.io/" }
+      }
+    }
+  },
+  {
+    "name": "unknown-decision-field",
+    "kind": "registrations",
+    "value": {
+      "data": [],
+      "links": {
+        "first": "https://api.osf.io/",
+        "last": "https://api.osf.io/",
+        "prev": null,
+        "next": null
+      },
+      "meta": { "total": 0, "per_page": 100 },
+      "transformed": true
+    }
+  }
+]

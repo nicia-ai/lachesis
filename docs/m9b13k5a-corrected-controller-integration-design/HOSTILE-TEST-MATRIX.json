@@ -1,0 +1,38 @@
+{
+  "protocol": "lachesis-m9b13k5a-hostile-test-matrix/1",
+  "fixedSeeds": [
+    {
+      "seed": 331677701,
+      "runs": 2048,
+      "claims": [
+        "official-shaped-valid-responses-pass",
+        "foreign-host-substitutions-fail"
+      ]
+    },
+    { "seed": 5130505, "runs": 4, "claims": ["exhaustive-replay-equivalence"] }
+  ],
+  "classes": [
+    "all-135-stage-event-pairs",
+    "all-operation-page-lifecycles",
+    "shortest-and-maximum-success-paths",
+    "before-permit-commit",
+    "after-permit-commit-before-enqueue",
+    "during-enqueue",
+    "after-enqueue-before-response",
+    "during-response-persistence",
+    "after-response-before-decision-projection",
+    "zero-redispatch-after-ambiguous-boundaries",
+    "discriminated-union-irrelevant-fields",
+    "official-jsonapi-success-fixtures",
+    "malformed-utf8-and-duplicate-json-keys",
+    "foreign-host-and-encoded-path",
+    "alternate-provider-and-resource",
+    "duplicate-extra-and-missing-objects",
+    "actual-downloaded-byte-mismatch",
+    "controller-and-revocation-deadline-boundaries",
+    "ed25519-forgery-projection-key-lineage-and-lateness",
+    "one-use-capability-serialization-replay-and-restart",
+    "accepted-receipt-stale-root-sequence-and-digest",
+    "payload-limit"
+  ]
+}
