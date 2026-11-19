@@ -10,6 +10,7 @@ export default tseslint.config(
     ignores: [
       "**/dist/**",
       "**/coverage/**",
+      "docs/**",
       "**/.wrangler/**",
       "compat/node-smoke/smoke.mjs",
       "eslint.config.mjs",
