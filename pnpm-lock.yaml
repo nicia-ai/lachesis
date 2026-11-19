@@ -100,6 +100,19 @@ importers:
         specifier: 24.13.3
         version: 24.13.3
 
+  apps/registry:
+    dependencies:
+      "@nicia-ai/lachesis":
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      "@types/node":
+        specifier: 24.13.3
+        version: 24.13.3
+
   compat/node-smoke:
     dependencies:
       "@nicia-ai/lachesis":

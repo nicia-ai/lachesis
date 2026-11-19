@@ -5,3 +5,5 @@ studies/m8b0-cli-contract/goldens/
 docs/m9b13b-independent-review.md
 docs/m9b13f2-independent-review-receipt/
 docs/m9b13i-osf-private-draft-canary/
+registry/
+**/MANIFEST.json

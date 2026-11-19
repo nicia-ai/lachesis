@@ -55,7 +55,7 @@
     "audit:m8b2a-results": "node scripts/audit-historical-checksum.mjs 5b2150c9dce49f67531589d81d186b941199c19e docs/m8b2a-results.sha256 b4ab2e772922c3091d3c52c7451596dd86f4595b4e4eb7885720507a7b50aff6",
     "verify:m8b1-stage5.1": "pnpm verify:m8b1-stage4.1 && pnpm audit:m8b1-stage5-results && pnpm audit:m8b1-stage5.1-results",
     "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
-    "smoke": "pnpm --filter @nicia-ai/lachesis-generator smoke && pnpm --filter @nicia-ai/lachesis-evidence smoke && pnpm --filter @nicia-ai/lachesis-evidence-typegraph smoke && pnpm --filter @nicia-ai/lachesis-benchmark smoke && pnpm --filter @nicia-ai/lachesis-node-smoke test && pnpm --filter @nicia-ai/lachesis-worker-smoke test"
+    "smoke": "pnpm --filter @nicia-ai/lachesis-generator smoke && pnpm --filter @nicia-ai/lachesis-evidence smoke && pnpm --filter @nicia-ai/lachesis-evidence-typegraph smoke && pnpm --filter @nicia-ai/lachesis-benchmark smoke && pnpm --filter @nicia-ai/lachesis-node-smoke test && pnpm --filter @nicia-ai/lachesis-worker-smoke test && pnpm --filter @nicia-ai/lachesis-registry smoke"
   },
   "devDependencies": {
     "@nicia-ai/lachesis-runtime": "workspace:*",

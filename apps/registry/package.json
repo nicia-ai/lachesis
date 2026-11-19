@@ -1,0 +1,26 @@
+{
+  "name": "@nicia-ai/lachesis-registry",
+  "version": "0.0.0",
+  "description": "Git-native, tamper-evident study registry for Lachesis research",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "bin": {
+    "lachesis-registry": "./dist/cli.js"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "smoke": "node dist/cli.js verify --offline && ! node dist/cli.js unknown-command 2>/dev/null"
+  },
+  "dependencies": {
+    "@nicia-ai/lachesis": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3"
+  }
+}
